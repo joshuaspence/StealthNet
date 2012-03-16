@@ -211,7 +211,7 @@ public class StealthNetClient {
 		creditsPane.add(creditsBox);
                 
         // create buttons (login, send message, chat, ftp)
-        loginBtn = new JButton(new ImageIcon("login.gif"));
+        loginBtn = new JButton(new ImageIcon("img/login.gif"));
         loginBtn.setVerticalTextPosition(AbstractButton.BOTTOM);
         loginBtn.setHorizontalTextPosition(AbstractButton.CENTER);
         loginBtn.setMnemonic(KeyEvent.VK_N);
@@ -222,7 +222,7 @@ public class StealthNetClient {
             }
         });
 
-        final JButton msgBtn = new JButton(new ImageIcon("msg.gif"));
+        final JButton msgBtn = new JButton(new ImageIcon("img/msg.gif"));
         msgBtn.setVerticalTextPosition(AbstractButton.BOTTOM);
         msgBtn.setHorizontalTextPosition(AbstractButton.CENTER);
         msgBtn.setMnemonic(KeyEvent.VK_M);
@@ -275,7 +275,7 @@ public class StealthNetClient {
 
 		msgTextBox.append("Connected to stealthnet.\n");
 		clientFrame.setTitle("stealthnet [" + userID + "]");
-        loginBtn.setIcon(new ImageIcon("logout.gif"));
+        loginBtn.setIcon(new ImageIcon("img/logout.gif"));
         loginBtn.setToolTipText("Logout");
     }
 
@@ -285,7 +285,7 @@ public class StealthNetClient {
             stealthComms.sendPacket(StealthNetPacket.CMD_LOGOUT);
             stealthComms.terminateSession();
             stealthComms = null;
-            loginBtn.setIcon(new ImageIcon("login.gif"));
+            loginBtn.setIcon(new ImageIcon("img/login.gif"));
             loginBtn.setToolTipText("Login");
             buddyListData.setRowCount(0);
             secretListData.setRowCount(0);
