@@ -1,0 +1,63 @@
+<?xml version="1.0" ?>
+<project name="ELEC5616" default="build" basedir=".">
+	<property name="src.dir"      value="src"/>
+    <property name="build.dir"    value="build"/>
+	<property name="classes.dir"  value="${build.dir}/classes"/>
+	<property name="jar.dir"      value="${build.dir}/jar"/>
+	<property name="lib.dir"      value="lib"/>
+
+    <property name="client-class" value="StealthNetClient"/>
+	<property name="server-class" value="StealthNetServer"/>
+	<property name="main-class"   value="${client-class}"/>
+	
+	<path id="classpath">
+        <fileset dir="${lib.dir}" includes="**/*.jar"/>
+    </path>
+	
+    <target name="build" depends="compile, jar" description="Main target"/>
+  
+    <target name="compile" description="Compilation target">
+    	<mkdir dir="${classes.dir}"/>
+        <javac srcdir="${src.dir}" destdir="${classes.dir}" classpathref="classpath" debug="true" includeantruntime="false"/>
+    </target>
+  
+    <target name="jar" description="Compression target">
+    	<mkdir dir="${jar.dir}"/>
+    	<tstamp>
+	        <format property="TODAY" pattern="yyyy-MM-dd HH:mm:ss" />
+	    </tstamp>
+        <jar destfile="${jar.dir}/${ant.project.name}.jar" basedir="${classes.dir}">
+        	<manifest>
+        		<attribute name="Built-By" value="${user.name}"/>
+        		<attribute name="Built-Date" value="${TODAY}"/>
+                <attribute name="Main-Class" value="${main-class}"/>
+        	</manifest>
+    	</jar>
+    </target>
+	
+	<target name="clean" description="Clean the project">
+        <delete dir="build"/>
+    </target>
+	
+	<target name="clean-build" depends="clean, build" description="Clean and then build the project"/>
+	
+	<target name="run" depends="run_server, run_client" description="Run StealthNet client and server"/>
+	
+	<target name="run_client" description="Run StealthNet client">		
+		<java fork="true" classname="${client-class}">
+            <classpath>
+                <path refid="classpath"/>
+                <path location="${jar.dir}/${ant.project.name}.jar"/>
+            </classpath>
+        </java>
+	</target>
+	
+	<target name="run_server" description="Run StealthNet server">
+		<java fork="true" classname="${server-class}">
+            <classpath>
+                <path refid="classpath"/>
+                <path location="${jar.dir}/${ant.project.name}.jar"/>
+            </classpath>
+        </java>
+    </target>
+</project>
