@@ -38,7 +38,7 @@ Thumbs.db
 #===============================================================================
 
 # Executables
-classes/
+build/
 
 # Documentation
 docs/
