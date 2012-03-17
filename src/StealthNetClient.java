@@ -20,13 +20,47 @@
 
 /* Import Libraries **********************************************************/
 
-import java.io.*;
-import java.net.*;
-import javax.swing.*;
-import javax.swing.table.*;
-import java.awt.*;
-import java.awt.event.*;
 import java.util.Hashtable;
+
+import java.io.IOException;
+import java.net.InetAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.UnknownHostException;
+
+import javax.swing.AbstractButton;
+import javax.swing.BorderFactory;
+import javax.swing.ImageIcon;
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JMenuItem;
+import javax.swing.JPanel;
+import javax.swing.JPopupMenu;
+import javax.swing.JScrollPane;
+import javax.swing.JSplitPane;
+import javax.swing.JTable;
+import javax.swing.JTextArea;
+import javax.swing.JTextField;
+import javax.swing.SwingConstants;
+import javax.swing.table.DefaultTableModel;
+import javax.swing.Timer;
+import javax.swing.UIManager;
+import javax.swing.JOptionPane;
+
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.FileDialog;
+import java.awt.GridLayout;
+import java.awt.BorderLayout;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 
 /* StealthNetClient Class Definition *****************************************/
 
@@ -48,28 +82,28 @@ public class StealthNetClient {
 		String filename = null;
 	}
 
-	static private Hashtable secretDescriptions = new Hashtable();
+	static private Hashtable<String, SecretData> secretDescriptions = new Hashtable<String, SecretData>();
 
     public StealthNetClient() {
-        stealthTimer = new javax.swing.Timer(100, new ActionListener() {
+        stealthTimer = new Timer(100, new ActionListener() {
             public void actionPerformed(ActionEvent e) { processPackets(); }
         });
     }
 
-    public Component createGUI() {
+    @SuppressWarnings("serial")
+	public Component createGUI() {
         JPanel pane = new JPanel();
             	
         // create buddy list
         buddyListData = new DefaultTableModel() {
-        	public boolean isCellEditable(int row, int col) { 
-        	return false; 
-        	};
+        	public boolean isCellEditable(int row, int col) { return false; };
         };
         buddyListData.addColumn("User ID");
         buddyListData.addColumn("Online");
         buddyTable = new JTable(buddyListData);
         buddyTable.setPreferredScrollableViewportSize(new Dimension(200, 100));
         buddyTable.getColumnModel().getColumn(0).setPreferredWidth(180);
+        
         JScrollPane buddyScrollPane = new JScrollPane(buddyTable);
         buddyScrollPane.setBorder(
             BorderFactory.createCompoundBorder(
@@ -83,10 +117,8 @@ public class StealthNetClient {
 		MouseListener ml = new MouseAdapter() {
 			JPopupMenu popup;
 			int row;
-			String myid, mystatus;
 			
-			public void mouseReleased(MouseEvent e) {
-								
+			public void mouseReleased(MouseEvent e) {	
 				if (e.isShiftDown()||e.isControlDown()||e.isAltDown()) {
        				return;
       			}
@@ -101,7 +133,8 @@ public class StealthNetClient {
 					item = new JMenuItem("Chat");
 					item.addActionListener(new ActionListener() {
         		 	   public void actionPerformed(ActionEvent e) { startChat(row); }
-        			});popup.add(item);
+        			});
+					popup.add(item);
 					
 					item = new JMenuItem("Send File");
 					
@@ -117,9 +150,7 @@ public class StealthNetClient {
 
         // create secret window
         secretListData = new DefaultTableModel() {
-        	public boolean isCellEditable(int row, int col) { 
-        	return false; 
-        	};
+        	public boolean isCellEditable(int row, int col) { return false;	};
         };
         secretListData.addColumn("Secret");
         secretListData.addColumn("Cost");
@@ -131,14 +162,11 @@ public class StealthNetClient {
 		ml = new MouseAdapter() {
 			JPopupMenu popup;
 			int row;
-			String cost;
 			
 			public void mouseReleased(MouseEvent e) {
-								
-				if (e.isShiftDown()||e.isControlDown()||e.isAltDown()) {
+				if (e.isShiftDown() || e.isControlDown() || e.isAltDown()) {
        				return;
-      			}
-      			if (e.isPopupTrigger()) {
+      			} else if (e.isPopupTrigger()) {
         			JMenuItem item;
         			
         			row = buddyTable.rowAtPoint(e.getPoint());	
@@ -189,15 +217,11 @@ public class StealthNetClient {
                 msgScrollPane.getBorder()));
 
         // create split pane for buddy list and messages
-        
-        final JSplitPane splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT,
-            buddyScrollPane, secretScrollPane);
+        final JSplitPane splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, buddyScrollPane, secretScrollPane);
         splitPane.setOneTouchExpandable(true);
         splitPane.setDividerLocation(150);
 
-
-		final JSplitPane topPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT,
-            splitPane, msgScrollPane);
+		final JSplitPane topPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, splitPane, msgScrollPane);
         topPane.setOneTouchExpandable(true);  
 
 		// Credits display
@@ -244,7 +268,6 @@ public class StealthNetClient {
 		bottomPane.add(btnPane, BorderLayout.SOUTH);
 
         // create top-level panel and add components
-
         pane.setBorder(BorderFactory.createEmptyBorder(10, 10, 5, 10));
         pane.setLayout(new BorderLayout());
         pane.add(topPane, BorderLayout.NORTH);
@@ -262,6 +285,7 @@ public class StealthNetClient {
         try {
             userID = JOptionPane.showInputDialog("Login:", userID);
             if (userID == null) return;
+            
             stealthComms = new StealthNetComms();
             stealthComms.initiateSession(new Socket(StealthNetComms.SERVERNAME, StealthNetComms.SERVERPORT));
             stealthComms.sendPacket(StealthNetPacket.CMD_LOGIN, userID);
@@ -271,7 +295,6 @@ public class StealthNetClient {
         } catch (IOException e) {
             msgTextBox.append("[*ERR*] Could not connect to host: " + StealthNetComms.SERVERNAME + "\n");
         }
-
 
 		msgTextBox.append("Connected to stealthnet.\n");
 		clientFrame.setTitle("stealthnet [" + userID + "]");
@@ -285,17 +308,20 @@ public class StealthNetClient {
             stealthComms.sendPacket(StealthNetPacket.CMD_LOGOUT);
             stealthComms.terminateSession();
             stealthComms = null;
+            
             loginBtn.setIcon(new ImageIcon("img/login.gif"));
             loginBtn.setToolTipText("Login");
+            
             buddyListData.setRowCount(0);
             secretListData.setRowCount(0);
             msgTextBox.append("Disconnected.\n");
         }
     }
 
-    private void createSecret() {
+    @SuppressWarnings("unused")
+	private void createSecret() {
     	String userMsg;
-    	String name = "", description = "", cost = "", filename = "";
+    	String name = "", description = "", cost = "";
     	
         if (stealthComms == null) {
             msgTextBox.append("[*ERR*] Not logged in.\n");
@@ -303,14 +329,11 @@ public class StealthNetClient {
         }
 
 		name = JOptionPane.showInputDialog("Secret Name:", name);
-		
 		description = JOptionPane.showInputDialog("Secret Description:", description);
-		
 		cost = JOptionPane.showInputDialog("Secret Cost (credits):", cost);
 
-        FileDialog fileOpen = new FileDialog(clientFrame, "Select Secret File....",
-            FileDialog.LOAD);
-        fileOpen.show();
+        FileDialog fileOpen = new FileDialog(clientFrame, "Select Secret File....", FileDialog.LOAD);
+        fileOpen.setVisible(true);
         if (fileOpen.getFile().length() == 0)
             return;
 	
@@ -323,8 +346,8 @@ public class StealthNetClient {
 		String name;
 		SecretData data;
 		
-		name = (String)secretTable.getValueAt(row,0);
-		data = (SecretData)secretDescriptions.get(name);
+		name = (String) secretTable.getValueAt(row,0);
+		data = (SecretData) secretDescriptions.get(name);
 		if (data != null) {
 			JOptionPane.showMessageDialog(null,data.description,"Details of Secret: " + name, JOptionPane.PLAIN_MESSAGE);			
 		}
@@ -332,10 +355,9 @@ public class StealthNetClient {
 		return;
 	}
 
-
     private void purchaseSecret(int row) {
-		String name = (String)secretTable.getValueAt(row, 0);
-		SecretData data = (SecretData)secretDescriptions.get(name);
+		String name = (String) secretTable.getValueAt(row, 0);
+		SecretData data = secretDescriptions.get(name);
 		if (data == null)
 			return;
 
@@ -349,7 +371,7 @@ public class StealthNetClient {
 			return;
 		}
 
-		// send reqest to server
+		// send request to server
 		String iAddr;
 		try {
 			iAddr = InetAddress.getLocalHost().toString();
@@ -359,20 +381,19 @@ public class StealthNetClient {
 			iAddr = "localhost";
 		}
 		iAddr += ":" + Integer.toString(ftpSocket.getLocalPort());
-		stealthComms.sendPacket(StealthNetPacket.CMD_GETSECRET, name +
-			"@" + iAddr);
+		stealthComms.sendPacket(StealthNetPacket.CMD_GETSECRET, name + "@" + iAddr);
 
 		FileDialog fileSave = new FileDialog(clientFrame, "Save As...", FileDialog.SAVE);
 		fileSave.setFile(data.filename);
-		fileSave.show();
+		fileSave.setVisible(true);
+		
 		if ((fileSave.getFile() != null) && (fileSave.getFile().length() > 0)) {
 			// wait for user to connect, then start file transfer
 			try {
 				ftpSocket.setSoTimeout(2000);  // 2 second timeout
 				StealthNetComms snComms = new StealthNetComms();
 				snComms.acceptSession(ftpSocket.accept());
-				new StealthNetFileTransfer(snComms,
-					fileSave.getDirectory() + fileSave.getFile(), false).start();
+				new StealthNetFileTransfer(snComms, fileSave.getDirectory() + fileSave.getFile(), false).start();
 			} catch (Exception e) {
 				msgTextBox.append("[*ERR*] Transfer failed.\n");
 			}	
@@ -382,8 +403,8 @@ public class StealthNetClient {
 	private boolean isOKtoSendtoRow(int row) {
 		String myid, mystatus;
 
-		myid = (String)buddyTable.getValueAt(row, 0);
-		mystatus = (String)buddyTable.getValueAt(row,1);
+		myid = (String) buddyTable.getValueAt(row, 0);
+		mystatus = (String) buddyTable.getValueAt(row,1);
 
 		if (myid.equals(userID)) {
 		   	msgTextBox.append("[*ERR*] Can't send to self.\n");
@@ -399,14 +420,12 @@ public class StealthNetClient {
         return true;
 	}
 	
-    
 	private void startChat(int row) {
-
 		if (!isOKtoSendtoRow(row)) {
 			return;
 		}
         
-        String myid = (String)buddyTable.getValueAt(row, 0);
+        String myid = (String) buddyTable.getValueAt(row, 0);
         		
         // set up socket on a free port
         ServerSocket chatSocket = null;
@@ -442,17 +461,14 @@ public class StealthNetClient {
     }
    
     private void sendFile(int row) {
-    	
 		if (!isOKtoSendtoRow(row)) {
 			return;
 		}
 		
-		String myid = (String)buddyTable.getValueAt(row, 0);
+		String myid = (String) buddyTable.getValueAt(row, 0);
 
-        FileDialog fileOpen = new FileDialog(clientFrame, "Open...",
-            FileDialog.LOAD);
-
-        fileOpen.show();
+        FileDialog fileOpen = new FileDialog(clientFrame, "Open...", FileDialog.LOAD);
+        fileOpen.setVisible(true);
         if (fileOpen.getFile().length() == 0)
             return;
 
@@ -476,16 +492,14 @@ public class StealthNetClient {
             iAddr = "localhost";
         }
         iAddr += ":" + Integer.toString(ftpSocket.getLocalPort());
-        stealthComms.sendPacket(StealthNetPacket.CMD_FTP, myid +
-            "@" + iAddr + "#" + fileOpen.getFile());
+        stealthComms.sendPacket(StealthNetPacket.CMD_FTP, myid + "@" + iAddr + "#" + fileOpen.getFile());
 
         // wait for user to connect, then start file transfer
         try {
             ftpSocket.setSoTimeout(2000);  // 2 second timeout
             StealthNetComms snComms = new StealthNetComms();
             snComms.acceptSession(ftpSocket.accept());
-            new StealthNetFileTransfer(snComms,
-                fileOpen.getDirectory() + fileOpen.getFile(), true).start();
+            new StealthNetFileTransfer(snComms, fileOpen.getDirectory() + fileOpen.getFile(), true).start();
         } catch (Exception e) {
             msgTextBox.append("[*ERR*] FTP failed.\n");
         }
@@ -519,7 +533,7 @@ public class StealthNetClient {
                 	    msgTextBox.append(new String(pckt.data) + "\n");
                         break;
 
-                    case StealthNetPacket.CMD_CHAT :
+                    case StealthNetPacket.CMD_CHAT:
                         iAddr = new String(pckt.data);
                         iAddr = iAddr.substring(iAddr.lastIndexOf("@") + 1);
                         iPort = new Integer(iAddr.substring(iAddr.lastIndexOf(":") + 1));
@@ -529,7 +543,7 @@ public class StealthNetClient {
                         new StealthNetChat(userID, snComms).start();
                         break;
 
-                    case StealthNetPacket.CMD_FTP :
+                    case StealthNetPacket.CMD_FTP:
                         iAddr = new String(pckt.data);
                         iAddr = iAddr.substring(iAddr.lastIndexOf("@") + 1);
                         fName = iAddr.substring(iAddr.lastIndexOf("#") + 1);
@@ -542,20 +556,21 @@ public class StealthNetClient {
 
                         FileDialog fileSave = new FileDialog(clientFrame, "Save As...", FileDialog.SAVE);
                         fileSave.setFile(fName);
-                        fileSave.show();
+                        fileSave.setVisible(true);
                         if ((fileSave.getFile() != null) && (fileSave.getFile().length() > 0)) {
-                            new StealthNetFileTransfer(snComms,
-                                fileSave.getDirectory() + fileSave.getFile(), false).start();
+                            new StealthNetFileTransfer(snComms, fileSave.getDirectory() + fileSave.getFile(), false).start();
                         }
                         break;
 
-                    case StealthNetPacket.CMD_LIST :
+                    case StealthNetPacket.CMD_LIST:
                         int indx;
                         String row;
                         String userTable = new String(pckt.data);
                         buddyListData.setRowCount(0);
+                        
                         while (userTable.length() > 0) {
                             indx = userTable.indexOf("\n");
+                            
                             if (indx > 0) {
                                 row = userTable.substring(0, indx);
                                 userTable = userTable.substring(indx + 1);
@@ -563,7 +578,9 @@ public class StealthNetClient {
                                 row = userTable;
                                 userTable = "";
                             }
+                            
                             indx = row.lastIndexOf(",");
+                            
                             if (indx > 0) {
                                 buddyListData.addRow(new Object[]{
                                     row.substring(0, indx).trim(),
@@ -573,12 +590,13 @@ public class StealthNetClient {
                       
                         break;
                         
-                   	case StealthNetPacket.CMD_SECRETLIST :
-                   	
+                   	case StealthNetPacket.CMD_SECRETLIST:
                         String secretTable = new String(pckt.data);
                         secretListData.setRowCount(0);
+                        
                         while (secretTable.length() > 0) {
                             indx = secretTable.indexOf("\n");
+                            
                             if (indx > 0) {
                                 row = secretTable.substring(0, indx);
                                 secretTable = secretTable.substring(indx + 1);
@@ -598,7 +616,7 @@ public class StealthNetClient {
                       
                         break;
 
-					case StealthNetPacket.CMD_GETSECRET : 
+					case StealthNetPacket.CMD_GETSECRET:
 						fName = new String(pckt.data);
 						iAddr = fName.substring(fName.lastIndexOf("@") + 1);
 						iPort = new Integer(iAddr.substring(iAddr.lastIndexOf(":") + 1));
@@ -628,9 +646,8 @@ public class StealthNetClient {
 
     public static void main(String[] args) {
         try {
-            UIManager.setLookAndFeel(
-                UIManager.getCrossPlatformLookAndFeelClassName());
-        } catch (Exception e) { }
+            UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
+        } catch (Exception e) {}
 
         // create the top-level container and contents
         clientFrame = new JFrame("stealthnet");
@@ -638,11 +655,9 @@ public class StealthNetClient {
         Component contents = app.createGUI();
         clientFrame.getContentPane().add(contents, BorderLayout.CENTER);
 
-        // finish setting up the gui
+        // finish setting up the GUI
         clientFrame.addWindowListener(new WindowAdapter() {
-            public void windowClosing(WindowEvent e) {
-                System.exit(0);
-            }
+            public void windowClosing(WindowEvent e) { System.exit(0); };
         });
         clientFrame.pack();
         clientFrame.setVisible(true);
@@ -652,4 +667,3 @@ public class StealthNetClient {
 /******************************************************************************
  * END OF FILE:     StealthNetClient.java
  *****************************************************************************/
- 

@@ -17,10 +17,26 @@
 
 /* Import Libraries **********************************************************/
 
-import java.io.*;
-import javax.swing.*;
-import java.awt.*;
-import java.awt.event.*;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.Toolkit;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.io.IOException;
+import javax.swing.AbstractButton;
+import javax.swing.BorderFactory;
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
+import javax.swing.JTextField;
 
 /* StealthNetChat Class Definition *******************************************/
 
@@ -48,6 +64,7 @@ public class StealthNetChat extends Thread {
         chatTextBox.setWrapStyleWord(true);
         chatTextBox.setEditable(false);
         chatTextBox.setBackground(Color.lightGray);
+        
         JScrollPane chatScrollPane = new JScrollPane(chatTextBox);
         chatScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
         chatScrollPane.setPreferredSize(new Dimension(280, 100));
@@ -65,6 +82,7 @@ public class StealthNetChat extends Thread {
                 sendChat();
             }
         });
+        
         final JButton quitBtn = new JButton("X");
         quitBtn.setVerticalTextPosition(AbstractButton.BOTTOM);
         quitBtn.setHorizontalTextPosition(AbstractButton.CENTER);
@@ -79,6 +97,7 @@ public class StealthNetChat extends Thread {
                 stealthComms = null;
             }
         });
+        
         JPanel btnPane = new JPanel();
         btnPane.setLayout(new BorderLayout());
         btnPane.add(msgText);
@@ -119,21 +138,23 @@ public class StealthNetChat extends Thread {
         StealthNetPacket pckt = new StealthNetPacket();
 
         try {
-            while ((pckt.command != StealthNetPacket.CMD_LOGOUT) &&
-                (stealthComms.recvReady())) {
+            while ((pckt.command != StealthNetPacket.CMD_LOGOUT) && (stealthComms.recvReady())) {
                 pckt = stealthComms.recvPacket();
+                
                 switch (pckt.command) {
-                    case StealthNetPacket.CMD_MSG :
+                    case StealthNetPacket.CMD_MSG:
                 	    chatTextBox.append(new String(pckt.data) + "\n");
                         break;
-                    case StealthNetPacket.CMD_LOGOUT :
+                        
+                    case StealthNetPacket.CMD_LOGOUT:
                         JOptionPane.showMessageDialog(chatFrame,
                             "Chat session terminated at other side.",
                             "StealthNet", JOptionPane.INFORMATION_MESSAGE);
                         stealthComms.terminateSession();
                         stealthComms = null;
                         break;
-                    default :
+                        
+                    default:
                         System.out.println("unrecognised command");
                }
             }
@@ -163,8 +184,8 @@ public class StealthNetChat extends Thread {
         });
 
         // center the window
-        int x = (screenDim.width - chatFrame.getSize().width)/2;
-        int y = (screenDim.height - chatFrame.getSize().height)/2;
+        int x = (screenDim.width - chatFrame.getSize().width) / 2;
+        int y = (screenDim.height - chatFrame.getSize().height) / 2;
         chatFrame.setLocation(x, y);
         chatFrame.setVisible(true);
 
@@ -172,7 +193,7 @@ public class StealthNetChat extends Thread {
             recvChat();
             try {
                 sleep(100);
-            } catch (Exception e) { }
+            } catch (Exception e) {}
         }
 
         chatTextBox = null;

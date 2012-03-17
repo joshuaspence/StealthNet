@@ -20,9 +20,19 @@
 
 /* Import Libraries **********************************************************/
 
-import java.io.*;
-import javax.swing.*;
-import java.awt.*;
+import java.awt.BorderLayout;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.Toolkit;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import javax.swing.BorderFactory;
+import javax.swing.JFrame;
+import javax.swing.JPanel;
+import javax.swing.JProgressBar;
+import javax.swing.JOptionPane;
 
 /* StealthNetFileTransfer Class Definition ************************************/
 
@@ -64,8 +74,8 @@ public class StealthNetFileTransfer extends Thread {
         ftpFrame.pack();
 
         // center the window
-        int x = (screenDim.width - ftpFrame.getSize().width)/2;
-        int y = (screenDim.height - ftpFrame.getSize().height)/2;
+        int x = (screenDim.width - ftpFrame.getSize().width) / 2;
+        int y = (screenDim.height - ftpFrame.getSize().height) / 2;
         ftpFrame.setLocation(x, y);
         ftpFrame.setVisible(true);
 

@@ -51,8 +51,7 @@ public class StealthNetPacket {
     }
 
     public StealthNetPacket(String str) {
-        int i, len;
-        byte[] buf;
+        int i;
 
         if (str.length() % 2 == 1)
             str = "0" + str;
@@ -61,12 +60,10 @@ public class StealthNetPacket {
             command = CMD_NULL;
             data = new byte[0];
         } else {
-            command = (byte)(16 * hexToInt(str.charAt(0)) +
-                hexToInt(str.charAt(1)));
+            command = (byte) (16 * hexToInt(str.charAt(0)) + hexToInt(str.charAt(1)));
             data = new byte[str.length() / 2 - 1];
             for (i = 0; i < data.length; i++) {
-                data[i] = (byte)(16 * hexToInt(str.charAt(2*i + 2)) +
-                    hexToInt(str.charAt(2*i + 3)));
+                data[i] = (byte) (16 * hexToInt(str.charAt(2*i + 2)) + hexToInt(str.charAt(2*i + 3)));
             }
         }
     }

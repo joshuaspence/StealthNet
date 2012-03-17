@@ -20,9 +20,11 @@
 
 /* Import Libraries **********************************************************/
 
-import java.io.*;
-import java.net.*;
-import java.util.*;
+import java.io.IOException;
+import java.net.Socket;
+import java.util.Hashtable;
+import java.util.Enumeration;
+import java.util.StringTokenizer;
 
 /* StealthNetServerThread Class Definition ***********************************/
 
@@ -40,8 +42,8 @@ public class StealthNetServerThread extends Thread {
 		String filename = null;
     }
 
-    static private Hashtable userList = new Hashtable();
-    static private Hashtable secretList = new Hashtable();
+    static private Hashtable<String, UserData> userList = new Hashtable<String, UserData>();
+    static private Hashtable<String, SecretData> secretList = new Hashtable<String, SecretData>();
     
     private String userID = null;
     private StealthNetComms stealthComms = null;
@@ -58,7 +60,7 @@ public class StealthNetServerThread extends Thread {
     }
 
     private synchronized boolean addUser(String id) {
-        UserData userInfo = (UserData)userList.get(id);
+        UserData userInfo = (UserData) userList.get(id);
         if ((userInfo != null) && (userInfo.userThread != null))
             return false;
         userInfo = new UserData();
@@ -68,7 +70,7 @@ public class StealthNetServerThread extends Thread {
     }
 
     private synchronized boolean addSecret(SecretData t) {
-        SecretData secretInfo = (SecretData)secretList.get(t.name);
+        SecretData secretInfo = (SecretData) secretList.get(t.name);
         if (secretInfo != null)
             return false;
 
@@ -77,7 +79,7 @@ public class StealthNetServerThread extends Thread {
     }
     
     private synchronized boolean removeUser(String id) {
-        UserData userInfo = (UserData)userList.get(id);
+        UserData userInfo = (UserData) userList.get(id);
         if (userInfo != null) {
             userInfo.userThread = null;
             return true;
@@ -85,7 +87,8 @@ public class StealthNetServerThread extends Thread {
         return false;
     }
 
-    private synchronized boolean removeSecret(String name) {
+	@SuppressWarnings("unused")
+	private synchronized boolean removeSecret(String name) {
     	secretList.remove(name);
     	return true;
     }
@@ -95,10 +98,10 @@ public class StealthNetServerThread extends Thread {
         UserData userInfo;
 
         userTable = "";
-        Enumeration i = userList.keys();
+        Enumeration<String> i = userList.keys();
         while (i.hasMoreElements()) {
-            userKey = (String)i.nextElement();
-            userInfo = (UserData)userList.get(userKey);
+            userKey = i.nextElement();
+            userInfo = userList.get(userKey);
             userTable += userKey + ", ";
             if ((userInfo != null) && (userInfo.userThread != null)) {
                 userTable += "true";
@@ -116,10 +119,10 @@ public class StealthNetServerThread extends Thread {
         SecretData secretInfo;
 
         secretTable = "";
-        Enumeration i = secretList.keys();
+        Enumeration<String> i = secretList.keys();
         while (i.hasMoreElements()) {
-            secretKey = (String)i.nextElement();
-            secretInfo = (SecretData)secretList.get(secretKey);
+            secretKey = i.nextElement();
+            secretInfo = secretList.get(secretKey);
             secretTable += secretKey + ";";
             if (secretInfo != null) {
                 secretTable += secretInfo.cost + ";";
@@ -131,21 +134,21 @@ public class StealthNetServerThread extends Thread {
 
         return secretTable;
     }
+    
     private synchronized void sendUserList() {
         String userKey;
         UserData userInfo;
 
-        Enumeration i = userList.keys();
+        Enumeration<String> i = userList.keys();
         String userTable = userListAsString();
         while (i.hasMoreElements()) {
-            userKey = (String)i.nextElement();
-            userInfo = (UserData)userList.get(userKey);
+            userKey = i.nextElement();
+            userInfo = userList.get(userKey);
             if ((userInfo != null) && (userInfo.userThread != null)) {
                 if (userInfo.userThread.stealthComms == null) {
                     userInfo.userThread = null;
                 } else {
-                    userInfo.userThread.stealthComms.sendPacket(
-                        StealthNetPacket.CMD_LIST, userTable);
+                    userInfo.userThread.stealthComms.sendPacket(StealthNetPacket.CMD_LIST, userTable);
                 }
             }
         }
@@ -155,17 +158,16 @@ public class StealthNetServerThread extends Thread {
         String userKey;
         UserData userInfo;
 
-        Enumeration i = userList.keys();
+        Enumeration<String> i = userList.keys();
         String secretTable = secretListAsString();
         while (i.hasMoreElements()) {
-            userKey = (String)i.nextElement();
-            userInfo = (UserData)userList.get(userKey);
+            userKey = i.nextElement();
+            userInfo = userList.get(userKey);
             if ((userInfo != null) && (userInfo.userThread != null)) {
                 if (userInfo.userThread.stealthComms == null) {
                     userInfo.userThread = null;
                 } else {
-                    userInfo.userThread.stealthComms.sendPacket(
-                    	StealthNetPacket.CMD_SECRETLIST, secretTable);
+                    userInfo.userThread.stealthComms.sendPacket(StealthNetPacket.CMD_SECRETLIST, secretTable);
                 }
             }
         }
@@ -184,7 +186,7 @@ public class StealthNetServerThread extends Thread {
                     System.out.println("received NULL command");
                     break;
 
-                case StealthNetPacket.CMD_LOGIN :
+                case StealthNetPacket.CMD_LOGIN:
                     if (userID != null) {
                         System.out.println("user " + userID + " trying to log in twice");
                         break;
@@ -201,7 +203,7 @@ public class StealthNetServerThread extends Thread {
                     }
                     break;
 
-                case StealthNetPacket.CMD_LOGOUT :
+                case StealthNetPacket.CMD_LOGOUT:
                     if (userID == null) {
                         System.out.println("unknown user trying to log out");
                         break;
@@ -209,14 +211,14 @@ public class StealthNetServerThread extends Thread {
                     System.out.println("user \"" + userID + "\" has logged out");
                     break;
 
-                case StealthNetPacket.CMD_MSG :
+                case StealthNetPacket.CMD_MSG:
                     if (userID == null) {
                         System.out.println("unknown user trying to send message");
                         break;
                     }
                     String msg = new String(pckt.data);
                     msg = "[" + userID + "] " + msg;
-                    Enumeration i = userList.keys();
+                    Enumeration<String> i = userList.keys();
                     while (i.hasMoreElements()) {
                         userKey = (String)i.nextElement();
                         userInfo = (UserData)userList.get(userKey);
@@ -227,7 +229,7 @@ public class StealthNetServerThread extends Thread {
                     }
                     break;
 
-                case StealthNetPacket.CMD_CHAT :
+                case StealthNetPacket.CMD_CHAT:
                     if (userID == null) {
                         System.out.println("unknown user trying to chat");
                         break;
@@ -238,18 +240,16 @@ public class StealthNetServerThread extends Thread {
                     userInfo = (UserData)userList.get(userKey);
 
                     if ((userInfo == null) || (userInfo.userThread == null)) {
-                        stealthComms.sendPacket(StealthNetPacket.CMD_MSG,
-                            "[*SVR*] user not logged in");
+                        stealthComms.sendPacket(StealthNetPacket.CMD_MSG, "[*SVR*] user not logged in");
                     } else if (userInfo.userThread == Thread.currentThread()) {
-                        stealthComms.sendPacket(StealthNetPacket.CMD_MSG,
-                            "[*SVR*] cannot chat to self");
+                        stealthComms.sendPacket(StealthNetPacket.CMD_MSG, "[*SVR*] cannot chat to self");
                     } else {
                         userInfo.userThread.stealthComms.sendPacket(
                             StealthNetPacket.CMD_CHAT, userID + "@" + iAddr);
                     }
                     break;
 
-                case StealthNetPacket.CMD_FTP :
+                case StealthNetPacket.CMD_FTP:
                     if (userID == null) {
                         System.out.println("unknown user trying to transfer file");
                         break;
@@ -260,18 +260,15 @@ public class StealthNetServerThread extends Thread {
                     userInfo = (UserData)userList.get(userKey);
 
                     if ((userInfo == null) || (userInfo.userThread == null)) {
-                        stealthComms.sendPacket(StealthNetPacket.CMD_MSG,
-                            "[*SVR*] user not logged in");
+                        stealthComms.sendPacket(StealthNetPacket.CMD_MSG, "[*SVR*] user not logged in");
                     } else if (userInfo.userThread == Thread.currentThread()) {
-                        stealthComms.sendPacket(StealthNetPacket.CMD_MSG,
-                            "[*SVR*] cannot ftp to self");
+                        stealthComms.sendPacket(StealthNetPacket.CMD_MSG, "[*SVR*] cannot ftp to self");
                     } else {
-                        userInfo.userThread.stealthComms.sendPacket(
-                            StealthNetPacket.CMD_FTP, userID + "@" + iAddr);
+                        userInfo.userThread.stealthComms.sendPacket(StealthNetPacket.CMD_FTP, userID + "@" + iAddr);
                     }
                     break;
 
-                case StealthNetPacket.CMD_CREATESECRET :
+                case StealthNetPacket.CMD_CREATESECRET:
                     if (userID == null) {
                     	System.out.println("unknown user trying to create secret");
                         break;
@@ -286,7 +283,6 @@ public class StealthNetServerThread extends Thread {
 					t.dirname = "";
 					t.filename = "";
                     
-                    
                     StringTokenizer tokens = new StringTokenizer (new String(pckt.data),";");
                     t.name = tokens.nextToken();
                     t.description = tokens.nextToken();
@@ -300,10 +296,9 @@ public class StealthNetServerThread extends Thread {
                     System.out.println("Sending secret list from server.\n");
                     sendSecretList();
 
-                    
                     break;
 
-				case StealthNetPacket.CMD_GETSECRET :
+				case StealthNetPacket.CMD_GETSECRET:
 					if (userID == null) {
 						System.out.println("unknown user trying to transfer file");
 						break;
@@ -323,20 +318,17 @@ public class StealthNetServerThread extends Thread {
 					userInfo = (UserData)userList.get(user);
 
 					if ((userInfo == null) || (userInfo.userThread == null)) {
-						stealthComms.sendPacket(StealthNetPacket.CMD_MSG,
-							"[*SVR*] Secret is not currently available");
+						stealthComms.sendPacket(StealthNetPacket.CMD_MSG, "[*SVR*] Secret is not currently available");
 					} else if (userInfo.userThread == Thread.currentThread()) {
-						stealthComms.sendPacket(StealthNetPacket.CMD_MSG,
-							"[*SVR*] You can't purchase a secret from yourself!");
+						stealthComms.sendPacket(StealthNetPacket.CMD_MSG, "[*SVR*] You can't purchase a secret from yourself!");
 					} else {
 						String fName = secretInfo.dirname + secretInfo.filename;
-						userInfo.userThread.stealthComms.sendPacket(
-							StealthNetPacket.CMD_GETSECRET, fName + "@" + iAddr);
+						userInfo.userThread.stealthComms.sendPacket(StealthNetPacket.CMD_GETSECRET, fName + "@" + iAddr);
 					}
 
 					break;
 
-                default :
+                default:
                     System.out.println("unrecognised command");
                 }
             }
@@ -361,4 +353,3 @@ public class StealthNetServerThread extends Thread {
 /******************************************************************************
  * END OF FILE:     StealthNetServerThread.java
  *****************************************************************************/
- 

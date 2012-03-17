@@ -25,8 +25,11 @@
 
 /* Import Libraries **********************************************************/
 
-import java.net.*;
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.net.Socket;
 
 /* StealthNetComms class *****************************************************/
 
@@ -57,8 +60,7 @@ public class StealthNetComms {
         try {
             commsSocket = socket;
             dataOut = new PrintWriter(commsSocket.getOutputStream(), true);
-            dataIn = new BufferedReader(new InputStreamReader(
-                commsSocket.getInputStream()));
+            dataIn = new BufferedReader(new InputStreamReader(commsSocket.getInputStream()));
         } catch (Exception e) {
             System.err.println("Connection terminated.");
             System.exit(1);
@@ -71,8 +73,7 @@ public class StealthNetComms {
         try {
             commsSocket = socket;
             dataOut = new PrintWriter(commsSocket.getOutputStream(), true);
-            dataIn = new BufferedReader(new InputStreamReader(
-                commsSocket.getInputStream()));
+            dataIn = new BufferedReader(new InputStreamReader(commsSocket.getInputStream()));
         } catch (Exception e) {
             System.err.println("Connection terminated.");
             System.exit(1);
@@ -145,4 +146,3 @@ public class StealthNetComms {
 /******************************************************************************
  * END OF FILE:     StealthNetComms.java
  *****************************************************************************/
- 

@@ -20,8 +20,8 @@
 
 /* Import Libraries **********************************************************/
 
-import java.io.*;
-import java.net.*;
+import java.io.IOException;
+import java.net.ServerSocket;
 
 /* StealthNetServer Class Definition *****************************************/
 
@@ -46,4 +46,3 @@ public class StealthNetServer {
 /******************************************************************************
  * END OF FILE:     StealthNetServer.java
  *****************************************************************************/
- 
