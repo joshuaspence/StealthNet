@@ -18,6 +18,8 @@
  *
  **********************************************************************************/
 
+package StealthNet;
+
 public class StealthNetPacket {
     public static final byte CMD_NULL = 0x00;
     public static final byte CMD_LOGIN = 0x01;

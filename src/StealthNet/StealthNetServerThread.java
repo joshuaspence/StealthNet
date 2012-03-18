@@ -20,6 +20,8 @@
 
 /* Import Libraries **********************************************************/
 
+package StealthNet;
+
 import java.io.IOException;
 import java.net.Socket;
 import java.util.Hashtable;
