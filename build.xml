@@ -1,63 +1,163 @@
 <?xml version="1.0" ?>
-<project name="ELEC5616" default="build" basedir=".">
-	<property name="src.dir"      value="src"/>
-    <property name="build.dir"    value="build"/>
-	<property name="classes.dir"  value="${build.dir}/classes"/>
-	<property name="jar.dir"      value="${build.dir}/jar"/>
-	<property name="lib.dir"      value="lib"/>
-
-    <property name="client-class" value="StealthNetClient"/>
-	<property name="server-class" value="StealthNetServer"/>
-	<property name="main-class"   value="${client-class}"/>
+<!--
+    Ant buildfile for ELEC5616 project.
+    
+    Joshua Spence (308216350)
+    Adrian Wong
+-->
+<project name="ELEC5616" default="all" basedir=".">
+	<!-- Path properties -->
+	<property name="path.build"   value="build"/>
+	<property name="path.docs"    value="docs"/>
+	<property name="path.img"     value="img"/>
+    <property name="path.lib"     value="lib"/>
+	<property name="path.src"     value="src"/>
+	<property name="path.classes" value="${path.build}/classes"/>
+	<property name="path.jar"     value="${path.build}/jar"/>
+	<!-- basedir  -->
+	<!-- Class properties -->
+    <property name="class.client" value="StealthNetClient"/>
+	<property name="class.server" value="StealthNetServer"/>
+	<property name="class.main"   value="${class.client}"/>
 	
-	<path id="classpath">
-        <fileset dir="${lib.dir}" includes="**/*.jar"/>
+	<!-- Compile properties -->
+	<property name="compile.debug"              value="true"/>
+	<property name="compile.deprecation"        value="false"/>
+	<property name="compile.optimize"           value="true"/>
+	<property name="compile.jdk-version.source" value="1.5"/>
+	<property name="compile.jdk-version.target" value="1.5"/>
+	<property name="compile.includeantruntime"  value="false"/>
+	
+	<!-- Classpath -->
+	<path id="compile.classpath">
+        <fileset dir="${basedir}">
+        	<include name="${path.lib}/*.jar"/>
+    	</fileset>
     </path>
 	
-    <target name="build" depends="compile, jar" description="Main target"/>
-  
-    <target name="compile" description="Compilation target">
-    	<mkdir dir="${classes.dir}"/>
-        <javac srcdir="${src.dir}" destdir="${classes.dir}" classpathref="classpath" debug="true" includeantruntime="false"/>
+	<!-- see http://stackoverflow.com/questions/1821803/creating-a-bundle-jar-with-ant -->
+	<pathconvert property="mf.classpath" pathsep=" ">
+        <path refid="compile.classpath"/>
+        <mapper>
+            <chainedmapper>
+                <flattenmapper/>
+                <globmapper from="*.jar" to="lib/*.jar"/>
+            </chainedmapper>
+        </mapper>
+	</pathconvert>
+	
+	<!-- Main target -->
+    <target name="all" depends="info, compile, jar" description="Main target"/>
+    	
+	<!-- Information target -->
+    <target name="info" description="Just prints information about the environment">
+        <echo>Project base directory: '${basedir}'</echo>
+    	<echo/>
+    	<echo>OS name: ${os.name}</echo>
+        <echo>OS architecture: ${os.arch}</echo>
+    	<echo>OS version: ${os.version}</echo>
+    	<echo/>
+        <echo>JVM name: ${java.vm.name}</echo>
+    	<echo>JVM vendor: ${java.vm.vendor}</echo>
+		<echo>JVM version: ${java.vm.version}</echo>
+		<echo/>
+		<echo>JRE vendor: ${java.vendor}</echo>
+        <echo>JRE version: ${java.version}</echo>
     </target>
   
+	<!-- Compilation target -->
+    <target name="compile" description="Compilation target">
+    	<!-- Make output directory -->
+    	<mkdir dir="${path.classes}"/>
+    	
+    	 <!-- Compile Java classes as necessary -->
+        <javac            srcdir="${path.src}" 
+        	             destdir="${path.classes}" 
+    	                   debug="${compile.debug}"
+        	         deprecation="${compile.deprecation}"
+        	            optimize="${compile.optimize}"
+        	   includeantruntime="${compile.includeantruntime}"
+    	                  source="${compile.jdk-version.source}"
+    	                  target="${compile.jdk-version.target}">
+        	<classpath refid="compile.classpath"/>
+    	</javac>
+    </target>
+  
+	<!-- JAR target -->
     <target name="jar" description="Compression target">
-    	<mkdir dir="${jar.dir}"/>
+    	<mkdir dir="${path.jar}"/>
     	<tstamp>
-	        <format property="TODAY" pattern="yyyy-MM-dd HH:mm:ss" />
+	        <format property="TODAY" pattern="dd/MM/yy HH:mm:ss" />
 	    </tstamp>
-        <jar destfile="${jar.dir}/${ant.project.name}.jar" basedir="${classes.dir}">
+        <jar destfile="${path.jar}/${ant.project.name}.jar" basedir="${path.classes}">
+        	<zipgroupfileset dir="${path.lib}" includes="*.jar"/>
+        	<fileset dir=".">
+        		  <include name="${path.img}/*"/>
+    		</fileset>
+        	
         	<manifest>
         		<attribute name="Built-By" value="${user.name}"/>
         		<attribute name="Built-Date" value="${TODAY}"/>
-                <attribute name="Main-Class" value="${main-class}"/>
+                <attribute name="Main-Class" value="${class.main}"/>
+        		<attribute name="Class-Path" value="${compile.classpath}"/>
         	</manifest>
     	</jar>
     </target>
 	
+	<!-- javadoc target -->
+	<target name="javadoc" depends="compile" description="Create Javadoc API documentation">
+	    <!-- Make the output directory -->
+		<mkdir dir="${path.docs}"/>
+		
+		<!-- Generate javadoc -->
+	    <javadoc sourcepath="${path.src}"
+	                destdir="${path.docs}"
+	           packagenames="*"
+    	           doctitle="${component.title}"
+    	             author="true" 
+    	             bottom="${component.title}" 
+    	             source="${compile.jdk-version.source}"  
+    	             access="protected"
+                    version="true" 
+    	        windowtitle="${component.title} (Version ${component.version})">
+	        <classpath refid="compile.classpath"/>
+	    </javadoc>
+	</target>
+	
+	<!-- Clean target -->
 	<target name="clean" description="Clean the project">
-        <delete dir="build"/>
+        <delete dir="${path.build}"/>
     </target>
 	
-	<target name="clean-build" depends="clean, build" description="Clean and then build the project"/>
-	
+	<!-- Run target -->
 	<target name="run" depends="run_server, run_client" description="Run StealthNet client and server"/>
 	
+	<!-- Run client target -->
 	<target name="run_client" description="Run StealthNet client">		
-		<java fork="true" classname="${client-class}">
+		<java fork="true" classname="${class.client}">
             <classpath>
-                <path refid="classpath"/>
-                <path location="${jar.dir}/${ant.project.name}.jar"/>
+                <path refid="compile.classpath"/>
+                <path location="${path.jar}/${ant.project.name}.jar"/>
             </classpath>
         </java>
 	</target>
 	
+	<!-- Run server target -->
 	<target name="run_server" description="Run StealthNet server">
-		<java fork="true" classname="${server-class}">
+		<java fork="true" classname="${class.server}">
             <classpath>
-                <path refid="classpath"/>
-                <path location="${jar.dir}/${ant.project.name}.jar"/>
+                <path refid="compile.classpath"/>
+                <path location="${path.jar}/${ant.project.name}.jar"/>
             </classpath>
         </java>
     </target>
+    	
+	<!-- Create a TAR file with all of the relevant content -->
+	<target name="tar" depends="" description="Create a tar archive">
+    	<tar destfile="${source.file.tar.gz}" longfile="gnu" compression="gzip">
+            <tarfileset prefix="${uportal.finalName}" dir="${source.dir}" />
+        </tar>
+        <checksum file="${source.file.tar.gz}" algorithm="md5" />
+        <checksum file="${source.file.tar.gz}" algorithm="sha1" />
+	</target>
 </project>

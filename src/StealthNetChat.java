@@ -50,6 +50,7 @@ public class StealthNetChat extends Thread {
     public StealthNetChat(String id, StealthNetComms snComms) {
         userID = id;
         stealthComms = snComms;
+        
     }
 
     protected void finalise() throws IOException {

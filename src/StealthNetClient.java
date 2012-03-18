@@ -23,10 +23,12 @@
 import java.util.Hashtable;
 
 import java.io.IOException;
+
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.net.URL;
 
 import javax.swing.AbstractButton;
 import javax.swing.BorderFactory;
@@ -74,6 +76,7 @@ public class StealthNetClient {
     private JTable buddyTable = null, secretTable = null;
     private DefaultTableModel buddyListData = null, secretListData = null;
 	JTextField creditsBox;
+	private final ClassLoader cldr = this.getClass().getClassLoader();
 	
     private int credits = 100;		// CHANGEME: Give them 100 credits for demonstration purposes
 
@@ -235,7 +238,8 @@ public class StealthNetClient {
 		creditsPane.add(creditsBox);
                 
         // create buttons (login, send message, chat, ftp)
-        loginBtn = new JButton(new ImageIcon("img/login.gif"));
+        URL loginImageURL = cldr.getResource("img/login.gif");
+        loginBtn = new JButton(new ImageIcon(loginImageURL));
         loginBtn.setVerticalTextPosition(AbstractButton.BOTTOM);
         loginBtn.setHorizontalTextPosition(AbstractButton.CENTER);
         loginBtn.setMnemonic(KeyEvent.VK_N);
@@ -246,7 +250,8 @@ public class StealthNetClient {
             }
         });
 
-        final JButton msgBtn = new JButton(new ImageIcon("img/msg.gif"));
+        URL msgImageURL = cldr.getResource("img/msg.gif");
+        final JButton msgBtn = new JButton(new ImageIcon(msgImageURL));
         msgBtn.setVerticalTextPosition(AbstractButton.BOTTOM);
         msgBtn.setHorizontalTextPosition(AbstractButton.CENTER);
         msgBtn.setMnemonic(KeyEvent.VK_M);
@@ -298,7 +303,8 @@ public class StealthNetClient {
 
 		msgTextBox.append("Connected to stealthnet.\n");
 		clientFrame.setTitle("stealthnet [" + userID + "]");
-        loginBtn.setIcon(new ImageIcon("img/logout.gif"));
+		URL logoutImageURL = cldr.getResource("img/logout.gif");
+        loginBtn.setIcon(new ImageIcon(logoutImageURL));
         loginBtn.setToolTipText("Logout");
     }
 
@@ -309,7 +315,8 @@ public class StealthNetClient {
             stealthComms.terminateSession();
             stealthComms = null;
             
-            loginBtn.setIcon(new ImageIcon("img/login.gif"));
+            URL loginImageURL = cldr.getResource("img/login.gif");
+            loginBtn.setIcon(new ImageIcon(loginImageURL));
             loginBtn.setToolTipText("Login");
             
             buddyListData.setRowCount(0);
