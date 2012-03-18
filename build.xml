@@ -14,10 +14,18 @@
 	<property name="path.src"     value="src"/>
 	<property name="path.classes" value="${path.build}/classes"/>
 	<property name="path.jar"     value="${path.build}/jar"/>
-	<!-- basedir  -->
+	
+	<!-- File names -->
+	<property name="file.jar"         value="${path.jar}/${ant.project.name}.jar"/>
+	<property name="file.jar.server"  value="${path.jar}/${ant.project.name}_server.jar"/>
+	<property name="file.jar.client"  value="${path.jar}/${ant.project.name}_client.jar"/>
+	<property name="file.tar.gz"      value="${ant.project.name}.tar.gz"/>
+	<property name="file.tar.gz.md5"  value="${ant.project.name}.tar.gz.md5"/>
+	<property name="file.tar.gz.sha1" value="${ant.project.name}.tar.gz.sha1"/>
+	
 	<!-- Class properties -->
-    <property name="class.client" value="StealthNetClient"/>
-	<property name="class.server" value="StealthNetServer"/>
+    <property name="class.client" value="StealthNet.StealthNetClient"/>
+	<property name="class.server" value="StealthNet.StealthNetServer"/>
 	<property name="class.main"   value="${class.client}"/>
 	
 	<!-- Compile properties -->
@@ -47,7 +55,7 @@
 	</pathconvert>
 	
 	<!-- Main target -->
-    <target name="all" depends="info, compile, jar" description="Main target"/>
+    <target name="all" depends="info, compile, jar, javadoc" description="Main target"/>
     	
 	<!-- Information target -->
     <target name="info" description="Just prints information about the environment">
@@ -84,24 +92,58 @@
     </target>
   
 	<!-- JAR target -->
-    <target name="jar" description="Compression target">
+    <target name="jar" depends="compile" description="Compression target">
     	<mkdir dir="${path.jar}"/>
     	<tstamp>
 	        <format property="TODAY" pattern="dd/MM/yy HH:mm:ss" />
 	    </tstamp>
-        <jar destfile="${path.jar}/${ant.project.name}.jar" basedir="${path.classes}">
+    	
+    	<!-- Main JAR file -->
+        <jar destfile="${file.jar}" basedir="${path.classes}">
+            <zipgroupfileset dir="${path.lib}" includes="*.jar"/>
+            <fileset dir=".">
+                  <include name="${path.img}/*"/>
+            </fileset>
+            
+            <manifest>
+                <attribute name="Built-By"   value="${user.name}"/>
+                <attribute name="Built-Date" value="${TODAY}"/>
+                <attribute name="Main-Class" value="${class.main}"/>
+                <attribute name="Class-Path" value="${compile.classpath}"/>
+            </manifest>
+        </jar>
+    	
+    	<!-- Server JAR file -->
+    	<!-- TODO: exclude client files from this JAR -->
+        <jar destfile="${file.jar.server}" basedir="${path.classes}">
         	<zipgroupfileset dir="${path.lib}" includes="*.jar"/>
         	<fileset dir=".">
         		  <include name="${path.img}/*"/>
     		</fileset>
         	
         	<manifest>
-        		<attribute name="Built-By" value="${user.name}"/>
+        		<attribute name="Built-By"   value="${user.name}"/>
         		<attribute name="Built-Date" value="${TODAY}"/>
-                <attribute name="Main-Class" value="${class.main}"/>
+                <attribute name="Main-Class" value="${class.server}"/>
         		<attribute name="Class-Path" value="${compile.classpath}"/>
         	</manifest>
     	</jar>
+    	
+    	<!-- Client JAR file -->
+    	<!-- TODO: exclude server files from this JAR -->
+        <jar destfile="${file.jar.client}" basedir="${path.classes}">
+            <zipgroupfileset dir="${path.lib}" includes="*.jar"/>
+            <fileset dir=".">
+                  <include name="${path.img}/*"/>
+            </fileset>
+            
+            <manifest>
+                <attribute name="Built-By"   value="${user.name}"/>
+                <attribute name="Built-Date" value="${TODAY}"/>
+                <attribute name="Main-Class" value="${class.client}"/>
+                <attribute name="Class-Path" value="${compile.classpath}"/>
+            </manifest>
+        </jar>
     </target>
 	
 	<!-- javadoc target -->
@@ -127,37 +169,46 @@
 	<!-- Clean target -->
 	<target name="clean" description="Clean the project">
         <delete dir="${path.build}"/>
+		<delete dir="${path.docs}"/>
+		<delete file="${file.tar.gz}"/>
+		<delete file="${file.tar.gz.md5}"/>
+		<delete file="${file.tar.gz.sha1}"/>
     </target>
 	
 	<!-- Run target -->
 	<target name="run" depends="run_server, run_client" description="Run StealthNet client and server"/>
 	
 	<!-- Run client target -->
-	<target name="run_client" description="Run StealthNet client">		
-		<java fork="true" classname="${class.client}">
+	<target name="run_client" depends="compile, jar" description="Run StealthNet client">
+		<java jar="${file.jar.client}" fork="true">
             <classpath>
                 <path refid="compile.classpath"/>
-                <path location="${path.jar}/${ant.project.name}.jar"/>
+                <path location="${file.jar}"/>
             </classpath>
         </java>
 	</target>
 	
 	<!-- Run server target -->
-	<target name="run_server" description="Run StealthNet server">
-		<java fork="true" classname="${class.server}">
+	<target name="run_server" depends="compile, jar" description="Run StealthNet server">
+		<java jar="${file.jar.server}" fork="true">
             <classpath>
                 <path refid="compile.classpath"/>
-                <path location="${path.jar}/${ant.project.name}.jar"/>
+                <path location="${file.jar}"/>
             </classpath>
         </java>
     </target>
     	
 	<!-- Create a TAR file with all of the relevant content -->
-	<target name="tar" depends="" description="Create a tar archive">
-    	<tar destfile="${source.file.tar.gz}" longfile="gnu" compression="gzip">
-            <tarfileset prefix="${uportal.finalName}" dir="${source.dir}" />
+	<target name="tar" depends="compile, jar, javadoc" description="Create a tar archive">
+    	<tar destfile="${file.tar.gz}" longfile="gnu" compression="gzip">
+            <tarfileset dir="${basedir}">
+            	<exclude name=".git"/>
+            	<exclude name=".gitignore"/>
+            	<exclude name=".classpath"/>
+            	<exclude name=".settings"/>
+            </tarfileset>
         </tar>
-        <checksum file="${source.file.tar.gz}" algorithm="md5" />
-        <checksum file="${source.file.tar.gz}" algorithm="sha1" />
+        <checksum file="${file.tar.gz}" algorithm="md5"/>
+        <checksum file="${file.tar.gz}" algorithm="sha1"/>
 	</target>
 </project>
