@@ -23,9 +23,9 @@
  *
  **********************************************************************************/
 
-/* Import Libraries **********************************************************/
-
 package StealthNet;
+
+/* Import Libraries **********************************************************/
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;

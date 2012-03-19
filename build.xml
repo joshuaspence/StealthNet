@@ -7,55 +7,56 @@
 -->
 <project name="ELEC5616" default="all" basedir=".">
 	<!-- Path properties -->
-	<property name="path.build"   value="build"/>
-	<property name="path.docs"    value="docs"/>
-	<property name="path.img"     value="img"/>
-    <property name="path.lib"     value="lib"/>
-	<property name="path.src"     value="src"/>
-	<property name="path.classes" value="${path.build}/classes"/>
-	<property name="path.jar"     value="${path.build}/jar"/>
+	<property name="path.build"   value="build" />
+	<property name="path.docs"    value="docs" />
+	<property name="path.img"     value="img" />
+    <property name="path.lib"     value="lib" />
+	<property name="path.src"     value="src" />
+	<property name="path.classes" value="${path.build}/classes" />
+	<property name="path.jar"     value="${path.build}/jar" />
 	
 	<!-- File names -->
-	<property name="file.jar"         value="${path.jar}/${ant.project.name}.jar"/>
-	<property name="file.jar.server"  value="${path.jar}/${ant.project.name}_server.jar"/>
-	<property name="file.jar.client"  value="${path.jar}/${ant.project.name}_client.jar"/>
-	<property name="file.tar.gz"      value="${ant.project.name}.tar.gz"/>
-	<property name="file.tar.gz.md5"  value="${ant.project.name}.tar.gz.md5"/>
-	<property name="file.tar.gz.sha1" value="${ant.project.name}.tar.gz.sha1"/>
+	<property name="file.jar"         value="${path.jar}/${ant.project.name}.jar" />
+	<property name="file.jar.server"  value="${path.jar}/${ant.project.name}_server.jar" />
+	<property name="file.jar.client"  value="${path.jar}/${ant.project.name}_client.jar" />
+	<property name="file.tar.gz"      value="${ant.project.name}.tar.gz" />
+	<property name="file.tar.gz.md5"  value="${ant.project.name}.tar.gz.md5" />
+	<property name="file.tar.gz.sha1" value="${ant.project.name}.tar.gz.sha1" />
 	
 	<!-- Class properties -->
-    <property name="class.client" value="StealthNet.StealthNetClient"/>
-	<property name="class.server" value="StealthNet.StealthNetServer"/>
-	<property name="class.main"   value="${class.client}"/>
+    <property name="class.client"  value="StealthNet.StealthNetClient" />
+	<property name="class.server"  value="StealthNet.StealthNetServer" />
+	<property name="class.main"    value="${class.client}" />
+	<property name="class.package" value="StealthNet" />
 	
 	<!-- Compile properties -->
-	<property name="compile.debug"              value="true"/>
-	<property name="compile.deprecation"        value="false"/>
-	<property name="compile.optimize"           value="true"/>
-	<property name="compile.jdk-version.source" value="1.5"/>
-	<property name="compile.jdk-version.target" value="1.5"/>
-	<property name="compile.includeantruntime"  value="false"/>
+	<property name="compile.debug"              value="true" />
+	<property name="compile.deprecation"        value="false" />
+	<property name="compile.optimize"           value="true" />
+	<property name="compile.jdk-version.source" value="1.5" />
+	<property name="compile.jdk-version.target" value="1.5" />
+	<property name="compile.includeantruntime"  value="false" />
 	
 	<!-- Classpath -->
 	<path id="compile.classpath">
         <fileset dir="${basedir}">
-        	<include name="${path.lib}/*.jar"/>
+        	<include name="${path.lib}/*.jar" />
     	</fileset>
     </path>
 	
 	<!-- see http://stackoverflow.com/questions/1821803/creating-a-bundle-jar-with-ant -->
 	<pathconvert property="mf.classpath" pathsep=" ">
-        <path refid="compile.classpath"/>
+        <path refid="compile.classpath" />
         <mapper>
             <chainedmapper>
                 <flattenmapper/>
-                <globmapper from="*.jar" to="lib/*.jar"/>
+                <globmapper from="*.jar" to="lib/*.jar" />
             </chainedmapper>
         </mapper>
 	</pathconvert>
 	
 	<!-- Main target -->
-    <target name="all" depends="info, compile, jar, javadoc" description="Main target"/>
+    <target name="all" depends="info, compile, jar, javadoc" description="Main target" />
     	
 	<!-- Information target -->
     <target name="info" description="Just prints information about the environment">
@@ -76,7 +77,7 @@
 	<!-- Compilation target -->
     <target name="compile" description="Compilation target">
     	<!-- Make output directory -->
-    	<mkdir dir="${path.classes}"/>
+    	<mkdir dir="${path.classes}" />
     	
     	 <!-- Compile Java classes as necessary -->
         <javac            srcdir="${path.src}" 
@@ -87,56 +88,65 @@
         	   includeantruntime="${compile.includeantruntime}"
     	                  source="${compile.jdk-version.source}"
     	                  target="${compile.jdk-version.target}">
-        	<classpath refid="compile.classpath"/>
+        	<classpath refid="compile.classpath" />
     	</javac>
     </target>
   
 	<!-- JAR target -->
     <target name="jar" depends="compile" description="Compression target">
-    	<mkdir dir="${path.jar}"/>
+    	<mkdir dir="${path.jar}" />
     	<tstamp>
 	        <format property="TODAY" pattern="dd/MM/yy HH:mm:ss" />
 	    </tstamp>
     	
     	<!-- Main JAR file -->
         <jar destfile="${file.jar}" basedir="${path.classes}">
-            <zipgroupfileset dir="${path.lib}" includes="*.jar"/>
+            <zipgroupfileset dir="${path.lib}" includes="*.jar" />
             <fileset dir=".">
-                  <include name="${path.img}/*"/>
+                  <include name="${path.img}/*" />
             </fileset>
             
             <manifest>
-                <attribute name="Built-By"   value="${user.name}"/>
-                <attribute name="Built-Date" value="${TODAY}"/>
-                <attribute name="Main-Class" value="${class.main}"/>
-                <attribute name="Class-Path" value="${compile.classpath}"/>
+                <attribute name="Built-By"   value="${user.name}" />
+                <attribute name="Built-Date" value="${TODAY}" />
+                <attribute name="Main-Class" value="${class.main}" />
+                <attribute name="Class-Path" value="${compile.classpath}" />
             </manifest>
         </jar>
     	
     	<!-- Server JAR file -->
-    	<!-- TODO: exclude client files from this JAR -->
-        <jar destfile="${file.jar.server}" basedir="${path.classes}">
-        	<zipgroupfileset dir="${path.lib}" includes="*.jar"/>
-        	<fileset dir=".">
-        		  <include name="${path.img}/*"/>
+        <jar destfile="${file.jar.server}">
+        	<zipgroupfileset dir="${path.lib}" includes="*.jar" />
+        	<fileset dir="${path.classes}">
+		        <include name="*/StealthNetServer**" />
+		  	    <include name="*/StealthNetServerThread**" />
+		  	    <include name="*/StealthNetComms**" />
+		  	    <include name="*/StealthNetPacket**" />
     		</fileset>
         	
         	<manifest>
-        		<attribute name="Built-By"   value="${user.name}"/>
-        		<attribute name="Built-Date" value="${TODAY}"/>
-                <attribute name="Main-Class" value="${class.server}"/>
-        		<attribute name="Class-Path" value="${compile.classpath}"/>
+        		<attribute name="Built-By"   value="${user.name}" />
+        		<attribute name="Built-Date" value="${TODAY}" />
+                <attribute name="Main-Class" value="${class.server}" />
+        		<attribute name="Class-Path" value="${compile.classpath}" />
         	</manifest>
     	</jar>
     	
     	<!-- Client JAR file -->
     	<!-- TODO: exclude server files from this JAR -->
-        <jar destfile="${file.jar.client}" basedir="${path.classes}">
-            <zipgroupfileset dir="${path.lib}" includes="*.jar"/>
+        <jar destfile="${file.jar.client}">
+            <zipgroupfileset dir="${path.lib}" includes="*.jar" />
             <fileset dir=".">
-                  <include name="${path.img}/*"/>
+                  <include name="${path.img}/*" />
             </fileset>
-            
+        	<fileset dir="${path.classes}">
+                <include name="*/StealthNetClient**" />
+                <include name="*/StealthNetComms**" />
+                <include name="*/StealthNetPacket**" />
+          	    <include name="*/StealthNetFileTransfer**" />
+          	    <include name="*/StealthNetChat**" />
+            </fileset>
+        	
             <manifest>
                 <attribute name="Built-By"   value="${user.name}"/>
                 <attribute name="Built-Date" value="${TODAY}"/>
@@ -149,7 +159,7 @@
 	<!-- javadoc target -->
 	<target name="javadoc" depends="compile" description="Create Javadoc API documentation">
 	    <!-- Make the output directory -->
-		<mkdir dir="${path.docs}"/>
+		<mkdir dir="${path.docs}" />
 		
 		<!-- Generate javadoc -->
 	    <javadoc sourcepath="${path.src}"
@@ -162,28 +172,28 @@
     	             access="protected"
                     version="true" 
     	        windowtitle="${component.title} (Version ${component.version})">
-	        <classpath refid="compile.classpath"/>
+	        <classpath refid="compile.classpath" />
 	    </javadoc>
 	</target>
 	
 	<!-- Clean target -->
 	<target name="clean" description="Clean the project">
-        <delete dir="${path.build}"/>
-		<delete dir="${path.docs}"/>
-		<delete file="${file.tar.gz}"/>
-		<delete file="${file.tar.gz.md5}"/>
-		<delete file="${file.tar.gz.sha1}"/>
+        <delete dir="${path.build}" />
+		<delete dir="${path.docs}" />
+		<delete file="${file.tar.gz}" />
+		<delete file="${file.tar.gz.md5}" />
+		<delete file="${file.tar.gz.sha1}" />
     </target>
 	
 	<!-- Run target -->
-	<target name="run" depends="run_server, run_client" description="Run StealthNet client and server"/>
+	<target name="run" depends="run_server, run_client" description="Run StealthNet client and server" />
 	
 	<!-- Run client target -->
 	<target name="run_client" depends="compile, jar" description="Run StealthNet client">
 		<java jar="${file.jar.client}" fork="true">
             <classpath>
-                <path refid="compile.classpath"/>
-                <path location="${file.jar}"/>
+                <path refid="compile.classpath" />
+                <path location="${file.jar}" />
             </classpath>
         </java>
 	</target>
@@ -192,8 +202,8 @@
 	<target name="run_server" depends="compile, jar" description="Run StealthNet server">
 		<java jar="${file.jar.server}" fork="true">
             <classpath>
-                <path refid="compile.classpath"/>
-                <path location="${file.jar}"/>
+                <path refid="compile.classpath" />
+                <path location="${file.jar}" />
             </classpath>
         </java>
     </target>
@@ -202,13 +212,13 @@
 	<target name="tar" depends="compile, jar, javadoc" description="Create a tar archive">
     	<tar destfile="${file.tar.gz}" longfile="gnu" compression="gzip">
             <tarfileset dir="${basedir}">
-            	<exclude name=".git"/>
-            	<exclude name=".gitignore"/>
-            	<exclude name=".classpath"/>
-            	<exclude name=".settings"/>
+            	<exclude name=".git" />
+            	<exclude name=".gitignore" />
+            	<exclude name=".classpath" />
+            	<exclude name=".settings" />
             </tarfileset>
         </tar>
-        <checksum file="${file.tar.gz}" algorithm="md5"/>
-        <checksum file="${file.tar.gz}" algorithm="sha1"/>
+        <checksum file="${file.tar.gz}" algorithm="md5" />
+        <checksum file="${file.tar.gz}" algorithm="sha1" />
 	</target>
 </project>
