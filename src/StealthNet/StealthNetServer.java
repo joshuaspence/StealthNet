@@ -27,17 +27,39 @@ import java.net.ServerSocket;
 
 /* StealthNetServer Class Definition *****************************************/
 
+/**
+ * A server process for StealthNet communications. Opens a server socket, 
+ * listening on the specified listening port. For each incoming connection on 
+ * this port, a new StealthNetServerThread is created.
+ * 
+ * @author Matt Barrie 
+ * @author Stephen Gould
+ */
 public class StealthNetServer {
+	private static final boolean DEBUG = false;
+	
+	/** 
+	 * The main StealthNetServer function.
+	 * 
+	 * @throws IOException
+	 */
     public static void main(String[] args) throws IOException {
+    	/** Try to create a server socket listening on a specified port. */
         ServerSocket svrSocket = null;
         try {
             svrSocket = new ServerSocket(StealthNetComms.SERVERPORT);
         } catch (IOException e) {
             System.err.println("Could not listen on port: " + StealthNetComms.SERVERPORT);
+            if (DEBUG) e.printStackTrace();
             System.exit(1);
         }
 
         System.out.println("Server online...");
+        
+        /** 
+         * Wait for and accept connections on the server socket. Create a new 
+         * thread for each connection.
+         */
         while (true) {
             new StealthNetServerThread(svrSocket.accept()).start();
             System.out.println("Server accepted connection...");

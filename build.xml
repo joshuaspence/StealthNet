@@ -190,7 +190,7 @@
 	
 	<!-- Run client target -->
 	<target name="run_client" depends="compile, jar" description="Run StealthNet client">
-		<java jar="${file.jar.client}" fork="true">
+		<java jar="${file.jar.client}" spawn="true" fork="true">
             <classpath>
                 <path refid="compile.classpath" />
                 <path location="${file.jar}" />
@@ -200,7 +200,7 @@
 	
 	<!-- Run server target -->
 	<target name="run_server" depends="compile, jar" description="Run StealthNet server">
-		<java jar="${file.jar.server}" fork="true">
+		<java jar="${file.jar.server}" spawn="true" fork="true">
             <classpath>
                 <path refid="compile.classpath" />
                 <path location="${file.jar}" />

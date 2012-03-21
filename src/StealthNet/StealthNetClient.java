@@ -68,7 +68,15 @@ import java.awt.event.WindowEvent;
 
 /* StealthNetClient Class Definition *****************************************/
 
+/** TODO
+ * 
+ * @author Matt Barrie
+ * @author Stephen Gould
+ * @author Ryan Junee
+ */
 public class StealthNetClient {
+	private static final boolean DEBUG = false;
+	
     private static JFrame clientFrame;
     private JTextArea msgTextBox;
     private JButton loginBtn;
@@ -82,6 +90,7 @@ public class StealthNetClient {
 	
     private int credits = 100;		// CHANGEME: Give them 100 credits for demonstration purposes
 
+    /** Constructor. */
 	private class SecretData {
 		String description = null;
 		String filename = null;
