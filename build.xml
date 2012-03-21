@@ -222,8 +222,8 @@
 	<!-- Default TAR target -->
 	<target name="tar" depends="minimal-tar" description="Create a tar archive" />
     	
-	<!-- Create a TAR file with all of the relevant content (excludes Eclipse files and git metadata) -->
-	<target name="minimal-tar" depends="compile, jar, javadoc" description="Create a minimal tar archive">
+	<!-- Create a TAR file with all of the relevant content (excludes Eclipse files, git metadata and any built files) -->
+	<target name="minimal-tar" description="Create a minimal tar archive">
 		<!-- Delete old TAR file -->
 		<delete file="${file.tar.gz}" />
 		<delete file="${file.tar.gz.md5}" />
@@ -250,8 +250,8 @@
         <checksum file="${file.tar.gz}" algorithm="sha1" />
 	</target>
 	
-	<!-- Create a TAR file with all of the relevant content (includes Eclipse files but excludes git metadata) -->
-    <target name="maximal-tar" depends="compile, jar, javadoc" description="Create a tar archive">
+	<!-- Create a TAR file with all of the relevant content (includes Eclipse files but excludes git metadata and any built files) -->
+    <target name="normal-tar" description="Create a normal tar archive">
     	<!-- Delete old TAR file -->
         <delete file="${file.tar.gz}" />
         <delete file="${file.tar.gz.md5}" />
@@ -273,12 +273,31 @@
         <checksum file="${file.tar.gz}" algorithm="sha1" />
     </target>
 	
+	<!-- Create a TAR file with all of the relevant content (includes Eclipse files and any built files but excludes git metadata) -->
+    <target name="maximal-tar" depends="compile, jar, javadoc" description="Create a maximal tar archive">
+        <!-- Delete old TAR file -->
+        <delete file="${file.tar.gz}" />
+        <delete file="${file.tar.gz.md5}" />
+        <delete file="${file.tar.gz.sha1}" />
+        
+        <tar destfile="${file.tar.gz}" longfile="gnu" compression="gzip">
+            <tarfileset dir="${basedir}">
+                <!-- git metadata -->
+                <exclude name=".git" />
+                <exclude name=".gitignore" />
+            </tarfileset>
+        </tar>
+        <checksum file="${file.tar.gz}" algorithm="md5" />
+        <checksum file="${file.tar.gz}" algorithm="sha1" />
+    </target>
+	
 	<!-- Print the classpath -->
     <target name="classpath" description="Print the classpath">
     	<!-- TODO: this doesn't work -->
 	    <echo message="${compile.classpath}" />
 	</target>
 	
+	<!-- Print the directory where the JAR files are stored -->
 	<target name="jar_dir" description="Print the directory that the JARs are stored in">
 		<!-- TODO: this doesn't work -->
 		<echo message="${path.jar" />
