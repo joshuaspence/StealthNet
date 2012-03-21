@@ -6,7 +6,7 @@ JRE_FLAGS="-enableassertions -enablesystemassertions"
 
 # ANT configuration
 HAS_ANT=0
-ANT=$(which ant)
+ANT="$(which ant) -quiet"
 [ "$?" -eq 0 ] && HAS_ANT=1
 
 # TODO: Get classpath
