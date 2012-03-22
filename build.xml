@@ -56,7 +56,7 @@
 	</pathconvert>
 	
 	<!-- Default (main) target -->
-    <target name="all" depends="info, compile, jar, javadoc" description="Main target" />
+    <target name="all" depends="info, compile, jar, javadoc, tar" description="Main target" />
     	
 	<!-- Information target -->
     <target name="info" description="Just prints information about the environment">
@@ -118,7 +118,7 @@
         <jar destfile="${file.jar.server}">
         	<zipgroupfileset dir="${path.lib}" includes="*.jar" />
         	<fileset dir="${path.classes}">
-        		<!-- Must list the files to be included in the server JAR file here!!! -->
+        		<!-- NOTE: Must list the files to be included in the server JAR file here!!! -->
 		        <include name="*/StealthNetServer**" />
 		  	    <include name="*/StealthNetServerThread**" />
 		  	    <include name="*/StealthNetComms**" />
@@ -140,7 +140,7 @@
                   <include name="${path.img}/*" />
             </fileset>
         	<fileset dir="${path.classes}">
-        		<!-- Must list the files to be included in the client JAR file here!!! -->
+        		<!-- NOTE: Must list the files to be included in the client JAR file here!!! -->
                 <include name="*/StealthNetClient**" />
                 <include name="*/StealthNetComms**" />
                 <include name="*/StealthNetPacket**" />
@@ -199,8 +199,9 @@
         </java>
 	</target>
 	
-	<!-- Run a second client instance -->
+	<!-- Run a second client instance (exactly the same as the "run_client" target) -->
 	<target name="run_client2" depends="compile, jar" description="A copy of 'run_client' to allow running a second client instance">
+		<echo>Running StealthNet client...</echo>
 		<java jar="${file.jar.client}" spawn="true" fork="true">
             <classpath>
                 <path refid="compile.classpath" />
@@ -211,6 +212,7 @@
 	
 	<!-- Run server target -->
 	<target name="run_server" depends="compile, jar" description="Run StealthNet server">
+		<echo>Running StealthNet server...</echo>
 		<java jar="${file.jar.server}" spawn="true" fork="true">
             <classpath>
                 <path refid="compile.classpath" />
@@ -220,7 +222,7 @@
     </target>
 	
 	<!-- Default TAR target -->
-	<target name="tar" depends="minimal-tar" description="Create a tar archive" />
+	<target name="tar" depends="maximal-tar" description="Create a tar archive" />
     	
 	<!-- Create a TAR file with all of the relevant content (excludes Eclipse files, git metadata and any built files) -->
 	<target name="minimal-tar" description="Create a minimal tar archive">
@@ -232,15 +234,14 @@
     	<tar destfile="${file.tar.gz}" longfile="gnu" compression="gzip">
             <tarfileset dir="${basedir}">
             	<!-- Exclude unnecessary files that can be built -->
-            	<!-- TODO: this doesn't work -->
-            	<exclude name="${path.build}/*" />
-                <exclude name="${path.docs}/*" />
+            	<exclude name="**/${path.build}/**" />
+                <exclude name="**/${path.docs}/**" />
                 
-            	<!-- git metadata -->
+            	<!-- Exclude git metadata -->
             	<exclude name=".git" />
             	<exclude name=".gitignore" />
             	
-            	<!-- Eclipse files -->
+            	<!-- Exclude Eclipse files -->
             	<exclude name=".classpath" />
             	<exclude name=".project" />
             	<exclude name=".settings" />
@@ -260,11 +261,10 @@
     	<tar destfile="${file.tar.gz}" longfile="gnu" compression="gzip">
             <tarfileset dir="${basedir}">
             	<!-- Exclude unnecessary files that can be built -->
-            	<!-- TODO: this doesn't work -->
-                <exclude name="${path.build}/*" />
-                <exclude name="${path.docs}/*" />
+                <exclude name="**/${path.build}/**" />
+                <exclude name="**/${path.docs}/**" />
                 
-                <!-- git metadata -->
+                <!-- Exclude git metadata -->
                 <exclude name=".git" />
                 <exclude name=".gitignore" />
             </tarfileset>
@@ -282,7 +282,7 @@
         
         <tar destfile="${file.tar.gz}" longfile="gnu" compression="gzip">
             <tarfileset dir="${basedir}">
-                <!-- git metadata -->
+                <!-- Exclude git metadata -->
                 <exclude name=".git" />
                 <exclude name=".gitignore" />
             </tarfileset>
@@ -293,13 +293,17 @@
 	
 	<!-- Print the classpath -->
     <target name="classpath" description="Print the classpath">
-    	<!-- TODO: this doesn't work -->
-	    <echo message="${compile.classpath}" />
+    	<property name="print.classpath" refid="compile.classpath" />
+	    <echo>Classpath: '${print.classpath}'</echo>
 	</target>
 	
 	<!-- Print the directory where the JAR files are stored -->
 	<target name="jar_dir" description="Print the directory that the JARs are stored in">
-		<!-- TODO: this doesn't work -->
-		<echo message="${path.jar" />
+		<echo>JAR directory: '${path.jar}'</echo>
 	</target>
+	
+	<!-- Debug target -->
+	<target name="debug" description="Print out all properties"> 
+        <echoproperties/>
+    </target> 
 </project>
