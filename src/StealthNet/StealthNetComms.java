@@ -22,67 +22,45 @@
  * REVISION HISTORY:
  *
  **********************************************************************************/
-
 package StealthNet;
-
 /* Import Libraries **********************************************************/
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.net.Socket;
+import java.net.*;
+import java.io.*;
 
 /* StealthNetComms class *****************************************************/
 
-/**
- * TODO
- * 
- * @author Stephen Gould
- * @author Matt Barrie
- * @author Ryan Junee
- *
- */
 public class StealthNetComms {
-	private static final boolean DEBUG = false;
-	
     public static final String SERVERNAME = "localhost";
     public static final int SERVERPORT = 5616;
+    public static final String DEFAULT_SERVERNAME = "localhost";
+    public static final int DEFAULT_SERVERPORT = 5616;
 
-    /** Communications socket. */
-    private Socket commsSocket;
+    private Socket commsSocket;             // communications socket
+    private PrintWriter dataOut;            // output data stream
+    private BufferedReader dataIn;          // input data stream
 
-    /** Output data stream. */
-    private PrintWriter dataOut;            
-    
-    /** Input data stream */
-    private BufferedReader dataIn;         
-
-    /** Constructor */
     public StealthNetComms() {
         commsSocket = null;
         dataIn = null;
         dataOut = null;
     }
 
-    /** Cleans up before terminating the class. */
     protected void finalize() throws IOException {
-        if (dataOut != null) {
+        if (dataOut != null)
             dataOut.close();
-        }
-        if (dataIn != null) {
+        if (dataIn != null)
             dataIn.close();
-        }
-        if (commsSocket != null) {
+        if (commsSocket != null)
             commsSocket.close();
-        }
     }
 
     public boolean initiateSession(Socket socket) {
         try {
             commsSocket = socket;
             dataOut = new PrintWriter(commsSocket.getOutputStream(), true);
-            dataIn = new BufferedReader(new InputStreamReader(commsSocket.getInputStream()));
+            dataIn = new BufferedReader(new InputStreamReader(
+                commsSocket.getInputStream()));
         } catch (Exception e) {
             System.err.println("Connection terminated.");
             System.exit(1);
@@ -95,7 +73,8 @@ public class StealthNetComms {
         try {
             commsSocket = socket;
             dataOut = new PrintWriter(commsSocket.getOutputStream(), true);
-            dataIn = new BufferedReader(new InputStreamReader(commsSocket.getInputStream()));
+            dataIn = new BufferedReader(new InputStreamReader(
+                commsSocket.getInputStream()));
         } catch (Exception e) {
             System.err.println("Connection terminated.");
             System.exit(1);
@@ -154,19 +133,13 @@ public class StealthNetComms {
         return pckt;
     }
 
-    /**
-     * TODO  
-     * 
-     * @return True to indicate ready. False to indicate not-ready.
-     * @throws IOException
-     */
     public boolean recvReady() throws IOException {
-    	if (DEBUG) {
-	        System.out.println("Connected: " + commsSocket.isConnected());
-	        System.out.println("Closed: " + commsSocket.isClosed());
-	        System.out.println("InClosed: " + commsSocket.isInputShutdown());
-	        System.out.println("OutClosed: " + commsSocket.isOutputShutdown());
-    	}
+/*
+        System.out.println("Connected: " + commsSocket.isConnected());
+        System.out.println("Closed: " + commsSocket.isClosed());
+        System.out.println("InClosed: " + commsSocket.isInputShutdown());
+        System.out.println("OutClosed: " + commsSocket.isOutputShutdown());
+*/
         return dataIn.ready();
     }
 }
@@ -174,3 +147,4 @@ public class StealthNetComms {
 /******************************************************************************
  * END OF FILE:     StealthNetComms.java
  *****************************************************************************/
+ 

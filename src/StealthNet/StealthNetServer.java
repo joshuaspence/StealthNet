@@ -36,24 +36,45 @@ import java.net.ServerSocket;
  * @author Stephen Gould
  */
 public class StealthNetServer {
-	private static final boolean DEBUG = false;
+	/** Set to true in build.xml to output debug messages for this class. */
+	private static final boolean DEBUG = System.getProperty("debug." + StealthNetServer.class.getName(), "false").equals("true");
 	
 	/** 
 	 * The main StealthNetServer function.
 	 * 
+	 * @param args The command line arguments.
 	 * @throws IOException
 	 */
     public static void main(String[] args) throws IOException {
+    	/** Port that the server is listening on. */
+    	int port = StealthNetComms.DEFAULT_SERVERPORT;
+    	
+    	/** Check if a port number was specified at the command line. */
+    	if (args.length > 0) {
+    		try {
+    			port = Integer.parseInt(args[0]);
+    			
+    			/** Check for a valid port number. */
+    			if (port <= 0 || port > 65535)
+    				throw new NumberFormatException("Invalid port number: " + port);
+    		} catch (NumberFormatException e) {
+    			System.err.println(e.getMessage());
+    			if (DEBUG) e.printStackTrace();
+                System.exit(1);
+    		}
+    	}
+    	
     	/** Try to create a server socket listening on a specified port. */
         ServerSocket svrSocket = null;
         try {
-            svrSocket = new ServerSocket(StealthNetComms.SERVERPORT);
+            svrSocket = new ServerSocket(port);
         } catch (IOException e) {
-            System.err.println("Could not listen on port: " + StealthNetComms.SERVERPORT);
+            System.err.println("Could not listen on port: " + port);
             if (DEBUG) e.printStackTrace();
             System.exit(1);
         }
 
+        System.out.println("Server listening on port " + port + ".");
         System.out.println("Server online...");
         
         /** 

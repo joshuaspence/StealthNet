@@ -17,36 +17,16 @@
  * REVISION HISTORY:
  *
  *****************************************************************************/
-
 package StealthNet;
-
 /* Import Libraries **********************************************************/
 
-import java.awt.BorderLayout;
-import java.awt.Component;
-import java.awt.Dimension;
-import java.awt.Toolkit;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import javax.swing.BorderFactory;
-import javax.swing.JFrame;
-import javax.swing.JPanel;
-import javax.swing.JProgressBar;
-import javax.swing.JOptionPane;
+import java.io.*;
+import javax.swing.*;
+import java.awt.*;
 
 /* StealthNetFileTransfer Class Definition ************************************/
 
-/**
- * A class to manage a file transfer between multiple StealthNet clients.
- * 
- * @author Matt Barrie
- * @author Stephen Gould
- */
 public class StealthNetFileTransfer extends Thread {
-	private static final boolean DEBUG = false;
-	
     private static final int PACKETSIZE = 256;
 
     private JProgressBar progressBar = null;
@@ -54,21 +34,19 @@ public class StealthNetFileTransfer extends Thread {
     private String filename;
     private boolean bSend;
 
-    /** Constructor. */
     public StealthNetFileTransfer(StealthNetComms snComms, String fn, boolean b) {
         stealthComms = snComms;
         filename = fn.trim();
         bSend = b;
     }
 
-    /** TODO */
     public Component createGUI() {
-        /** Create progress bar. */
+        // create progress bar
         progressBar = new JProgressBar(0, 10);
         progressBar.setValue(0);
         progressBar.setStringPainted(true);
 
-        /** Create top-level panel and add components. */
+        // create top-level panel and add components
         JPanel pane = new JPanel();
         pane.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         pane.setLayout(new BorderLayout());
@@ -77,25 +55,25 @@ public class StealthNetFileTransfer extends Thread {
         return pane;
     }
 
-    /** TODO */
     public void run() {
         Dimension screenDim = Toolkit.getDefaultToolkit().getScreenSize();
 
-        /** Set up FTP window */
+        // set up ftp window
         JFrame ftpFrame = new JFrame("stealthnet FTP [" + filename + "]");
         ftpFrame.getContentPane().add(createGUI(), BorderLayout.CENTER);
         ftpFrame.pack();
 
-        /** Center the window. */
-        int x = (screenDim.width - ftpFrame.getSize().width) / 2;
-        int y = (screenDim.height - ftpFrame.getSize().height) / 2;
+        // center the window
+        int x = (screenDim.width - ftpFrame.getSize().width)/2;
+        int y = (screenDim.height - ftpFrame.getSize().height)/2;
         ftpFrame.setLocation(x, y);
         ftpFrame.setVisible(true);
 
-        if (bSend)
+        if (bSend) {
             sendFile();
-        else
+        } else {
             recvFile();
+        }
 
         ftpFrame.setVisible(false);
         JOptionPane.showMessageDialog(ftpFrame,
@@ -103,19 +81,17 @@ public class StealthNetFileTransfer extends Thread {
             "StealthNet", JOptionPane.INFORMATION_MESSAGE);
     }
 
-    /** TODO */
     private synchronized void sendFile() {
         FileInputStream fid = null;
         byte[] buf = new byte[PACKETSIZE];
         int bufLen;
-        int fileLen = (int) ((new File(filename)).length() / PACKETSIZE);
+        int fileLen = (int)((new File(filename)).length() / PACKETSIZE);
 
         progressBar.setMaximum(fileLen);
         try {
             stealthComms.sendPacket(StealthNetPacket.CMD_FTP, Integer.toString(fileLen));
             stealthComms.recvPacket();
             fid = new FileInputStream(filename);
-            
             do {
                 bufLen = fid.read(buf);
                 if (bufLen > 0) {
@@ -124,16 +100,13 @@ public class StealthNetFileTransfer extends Thread {
                 }
                 progressBar.setValue(progressBar.getValue() + 1);
             } while (bufLen > 0);
-            
             fid.close();
             stealthComms.sendPacket(StealthNetPacket.CMD_FTP);
         } catch (IOException e) {
             System.err.println("Error reading from file " + filename);
-            if (DEBUG) e.printStackTrace();
         }
     }
 
-    /** TODO */
     private synchronized void recvFile() {
         FileOutputStream fid = null;
         byte[] buf;
@@ -144,18 +117,15 @@ public class StealthNetFileTransfer extends Thread {
             stealthComms.sendPacket(StealthNetPacket.CMD_NULL);
             progressBar.setMaximum(fileLen);
             fid = new FileOutputStream(filename);
-            
             do {
                 buf = stealthComms.recvPacket().data;
                 stealthComms.sendPacket(StealthNetPacket.CMD_NULL);
                 fid.write(buf);
                 progressBar.setValue(progressBar.getValue() + 1);
             } while (buf.length > 0);
-            
             fid.close();
         } catch (IOException e) {
             System.err.println("Error writing to file " + filename);
-            if (DEBUG) e.printStackTrace();
         }
    }
 }

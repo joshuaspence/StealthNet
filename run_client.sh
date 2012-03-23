@@ -30,5 +30,8 @@ else
 	JAR_DIR="$CLIENT_DIR/build/classes"
 fi
 
+# Debug options
+DEBUG="-Ddebug.StealthNet.StealthNetChat=true -Ddebug.StealthNet.StealthNetClient=true -Ddebug.StealthNet.StealthNetComms=true -Ddebug.StealthNet.StealthNetFileTransfer=true -Ddebug.StealthNet.StealthNetPacket=true -Ddebug.StealthNet.StealthNetServer=true -Ddebug.StealthNet.StealthNetServerThread=true"
+
 # Execute
-$JRE -classpath $CLASSPATH $JRE_FLAGS -jar $JAR_DIR/ELEC5616_client.jar &
+$JRE $DEBUG $CLASSPATH $JRE_FLAGS -jar $JAR_DIR/ELEC5616_client.jar $@

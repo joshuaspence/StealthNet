@@ -29,6 +29,14 @@
 	<property name="class.main"    value="${class.client}" />
 	<property name="class.package" value="StealthNet" />
 	
+	<!-- Class debug -->
+	<property name="debug.StealthNet.StealthNetChat"         value="false" />
+	<property name="debug.StealthNet.StealthNetClient"       value="false" />
+	<property name="debug.StealthNet.StealthNetComms"        value="false" />
+	<property name="debug.StealthNet.StealthNetFileTransfer" value="false" />
+	<property name="debug.StealthNet.StealthNetServer"       value="false" />
+    <property name="debug.StealthNet.StealthNetServerThread" value="false" />
+	
 	<!-- Compile properties -->
 	<property name="compile.debug"              value="true" />
 	<property name="compile.deprecation"        value="false" />
@@ -213,11 +221,19 @@
 	<!-- Run server target -->
 	<target name="run_server" depends="compile, jar" description="Run StealthNet server">
 		<echo>Running StealthNet server...</echo>
+		<echo>${debug.StealthNet.StealthNetChat}</echo>
 		<java jar="${file.jar.server}" spawn="true" fork="true">
             <classpath>
                 <path refid="compile.classpath" />
                 <path location="${file.jar}" />
             </classpath>
+			
+			<sysproperty key="debug.StealthNet.StealthNetChat"         value="${debug.StealthNet.StealthNetChat}" />
+		    <sysproperty key="debug.StealthNet.StealthNetClient"       value="${debug.StealthNet.StealthNetClient}" />
+		    <sysproperty key="debug.StealthNet.StealthNetComms"        value="${debug.StealthNet.StealthNetComms}" />
+		    <sysproperty key="debug.StealthNet.StealthNetFileTransfer" value="${debug.StealthNet.StealthNetFileTransfer}" />
+		    <sysproperty key="debug.StealthNet.StealthNetServer"       value="${debug.StealthNet.StealthNetServer}" />
+		    <sysproperty key="debug.StealthNet.StealthNetServerThread" value="${debug.StealthNet.StealthNetServerThread}" />
         </java>
     </target>
 	
@@ -301,9 +317,4 @@
 	<target name="jar_dir" description="Print the directory that the JARs are stored in">
 		<echo>JAR directory: '${path.jar}'</echo>
 	</target>
-	
-	<!-- Debug target -->
-	<target name="debug" description="Print out all properties"> 
-        <echoproperties/>
-    </target> 
 </project>
