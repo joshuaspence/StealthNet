@@ -14,40 +14,82 @@
  * VERSION:         2.0-ICE
  *
  *****************************************************************************/
+
 package StealthNet;
+
 /* Import Libraries **********************************************************/
 
-import java.io.*;
-import javax.swing.*;
-import java.awt.*;
-import java.awt.event.*;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.Toolkit;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.io.IOException;
+import javax.swing.AbstractButton;
+import javax.swing.BorderFactory;
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
+import javax.swing.JTextField;
 
 /* StealthNetChat Class Definition *******************************************/
 
+/**
+ * TODO
+ * 
+ * @author Matt Barrie
+ */
 public class StealthNetChat extends Thread {
+	/** Set to true to output debug messages for this class. */
+	@SuppressWarnings("unused")
+	private static final boolean DEBUG = (System.getProperties().getProperty("debug." + StealthNetChat.class.getName()) == "true");
+	
     private JFrame chatFrame;
     private JTextArea chatTextBox;
     private JTextField msgText;
     private StealthNetComms stealthComms = null;
     private String userID;
 
+    /** 
+     * Constructor.
+     * 
+     * @param id TODO
+     * @param snComms TODO
+     */
     public StealthNetChat(String id, StealthNetComms snComms) {
         userID = id;
         stealthComms = snComms;
     }
 
-    protected void finalise() throws IOException {
-        if (stealthComms != null)
-            stealthComms.terminateSession();
+    /** 
+     * Cleans up before destroying the class.
+     * @throws IOException
+     */
+    protected void finalize() throws IOException {
+        if (stealthComms != null) stealthComms.terminateSession();
     }
 
+    /** 
+     * Creates the GUI for the StealthNetChat instance.
+     * 
+     * @return An AWT component containing the chat elements.
+     */
     public Component createGUI() {
-        // create text window
+        /** Create text window. */
         chatTextBox = new JTextArea();
         chatTextBox.setLineWrap(true);
         chatTextBox.setWrapStyleWord(true);
         chatTextBox.setEditable(false);
         chatTextBox.setBackground(Color.lightGray);
+        
         JScrollPane chatScrollPane = new JScrollPane(chatTextBox);
         chatScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
         chatScrollPane.setPreferredSize(new Dimension(280, 100));
@@ -58,13 +100,12 @@ public class StealthNetChat extends Thread {
                     BorderFactory.createEmptyBorder(0,0,0,0)),
                 chatScrollPane.getBorder()));
 
-        // create text input field (and quit button)
+        /** Create text input field (and quit button). */
         msgText = new JTextField(25);
         msgText.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                sendChat();
-            }
+            public void actionPerformed(ActionEvent e) { sendChat(); }
         });
+        
         final JButton quitBtn = new JButton("X");
         quitBtn.setVerticalTextPosition(AbstractButton.BOTTOM);
         quitBtn.setHorizontalTextPosition(AbstractButton.CENTER);
@@ -79,12 +120,13 @@ public class StealthNetChat extends Thread {
                 stealthComms = null;
             }
         });
+        
         JPanel btnPane = new JPanel();
         btnPane.setLayout(new BorderLayout());
         btnPane.add(msgText);
         btnPane.add(quitBtn, BorderLayout.EAST);
 
-        // create top-level panel and add components
+        /** Create top-level panel and add components. */
         JPanel pane = new JPanel();
         pane.setBorder(BorderFactory.createEmptyBorder(10, 10, 5, 10));
         pane.setLayout(new BorderLayout());
@@ -94,8 +136,9 @@ public class StealthNetChat extends Thread {
         return pane;
     }
 
+    /** Send a chat message using StealthNet. */
     private synchronized void sendChat() {
-        String msg = "[" + userID + "] " + msgText.getText();
+        final String msg = "[" + userID + "] " + msgText.getText();
 
         chatTextBox.append(msg + "\n");
         if (stealthComms != null)
@@ -103,6 +146,7 @@ public class StealthNetChat extends Thread {
         msgText.setText("");
     }
 
+    /** Receive a chat message using StealthNet. */
     private synchronized void recvChat() {
         try {
             if ((stealthComms == null) || (!stealthComms.recvReady()))
@@ -119,34 +163,37 @@ public class StealthNetChat extends Thread {
         StealthNetPacket pckt = new StealthNetPacket();
 
         try {
-            while ((pckt.command != StealthNetPacket.CMD_LOGOUT) &&
-                (stealthComms.recvReady())) {
+            while ((pckt.command != StealthNetPacket.CMD_LOGOUT) && (stealthComms.recvReady())) {
                 pckt = stealthComms.recvPacket();
+                
                 switch (pckt.command) {
-                    case StealthNetPacket.CMD_MSG :
+                    case StealthNetPacket.CMD_MSG:
                 	    chatTextBox.append(new String(pckt.data) + "\n");
                         break;
-                    case StealthNetPacket.CMD_LOGOUT :
+                        
+                    case StealthNetPacket.CMD_LOGOUT:
                         JOptionPane.showMessageDialog(chatFrame,
                             "Chat session terminated at other side.",
                             "StealthNet", JOptionPane.INFORMATION_MESSAGE);
                         stealthComms.terminateSession();
                         stealthComms = null;
                         break;
-                    default :
-                        System.out.println("unrecognised command");
+                        
+                    default:
+                        System.out.println("Unrecognised command.");
                }
             }
         } catch (Exception e) {
-            System.err.println("error running client thread");
-            e.printStackTrace();
+            System.err.println("Error running client thread.");
+            if (DEBUG) e.printStackTrace();
         }
     }
 
+    /** TODO */
     public void run() {
         Dimension screenDim = Toolkit.getDefaultToolkit().getScreenSize();
 
-        // set up chat window
+        /** Set up chat window. */
         chatFrame = new JFrame("stealthnet chat [" + userID + "]");
         chatFrame.getContentPane().add(createGUI(), BorderLayout.CENTER);
         chatFrame.pack();
@@ -162,9 +209,9 @@ public class StealthNetChat extends Thread {
             }
         });
 
-        // center the window
-        int x = (screenDim.width - chatFrame.getSize().width)/2;
-        int y = (screenDim.height - chatFrame.getSize().height)/2;
+        /** Center the window. */
+        int x = (screenDim.width - chatFrame.getSize().width) / 2;
+        int y = (screenDim.height - chatFrame.getSize().height) / 2;
         chatFrame.setLocation(x, y);
         chatFrame.setVisible(true);
 
@@ -172,7 +219,7 @@ public class StealthNetChat extends Thread {
             recvChat();
             try {
                 sleep(100);
-            } catch (Exception e) { }
+            } catch (Exception e) {}
         }
 
         chatTextBox = null;
