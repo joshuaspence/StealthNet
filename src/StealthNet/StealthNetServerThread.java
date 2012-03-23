@@ -418,13 +418,16 @@ public class StealthNetServerThread extends Thread {
 						} else if (userInfo.userThread == Thread.currentThread()) {
 							msg_type = StealthNetPacket.CMD_MSG;
 							msg = "[*SVR*] Cannot chat to self";
+							
+							stealthComms.sendPacket(msg_type, msg);
 						} else {
 							msg_type = StealthNetPacket.CMD_CHAT;
 							msg = userID + "@" + iAddr;
+							
+							if (DEBUG) System.out.println("Sending chat message (\"" + msg + "\").");
+							userInfo.userThread.stealthComms.sendPacket(msg_type, msg);
 						}
 						
-						if (DEBUG) System.out.println("Sending chat message (\"" + msg + "\").");
-						userInfo.userThread.stealthComms.sendPacket(msg_type, msg);
 						break;
 	
 					/***********************************************************
@@ -446,14 +449,19 @@ public class StealthNetServerThread extends Thread {
 						if ((userInfo == null) || (userInfo.userThread == null)) {
 							msg_type = StealthNetPacket.CMD_MSG;
 							msg = "[*SVR*] User not logged in";
+							
+							stealthComms.sendPacket(msg_type, msg);
 						} else if (userInfo.userThread == Thread.currentThread()) {
 							msg_type = StealthNetPacket.CMD_MSG;
 							msg = "[*SVR*] Cannot ftp to self";
+							
+							stealthComms.sendPacket(msg_type, msg);
 						} else {
 							msg_type = StealthNetPacket.CMD_FTP;
 							msg = userID + "@" + iAddr;
+							
+							userInfo.userThread.stealthComms.sendPacket(msg_type, msg);
 						}
-						stealthComms.sendPacket(msg_type, msg);
 						break;
 	
 					/***********************************************************
@@ -520,16 +528,21 @@ public class StealthNetServerThread extends Thread {
 							if ((userInfo == null) || (userInfo.userThread == null)) {
 								msg_type = StealthNetPacket.CMD_MSG;
 								msg = "[*SVR*] Secret is not currently available";
+								
+								stealthComms.sendPacket(msg_type, msg);
 							} else if (userInfo.userThread == Thread.currentThread()) {
 								msg_type = StealthNetPacket.CMD_MSG;
 								msg = "[*SVR*] You can't purchase a secret from yourself!";
+								
+								stealthComms.sendPacket(msg_type, msg);
 							} else {
 								final String fName = secretInfo.dirname + secretInfo.filename;
 								msg_type = StealthNetPacket.CMD_GETSECRET;
 								msg = fName + "@" + iAddr;
+								
+								userInfo.userThread.stealthComms.sendPacket(msg_type, msg);
 							}
 						}
-						stealthComms.sendPacket(msg_type, msg);
 						break;
 	
 					/***********************************************************

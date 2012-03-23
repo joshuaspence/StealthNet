@@ -49,7 +49,6 @@ import javax.swing.JTextField;
  */
 public class StealthNetChat extends Thread {
 	/** Set to true to output debug messages for this class. */
-	@SuppressWarnings("unused")
 	private static final boolean DEBUG = (System.getProperties().getProperty("debug." + StealthNetChat.class.getName()) == "true");
 	
     private JFrame chatFrame;
