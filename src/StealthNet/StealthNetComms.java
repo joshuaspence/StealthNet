@@ -32,6 +32,11 @@ import java.io.InputStreamReader;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
+
+import javax.crypto.NoSuchPaddingException;
 
 /* StealthNetComms class *****************************************************/
 
@@ -43,7 +48,7 @@ import java.net.Socket;
  * @author Ryan Junee
  *
  */
-public class StealthNetComms {
+public class StealthNetComms extends StealthNetEncryption {
 	/** 
 	 * Set to true in build.xml to output debug messages for this class. 
 	 * Alternatively, use the argument `-Ddebug.StealthNetComms=true' at the 
@@ -73,7 +78,7 @@ public class StealthNetComms {
     private BufferedReader dataIn;    
     
     /** Constructor. */
-    public StealthNetComms() {
+    public StealthNetComms() throws InvalidKeyException, NoSuchPaddingException, NoSuchAlgorithmException {
     	commsSocket = null;
         dataIn = null;
         dataOut = null;
@@ -88,7 +93,7 @@ public class StealthNetComms {
      * @param s The servername of the StealthNet server.
      * @param p The port number for the StealthNet server.
      */
-    public StealthNetComms(String s, int p) {
+    public StealthNetComms(String s, int p) throws InvalidKeyException, NoSuchPaddingException, NoSuchAlgorithmException {
         commsSocket = null;
         dataIn = null;
         dataOut = null;

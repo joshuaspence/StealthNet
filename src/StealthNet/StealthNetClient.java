@@ -40,6 +40,7 @@ import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.security.NoSuchAlgorithmException;
 import java.util.Hashtable;
 import javax.swing.AbstractButton;
 import javax.swing.BorderFactory;
@@ -61,7 +62,6 @@ import javax.swing.table.DefaultTableModel;
 import javax.swing.Timer;
 import javax.swing.UIManager;
 import javax.swing.JOptionPane;
-import StealthNet.StealthNetFileTransfer;
 
 /* StealthNetClient Class Definition *****************************************/
 
@@ -85,7 +85,7 @@ import StealthNet.StealthNetFileTransfer;
  * @author Stephen Gould
  * @author Ryan Junee
  */
-public class StealthNetClient {
+public class StealthNetClient extends StealthNetEntity {
 	/** 
 	 * Set to true in build.xml to output debug messages for this class. 
 	 * Alternatively, use the argument `-Ddebug.StealthNetComms=true' at the 
@@ -143,7 +143,7 @@ public class StealthNetClient {
 	static private Hashtable<String, SecretData> secretDescriptions = new Hashtable<String, SecretData>();
     
     /** Constructor. */
-    public StealthNetClient() {
+    public StealthNetClient() throws NoSuchAlgorithmException {
     	/** Create a timer to process packets every 100ms. */
         stealthTimer = new Timer(100, new ActionListener() {
             public void actionPerformed(ActionEvent e) { processPackets(); }
@@ -159,7 +159,7 @@ public class StealthNetClient {
 	 * @param s The hostname of the StealthNet server.
 	 * @param p The port that the StealthNet server is listening on.
 	 */
-    public StealthNetClient(String s, int p) {
+    public StealthNetClient(String s, int p) throws NoSuchAlgorithmException {    	
     	/** Create a timer to process packets every 100ms. */
         stealthTimer = new Timer(100, new ActionListener() {
             public void actionPerformed(ActionEvent e) { processPackets(); }
@@ -918,7 +918,14 @@ public class StealthNetClient {
 
         /** Create the top-level container and contents. */
         clientFrame = new JFrame("stealthnet");
-        StealthNetClient app = new StealthNetClient(hostname, port);
+        StealthNetClient app = null;
+        try {
+        	app = new StealthNetClient(hostname, port);
+        } catch(Exception e) {
+        	System.out.println("Unable to create StealthNet client.");
+        	if (DEBUG) e.printStackTrace();
+        	System.exit(1);
+        }
         Component contents = app.createGUI();
         clientFrame.getContentPane().add(contents, BorderLayout.CENTER);
 

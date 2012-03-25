@@ -35,6 +35,7 @@ DEBUG=" \
 	-Ddebug.StealthNetChat=true \
 	-Ddebug.StealthNetClient=true \
 	-Ddebug.StealthNetComms=true \
+	-Ddebug.StealthNetEntity=true \
 	-Ddebug.StealthNetFileTransfer=true \
 	-Ddebug.StealthNetPacket=true \
 	-Ddebug.StealthNetServer=true \

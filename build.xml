@@ -33,6 +33,7 @@
 	<property name="debug.StealthNetChat"         value="false" />
 	<property name="debug.StealthNetClient"       value="false" />
 	<property name="debug.StealthNetComms"        value="false" />
+	<property name="debug.StealthNetEntity"       value="false" />
 	<property name="debug.StealthNetFileTransfer" value="false" />
 	<property name="debug.StealthNetServer"       value="false" />
     <property name="debug.StealthNetServerThread" value="false" />
@@ -130,6 +131,8 @@
 		        <include name="*/StealthNetServer**" />
 		  	    <include name="*/StealthNetServerThread**" />
 		  	    <include name="*/StealthNetComms**" />
+        		<include name="*/StealthNetEncryption**" />
+                <include name="*/StealthNetEntity**" />
 		  	    <include name="*/StealthNetPacket**" />
     		</fileset>
         	
@@ -151,6 +154,8 @@
         		<!-- NOTE: Must list the files to be included in the client JAR file here!!! -->
                 <include name="*/StealthNetClient**" />
                 <include name="*/StealthNetComms**" />
+        		<include name="*/StealthNetEncryption**" />
+        		<include name="*/StealthNetEntity**" />
                 <include name="*/StealthNetPacket**" />
           	    <include name="*/StealthNetFileTransfer**" />
           	    <include name="*/StealthNetChat**" />
