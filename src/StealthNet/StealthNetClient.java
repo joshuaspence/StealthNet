@@ -66,33 +66,55 @@ import StealthNet.StealthNetFileTransfer;
 /* StealthNetClient Class Definition *****************************************/
 
 /** 
- * TODO
+ * A client for the StealthNet chat program. Receives information about clients 
+ * and secrets from the StealthNet server.
+ * 
+ * If the client wants to start a chat session with a user, then the first 
+ * client sends a command to the server, containing an IP address and port 
+ * number on which the first client is waiting for a connection from the second
+ * client. The server relays this information to the second client, which should
+ * then connect with the first client to start the chat session.
+ * 
+ * Similarly, if the clients wants to send a file to another client, then the
+ * first clients send a command to the server, containing an IP address and port
+ * number on which the first client is waiting for a connection from the second 
+ * client. The server relays this information to the second client, which should
+ * then connect with the first client to start the file transfer.
  * 
  * @author Matt Barrie
  * @author Stephen Gould
  * @author Ryan Junee
  */
 public class StealthNetClient {
-	/** Set to true to output debug messages for this class. */
-	private static final boolean DEBUG = (System.getProperties().getProperty("debug." + StealthNetClient.class.getName()) == "true");
+	/** 
+	 * Set to true in build.xml to output debug messages for this class. 
+	 * Alternatively, use the argument `-Ddebug.StealthNetComms=true' at the 
+	 * command line. 
+	 */
+	private static final boolean DEBUG = (System.getProperty("debug.StealthNetClient", "false").equals("true"));
 	
-	/** StealthNet server. */
+	/** StealthNet server (defaults to StealthNetComms.DEFAULT_SERVERNAME). */
 	private final String server_hostname;
 	
-	/** StealthNet port */
+	/** StealthNet port (defaults to StealthNetComms.DEFAULT_SERVERNAME). */
 	private final int server_port;
 	
+	/** The main frame for this client. */
     private static JFrame clientFrame;
+    
+    /** A text box used to display messages to the user. */
     private JTextArea msgTextBox;
     
     /** Button to log into StealthNet. */
     private JButton loginBtn;
     
+    /** Used for communications with the StealthNet server. */
     private StealthNetComms stealthComms = null;
     
     /** A timer to periodically process incoming packets. */
     private final Timer stealthTimer;
     
+    /** The ID of this (client) user. */
     private String userID = null;
     
     /** Buddy list. */
@@ -100,25 +122,24 @@ public class StealthNetClient {
     private DefaultTableModel buddyListData = null;
     
     /** Secret list. */
-    private JTable secretTable = null;
     private DefaultTableModel secretListData = null;
     
+    /** Graphical representation of the secret list. */
+    private JTable secretTable = null;
+    
+    /** Field to show the remaining number of credits. */
 	JTextField creditsBox;
 	
-	/** Used to get resources from the JAR file. */
-	private final ClassLoader cldr = this.getClass().getClassLoader();
-	
-	/** CHANGEME: Give them 100 credits for demonstration purposes. */
+	/** Give them 100 credits for demonstration purposes. */
     private int credits = 100;
 
-    /**
-     * TODO
-     */
+    /** Secret data. */
 	private class SecretData {
 		String description = null;
 		String filename = null;
 	}
 
+	/** A list of secret data, indexed by ???. */
 	static private Hashtable<String, SecretData> secretDescriptions = new Hashtable<String, SecretData>();
     
     /** Constructor. */
@@ -148,11 +169,16 @@ public class StealthNetClient {
         server_port = p;
     }
     
+    /**
+     * Create the GUI for the client instance.
+     * 
+     * @return An AWT component containing the client GUI.
+     */
     @SuppressWarnings("serial")
 	public Component createGUI() {
         final JPanel pane = new JPanel();
             	
-        /** Create buddy list. */
+        /** Create user list. */
         buddyListData = new DefaultTableModel() {
         	public boolean isCellEditable(int row, int col) { return false; };
         };
@@ -308,7 +334,7 @@ public class StealthNetClient {
 		creditsPane.add(creditsBox);
                 
         /** Create buttons (login, send message, chat, ftp) */
-        loginBtn = new JButton(new ImageIcon(cldr.getResource("img/login.gif")));
+        loginBtn = new JButton(new ImageIcon(this.getClass().getClassLoader().getResource("img/login.gif")));
         loginBtn.setVerticalTextPosition(AbstractButton.BOTTOM);
         loginBtn.setHorizontalTextPosition(AbstractButton.CENTER);
         loginBtn.setMnemonic(KeyEvent.VK_N);
@@ -319,7 +345,7 @@ public class StealthNetClient {
             }
         });
 
-        final JButton msgBtn = new JButton(new ImageIcon(cldr.getResource("img/msg.gif")));
+        final JButton msgBtn = new JButton(new ImageIcon(this.getClass().getClassLoader().getResource("img/msg.gif")));
         msgBtn.setVerticalTextPosition(AbstractButton.BOTTOM);
         msgBtn.setHorizontalTextPosition(AbstractButton.CENTER);
         msgBtn.setMnemonic(KeyEvent.VK_M);
@@ -328,14 +354,14 @@ public class StealthNetClient {
             public void actionPerformed(ActionEvent e) { createSecret(); }
         });
 
-        JPanel btnPane = new JPanel();
+        final JPanel btnPane = new JPanel();
         btnPane.setLayout(new GridLayout(1, 0));
         btnPane.setPreferredSize(new Dimension(180, 40));
         btnPane.setBorder(BorderFactory.createEmptyBorder(10, 0, 0, 0));
         btnPane.add(loginBtn);
         btnPane.add(msgBtn);
 
-		JPanel bottomPane = new JPanel();
+		final JPanel bottomPane = new JPanel();
 		bottomPane.setLayout(new BorderLayout());
 		bottomPane.add(creditsPane, BorderLayout.NORTH);
 		bottomPane.add(btnPane, BorderLayout.SOUTH);
@@ -351,12 +377,16 @@ public class StealthNetClient {
 
     /** Login to StealthNet. */
     private synchronized void login() {
+    	if (DEBUG) System.out.println("Logging in to StealthNet.");
+    	
         if (stealthComms != null) {
-            msgTextBox.append("[*ERR*] Already logged in.\n");
+        	System.err.println("Already logged in!");
+        	msgTextBox.append("[*ERR*] Already logged in.\n");
             return;
         }
 
         try {
+        	/** Get the user ID. */
             userID = JOptionPane.showInputDialog("Login:", userID);
             if (userID == null) 
             	return;
@@ -371,21 +401,32 @@ public class StealthNetClient {
             /** Start periodically checking for packets. */
             stealthTimer.start();
         } catch (UnknownHostException e) {
-            msgTextBox.append("[*ERR*] Unknown host: " +server_hostname + "\n");
+        	System.err.println("Unknown host for StealthNet server: " + server_hostname + ".");
+            msgTextBox.append("[*ERR*] Unknown host: " + server_hostname + "\n");
             if (DEBUG) e.printStackTrace();
         } catch (IOException e) {
+        	System.err.println("Could not connect to StealthNet server on port " + server_port + ".");
             msgTextBox.append("[*ERR*] Could not connect to host: " + server_port + "\n");
             if (DEBUG) e.printStackTrace();
         }
+        
+        /** We should now be connected to the StealthNet server. */
 
 		msgTextBox.append("Connected to StealthNet.\n");
+		if (DEBUG) System.out.println("Connected to StealthNet.");
+		
+		/** Set the frame title. */
 		clientFrame.setTitle("stealthnet [" + userID + "]");
-        loginBtn.setIcon(new ImageIcon(cldr.getResource("img/logout.gif")));
+		
+		/** Change the login button to a logout button. */
+        loginBtn.setIcon(new ImageIcon(this.getClass().getClassLoader().getResource("img/logout.gif")));
         loginBtn.setToolTipText("Logout");
     }
 
     /** Logout of StealthNet. */
     private synchronized void logout() {
+    	if (DEBUG) System.out.println("Logging out of StealthNet.");
+    	
         if (stealthComms != null) {
         	/** Stop periodically checking for packets. */
             stealthTimer.stop();
@@ -397,26 +438,34 @@ public class StealthNetClient {
             stealthComms.terminateSession();
             stealthComms = null;
             
-            loginBtn.setIcon(new ImageIcon(cldr.getResource("img/login.gif")));
+            /** Change the logout button back to a login button. */
+            loginBtn.setIcon(new ImageIcon(this.getClass().getClassLoader().getResource("img/login.gif")));
             loginBtn.setToolTipText("Login");
             
+            /** Hide user and secret list. */
             buddyListData.setRowCount(0);
             secretListData.setRowCount(0);
+            
             msgTextBox.append("Disconnected.\n");
+            if (DEBUG) System.out.println("Disconnected.");
         }
     }
 
     /** Create a secret. */
 	private void createSecret() {
+		if (DEBUG) System.out.println("Creating secret.");
+		
     	if (stealthComms == null) {
             msgTextBox.append("[*ERR*] Not logged in.\n");
         } else {
         	String name = "", description = "", cost = "";
         	
+        	/** Prompt the user for the secret name, description and cost. */
 			name = JOptionPane.showInputDialog("Secret Name:", name);
 			description = JOptionPane.showInputDialog("Secret Description:", description);
 			cost = JOptionPane.showInputDialog("Secret Cost (credits):", cost);
 	
+			/** Prompt the user for the secret file. */
 	        final FileDialog fileOpen = new FileDialog(clientFrame, "Select Secret File....", FileDialog.LOAD);
 	        fileOpen.setVisible(true);
 	        if (fileOpen.getFile().length() == 0)
@@ -425,6 +474,7 @@ public class StealthNetClient {
 			final String userMsg = name + ";" + description + ";" + cost + ";" + fileOpen.getDirectory() + ";" + fileOpen.getFile();
 	        if (userMsg != null)
 	        	/** Create the secret on the server. */
+	        	if (DEBUG) System.out.println("Sending secret details to server. Secret name is \"" + name + "\". Secret cost is " + cost + ". Secret description is \"" + description + "\". Secret file is \"" + fileOpen.getDirectory() + fileOpen.getFile() + "\".");
 	        	stealthComms.sendPacket(StealthNetPacket.CMD_CREATESECRET, userMsg);
         }
     }
@@ -444,27 +494,31 @@ public class StealthNetClient {
 	/** 
      * Purchase the details of a secret.
      * 
-     * @param row The row of the secret to be purchase.
+     * @param row The secret to be purchased.
      */
     private void purchaseSecret(int row) {
 		final String name = (String) secretTable.getValueAt(row, 0);
 		final SecretData data = secretDescriptions.get(name);
 		
+		if (DEBUG) System.out.println("Attempting to purchase secret \"" + name + "\".");
+		
 		if (data == null)
 			return;
 
-		/** Set up socket on a free port for file transfer. */
+		/** Set up socket on a free port for file transfer of the secret file. */
 		ServerSocket ftpSocket = null;
 		try {
 			ftpSocket = new ServerSocket(0);
 		} catch (IOException e) {
-			System.err.println("could not set up listening port");
+			System.err.println("Could not set up listening port for file transfer.");
 			msgTextBox.append("[*ERR*] Transfer failed.\n");
 			if (DEBUG) e.printStackTrace();
 			return;
 		}
+		
+		if (DEBUG) System.out.println("Set up socket " + ftpSocket.getLocalPort() + " for transfer of secret file \"" + name + "\".");
 
-		/** Send request to server. */
+		/** Discover the IP address of this client. */
 		String iAddr;
 		try {
 			iAddr = InetAddress.getLocalHost().toString();
@@ -474,26 +528,47 @@ public class StealthNetClient {
 			iAddr = "localhost";
 		}
 		iAddr += ":" + Integer.toString(ftpSocket.getLocalPort());
+		
+		/** 
+		 * Send the server the name of the secret and the IP address and port 
+		 * number for the file transfer. 
+		 */
+		if (DEBUG) System.out.println("Sending get secret message to server. Target client should connect on " + iAddr + ":" + ftpSocket.getLocalPort() + ".");
 		stealthComms.sendPacket(StealthNetPacket.CMD_GETSECRET, name + "@" + iAddr);
 
+		/** Choose where to save the secret file. */
 		final FileDialog fileSave = new FileDialog(clientFrame, "Save As...", FileDialog.SAVE);
 		fileSave.setFile(data.filename);
 		fileSave.setVisible(true);
 		
+		if (DEBUG) System.out.println("Will save secret file \"" + name + "\" to \"" + fileSave.getDirectory() + fileSave.getFile() + "\".");
+		
 		if ((fileSave.getFile() != null) && (fileSave.getFile().length() > 0)) {
 			/** Wait for user to connect, then start file transfer. */
 			try {
+				if (DEBUG) System.out.println("Waiting for target client to connect.");
+				
+				Socket conn;
 				ftpSocket.setSoTimeout(2000);  // 2 second timeout
 				final StealthNetComms snComms = new StealthNetComms();
-				snComms.acceptSession(ftpSocket.accept());
+				snComms.acceptSession(conn = ftpSocket.accept());
+				
+				if (DEBUG) System.out.println("Accepted connection from " + conn.getInetAddress() + ":" + conn.getPort() + " for chat session.");
 				new StealthNetFileTransfer(snComms, fileSave.getDirectory() + fileSave.getFile(), false).start();
 			} catch (Exception e) {
+				System.err.println("Transfer failed.");
 				msgTextBox.append("[*ERR*] Transfer failed.\n");
 				if (DEBUG) e.printStackTrace();
 			}	
 		}
     }    
 
+    /** 
+     * 
+     * Check if we are able to send a message to a specified user.
+     * 
+     * @param row The user to check.
+     */
 	private boolean isOKtoSendtoRow(int row) {
 		String myid, mystatus;
 
@@ -501,12 +576,14 @@ public class StealthNetClient {
 		mystatus = (String) buddyTable.getValueAt(row,1);
 
 		if (myid.equals(userID)) {
+			System.err.println("Can't send to self.");
 		   	msgTextBox.append("[*ERR*] Can't send to self.\n");
 		   	return false;
 		}
 
-        // check if the user is logged in
+        /** Check if the user is logged in. */
         if (mystatus.equals("false")) {
+        	System.err.println("User \"" + myid + "\" is not online.");
         	msgTextBox.append("[*ERR*] User is not online.\n");
         	return false;
         }
@@ -514,24 +591,36 @@ public class StealthNetClient {
         return true;
 	}
 	
+	/** 
+	 * Start a chat session with the selected user. 
+	 *
+	 * @param row The user to chat with.
+	 */
 	private void startChat(int row) {
-		if (!isOKtoSendtoRow(row)) {
+		if (!isOKtoSendtoRow(row))
 			return;
-		}
         
+		/** Get the ID of the target user. */ 
         String myid = (String) buddyTable.getValueAt(row, 0);
         		
-        // set up socket on a free port
+        /** Set up socket on a free port for the chat session. */
         ServerSocket chatSocket = null;
 
         try {
             chatSocket = new ServerSocket(0);
         } catch (IOException e) {
+        	System.err.println("Chat failed. Failed to create ServerSocket.");
             msgTextBox.append("[*ERR*] Chat failed.\n");
+            if (DEBUG) e.printStackTrace();
             return;
         }
+        
+        if (DEBUG) System.out.println("Set up socket " + chatSocket.getLocalPort() + " for chat session with \"" + myid + "\".");
 
-        // send message to server with target user and listening address and port
+        /**
+         * Send message to server with target user and listening address and
+         * port for the chat session.
+         */
         String iAddr;
         try {
             iAddr = InetAddress.getLocalHost().toString();
@@ -541,42 +630,63 @@ public class StealthNetClient {
             iAddr = "localhost";
         }
         iAddr += ":" + Integer.toString(chatSocket.getLocalPort());
+        
+        if (DEBUG) System.out.println("Sending chat message to server. Target client should connect on " + iAddr + ":" + chatSocket.getLocalPort() + ".");
         stealthComms.sendPacket(StealthNetPacket.CMD_CHAT, myid + "@" + iAddr);
 
-        // wait for user to connect and open chat window
+        /** Wait for user to connect and open chat window. */
         try {
+        	if (DEBUG) System.out.println("Waiting for target client to connect.");
+        	
+        	Socket conn;
             chatSocket.setSoTimeout(2000);  // 2 second timeout
             StealthNetComms snComms = new StealthNetComms();
-            snComms.acceptSession(chatSocket.accept());
+            snComms.acceptSession(conn = chatSocket.accept());
+            
+            if (DEBUG) System.out.println("Accepted connection from " + conn.getInetAddress() + ":" + conn.getPort() + " for chat session.");
             new StealthNetChat(userID, snComms).start();
         } catch (Exception e) {
+        	System.err.println("Chat failed.");
             msgTextBox.append("[*ERR*] Chat failed.\n");
         }
     }
    
+	/** 
+	 * Send a file to the selected user.
+	 * 
+	 * @param row The user to send the file to.
+	 */
     private void sendFile(int row) {
 		if (!isOKtoSendtoRow(row)) {
 			return;
 		}
 		
+		/** Get the user ID. */
 		String myid = (String) buddyTable.getValueAt(row, 0);
 
+		/** Select the file to send. */
         FileDialog fileOpen = new FileDialog(clientFrame, "Open...", FileDialog.LOAD);
         fileOpen.setVisible(true);
         if (fileOpen.getFile().length() == 0)
             return;
 
-        // set up socket on a free port
+        /** Set up socket on a free port. */
         ServerSocket ftpSocket = null;
         try {
             ftpSocket = new ServerSocket(0);
         } catch (IOException e) {
-            System.err.println("could not set up listening port");
+            System.err.println("Could not set up listening port.");
             msgTextBox.append("[*ERR*] FTP failed.\n");
+            if (DEBUG) e.printStackTrace();
             return;
         }
 
-        // send message to server with target user and listening address and port
+        if (DEBUG) System.out.println("Set up socket " + ftpSocket.getLocalPort() + " for transfer of file \"" + fileOpen.getFile() + "\" to \"" + myid + "\".");
+        
+        /**
+         * Send message to server with target user and listening address and 
+         * port for file transfer.
+         */
         String iAddr;
         try {
             iAddr = InetAddress.getLocalHost().toString();
@@ -586,16 +696,25 @@ public class StealthNetClient {
             iAddr = "localhost";
         }
         iAddr += ":" + Integer.toString(ftpSocket.getLocalPort());
+        
+        if (DEBUG) System.out.println("Sending FTP message to server. Target client should connect on " + iAddr + ":" + ftpSocket.getLocalPort() + ".");
         stealthComms.sendPacket(StealthNetPacket.CMD_FTP, myid + "@" + iAddr + "#" + fileOpen.getFile());
 
-        // wait for user to connect, then start file transfer
+        /** Wait for user to connect, then start file transfer. */
         try {
+        	if (DEBUG) System.out.println("Waiting for target client to connect.");
+        	
+        	Socket conn;
             ftpSocket.setSoTimeout(2000);  // 2 second timeout
             StealthNetComms snComms = new StealthNetComms();
-            snComms.acceptSession(ftpSocket.accept());
+            snComms.acceptSession(conn = ftpSocket.accept());
+            
+            if (DEBUG) System.out.println("Accepted connection from " + conn.getInetAddress() + ":" + conn.getPort() + " for chat session.");
             new StealthNetFileTransfer(snComms, fileOpen.getDirectory() + fileOpen.getFile(), true).start();
         } catch (Exception e) {
+        	System.err.println("FTP failed.");
             msgTextBox.append("[*ERR*] FTP failed.\n");
+            if (DEBUG) e.printStackTrace();
         }
     }
 
@@ -608,6 +727,7 @@ public class StealthNetClient {
             if ((stealthComms == null) || (!stealthComms.recvReady()))
                 return;
         } catch (IOException e) {
+        	System.err.println("The server appears to be down.");
 			msgTextBox.append("[*ERR*] The server appears to be down.\n");
 			if (DEBUG) e.printStackTrace();
             return;
@@ -628,43 +748,57 @@ public class StealthNetClient {
                 
                 switch (pckt.command) {
                     case StealthNetPacket.CMD_MSG:
-                	    msgTextBox.append(new String(pckt.data) + "\n");
+                    	final String msg = new String(pckt.data);
+                    	if (DEBUG) System.out.println("Received a message command from server. Packet data: \"" + msg + "\".");
+                	    msgTextBox.append(msg + "\n");
                         break;
 
-                    case StealthNetPacket.CMD_CHAT:
+                    case StealthNetPacket.CMD_CHAT:                    	
                         iAddr = new String(pckt.data);
                         iAddr = iAddr.substring(iAddr.lastIndexOf("@") + 1);
                         iPort = new Integer(iAddr.substring(iAddr.lastIndexOf(":") + 1));
                         iAddr = iAddr.substring(0, iAddr.lastIndexOf(":"));
                         
+                        if (DEBUG) System.out.println("Received a chat command from server. Target host: " + iAddr + ":" + iPort + ".");
+                        
                         snComms = new StealthNetComms();
                         snComms.initiateSession(new Socket(iAddr, iPort.intValue()));
+                        if (DEBUG) System.out.println("Opened a communications session with " + iAddr + ".");
+                        
                         
                         new StealthNetChat(userID, snComms).start();
+                        if (DEBUG) System.out.println("Started a chat session with " + iAddr + ".");
                         break;
 
-                    case StealthNetPacket.CMD_FTP:
+                    case StealthNetPacket.CMD_FTP:                    	
                         iAddr = new String(pckt.data);
                         iAddr = iAddr.substring(iAddr.lastIndexOf("@") + 1);
                         fName = iAddr.substring(iAddr.lastIndexOf("#") + 1);
                         iAddr = iAddr.substring(0, iAddr.lastIndexOf("#"));
                         iPort = new Integer(iAddr.substring(iAddr.lastIndexOf(":") + 1));
                         iAddr = iAddr.substring(0, iAddr.lastIndexOf(":"));
+                        
+                        if (DEBUG) System.out.println("Received a file transfer command from server. Target host: " + iAddr + ":" + iPort + ".");
 
                         snComms = new StealthNetComms();
                         snComms.initiateSession(new Socket(iAddr, iPort.intValue()));
-
+                        if (DEBUG) System.out.println("Opened a communications session with " + iAddr + ".");
+                        
                         final FileDialog fileSave = new FileDialog(clientFrame, "Save As...", FileDialog.SAVE);
                         fileSave.setFile(fName);
                         fileSave.setVisible(true);
                         if ((fileSave.getFile() != null) && (fileSave.getFile().length() > 0)) {
+                        	if (DEBUG) System.out.println("File will be saved to \"" + fileSave.getDirectory() + fileSave.getFile() + "\". Starting file transfer.");
+                        	
                             new StealthNetFileTransfer(snComms, fileSave.getDirectory() + fileSave.getFile(), false).start();
                         }
                         break;
 
-                    case StealthNetPacket.CMD_LIST:
+                    case StealthNetPacket.CMD_LIST:                    	
                         String userTable = new String(pckt.data);
                         buddyListData.setRowCount(0);
+                        
+                        if (DEBUG) System.out.println("Received a user list from server: \"" + userTable.replaceAll("\n", "; ") + "\".");
                         
                         while (userTable.length() > 0) {
                             int indx = userTable.indexOf("\n");
@@ -688,9 +822,11 @@ public class StealthNetClient {
                         }
                         break;
                         
-                   	case StealthNetPacket.CMD_SECRETLIST:
+                   	case StealthNetPacket.CMD_SECRETLIST:                   		
                         String secretTable = new String(pckt.data);
                         secretListData.setRowCount(0);
+                        
+                        if (DEBUG) System.out.println("Received a user list from server: \"" + secretTable.replaceAll("\n", "; ") + "\".");
                         
                         while (secretTable.length() > 0) {
                             int indx = secretTable.indexOf("\n");
@@ -714,23 +850,27 @@ public class StealthNetClient {
                         }
                         break;
 
-					case StealthNetPacket.CMD_GETSECRET:
+					case StealthNetPacket.CMD_GETSECRET:						
 						fName = new String(pckt.data);
 						iAddr = fName.substring(fName.lastIndexOf("@") + 1);
 						iPort = new Integer(iAddr.substring(iAddr.lastIndexOf(":") + 1));
 						iAddr = iAddr.substring(0, iAddr.lastIndexOf(":"));
 						fName = fName.substring(0, fName.lastIndexOf("@"));
+						
+						if (DEBUG) System.out.println("Received a get secret command from server. Target host: " + iAddr + ":" + iPort + ". The filename is \"" + fName + "\".");
 
 						snComms = new StealthNetComms();
 						snComms.initiateSession(new Socket(iAddr, iPort.intValue()));
-
+						if (DEBUG) System.out.println("Opened a communications session with " + iAddr + ".");
+						
 						msgTextBox.append("[INFO] Sending out a secret.\n");
 
+						if (DEBUG) System.out.println("Starting file transfer.");
 						new StealthNetFileTransfer(snComms,	fName, true).start();
 						break;
 
                     default:
-                        System.out.println("unrecognised command");
+                        System.err.println("Unrecognised command received from server.");
                }
             }
         } catch (Exception e) {

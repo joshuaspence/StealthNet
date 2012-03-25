@@ -31,7 +31,33 @@ else
 fi
 
 # Debug options
-DEBUG="-Ddebug.StealthNet.StealthNetChat=true -Ddebug.StealthNet.StealthNetClient=true -Ddebug.StealthNet.StealthNetComms=true -Ddebug.StealthNet.StealthNetFileTransfer=true -Ddebug.StealthNet.StealthNetPacket=true -Ddebug.StealthNet.StealthNetServer=true -Ddebug.StealthNet.StealthNetServerThread=true"
+DEBUG=" \
+	-Ddebug.StealthNetChat=true \
+	-Ddebug.StealthNetClient=true \
+	-Ddebug.StealthNetComms=true \
+	-Ddebug.StealthNetFileTransfer=true \
+	-Ddebug.StealthNetPacket=true \
+	-Ddebug.StealthNetServer=true \
+	-Ddebug.StealthNetServerThread=true \
+	"
+DEBUG_ARG=
+
+# Get program command line options
+PN=`basename $0`
+ARGS=`getopt --name "$PN" --long debug --options d -- "$@"`
+if [ $? -ne 0 ]; then
+    echo "getopt failed!" >&2
+    exit 1
+fi
+eval set -- $ARGS
+while [ $# -gt 0 ]; do
+    case $1 in
+        -d | --debug)
+            DEBUG_ARG=$DEBUG
+            ;;
+    esac
+    shift
+done
 
 # Execute
-$JRE $DEBUG $CLASSPATH $JRE_FLAGS -jar $JAR_DIR/ELEC5616_server.jar $@
+$JRE $DEBUG_ARG $CLASSPATH $JRE_FLAGS -jar $JAR_DIR/ELEC5616_server.jar $@

@@ -45,10 +45,13 @@ import javax.swing.JOptionPane;
  * @author Stephen Gould
  */
 public class StealthNetFileTransfer extends Thread {
-	/** Set to true to output debug messages for this class. */
-	private static final boolean DEBUG = (System.getProperties().getProperty("debug." + StealthNetFileTransfer.class.getName()) == "true");
+	/** 
+     * Set to true to output debug messages for this class. Alternatively, use 
+     * the argument `-Ddebug.StealthNetFileTransfer=true' at the command line. 
+     */
+	private static final boolean DEBUG = (System.getProperty("debug.StealthNetFileTransfer", "false").equals("true"));
 	
-	/** TODO */
+	/** Number of bytes to send at a time. */
     private static final int PACKETSIZE = 256;
 
     /** A progress bar to visualise the transfer. */
@@ -63,11 +66,17 @@ public class StealthNetFileTransfer extends Thread {
     /** True to indicate sending, false to indicate receiving. */
     private boolean bSend;
 
-    /** Constructor. */
-    public StealthNetFileTransfer(StealthNetComms snComms, String fn, boolean b) {
+    /** 
+     * Constructor. 
+     * 
+     * @param snComms The StealthNetComm instance to use for the transfer.
+     * @param fn The filename of the file to be transferred.
+     * @param send True to indicate sending, false to indicate receiving.
+     */
+    public StealthNetFileTransfer(StealthNetComms snComms, String fn, boolean send) {
         stealthComms = snComms;
         filename = fn.trim();
-        bSend = b;
+        bSend = send;
     }
 
     /** 
@@ -91,8 +100,9 @@ public class StealthNetFileTransfer extends Thread {
         return pane;
     }
 
-    /** TODO */
+    /** Transfer the file. */
     public void run() {
+    	/** Get the screen size. */
         final Dimension screenDim = Toolkit.getDefaultToolkit().getScreenSize();
 
         /** Set up FTP window */
@@ -100,44 +110,55 @@ public class StealthNetFileTransfer extends Thread {
         ftpFrame.getContentPane().add(createGUI(), BorderLayout.CENTER);
         ftpFrame.pack();
 
-        /** Center the window. */
+        /** Centre the window. */
         final int x = (screenDim.width - ftpFrame.getSize().width) / 2;
         final int y = (screenDim.height - ftpFrame.getSize().height) / 2;
         ftpFrame.setLocation(x, y);
         ftpFrame.setVisible(true);
 
-        if (bSend)
-            sendFile();
-        else
-            recvFile();
+        /** Send or receive the file. */
+        if (bSend) sendFile();
+        else       recvFile();
 
+        /** Upload/Download complete. */
+        
         ftpFrame.setVisible(false);
         JOptionPane.showMessageDialog(ftpFrame,
             (bSend ? "Upload Complete" : "Download Complete"),
             "StealthNet", JOptionPane.INFORMATION_MESSAGE);
     }
 
-    /** Send a file. */
+    /** Send the file. */
     private synchronized void sendFile() {
         byte[] buf = new byte[PACKETSIZE];
         final int fileLen = (int) ((new File(filename)).length() / PACKETSIZE);
 
         progressBar.setMaximum(fileLen);
         try {
+        	/** Setup the transfer. */
             stealthComms.sendPacket(StealthNetPacket.CMD_FTP, Integer.toString(fileLen));
+            
+            /** Receive server response. */
             stealthComms.recvPacket();
+            
             final FileInputStream fid = new FileInputStream(filename);
             
             int bufLen;
             do {
                 bufLen = fid.read(buf);
                 if (bufLen > 0) {
+                	/** Send a part of the file. */
                     stealthComms.sendPacket(StealthNetPacket.CMD_FTP, buf, bufLen);
+                    
+                    /** Wait for server response. */
                     stealthComms.recvPacket();
                 }
+                
+                /** Update the progress bar. */
                 progressBar.setValue(progressBar.getValue() + 1);
             } while (bufLen > 0);
             
+            /** Close file handle. */
             fid.close();
             stealthComms.sendPacket(StealthNetPacket.CMD_FTP);
         } catch (IOException e) {
@@ -146,7 +167,7 @@ public class StealthNetFileTransfer extends Thread {
         }
     }
 
-    /**  Receive a file. */
+    /**  Receive the file. */
     private synchronized void recvFile() {
         try {
         	/** Get the file length from the first packet. */
@@ -181,6 +202,7 @@ public class StealthNetFileTransfer extends Thread {
                 progressBar.setValue(progressBar.getValue() + 1);
             } while (buf.length > 0);
             
+            /** Close file handle. */
             fid.close();
         } catch (IOException e) {
             System.err.println("Error writing to file " + filename);

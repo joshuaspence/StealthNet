@@ -24,20 +24,31 @@ package StealthNet;
 
 import java.io.IOException;
 import java.net.ServerSocket;
+import java.net.Socket;
 
 /* StealthNetServer Class Definition *****************************************/
 
 /**
  * A server process for StealthNet communications. Opens a server socket, 
  * listening on the specified listening port. For each incoming connection on 
- * this port, a new StealthNetServerThread is created.
+ * this port, a new StealthNetServerThread is created. The 
+ * StealthNetServerThread is responsible for communicating with that client.
+ * 
+ * The server is responsible for maintaining a list of users, as well as a list
+ * of secrets. Whenever the server is sent a command, the server needs only to
+ * pass some other command to the intended target client, enabling the two
+ * clients to communicate with each other.
  * 
  * @author Matt Barrie 
  * @author Stephen Gould
  */
 public class StealthNetServer {
-	/** Set to true in build.xml to output debug messages for this class. */
-	private static final boolean DEBUG = System.getProperty("debug." + StealthNetServer.class.getName(), "false").equals("true");
+	/** 
+	 * Set to true in build.xml to output debug messages for this class. 
+	 * Alternatively, use the argument `-Ddebug.StealthNetServer=true' at the 
+	 * command line.
+	 */
+	private static final boolean DEBUG = System.getProperty("debug.StealthNetServer", "false").equals("true");
 	
 	/** 
 	 * The main StealthNetServer function.
@@ -74,7 +85,7 @@ public class StealthNetServer {
             System.exit(1);
         }
 
-        System.out.println("Server listening on port " + port + ".");
+        if (DEBUG) System.out.println("Server is listening on port " + port + ".");
         System.out.println("Server online...");
         
         /** 
@@ -82,8 +93,13 @@ public class StealthNetServer {
          * thread for each connection.
          */
         while (true) {
-            new StealthNetServerThread(svrSocket.accept()).start();
-            System.out.println("Server accepted connection...");
+        	Socket conn;
+            new StealthNetServerThread(conn = svrSocket.accept()).start();
+            
+            if (DEBUG)
+            	System.out.println("Server accepted connection from " + conn.getInetAddress() + " on port " + conn.getPort() + ".");
+            else
+            	System.out.println("Server accepted connection...");
         }
     }
 }

@@ -32,8 +32,6 @@ import java.io.InputStreamReader;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.Socket;
-import java.security.PrivateKey;
-import java.security.PublicKey;
 
 /* StealthNetComms class *****************************************************/
 
@@ -46,8 +44,12 @@ import java.security.PublicKey;
  *
  */
 public class StealthNetComms {
-	/** Set to true to output debug messages for this class. */
-	private static final boolean DEBUG = (System.getProperties().getProperty("debug." + StealthNetComms.class.getName()) == "true");
+	/** 
+	 * Set to true in build.xml to output debug messages for this class. 
+	 * Alternatively, use the argument `-Ddebug.StealthNetComms=true' at the 
+	 * command line. 
+	 */
+	private static final boolean DEBUG = (System.getProperty("debug.StealthNetComms", "false").equals("true"));
 	
 	/** Default host for the StealthNet server. */
     public static final String DEFAULT_SERVERNAME = "localhost";
@@ -72,7 +74,12 @@ public class StealthNetComms {
     
     /** Constructor. */
     public StealthNetComms() {
-        new StealthNetComms(DEFAULT_SERVERNAME, DEFAULT_SERVERPORT);
+    	commsSocket = null;
+        dataIn = null;
+        dataOut = null;
+        
+        servername = DEFAULT_SERVERNAME;
+        port = DEFAULT_SERVERPORT;
     }
     
     /** 
@@ -91,7 +98,8 @@ public class StealthNetComms {
     }
 
     /** 
-     * Cleans up before terminating the class. 
+     * Cleans up before terminating the class.
+     * 
      * @throws IOException
      */
     protected void finalize() throws IOException {
@@ -182,7 +190,6 @@ public class StealthNetComms {
      * @return True if successful, otherwise false.
      */
     public boolean sendPacket(byte command, String data) {
-        if (DEBUG) System.out.println("String data: " + data);
         return sendPacket(command, data.getBytes());
     }
 
@@ -241,10 +248,22 @@ public class StealthNetComms {
         final String str = dataIn.readLine();
         
         /** Convert the data to a packet. */
+        if (str == null) {
+        	return null;
+        }
         pckt = new StealthNetPacket(str);
         return pckt;
     }
 
+    // Just to limit the verbosity of output in recvReady
+ 	// {
+     private boolean prev_isconnected = false;
+     private boolean prev_isclosed = false;
+     private boolean prev_isinputshutdown = false;
+     private boolean prev_isoutputshutdown = false;
+     private boolean is_first_time = true;
+     // }
+    
     /**
      * Checks if the class is ready to receive more data.  
      * 
@@ -252,12 +271,28 @@ public class StealthNetComms {
      * @throws IOException
      */
     public boolean recvReady() throws IOException {
-    	if (DEBUG) {
-	        System.out.println("Connected: " + commsSocket.isConnected());
-	        System.out.println("Closed: " + commsSocket.isClosed());
-	        System.out.println("InClosed: " + commsSocket.isInputShutdown());
-	        System.out.println("OutClosed: " + commsSocket.isOutputShutdown());
+    	// Just to limit the verbosity of output
+    	// {
+    	final boolean isconnected = commsSocket.isConnected();
+    	final boolean isclosed = commsSocket.isClosed();
+    	final boolean isinputshutdown = commsSocket.isInputShutdown();
+    	final boolean isoutputshutdown = commsSocket.isOutputShutdown();
+    	
+    	if (DEBUG && (is_first_time || (prev_isconnected != isconnected || prev_isclosed != isclosed || prev_isinputshutdown != isinputshutdown || prev_isoutputshutdown != isoutputshutdown))) {
+	        System.out.println("Connected: " + isconnected);
+	        System.out.println("Closed: " + isclosed);
+	        System.out.println("InClosed: " + isinputshutdown);
+	        System.out.println("OutClosed: " + isoutputshutdown);
+	        
+	        prev_isconnected = isconnected;
+	        prev_isclosed = isclosed;
+	        prev_isinputshutdown = isinputshutdown;
+	        prev_isoutputshutdown = isoutputshutdown;
     	}
+    	
+    	is_first_time = false;
+    	// }
+    	
         return dataIn.ready();
     }
 }

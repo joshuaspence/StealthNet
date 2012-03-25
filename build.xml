@@ -30,12 +30,12 @@
 	<property name="class.package" value="StealthNet" />
 	
 	<!-- Class debug -->
-	<property name="debug.StealthNet.StealthNetChat"         value="false" />
-	<property name="debug.StealthNet.StealthNetClient"       value="false" />
-	<property name="debug.StealthNet.StealthNetComms"        value="false" />
-	<property name="debug.StealthNet.StealthNetFileTransfer" value="false" />
-	<property name="debug.StealthNet.StealthNetServer"       value="false" />
-    <property name="debug.StealthNet.StealthNetServerThread" value="false" />
+	<property name="debug.StealthNetChat"         value="false" />
+	<property name="debug.StealthNetClient"       value="false" />
+	<property name="debug.StealthNetComms"        value="false" />
+	<property name="debug.StealthNetFileTransfer" value="false" />
+	<property name="debug.StealthNetServer"       value="false" />
+    <property name="debug.StealthNetServerThread" value="false" />
 	
 	<!-- Compile properties -->
 	<property name="compile.debug"              value="true" />

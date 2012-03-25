@@ -28,9 +28,13 @@ package StealthNet;
  * @author Ryan Junee
  */
 public class StealthNetPacket {
-	/** Set to true to output debug messages for this class. */
+	/** 
+	 * Set to true in build.xml to output debug messages for this class. 
+	 * Alternatively, use the argument `-Ddebug.StealthNetPacket=true' at the 
+	 * command line. 
+	 */
 	@SuppressWarnings("unused")
-	private static final boolean DEBUG = (System.getProperties().getProperty("debug." + StealthNetPacket.class.getName()) == "true");
+	private static final boolean DEBUG = (System.getProperty("debug.StealthNetPacket", "false").equals("true"));
 	
 	/** Commands. */
     public static final byte CMD_NULL = 0x00;
