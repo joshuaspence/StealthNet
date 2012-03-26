@@ -137,7 +137,7 @@
 		  	    <include name="*/StealthNetComms**" />
         		<include name="*/StealthNetChecksum**" />
         		<include name="*/StealthNetEncryption**" />
-                <include name="*/StealthNetIdentityy**" />
+                <include name="*/StealthNetIdentity**" />
 		  	    <include name="*/StealthNetPacket**" />
         		<include name="*/StealthNetPRNG**" />
     		</fileset>

@@ -10,7 +10,8 @@ import java.security.SignatureException;
 
 /**
  * Stores identifiers for a StealthNet client or server. Generates a public key
- * and a private key to be used for authentication within StealthNet.
+ * and a private key to be used for authentication within StealthNet. These keys
+ * are used for authentication within StealthNet.
  * 
  * @author Joshua Spence
  */

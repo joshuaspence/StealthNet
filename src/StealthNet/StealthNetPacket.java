@@ -48,6 +48,11 @@ public class StealthNetPacket {
     public static final byte CMD_SECRETLIST = 0x08;
     public static final byte CMD_GETSECRET = 0x09;
     
+    /** Security-specific commands. */
+    public static final byte CMD_PUBKEY = 0x0A;
+    public static final byte CMD_CRYPTKEY = 0x0B;
+    public static final byte CMD_SEED = 0x0C;
+    
     /** Hexadecimal characters. */
     private static final char[] HEXTABLE = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
 

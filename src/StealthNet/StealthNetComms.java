@@ -35,7 +35,6 @@ import java.net.Socket;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
-
 import javax.crypto.NoSuchPaddingException;
 
 /* StealthNetComms class *****************************************************/
@@ -72,13 +71,13 @@ public class StealthNetComms {
     private Socket commsSocket;
     
     /** Provides encryption and decryption for the communications. */
-    private final StealthNetEncryption confidentialityProvider;
+    private StealthNetEncryption confidentialityProvider;
     
     /** Provides integrity through creating checksums for messages. */
     private static final StealthNetChecksum integrityProvider = new StealthNetChecksum();
     
     /** Prevents replay attacks using a PRNG. */
-    private final StealthNetPRNG replayPrevention;
+    private StealthNetPRNG replayPrevention;
 
     /** Output data stream for the socket. */
     private PrintWriter dataOut;            
@@ -95,8 +94,13 @@ public class StealthNetComms {
         servername = DEFAULT_SERVERNAME;
         port = DEFAULT_SERVERPORT;
         
-        confidentialityProvider = new StealthNetEncryption();
-        replayPrevention = new StealthNetPRNG(0);
+        try {
+        	confidentialityProvider = new StealthNetEncryption();
+        } catch (Exception e) {
+        	confidentialityProvider = null;
+        	System.err.println("Unable to provide confidentiality!");
+        }
+        replayPrevention = new StealthNetPRNG(Math.round(Math.random()));
     }
     
     /** 
@@ -113,8 +117,13 @@ public class StealthNetComms {
         servername = s;
         port = p;
         
-        confidentialityProvider = new StealthNetEncryption();
-        replayPrevention = new SteathNetPRNG();
+        try {
+        	confidentialityProvider = new StealthNetEncryption();
+        } catch (Exception e) {
+        	confidentialityProvider = null;
+        	System.err.println("Unable to provide confidentiality!");
+        }
+        replayPrevention = new StealthNetPRNG(Math.round(Math.random()));
     }
 
     /** 
@@ -129,7 +138,7 @@ public class StealthNetComms {
     }
 
     /** 
-     * Initiates a communications session. 
+     * Initiates a communications session. This occurs on the client side.
      * 
      * @param socket The socket through which the connection is made. 
      * @return True if the initialisation succeeds. False if the initialisation 
@@ -150,7 +159,7 @@ public class StealthNetComms {
     }
 
     /** 
-     * Accepts a connection on the given socket.
+     * Accepts a connection on the given socket. This occurs on the server side.
      * 
      * @param socket The socket through which the connection is made. 
      * @return True if the initialisation succeeds. False if the initialisation 
@@ -268,10 +277,12 @@ public class StealthNetComms {
         final String str = dataIn.readLine();
         
         /** Convert the data to a packet. */
-        if (str == null) {
+        if (str == null)
         	return null;
-        }
+        
         pckt = new StealthNetPacket(str);
+        // Decrypt the packet
+        // Check the integrity of the message.
         return pckt;
     }
 

@@ -76,8 +76,8 @@ public class StealthNetServer {
     		}
     	}
     	
-    	/** The public/private keys for this client. */
-    	final StealthNetIdentity identity = null;
+    	/** The public/private keys for this server. */
+    	StealthNetIdentity identity = null;
     	try {
     		identity = new StealthNetIdentity();
     	} catch (NoSuchAlgorithmException e) {

@@ -31,7 +31,6 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.StringTokenizer;
-
 import javax.crypto.NoSuchPaddingException;
 
 /* StealthNetServerThread Class Definition ***********************************/
@@ -364,7 +363,7 @@ public class StealthNetServerThread extends Thread {
 						userID = new String(pckt.data);
 
 						/** Log the user in. */
-						if (!addUser(userID)) {
+						if (!addUser(userID, null)) {
 							System.out.println(this.getId() + separator + "User \"" + userID + "\" is already logged in.");
 
 							/** Cancel the current login attempt. */

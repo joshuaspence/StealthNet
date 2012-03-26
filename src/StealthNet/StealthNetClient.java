@@ -134,7 +134,7 @@ public class StealthNetClient {
     private int credits = 100;
     
     /** The public/private keys for this client. */
-    private final StealthNetIdentity identity;
+    private StealthNetIdentity identity;
 
     /** Secret data. */
 	private class SecretData {
@@ -158,6 +158,7 @@ public class StealthNetClient {
         try {
         	identity = new StealthNetIdentity();
         } catch(NoSuchAlgorithmException e) {
+        	identity = null;
         	System.err.println("Unable to generate identity.");
         	if (DEBUG) e.printStackTrace();
         	System.exit(1);
