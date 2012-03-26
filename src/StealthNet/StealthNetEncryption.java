@@ -2,7 +2,6 @@ package StealthNet;
 
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
-
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
@@ -10,7 +9,12 @@ import javax.crypto.KeyGenerator;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
 
-public abstract class StealthNetEncryption {
+/**
+ * A class used to encrypt and decrypt messages.
+ * 
+ * @author Joshua Spence
+ */
+public class StealthNetEncryption {
 	private final SecretKey encryption_key;
 	private final Cipher encryption_cipher;
 	

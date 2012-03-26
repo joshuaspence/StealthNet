@@ -24,9 +24,15 @@ package StealthNet;
 
 import java.io.IOException;
 import java.net.Socket;
+import java.security.InvalidKeyException;
+import java.security.Key;
+import java.security.KeyPair;
+import java.security.NoSuchAlgorithmException;
 import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.StringTokenizer;
+
+import javax.crypto.NoSuchPaddingException;
 
 /* StealthNetServerThread Class Definition ***********************************/
 
@@ -58,6 +64,7 @@ public class StealthNetServerThread extends Thread {
 	 */
 	private class UserData {
 		StealthNetServerThread userThread = null;
+		Key publicKey = null;
 	}
 
 	/** Client secret data. */
@@ -81,19 +88,28 @@ public class StealthNetServerThread extends Thread {
 
 	/** A StealthNetComms class to handle communications for this client. */
 	private StealthNetComms stealthComms = null;
+	
+	/** The public/private keys for the server. */
+	private final StealthNetIdentity identity;
 
 	/**
 	 * Constructor.
 	 * 
 	 * @param socket The socket that the server is listening on.
+	 * 
+	 * @throws NoSuchAlgorithmException 
+	 * @throws NoSuchPaddingException 
+	 * @throws InvalidKeyException 
 	 */
-	public StealthNetServerThread(Socket socket) {
+	public StealthNetServerThread(Socket socket, StealthNetIdentity sni) {
 		/** Thread constructor. */
 		super("StealthNetServerThread");
 
 		/** Create a new StealthNetComms instance and accept sessions. */
 		stealthComms = new StealthNetComms();
 		stealthComms.acceptSession(socket);
+		
+		identity = sni;
 	}
 
 	/**
@@ -114,7 +130,7 @@ public class StealthNetServerThread extends Thread {
 	 * @return True on success, false on failure or if the specified user 
 	 * already exists in the user list.
 	 */
-	private synchronized boolean addUser(String id) {
+	private synchronized boolean addUser(String id, Key pubKey) {
 		/** Make sure the specified user doesn't already exist in the user list. */
 		UserData userInfo = userList.get(id);
 		
@@ -124,6 +140,7 @@ public class StealthNetServerThread extends Thread {
 			/** Create new user data for the specified user. */
 			userInfo = new UserData();
 			userInfo.userThread = this;
+			userInfo.publicKey = pubKey;
 			userList.put(id, userInfo);
 			
 			if (DEBUG) System.out.println(this.getId() + separator + "Added user \"" + id + "\" to the user list.");

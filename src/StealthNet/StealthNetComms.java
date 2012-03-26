@@ -48,7 +48,7 @@ import javax.crypto.NoSuchPaddingException;
  * @author Ryan Junee
  *
  */
-public class StealthNetComms extends StealthNetEncryption {
+public class StealthNetComms {
 	/** 
 	 * Set to true in build.xml to output debug messages for this class. 
 	 * Alternatively, use the argument `-Ddebug.StealthNetComms=true' at the 
@@ -62,14 +62,23 @@ public class StealthNetComms extends StealthNetEncryption {
     /** Default port for the StealthNet server. */
     public static final int DEFAULT_SERVERPORT = 5616;
     
-    /** Current host. */
+    /** Current host - defaults to DFEAULT_SERVERNAME */
     public String servername;
     
-    /** Current port. */
+    /** Current port - defaults to DEFAULT_SERVERPORT. */
     public int port;
 
     /** Opened socket through which the communication is to be made. */
     private Socket commsSocket;
+    
+    /** Provides encryption and decryption for the communications. */
+    private final StealthNetEncryption confidentialityProvider;
+    
+    /** Provides integrity through creating checksums for messages. */
+    private static final StealthNetChecksum integrityProvider = new StealthNetChecksum();
+    
+    /** Prevents replay attacks using a PRNG. */
+    private final StealthNetPRNG replayPrevention;
 
     /** Output data stream for the socket. */
     private PrintWriter dataOut;            
@@ -78,13 +87,16 @@ public class StealthNetComms extends StealthNetEncryption {
     private BufferedReader dataIn;    
     
     /** Constructor. */
-    public StealthNetComms() throws InvalidKeyException, NoSuchPaddingException, NoSuchAlgorithmException {
+    public StealthNetComms() {
     	commsSocket = null;
         dataIn = null;
         dataOut = null;
         
         servername = DEFAULT_SERVERNAME;
         port = DEFAULT_SERVERPORT;
+        
+        confidentialityProvider = new StealthNetEncryption();
+        replayPrevention = new StealthNetPRNG(0);
     }
     
     /** 
@@ -93,13 +105,16 @@ public class StealthNetComms extends StealthNetEncryption {
      * @param s The servername of the StealthNet server.
      * @param p The port number for the StealthNet server.
      */
-    public StealthNetComms(String s, int p) throws InvalidKeyException, NoSuchPaddingException, NoSuchAlgorithmException {
+    public StealthNetComms(String s, int p) {
         commsSocket = null;
         dataIn = null;
         dataOut = null;
         
         servername = s;
         port = p;
+        
+        confidentialityProvider = new StealthNetEncryption();
+        replayPrevention = new SteathNetPRNG();
     }
 
     /** 

@@ -2,9 +2,8 @@
 | ELEC5616 Assignment                                                          |
 |------------------------------------------------------------------------------|
 | Joshua Spence (308216350)                                                    |
-| ???                                                                          |
+| Ahamad                                                                       |
 ================================================================================
-
 
 INSTRUCTIONS
 --------------------------------------------------------------------------------
@@ -16,7 +15,6 @@ To run:
 	Alternatively, run the script `run_client.sh'.
 	
 	To execute a server application execute the command `ant run_server'.
-	Alternatively, run the script `run_client.sh'.
-	
-	The command `ant run' will execute a single server application and two 
-	client applications.
+	Alternatively, run the script `run_client.sh'. Alternatively, the command 
+	`ant run' will execute a single server application and two client 
+	applications.

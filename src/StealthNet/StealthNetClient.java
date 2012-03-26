@@ -85,7 +85,7 @@ import javax.swing.JOptionPane;
  * @author Stephen Gould
  * @author Ryan Junee
  */
-public class StealthNetClient extends StealthNetEntity {
+public class StealthNetClient {
 	/** 
 	 * Set to true in build.xml to output debug messages for this class. 
 	 * Alternatively, use the argument `-Ddebug.StealthNetComms=true' at the 
@@ -132,6 +132,9 @@ public class StealthNetClient extends StealthNetEntity {
 	
 	/** Give them 100 credits for demonstration purposes. */
     private int credits = 100;
+    
+    /** The public/private keys for this client. */
+    private final StealthNetIdentity identity;
 
     /** Secret data. */
 	private class SecretData {
@@ -139,11 +142,11 @@ public class StealthNetClient extends StealthNetEntity {
 		String filename = null;
 	}
 
-	/** A list of secret data, indexed by ???. */
+	/** A list of secret data, indexed by secret name. */
 	static private Hashtable<String, SecretData> secretDescriptions = new Hashtable<String, SecretData>();
     
     /** Constructor. */
-    public StealthNetClient() throws NoSuchAlgorithmException {
+    public StealthNetClient() {
     	/** Create a timer to process packets every 100ms. */
         stealthTimer = new Timer(100, new ActionListener() {
             public void actionPerformed(ActionEvent e) { processPackets(); }
@@ -151,6 +154,14 @@ public class StealthNetClient extends StealthNetEntity {
         
         server_hostname = StealthNetComms.DEFAULT_SERVERNAME;
         server_port = StealthNetComms.DEFAULT_SERVERPORT;
+        
+        try {
+        	identity = new StealthNetIdentity();
+        } catch(NoSuchAlgorithmException e) {
+        	System.err.println("Unable to generate identity.");
+        	if (DEBUG) e.printStackTrace();
+        	System.exit(1);
+        }
     }
 
     /** 
@@ -158,8 +169,10 @@ public class StealthNetClient extends StealthNetEntity {
 	 * 
 	 * @param s The hostname of the StealthNet server.
 	 * @param p The port that the StealthNet server is listening on.
+	 * 
+	 * @throws NoSuchAlgorithmException
 	 */
-    public StealthNetClient(String s, int p) throws NoSuchAlgorithmException {    	
+    public StealthNetClient(String s, int p)  {    	
     	/** Create a timer to process packets every 100ms. */
         stealthTimer = new Timer(100, new ActionListener() {
             public void actionPerformed(ActionEvent e) { processPackets(); }
@@ -167,6 +180,14 @@ public class StealthNetClient extends StealthNetEntity {
         
         server_hostname = s;
         server_port = p;
+        
+        try {
+        	identity = new StealthNetIdentity();
+        } catch(NoSuchAlgorithmException e) {
+        	System.err.println("Unable to generate identity.");
+        	if (DEBUG) e.printStackTrace();
+        	System.exit(1);
+        }
     }
     
     /**
