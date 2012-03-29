@@ -6,81 +6,117 @@
     Ahamad
 -->
 <project name="ELEC5616" default="all" basedir=".">
-	<!-- ====================== INITIALISATION TARGETS ===================== -->
+	<!-- Use ant-contrib -->
+	<!-- see http://http://ant-contrib.sourceforge.net/ -->
+	<taskdef resource="net/sf/antcontrib/antcontrib.properties">
+	    <classpath>
+	        <pathelement location="lib/ant-contrib-0.6.jar" />
+	    </classpath>
+	</taskdef>
+	
+	<!-- =========================== MAIN TARGETS ========================== -->
+    <!-- Main target -->
+    <target name="all" depends="-init, info, compile, jar, javadoc, tar" description="Main target" />
+    
+    <!-- Main target with verbose output -->
+    <target name="all-verbose" depends="-set-verbose, -init, info, compile, jar, javadoc, tar" description="Main target with verbose output" />
+    
+    <!-- Debug target -->
+    <target name="all-debug" depends="-set-debug, -init, info, compile, jar, javadoc, tar" description="Debug target" />
+    
+    <!-- Debug target with verbose output -->
+    <target name="all-debug-verbose" depends="-set-verbose, -set-debug, -init, info, compile, jar, javadoc, tar" description="Debug target with verbose output" />
+    <!-- =================================================================== -->
+	
+	<!-- ====================== INITIALISATION TARGETS ===================== -->	
+	<!-- Turn verbosity on -->
+	<target name="-set-verbose">
+	   <property name="global.verbose" value="true" />
+	</target>
+	
+	<!-- Turn debug on -->
+    <target name="-set-debug">
+       <property name="global.debug" value="true" />
+    </target>
+	
 	<!-- Main initialisation target -->
-	<target name="init" depends="init-paths, init-files, init-class, init-compile-nodebug, init-compile-noverbose, init-classpath" description="Main initialisation target" />
-	
-	<!-- Verbose initialisation target -->
-    <target name="init-verbose" depends="init-paths, init-files, init-class, init-compile-nodebug, init-compile-verbose, init-classpath" description="Verbose initialisation target" />
-	
-	<!-- Debug initialisation target -->
-    <target name="init-debug" depends="init-paths, init-files, init-class, init-compile-debug, init-compile-noverbose, init-classpath" description="Debug initialisation target" />
+	<target name="-init">
+		<!-- Set verbose (if not already set) -->
+		<condition property="global.verbose" value="false">
+		    <not>  
+		        <isset property="global.verbose" />
+		     </not>
+		</condition>
 		
-	<!-- Verbose debug initialisation target target -->
-    <target name="init-debug-verbose" depends="init-paths, init-files, init-class, init-compile-debug, init-compile-verbose, init-classpath" description="Verbose debug initialisation target" />
-		
-	<!-- Initialise path properties -->
-	<target name="init-paths" description="Initialise path properties">
+		<!-- Set debug (if not already set) -->
+		<condition property="global.debug" value="false">
+		   <not>  
+		      <isset property="global.debug" />
+		   </not>
+		</condition>
+			
+	    <!-- Initialise path properties -->
     	<property name="path.build"   value="build" />
-		<echo>Build path:         ${path.build}</echo>
-		
     	<property name="path.docs"    value="docs" />
-		<echo>Docs path:          ${path.docs}</echo>
-    		
-		<property name="path.img"     value="img" />
-		<echo>Image path:         ${path.img}</echo>
+        <property name="path.img"     value="img" />
+        <property name="path.lib"     value="lib" />
+        <property name="path.src"     value="src" />
+        <property name="path.classes" value="${path.build}/classes" />
+        <property name="path.jar"     value="${path.build}/jar" />
 		
-		<property name="path.lib"     value="lib" />
-		<echo>Library path:       ${path.lib}</echo>
-			
-		<property name="path.src"     value="src" />
-		<echo>Source path:        ${path.src}</echo>
-    	
-		<property name="path.classes" value="${path.build}/classes" />
-		<echo>Class output path:  ${path.classes}</echo>
+		<if>
+			<equals arg1="${global.verbose}" arg2="true" />
+			<then>
+        	    <echo>Build path:             ${path.build}</echo>
+        		<echo>Docs path:              ${path.docs}</echo>
+        	    <echo>Image path:             ${path.img}</echo>
+        		<echo>Library path:           ${path.lib}</echo>
+        		<echo>Source path:            ${path.src}</echo>
+        		<echo>Class output path:      ${path.classes}</echo>
+        		<echo>JAR output path:        ${path.jar}</echo>
+				<echo />
+			  </then>
+		</if>
 		
-		<property name="path.jar"     value="${path.build}/jar" />
-		<echo>JAR output path:    ${path.jar}</echo>
-	</target>
-		
-	<!-- Initialise file names -->
-	<target name="init-files" description="Initialise file names">
+	    <!-- Initialise file names -->
     	<property name="file.jar"         value="${path.jar}/${ant.project.name}.jar" />
-		<echo>Main JAR file:      ${file.jar}</echo>
-		
 		<property name="file.jar.server"  value="${path.jar}/${ant.project.name}_server.jar" />
-		<echo>Server JAR file:    ${file.jar.server}</echo>
-		
-		<property name="file.jar.client"  value="${path.jar}/${ant.project.name}_client.jar" />
-		<echo>Client JAR file:    ${file.jar.client}</echo>
-		
-		<property name="file.tar.gz"      value="${ant.project.name}.tar.gz" />
-		<echo>GZIPed TAR file:    ${file.tar.gz}</echo>
-		
-		<property name="file.tar.gz.md5"  value="${ant.project.name}.tar.gz.md5" />
-    	<echo>TAR MD% hash file:  ${file.tar.gz.md5}</echo>
-	    	
-		<property name="file.tar.gz.sha1" value="${ant.project.name}.tar.gz.sha1" />
-	    <echo>TAR SHA1 hash file: ${file.tar.gz.sha1}</echo>
-	</target>
+    	<property name="file.jar.client"  value="${path.jar}/${ant.project.name}_client.jar" />
+    	<property name="file.tar.gz"      value="${ant.project.name}.tar.gz" />
+    	<property name="file.tar.gz.md5"  value="${ant.project.name}.tar.gz.md5" />
+    	<property name="file.tar.gz.sha1" value="${ant.project.name}.tar.gz.sha1" />
 	
-	<!-- Initialise class properties -->
-	<target name="init-class" description="Initialise class properties">
+		<if>
+            <equals arg1="${global.verbose}" arg2="true" />
+            <then>
+                <echo>Main JAR file:          ${file.jar}</echo>
+                <echo>Server JAR file:        ${file.jar.server}</echo>	
+        		<echo>Client JAR file:        ${file.jar.client}</echo>
+        		<echo>GZIPed TAR file:        ${file.tar.gz}</echo>
+            	<echo>TAR MD5 hash file:      ${file.tar.gz.md5}</echo>
+        	    <echo>TAR SHA1 hash file:     ${file.tar.gz.sha1}</echo>
+            	<echo />
+    	    </then>
+		</if>
+		
+	    <!-- Initialise class properties -->
         <property name="class.client"  value="StealthNet.StealthNetClient" />   <!-- Main class for the client JAR file -->
-    	<echo>Client main class:  ${class.client}</echo>
+    	<property name="class.server"  value="StealthNet.StealthNetServer" />   <!-- Main class for the server JAR file -->
+    	<property name="class.main"    value="${class.client}" />               <!-- Main class for the main JAR file -->
+    	<property name="class.package" value="StealthNet" />                    <!-- Package name -->
+	
+		<if>
+            <equals arg1="${global.verbose}" arg2="true" />
+            <then>
+        	    <echo>Client main class:      ${class.client}</echo>
+            	<echo>Server main class:      ${class.server}</echo>
+            	<echo>Main class:             ${class.main}</echo>
+        		<echo>Package name:           ${class.package}</echo>
+            	<echo />
+			</then>
+    	</if>
 		
-		<property name="class.server"  value="StealthNet.StealthNetServer" />   <!-- Main class for the server JAR file -->
-    	<echo>Server main class:  ${class.server}</echo>
-		
-		<property name="class.main"    value="${class.client}" />               <!-- Main class for the main JAR file -->
-    	<echo>Main class:         ${class.main}</echo>
-		
-		<property name="class.package" value="StealthNet" />                    <!-- Package name -->
-		<echo>Package name:       ${class.package}</echo>
-	</target>
-			
-	<!-- Initialise class debug -->
-	<target name="init-class-debug" description="Initialise class debug">
+	    <!-- Initialise class debug -->
     	<!-- Enables debug messages within the source code -->
     	<property name="debug.StealthNetChat"         value="false" />
     	<property name="debug.StealthNetChecksum"     value="false" />
@@ -92,55 +128,33 @@
     	<property name="debug.StealthNetPRNG"         value="false" />
     	<property name="debug.StealthNetServer"       value="false" />
         <property name="debug.StealthNetServerThread" value="false" />
-    </target>
 		
-	<!-- Initialise compile properties -->
-	<target name="init-compile-nodebug" depends="init-compile-common" description="Initialise compile properties">
-    	<property name="compile.debug"              value="false" />                    <!-- Outputs debug information with class files -->
-		<echo>Debug compilation:      ${compile.debug}</echo>
-	</target>
-	
-	<!-- Debug compile properties -->
-	<target name="init-compile-debug" depends="init-compile-common" description="Initialise compile properties (debug)">
-        <property name="compile.debug"              value="true" />                     <!-- Outputs debug information with class files -->
-        <echo>Debug compilation:      ${compile.debug}</echo>
-    </target>
-	
-	<!-- Compilation verbosity -->
-    <target name="init-compile-noverbose" depends="init-compile-common" description="Initialise compile verbosity">
-        <property name="compile.verbose"            value="false" />                    <!-- Compiles with verbose output -->
-        <echo>Verbose compilation:    ${compile.verbose}</echo>
-    </target>
-    
-    <!-- Compilation verbosity -->
-    <target name="init-compile-verbose" depends="init-compile-common" description="Initialise compile verbosity">
-        <property name="compile.verbose"            value="true" />                     <!-- Compiles without verbose output -->
-        <echo>Verbose compilation:    ${compile.verbose}</echo>
-    </target>
-	
-	<!-- Common compile properties -->
-    <target name="init-compile-common" description="Initialise  commoncompile properties">
-        <property name="compile.debuglevel"         value="lines, vars, and source" />  <!-- Debugging information to output -->
-        <echo>Debug level:            ${compile.debuglevel}</echo>
-        
+	    <!-- Initialise compile properties -->
+    	<property name="compile.debug"              value="${global.debug}" />          <!-- Outputs debug information with class files -->
+        <property name="compile.debuglevel"         value="lines, vars, and source" />  <!-- Debugging information to output -->    
+        <property name="compile.verbose"            value="${global.verbose}" />        <!-- Compiles with verbose output -->
         <property name="compile.deprecation"        value="false" />                    <!-- Compiles with deprecation information -->
-        <echo>Compile deprecation:   ${compile.deprecation}</echo>
-        
         <property name="compile.optimize"           value="false" />                    <!-- Class file optimizations -->
-        <echo>Optimized compilation:  ${compile.optimizee}</echo>
-        
         <property name="compile.jdk-version.source" value="1.5" />                      <!-- Whether to include the Ant run-time libraries in the classpath -->
-        <echo>Source JDK version:     ${compile.jdk-version.source}</echo>
-        
         <property name="compile.jdk-version.target" value="1.5" />
-        <echo>Target JDK version:     ${compile.jdk-version.target}</echo>
-        
         <property name="compile.includeantruntime"  value="false" />
-        <echo>Include Ant runtime:    ${compile.includeantruntime}</echo>
-    </target>
 	
-	<!-- Initialise classpath -->
-	<target name="init-classpath" description="Initialise classpath">
+		<if>
+            <equals arg1="${global.verbose}" arg2="true" />
+            <then>
+        	    <echo>Debug compilation:      ${compile.debug}</echo>
+        	    <echo>Debug level:            ${compile.debuglevel}</echo>
+        	    <echo>Verbose compilation:    ${compile.verbose}</echo>
+                <echo>Compile deprecation:    ${compile.deprecation}</echo>
+                <echo>Optimized compilation:  ${compile.optimize}</echo>
+                <echo>Source JDK version:     ${compile.jdk-version.source}</echo>
+                <echo>Target JDK version:     ${compile.jdk-version.target}</echo>
+                <echo>Include Ant runtime:    ${compile.includeantruntime}</echo>
+            	<echo />
+    	    </then>
+		</if>
+		
+	    <!-- Initialise classpath -->
     	<path id="compile.classpath">
             <fileset dir="${basedir}">
             	<include name="${path.lib}/*.jar" />
@@ -158,22 +172,14 @@
             </mapper>
     	</pathconvert>
 		
-		<echo>Classpath:              ${compile.classpath}</echo>
+		<if>
+            <equals arg1="${global.verbose}" arg2="true" />
+            <then>
+        		<property name="init.classpath" refid="compile.classpath" />
+        		<echo>Classpath:              ${init.classpath}</echo>
+        	</then>
+    	</if>
 	</target>
-	<!-- =================================================================== -->
-	
-	<!-- =========================== MAIN TARGETS ========================== -->
-	<!-- Main target -->
-    <target name="all" depends="init, info, compile, jar, javadoc, tar" description="Main target" />
-    
-	<!-- Main target with verbose output -->
-    <target name="all-verbose" depends="init-verbose, info, compile, jar, javadoc, tar" description="Main target with verbose output" />
-	
-	<!-- Debug target -->
-    <target name="all-debug" depends="init-debug, info, compile, jar, javadoc, tar" description="Debug target" />
-	
-	<!-- Debug target with verbose output -->
-    <target name="all-debug-verbose" depends="init-debug-verbose, info, compile, jar, javadoc, tar" description="Debug target with verbose output" />
 	<!-- =================================================================== -->
   
 	<!-- Compilation target -->
@@ -291,7 +297,7 @@
 	
 	<!-- ========================== CLEAN TARGETS ========================== -->
 	<!-- Clean target -->
-	<target name="clean" depends="init-paths, init-files" description="Clean the project">
+	<target name="clean" depends="-init" description="Clean the project">
 		<echo>Deleting ${path.build}.</echo>
         <delete dir="${path.build}" />
 		
@@ -309,7 +315,7 @@
     </target>
 	
 	<!-- Distribution clean target -->
-    <target name="dist-clean" depends="init-paths" description="Clean the project">
+    <target name="dist-clean" depends="-init" description="Clean the project">
     	<echo>Deleting ${path.build}.</echo>
         <delete dir="${path.build}" />
         
@@ -320,7 +326,7 @@
 	
 	<!-- ======================== EXECUTION TARGETS ======================== -->
 	<!-- Run target -->
-	<target name="run" depends="run_server, run_client, run_client2" description="Run a single StealthNet server and two clients" />
+	<target name="run" depends="run_server, run_client, -run_client2" description="Run a single StealthNet server and two clients" />
 	
 	<!-- Run client target -->
 	<target name="run_client" depends="compile, jar" description="Run StealthNet client">
@@ -333,7 +339,7 @@
 	</target>
 	
 	<!-- Run a second client instance (exactly the same as the "run_client" target) -->
-	<target name="run_client2" depends="compile, jar" description="A copy of 'run_client' to allow running a second client instance">
+	<target name="-run_client2" depends="compile, jar">
 		<echo>Running StealthNet client...</echo>
 		<java jar="${file.jar.client}" spawn="true" fork="true">
             <classpath>
@@ -439,27 +445,27 @@
 	<!-- Information target -->
     <target name="info" description="Just prints information about the environment">
         <echo>Project base directory: '${basedir}'</echo>
-        <echo/>
+        <echo />
         <echo>OS name: ${os.name}</echo>
         <echo>OS architecture: ${os.arch}</echo>
         <echo>OS version: ${os.version}</echo>
-        <echo/>
+        <echo />
         <echo>JVM name: ${java.vm.name}</echo>
         <echo>JVM vendor: ${java.vm.vendor}</echo>
         <echo>JVM version: ${java.vm.version}</echo>
-        <echo/>
+        <echo />
         <echo>JRE vendor: ${java.vendor}</echo>
         <echo>JRE version: ${java.version}</echo>
     </target>
 	
 	<!-- Print the classpath -->
-    <target name="classpath" depends="init-classpath" description="Print the classpath">
+    <target name="classpath" depends="-init" description="Print the classpath">
     	<property name="print.classpath" refid="compile.classpath" />
 	    <echo>Classpath: '${print.classpath}'</echo>
 	</target>
 	
 	<!-- Print the directory where the JAR files are stored -->
-	<target name="jar_dir" depends="init-paths" description="Print the directory that the JARs are stored in">
+	<target name="jar_dir" depends="-init" description="Print the directory that the JARs are stored in">
 		<echo>JAR directory: '${path.jar}'</echo>
 	</target>
 	<!-- =================================================================== -->
