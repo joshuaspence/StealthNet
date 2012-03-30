@@ -17,9 +17,6 @@ else
 	CLASSPATH=""
 fi
 
-# Add -classpath prefix to classpath
-[ -n "$CLASSPATH" ] && CLASSPATH="-classpath $CLASSPATH" || CLASSPATH=""
-
 # Get JAR file (specified relative to script)
 JAR_DIR=`dirname $0`
 if [ $HAS_ANT -eq 1 ]; then
@@ -61,4 +58,8 @@ while [ $# -gt 0 ]; do
 done
 
 # Execute
-$JRE $DEBUG_ARG $CLASSPATH $JRE_FLAGS -jar $JAR_DIR/ELEC5616_client.jar $@
+if [ -n "$CLASSPATH" ]; then
+	$JRE $DEBUG_ARG -classpath "$CLASSPATH" $JRE_FLAGS -jar $JAR_DIR/ELEC5616_client.jar $@
+else
+	$JRE $DEBUG_ARG $JRE_FLAGS -jar $JAR_DIR/ELEC5616_client.jar $@
+fi

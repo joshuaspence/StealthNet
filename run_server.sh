@@ -11,14 +11,11 @@ ANT="$(which ant) -quiet"
 # Get classpath
 if [ $HAS_ANT -eq 1 ]; then
 	# Get classpath from ant
-	CLASSPATH=`$ANT classpath | sed -n "s/.*Classpath: '\(.*\)'/\1/p"`
+	CLASSPATH="\"`$ANT classpath | sed -n "s/.*Classpath: '\(.*\)'/\1/p"`\""
 else
 	# Use default classpath
 	CLASSPATH=""
 fi
-
-# Add -classpath prefix to classpath
-[ -n "$CLASSPATH" ] && CLASSPATH="-classpath $CLASSPATH" || CLASSPATH=""
 
 # Get JAR file (specified relative to script)
 JAR_DIR=`dirname $0`
@@ -61,4 +58,8 @@ while [ $# -gt 0 ]; do
 done
 
 # Execute
-$JRE $DEBUG_ARG $CLASSPATH $JRE_FLAGS -jar $JAR_DIR/ELEC5616_server.jar $@
+if [ -n "$CLASSPATH" ]; then
+	$JRE $DEBUG_ARG -classpath "$CLASSPATH" $JRE_FLAGS -jar $JAR_DIR/ELEC5616_server.jar $@
+else
+	$JRE $DEBUG_ARG $JRE_FLAGS -jar $JAR_DIR/ELEC5616_server.jar $@
+fi

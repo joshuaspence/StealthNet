@@ -273,6 +273,11 @@
                 <attribute name="Class-Path" value="${compile.classpath}"/>
             </manifest>
         </jar>
+    	
+    	<chmod file="${file.jar}" perm="ugo+x"/>
+    	<chmod file="${file.jar.server}" perm="ugo+x"/>
+		<chmod file="${file.jar.client}" perm="ugo+x"/>
+    	
     </target>
 	
 	<!-- Javadoc target -->
