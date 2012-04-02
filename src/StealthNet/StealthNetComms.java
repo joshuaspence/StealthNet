@@ -280,8 +280,14 @@ public class StealthNetComms {
      * @return True if successful, otherwise false.
      */
     public boolean sendPacket(StealthNetPacket pckt) {
-    	if (DEBUG_RAW_PACKET)     System.out.println("(raw) sendPacket(" + pckt.toString() + ")");
-    	if (DEBUG_DECODED_PACKET) System.out.println("(decoded) sendPacket(" + StealthNetPacket.getCommandName(pckt.command) + ", " + new String(pckt.data) + ")");
+    	if (DEBUG_RAW_PACKET)     System.out.println("(raw)     sendPacket(" + pckt.toString() + ")");
+    	if (DEBUG_DECODED_PACKET) {
+    		if (pckt.data.length <= 0)
+    			System.out.println("(decoded) sendPacket(" + StealthNetPacket.getCommandName(pckt.command) + ")");
+    		else
+    			System.out.println("(decoded) sendPacket(" + StealthNetPacket.getCommandName(pckt.command) + ", " + new String(pckt.data) + ")");
+    	
+    	}
     	
         if (dataOut == null)
             return false;
@@ -311,7 +317,12 @@ public class StealthNetComms {
         // Check the integrity of the message.
         
         if (DEBUG_RAW_PACKET)     System.out.println("(raw)     recvPacket(" + str + ")");
-        if (DEBUG_DECODED_PACKET) System.out.println("(decoded) recvPacket(" + StealthNetPacket.getCommandName(pckt.command) + ", " + new String(pckt.data) + ")");
+        if (DEBUG_DECODED_PACKET) {
+        	if (pckt.data.length <= 0)
+        		System.out.println("(decoded) recvPacket(" + StealthNetPacket.getCommandName(pckt.command) + ")");
+        	else
+        		System.out.println("(decoded) recvPacket(" + StealthNetPacket.getCommandName(pckt.command) + ", " + new String(pckt.data) + ")");
+        }
         return pckt;
     }
 
@@ -356,7 +367,10 @@ public class StealthNetComms {
         return dataIn.ready();
     }
     
-    /** Perform a Diffie-Hellman key exchange with the other party. */
+    /** 
+     * Perform a Diffie-Hellman key exchange with the other party.
+     * @see StealthNetKeyExchange 
+     */
     public void keyExchange() {
     	if (DEBUG_KEY_EXCHANGE) System.out.println("Initiating Diffie-Hellman key exchange.");
     	
@@ -366,7 +380,7 @@ public class StealthNetComms {
     	}
     	
     	try {
-			authenticationProvider = new StealthNetKeyExchange(512, new SecureRandom());
+			authenticationProvider = new StealthNetKeyExchange(StealthNetKeyExchange.NUM_BITS, new SecureRandom());
 		} catch (Exception e) {
 			System.err.println("Unable to provide authentication.");
 			if (DEBUG_ERROR_TRACE) e.printStackTrace();
@@ -379,8 +393,8 @@ public class StealthNetComms {
     
     /** 
      * Perform a Diffie-Hellman key exchange with the other party.
-     * 
      * @param sharedKey The shared key that was sent to us.
+     * @see StealthNetKeyExchange 
      */
     public void keyExchange(String sharedKey) {
     	if (DEBUG_KEY_EXCHANGE) System.out.println("Received shared authentication key: " + sharedKey);
@@ -389,7 +403,7 @@ public class StealthNetComms {
     		/** We haven't yet made our own private/public keys. */
     		
     		try {
-    			authenticationProvider = new StealthNetKeyExchange(512, new SecureRandom());
+    			authenticationProvider = new StealthNetKeyExchange(StealthNetKeyExchange.NUM_BITS, new SecureRandom());
     		} catch (Exception e) {
     			System.err.println("Unable to provide authentication. Failed to initialise StealthNetKeyExchange.");
     			if (DEBUG_ERROR_TRACE) e.printStackTrace();

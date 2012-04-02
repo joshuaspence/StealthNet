@@ -28,14 +28,6 @@ package StealthNet;
  * @author Ryan Junee
  */
 public class StealthNetPacket {
-	/** 
-	 * Set to true in build.xml to output debug messages for this class. 
-	 * Alternatively, use the argument `-Ddebug.StealthNetPacket=true' at the 
-	 * command line. 
-	 */
-	@SuppressWarnings("unused")
-	private static final boolean DEBUG = (System.getProperty("debug.StealthNetPacket", "false").equals("true"));
-	
 	/** Commands. */
     public static final byte CMD_NULL = 0x00;
     public static final byte CMD_LOGIN = 0x01;
@@ -145,7 +137,7 @@ public class StealthNetPacket {
     }
     
     /**
-     * Get the name of a command from its byte value.
+     * Get the name of a command from its byte value. For debug purposes only.
      * 
      * @param command The byte value of the command to query the name of.
      * @return A String containing the name of the command.
