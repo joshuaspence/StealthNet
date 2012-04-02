@@ -132,9 +132,6 @@ public class StealthNetClient {
 	
 	/** Give them 100 credits for demonstration purposes. */
     private int credits = 100;
-    
-    /** The public/private keys for this client. */
-    private StealthNetIdentity identity;
 
     /** Secret data. */
 	private class SecretData {
@@ -154,15 +151,6 @@ public class StealthNetClient {
         
         server_hostname = StealthNetComms.DEFAULT_SERVERNAME;
         server_port = StealthNetComms.DEFAULT_SERVERPORT;
-        
-        try {
-        	identity = new StealthNetIdentity();
-        } catch(NoSuchAlgorithmException e) {
-        	identity = null;
-        	System.err.println("Unable to generate identity.");
-        	if (DEBUG) e.printStackTrace();
-        	System.exit(1);
-        }
     }
 
     /** 
@@ -181,14 +169,6 @@ public class StealthNetClient {
         
         server_hostname = s;
         server_port = p;
-        
-        try {
-        	identity = new StealthNetIdentity();
-        } catch(NoSuchAlgorithmException e) {
-        	System.err.println("Unable to generate identity.");
-        	if (DEBUG) e.printStackTrace();
-        	System.exit(1);
-        }
     }
     
     /**

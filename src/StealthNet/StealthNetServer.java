@@ -25,7 +25,6 @@ package StealthNet;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.security.NoSuchAlgorithmException;
 
 /* StealthNetServer Class Definition *****************************************/
 
@@ -76,16 +75,6 @@ public class StealthNetServer {
     		}
     	}
     	
-    	/** The public/private keys for this server. */
-    	StealthNetIdentity identity = null;
-    	try {
-    		identity = new StealthNetIdentity();
-    	} catch (NoSuchAlgorithmException e) {
-    		System.err.println("Unable to generate identity of server.");
-    		if (DEBUG) e.printStackTrace();
-    		System.exit(1);
-    	}
-    	
     	/** Try to create a server socket listening on a specified port. */
         ServerSocket svrSocket = null;
         try {
@@ -105,7 +94,7 @@ public class StealthNetServer {
          */
         while (true) {
         	Socket conn;
-            new StealthNetServerThread(conn = svrSocket.accept(), identity).start();
+            new StealthNetServerThread(conn = svrSocket.accept()).start();
             
             if (DEBUG)
             	System.out.println("Server accepted connection from " + conn.getInetAddress() + " on port " + conn.getPort() + ".");
