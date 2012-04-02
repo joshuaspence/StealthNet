@@ -49,7 +49,7 @@ public class StealthNetPacket {
     public static final byte CMD_GETSECRET = 0x09;
     
     /** Security-specific commands. */
-    public static final byte CMD_PUBKEY = 0x0A;
+    public static final byte CMD_AUTHKEY = 0x0A;
     public static final byte CMD_CRYPTKEY = 0x0B;
     public static final byte CMD_SEED = 0x0C;
     
@@ -142,6 +142,57 @@ public class StealthNetPacket {
         else if ((hex >= 'A') && (hex <= 'F')) return (hex - 'A' + 10);
         else if ((hex >= 'a') && (hex <= 'f')) return (hex - 'a' + 10);
         else return 0;
+    }
+    
+    /**
+     * Get the name of a command from its byte value.
+     * 
+     * @param command The byte value of the command to query the name of.
+     * @return A String containing the name of the command.
+     */
+    public static String getCommandName(byte command) {
+    	switch (command) {
+    		case 0x00:
+				return "CMD_NULL";
+		case 0x01:
+    			return "CMD_LOGIN";
+			
+    		case 0x02:
+    			return "CMD_LOGOUT";
+			
+    		case 0x03:
+				return "CMD_MSG";
+				
+    		case 0x04:
+    			return "CMD_CHAT";
+    			
+    		case 0x05:
+    			return "CMD_FTP";
+    			
+    		case 0x06:
+    			return "CMD_LIST";
+    			
+    		case 0x07:
+    			return "CMD_CREATESECRET";
+    			
+    		case 0x08:
+				return "CMD_SECRETLIST";
+				
+    		case 0x09:
+    			return "CMD_GETSECRET";
+			
+    		case 0x0A:
+				return "CMD_AUTHKEY";
+				
+    		case 0x0B:
+    			return "CMD_CRYPTKEY";
+    			
+    		case 0x0C:
+    			return "CMD_SEED";
+			
+			default:
+				return "UNKNOWN";
+    	}
     }
 }
 

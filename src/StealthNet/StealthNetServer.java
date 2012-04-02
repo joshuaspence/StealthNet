@@ -44,11 +44,12 @@ import java.net.Socket;
  */
 public class StealthNetServer {
 	/** 
-	 * Set to true in build.xml to output debug messages for this class. 
-	 * Alternatively, use the argument `-Ddebug.StealthNetServer=true' at the 
-	 * command line.
+	 * Use the argument `-Ddebug.StealthNetServer.XXX=true' at the command line
+	 * to enable debug messages. Use the argument 
+	 * `-Ddebug.StealthNetServer=true' to enable all debug messages. 
 	 */
-	private static final boolean DEBUG = System.getProperty("debug.StealthNetServer", "false").equals("true");
+	private static final boolean DEBUG_GENERAL     = (System.getProperty("debug.StealthNetServer.General",    "false").equals("true") || System.getProperty("debug.StealthNetServer", "false").equals("true"));
+	private static final boolean DEBUG_ERROR_TRACE = (System.getProperty("debug.StealthNetServer.ErrorTrace", "false").equals("true") || System.getProperty("debug.StealthNetServer", "false").equals("true") || System.getProperty("debug.ErrorTrace", "false").equals("true"));
 	
 	/** 
 	 * The main StealthNetServer function.
@@ -70,7 +71,7 @@ public class StealthNetServer {
     				throw new NumberFormatException("Invalid port number: " + port);
     		} catch (NumberFormatException e) {
     			System.err.println(e.getMessage());
-    			if (DEBUG) e.printStackTrace();
+    			if (DEBUG_ERROR_TRACE) e.printStackTrace();
                 System.exit(1);
     		}
     	}
@@ -81,11 +82,11 @@ public class StealthNetServer {
             svrSocket = new ServerSocket(port);
         } catch (IOException e) {
             System.err.println("Could not listen on port: " + port);
-            if (DEBUG) e.printStackTrace();
+            if (DEBUG_ERROR_TRACE) e.printStackTrace();
             System.exit(1);
         }
 
-        if (DEBUG) System.out.println("Server is listening on port " + port + ".");
+        if (DEBUG_GENERAL) System.out.println("Server is listening on port " + port + ".");
         System.out.println("Server online...");
         
         /** 
@@ -96,7 +97,7 @@ public class StealthNetServer {
         	Socket conn;
             new StealthNetServerThread(conn = svrSocket.accept()).start();
             
-            if (DEBUG)
+            if (DEBUG_GENERAL)
             	System.out.println("Server accepted connection from " + conn.getInetAddress() + " on port " + conn.getPort() + ".");
             else
             	System.out.println("Server accepted connection...");

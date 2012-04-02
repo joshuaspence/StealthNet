@@ -749,6 +749,12 @@ public class StealthNetClient {
                 pckt = stealthComms.recvPacket();
                 
                 switch (pckt.command) {
+                	case StealthNetPacket.CMD_AUTHKEY:
+                		final String authKey = new String(pckt.data);
+                    	if (DEBUG) System.out.println("Received an authorisation key command from server. Packet data: \"" + authKey + "\".");
+                	    stealthComms.keyExchange(authKey);
+                        break;
+                
                     case StealthNetPacket.CMD_MSG:
                     	final String msg = new String(pckt.data);
                     	if (DEBUG) System.out.println("Received a message command from server. Packet data: \"" + msg + "\".");

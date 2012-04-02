@@ -116,19 +116,6 @@
 			</then>
     	</if>
 		
-	    <!-- Initialise class debug -->
-    	<!-- Enables debug messages within the source code -->
-    	<property name="debug.StealthNetChat"         value="false" />
-    	<property name="debug.StealthNetChecksum"     value="false" />
-    	<property name="debug.StealthNetClient"       value="false" />
-    	<property name="debug.StealthNetComms"        value="false" />
-    	<property name="debug.StealthNetEncryption"   value="false" />
-    	<property name="debug.StealthNetFileTransfer" value="false" />
-    	<property name="debug.StealthNetIdentity"     value="false" />
-    	<property name="debug.StealthNetPRNG"         value="false" />
-    	<property name="debug.StealthNetServer"       value="false" />
-        <property name="debug.StealthNetServerThread" value="false" />
-		
 	    <!-- Initialise compile properties -->
     	<property name="compile.debug"              value="${global.debug}" />          <!-- Outputs debug information with class files -->
         <property name="compile.debuglevel"         value="lines, vars, and source" />  <!-- Debugging information to output -->    
@@ -233,7 +220,7 @@
 		  	    <include name="*/StealthNetComms**" />
         		<include name="*/StealthNetChecksum**" />
         		<include name="*/StealthNetEncryption**" />
-                <include name="*/StealthNetIdentity**" />
+                <include name="*/StealthNetKeyExchange**" />
 		  	    <include name="*/StealthNetPacket**" />
         		<include name="*/StealthNetPRNG**" />
     		</fileset>
@@ -261,7 +248,7 @@
                 <include name="*/StealthNetComms**" />
         		<include name="*/StealthNetEncryption**" />
         		<include name="*/StealthNetFileTransfer**" />
-        		<include name="*/StealthNetIdentity**" />
+        		<include name="*/StealthNetKeyExchange**" />
                 <include name="*/StealthNetPacket**" />
         		<include name="*/StealthNetPRNG**" />
             </fileset>
