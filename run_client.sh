@@ -32,9 +32,11 @@ DEBUG=" \
 	-Ddebug.StealthNetChat=true \
 	-Ddebug.StealthNetClient=true \
 	-Ddebug.StealthNetComms=true \
-	-Ddebug.StealthNetEntity=true \
-	-Ddebug.StealthNetFileTransfer=true \
+	-Ddebug.StealthNetEncryption=true \
+	-Ddebug.StealthNetFileTranser=true \
+	-Ddebug.StealthNetKeyExchange=true \
 	-Ddebug.StealthNetPacket=true \
+	-Ddebug.StealthNetPRNG=true \
 	-Ddebug.StealthNetServer=true \
 	-Ddebug.StealthNetServerThread=true \
 	"

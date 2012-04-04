@@ -58,6 +58,7 @@ import javax.crypto.spec.DHPublicKeySpec;
  * @author Joshua Spence
  */
 public class StealthNetKeyExchange {
+	/** Length of the key (in bits). */
 	public final static int NUM_BITS = 512;
 	
 	/** Group parameters */
@@ -66,10 +67,10 @@ public class StealthNetKeyExchange {
 	private final BigInteger base;		// generator
 	// }
 	
-	/** Our private key */
+	/** Our private key. */
 	private PrivateKey privateKey;
 	
-	/** Public component of our key */
+	/** Public component of our key. */
 	private BigInteger publicValue;
 	
 	/** 

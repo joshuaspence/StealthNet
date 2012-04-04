@@ -49,13 +49,14 @@ import javax.swing.JTextField;
  */
 public class StealthNetChat extends Thread {
 	/** 
-	 * Set to true in build.xml to output debug messages for this class. 
-	 * Alternatively, use the argument `-Ddebug.StealthNetComms=true' at the 
-	 * command line. 
+	 * Use the argument `-Ddebug.StealthNetChat.XXX=true' at the command line
+	 * to enable debug messages. Use the argument 
+	 * `-Ddebug.StealthNetChat=true' to enable all debug messages. 
 	 */
-	private static final boolean DEBUG = (System.getProperty("debug.StealthNetChat", "false").equals("true"));
-	
-    private JFrame chatFrame;
+	private static final boolean DEBUG_GENERAL     = true && (System.getProperty("debug.StealthNetChat.General",    "false").equals("true") || System.getProperty("debug.StealthNetChat", "false").equals("true"));
+	private static final boolean DEBUG_ERROR_TRACE = true && (System.getProperty("debug.StealthNetChat.ErrorTrace", "false").equals("true") || System.getProperty("debug.StealthNetChat", "false").equals("true") || System.getProperty("debug.ErrorTrace", "false").equals("true"));
+    
+	private JFrame chatFrame;
     private JTextArea chatTextBox;
     private JTextField msgText;
     
@@ -127,7 +128,7 @@ public class StealthNetChat extends Thread {
         quitBtn.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 if (stealthComms != null) {
-                	if (DEBUG) System.out.println("Terminating chat session.");
+                	if (DEBUG_GENERAL) System.out.println("Terminating chat session.");
                     stealthComms.sendPacket(StealthNetPacket.CMD_LOGOUT);
                     stealthComms.terminateSession();
                 }
@@ -156,7 +157,7 @@ public class StealthNetChat extends Thread {
 
         chatTextBox.append(msg + "\n");
         if (stealthComms != null) {
-        	if (DEBUG) System.out.println("Sending chat message: \"" + msg + "\".");
+        	if (DEBUG_GENERAL) System.out.println("Sending chat message: \"" + msg + "\".");
             stealthComms.sendPacket(StealthNetPacket.CMD_MSG, msg);
         }
         msgText.setText("");
@@ -186,13 +187,13 @@ public class StealthNetChat extends Thread {
                     case StealthNetPacket.CMD_MSG:
                     	/** Chat message received. */
                     	final String msg = new String(pckt.data);
-                    	if (DEBUG) System.out.println("Received chat message: \"" + msg + "\".");
+                    	if (DEBUG_GENERAL) System.out.println("Received chat message: \"" + msg + "\".");
                 	    chatTextBox.append(msg + "\n");
                         break;
                         
                     case StealthNetPacket.CMD_LOGOUT:
                     	/** Terminate chat session. */
-                    	if (DEBUG) System.out.println("Terminating chat session.");
+                    	if (DEBUG_GENERAL) System.out.println("Terminating chat session.");
                         JOptionPane.showMessageDialog(chatFrame,
                             "Chat session terminated at other side.",
                             "StealthNet", JOptionPane.INFORMATION_MESSAGE);
@@ -206,7 +207,7 @@ public class StealthNetChat extends Thread {
             }
         } catch (Exception e) {
             System.err.println("Error running client thread.");
-            if (DEBUG) e.printStackTrace();
+            if (DEBUG_ERROR_TRACE) e.printStackTrace();
         }
     }
 

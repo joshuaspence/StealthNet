@@ -12,7 +12,7 @@ public class StealthNetChecksum {
 	 * Alternatively, use the argument `-Ddebug.StealthNetChecksum=true' at the 
 	 * command line.
 	 */
-	private static final boolean DEBUG = System.getProperty("debug.StealthNetChecksum", "false").equals("true");
+	private static final boolean DEBUG = true && System.getProperty("debug.StealthNetChecksum", "false").equals("true");
 	
 	/**
 	 * Calculates the checksum for a given message.

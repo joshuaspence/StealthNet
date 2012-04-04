@@ -26,6 +26,8 @@ package StealthNet;
  * @author Matt Barrie
  * @author Stephen Gould
  * @author Ryan Junee
+ * @author Joshua Spence Added security-related commands. Also added 
+ * getCommandName function for debug purposes.
  */
 public class StealthNetPacket {
 	/** Commands. */
@@ -141,47 +143,37 @@ public class StealthNetPacket {
      * 
      * @param command The byte value of the command to query the name of.
      * @return A String containing the name of the command.
+     * 
+     * @author Joshua Spence
      */
     public static String getCommandName(byte command) {
     	switch (command) {
-    		case 0x00:
+    		case CMD_NULL:
 				return "CMD_NULL";
-		case 0x01:
+    		case CMD_LOGIN:
     			return "CMD_LOGIN";
-			
-    		case 0x02:
+    		case CMD_LOGOUT:
     			return "CMD_LOGOUT";
-			
-    		case 0x03:
+    		case CMD_MSG:
 				return "CMD_MSG";
-				
-    		case 0x04:
+    		case CMD_CHAT:
     			return "CMD_CHAT";
-    			
-    		case 0x05:
+    		case CMD_FTP:
     			return "CMD_FTP";
-    			
-    		case 0x06:
+    		case CMD_LIST:
     			return "CMD_LIST";
-    			
-    		case 0x07:
+    		case CMD_CREATESECRET:
     			return "CMD_CREATESECRET";
-    			
-    		case 0x08:
+    		case CMD_SECRETLIST:
 				return "CMD_SECRETLIST";
-				
-    		case 0x09:
+    		case CMD_GETSECRET:
     			return "CMD_GETSECRET";
-			
-    		case 0x0A:
+    		case CMD_AUTHKEY:
 				return "CMD_AUTHKEY";
-				
-    		case 0x0B:
+    		case CMD_CRYPTKEY:
     			return "CMD_CRYPTKEY";
-    			
-    		case 0x0C:
+    		case CMD_SEED:
     			return "CMD_SEED";
-			
 			default:
 				return "UNKNOWN";
     	}

@@ -52,12 +52,12 @@ public class StealthNetComms {
 	 * to enable debug messages. Use the argument `-Ddebug.StealthNetComms=true'
 	 * to enable all debug messages. 
 	 */
-	private static final boolean DEBUG_GENERAL        = (System.getProperty("debug.StealthNetComms.General",       "false").equals("true") || System.getProperty("debug.StealthNetComms", "false").equals("true"));
-	private static final boolean DEBUG_ERROR_TRACE    = (System.getProperty("debug.StealthNetComms.ErrorTrace",    "false").equals("true") || System.getProperty("debug.StealthNetComms", "false").equals("true") || System.getProperty("debug.ErrorTrace", "false").equals("true"));
-	private static final boolean DEBUG_RAW_PACKET     = (System.getProperty("debug.StealthNetComms.RawOutput",     "false").equals("true") || System.getProperty("debug.StealthNetComms", "false").equals("true"));
-	private static final boolean DEBUG_DECODED_PACKET = (System.getProperty("debug.StealthNetComms.DecodedOutput", "false").equals("true") || System.getProperty("debug.StealthNetComms", "false").equals("true"));
-	private static final boolean DEBUG_RECEIVE_READY  = (System.getProperty("debug.StealthNetComms.ReceiveReady",  "false").equals("true") || System.getProperty("debug.StealthNetComms", "false").equals("true"));
-	private static final boolean DEBUG_KEY_EXCHANGE   = (System.getProperty("debug.StealthNetComms.KeyExchange",   "false").equals("true") || System.getProperty("debug.StealthNetComms", "false").equals("true"));
+	private static final boolean DEBUG_GENERAL        = true && (System.getProperty("debug.StealthNetComms.General",       "false").equals("true") || System.getProperty("debug.StealthNetComms", "false").equals("true"));
+	private static final boolean DEBUG_ERROR_TRACE    = true && (System.getProperty("debug.StealthNetComms.ErrorTrace",    "false").equals("true") || System.getProperty("debug.StealthNetComms", "false").equals("true") || System.getProperty("debug.ErrorTrace", "false").equals("true"));
+	private static final boolean DEBUG_RAW_PACKET     = true && (System.getProperty("debug.StealthNetComms.RawOutput",     "false").equals("true") || System.getProperty("debug.StealthNetComms", "false").equals("true"));
+	private static final boolean DEBUG_DECODED_PACKET = true && (System.getProperty("debug.StealthNetComms.DecodedOutput", "false").equals("true") || System.getProperty("debug.StealthNetComms", "false").equals("true"));
+	private static final boolean DEBUG_RECEIVE_READY  = true && (System.getProperty("debug.StealthNetComms.ReceiveReady",  "false").equals("true") || System.getProperty("debug.StealthNetComms", "false").equals("true"));
+	private static final boolean DEBUG_KEY_EXCHANGE   = true && (System.getProperty("debug.StealthNetComms.KeyExchange",   "false").equals("true") || System.getProperty("debug.StealthNetComms", "false").equals("true"));
 	
 	/** Default host for the StealthNet server. */
     public static final String DEFAULT_SERVERNAME = "localhost";
@@ -280,12 +280,20 @@ public class StealthNetComms {
      * @return True if successful, otherwise false.
      */
     public boolean sendPacket(StealthNetPacket pckt) {
+    	/** 
+    	 * We shouldn't send any packets unless we have performed authentication
+    	 * using the Diffie-Hellman key exchange.
+    	 */
+    	if ((authenticationKey == null) && (pckt.command != StealthNetPacket.CMD_AUTHKEY)) {
+    		System.err.println("Cannot send non-authentication packets until parties have exchanged authentication keys.");
+    	}
+    	
     	if (DEBUG_RAW_PACKET)     System.out.println("(raw)     sendPacket(" + pckt.toString() + ")");
     	if (DEBUG_DECODED_PACKET) {
     		if (pckt.data.length <= 0)
     			System.out.println("(decoded) sendPacket(" + StealthNetPacket.getCommandName(pckt.command) + ")");
     		else
-    			System.out.println("(decoded) sendPacket(" + StealthNetPacket.getCommandName(pckt.command) + ", " + new String(pckt.data) + ")");
+    			System.out.println("(decoded) sendPacket(" + StealthNetPacket.getCommandName(pckt.command) + ", " + (new String(pckt.data)).replaceAll("\n", ";", replacement) + ")");
     	
     	}
     	
@@ -321,7 +329,7 @@ public class StealthNetComms {
         	if (pckt.data.length <= 0)
         		System.out.println("(decoded) recvPacket(" + StealthNetPacket.getCommandName(pckt.command) + ")");
         	else
-        		System.out.println("(decoded) recvPacket(" + StealthNetPacket.getCommandName(pckt.command) + ", " + new String(pckt.data) + ")");
+        		System.out.println("(decoded) recvPacket(" + StealthNetPacket.getCommandName(pckt.command) + ", " + (new String(pckt.data)).replaceAll("\n", ";") + ")");
         }
         return pckt;
     }
@@ -427,18 +435,27 @@ public class StealthNetComms {
 		}
     }
     
+    /**
+     * Funtion to assist with printing cryptographic keys by returning byte 
+     * arrays as a hexadecimal number.
+     * 
+     * @param array The byte array to transfer into a hexadecimal number.
+     * @return The string containing the hexadecimal number.
+     * 
+     * @author Joshua Spence
+     */
     private static char[] getHexValue(byte[] array) {
-        char[] symbols="0123456789ABCDEF".toCharArray();
+        final char[] symbols="0123456789ABCDEF".toCharArray();
         char[] hexValue = new char[array.length * 2];
 	 
-        for (int i=0; i < array.length; i++) {
-        	/* Convert the byte to an int. */
+        for (int i = 0; i < array.length; i++) {
+        	/** Convert the byte to an int. */
 	        int current = array[i] & 0xff;
 		
-	        /* Determine the Hex symbol for the last 4 bits. */
+	        /** Determine the Hex symbol for the last 4 bits. */
 	        hexValue[i * 2 + 1] = symbols[current & 0x0f];
 		
-	        /* Determine the Hex symbol for the first 4 bits */
+	        /** Determine the Hex symbol for the first 4 bits */
 	        hexValue[i * 2] = symbols[current >> 4];
         }
 	     

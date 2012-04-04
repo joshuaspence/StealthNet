@@ -20,7 +20,7 @@ public class StealthNetPRNG {
 	 * command line. 
 	 */
 	@SuppressWarnings("unused")
-	private static final boolean DEBUG = (System.getProperty("debug.StealthNetPRNG", "false").equals("true"));
+	private static final boolean DEBUG = true && (System.getProperty("debug.StealthNetPRNG", "false").equals("true"));
 	
 	/** The PRNG. */
 	private final Random prng;

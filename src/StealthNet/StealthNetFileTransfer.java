@@ -43,13 +43,17 @@ import javax.swing.JOptionPane;
  * 
  * @author Matt Barrie
  * @author Stephen Gould
+ * @author Joshua Spence Added debug code.
  */
 public class StealthNetFileTransfer extends Thread {
 	/** 
-     * Set to true to output debug messages for this class. Alternatively, use 
-     * the argument `-Ddebug.StealthNetFileTransfer=true' at the command line. 
-     */
-	private static final boolean DEBUG = (System.getProperty("debug.StealthNetFileTransfer", "false").equals("true"));
+	 * Use the argument `-Ddebug.StealthNetFileTransfer.XXX=true' at the command
+	 * line to enable debug messages. Use the argument 
+	 * `-Ddebug.StealthNetFileTransfer=true' to enable all debug messages. 
+	 */
+	private static final boolean DEBUG_GENERAL     = true && (System.getProperty("debug.StealthNetFileTransfer.General",    "false").equals("true") || System.getProperty("debug.StealthNetFileTansfer", "false").equals("true"));
+	private static final boolean DEBUG_ERROR_TRACE = true && (System.getProperty("debug.StealthNetFileTransfer.ErrorTrace", "false").equals("true") || System.getProperty("debug.StealthNetFileTransfer", "false").equals("true") || System.getProperty("debug.ErrorTrace", "false").equals("true"));
+	private static final boolean DEBUG_TRANSFER    = true && (System.getProperty("debug.StealthNetFileTransfer.Transfer",   "false").equals("true") || System.getProperty("debug.StealthNetFileTransfer", "false").equals("true"));
 	
 	/** Number of bytes to send at a time. */
     private static final int PACKETSIZE = 256;
@@ -57,7 +61,7 @@ public class StealthNetFileTransfer extends Thread {
     /** A progress bar to visualise the transfer. */
     private JProgressBar progressBar = null;
     
-    /** The communications class through which to perform the transfer */
+    /** The communications class through which to perform the transfer. */
     private StealthNetComms stealthComms = null;
     
     /** The filename of the file being transferred. */
@@ -121,6 +125,7 @@ public class StealthNetFileTransfer extends Thread {
         else       recvFile();
 
         /** Upload/Download complete. */
+        if (DEBUG_GENERAL) System.out.println((bSend ? "Upload" : "Download") + " complete.");
         
         ftpFrame.setVisible(false);
         JOptionPane.showMessageDialog(ftpFrame,
@@ -133,24 +138,29 @@ public class StealthNetFileTransfer extends Thread {
         byte[] buf = new byte[PACKETSIZE];
         final int fileLen = (int) ((new File(filename)).length() / PACKETSIZE);
 
+        if (DEBUG_GENERAL) System.out.println("Sending file \"" + filename + "\" of size " + fileLen + ".");
+        
         progressBar.setMaximum(fileLen);
         try {
         	/** Setup the transfer. */
+        	if (DEBUG_GENERAL) System.out.println("Setting up file transfer.");
             stealthComms.sendPacket(StealthNetPacket.CMD_FTP, Integer.toString(fileLen));
             
             /** Receive server response. */
+            if (DEBUG_GENERAL) System.out.println("Waiting for server response.");
             stealthComms.recvPacket();
             
             final FileInputStream fid = new FileInputStream(filename);
-            
             int bufLen;
             do {
                 bufLen = fid.read(buf);
                 if (bufLen > 0) {
                 	/** Send a part of the file. */
+                	if (DEBUG_TRANSFER) System.out.println("Sending " + bufLen + " bytes of \"" + filename + "\".");
                     stealthComms.sendPacket(StealthNetPacket.CMD_FTP, buf, bufLen);
                     
                     /** Wait for server response. */
+                    if (DEBUG_TRANSFER) System.out.println("Waiting for server response.");
                     stealthComms.recvPacket();
                 }
                 
@@ -160,10 +170,11 @@ public class StealthNetFileTransfer extends Thread {
             
             /** Close file handle. */
             fid.close();
+            if (DEBUG_GENERAL) System.out.println("Sending terminating file transfer packet.");
             stealthComms.sendPacket(StealthNetPacket.CMD_FTP);
         } catch (IOException e) {
-            System.err.println("Error reading from file " + filename);
-            if (DEBUG) e.printStackTrace();
+            System.err.println("Error reading from file \"" + filename + "\".");
+            if (DEBUG_ERROR_TRACE) e.printStackTrace();
         }
     }
 
@@ -171,9 +182,12 @@ public class StealthNetFileTransfer extends Thread {
     private synchronized void recvFile() {
         try {
         	/** Get the file length from the first packet. */
+        	if (DEBUG_GENERAL) System.out.println("Waiting for sender to transmit file length.");
             final int fileLen = (new Integer(new String(stealthComms.recvPacket().data))).intValue();
+            if (DEBUG_GENERAL) System.out.println("Expecting to receive file \"" + filename + "\" of size " + fileLen + " bytes.");
             
             /** Acknowledge with a NULL packet. */
+            if (DEBUG_GENERAL) System.out.println("Sending acknowledgement to sender.");
             stealthComms.sendPacket(StealthNetPacket.CMD_NULL);
             
             /** Set the scale on the progress bar. */
@@ -191,8 +205,10 @@ public class StealthNetFileTransfer extends Thread {
             do {
             	/** Receive file data. */
                 buf = stealthComms.recvPacket().data;
+                if (DEBUG_TRANSFER) System.out.println("Received " + buf.length + " bytes of file.");
                 
                 /** Send an acknowledgement (NULL packet). */
+                if (DEBUG_TRANSFER) System.out.println("Sending acknowledgement.");
                 stealthComms.sendPacket(StealthNetPacket.CMD_NULL);
                 
                 /** Write the file data to the file output stream. */
@@ -205,8 +221,8 @@ public class StealthNetFileTransfer extends Thread {
             /** Close file handle. */
             fid.close();
         } catch (IOException e) {
-            System.err.println("Error writing to file " + filename);
-            if (DEBUG) e.printStackTrace();
+            System.err.println("Error writing to file \"" + filename + "\".");
+            if (DEBUG_ERROR_TRACE) e.printStackTrace();
         }
    }
 }

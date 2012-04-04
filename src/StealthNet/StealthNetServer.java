@@ -41,6 +41,8 @@ import java.net.Socket;
  * 
  * @author Matt Barrie 
  * @author Stephen Gould
+ * @author Joshua Spence Added debug code and optional port number 
+ * specification.
  */
 public class StealthNetServer {
 	/** 
@@ -48,14 +50,19 @@ public class StealthNetServer {
 	 * to enable debug messages. Use the argument 
 	 * `-Ddebug.StealthNetServer=true' to enable all debug messages. 
 	 */
-	private static final boolean DEBUG_GENERAL     = (System.getProperty("debug.StealthNetServer.General",    "false").equals("true") || System.getProperty("debug.StealthNetServer", "false").equals("true"));
-	private static final boolean DEBUG_ERROR_TRACE = (System.getProperty("debug.StealthNetServer.ErrorTrace", "false").equals("true") || System.getProperty("debug.StealthNetServer", "false").equals("true") || System.getProperty("debug.ErrorTrace", "false").equals("true"));
+	private static final boolean DEBUG_GENERAL     = true && (System.getProperty("debug.StealthNetServer.General",    "false").equals("true") || System.getProperty("debug.StealthNetServer", "false").equals("true"));
+	private static final boolean DEBUG_ERROR_TRACE = true && (System.getProperty("debug.StealthNetServer.ErrorTrace", "false").equals("true") || System.getProperty("debug.StealthNetServer", "false").equals("true") || System.getProperty("debug.ErrorTrace", "false").equals("true"));
 	
 	/** 
 	 * The main StealthNetServer function.
 	 * 
 	 * @param args The command line arguments.
 	 * @throws IOException
+	 * 
+	 * @author Matt Barrie 
+     * @author Stephen Gould
+	 * @author Joshua Spence Added debug code. Also modified code to accept an 
+	 * optional port number parameter from the command line.
 	 */
     public static void main(String[] args) throws IOException {
     	/** Port that the server is listening on. */
