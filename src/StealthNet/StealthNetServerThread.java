@@ -112,9 +112,7 @@ public class StealthNetServerThread extends Thread {
 	 * 
 	 * @throws NoSuchAlgorithmException 
 	 * @throws NoSuchPaddingException 
-	 * @throws InvalidKeyException 
-	 * 
-	 * @author Joshua Spence Added debug code.
+	 * @throws InvalidKeyException
 	 */
 	public StealthNetServerThread(Socket socket) {		
 		/** Thread constructor. */
@@ -144,8 +142,6 @@ public class StealthNetServerThread extends Thread {
 	 * @param id The ID of the user to add.
 	 * @return True on success, false on failure or if the specified user 
 	 * already exists in the user list.
-	 * 
-	 * @author Joshua Spence Added debug code.
 	 */
 	private synchronized boolean addUser(String id) {
 		/** Make sure the specified user doesn't already exist in the user list. */
@@ -192,8 +188,6 @@ public class StealthNetServerThread extends Thread {
 	 * @param id The ID of the user to remove.
 	 * @return True on success, false on failure or if the specified user 
 	 * doesn't exist in the user list.
-	 * 
-	 * @author Joshua Spence Added debug code.
 	 */
 	private synchronized boolean removeUser(String id) {
 		UserData userInfo = userList.get(id);
@@ -211,8 +205,6 @@ public class StealthNetServerThread extends Thread {
 	 * 
 	 * @param name The name of the secret data to remove.
 	 * @return True on success, false on failure.
-	 * 
-	 * @author Joshua Spence Added debug code.
 	 */
 	@SuppressWarnings("unused")
 	private synchronized boolean removeSecret(String name) {
@@ -273,8 +265,6 @@ public class StealthNetServerThread extends Thread {
 	/**
 	 * Send the user list (as a String) to all current users. Sent to all logged
 	 * in users (including the new user) whenever a new user logs on.
-	 * 
-	 * @author Joshua Spence Added debug code.
 	 */
 	private synchronized void sendUserList() {
 		Enumeration<String> i = userList.keys();
@@ -299,8 +289,6 @@ public class StealthNetServerThread extends Thread {
 	/**
 	 * Send the secret list (as a String) to all current users. Sent to all
 	 * logged in users (including the new user) whenever a new user logs on.
-	 * 
-	 * @author Joshua Spence Added debug code.
 	 */
 	private synchronized void sendSecretList() {
 		Enumeration<String> i = userList.keys();
@@ -345,9 +333,6 @@ public class StealthNetServerThread extends Thread {
 	 * If the packet contains the create secret command, then we create secret
 	 * data from the StealthNetPacket data, and retransmit the list of secrets
 	 * to all currently logged in users.
-	 * 
-	 * @author Joshua Spence Added debug code and handling of security-related
-	 * packets.
 	 */
 	public void run() {
 		if (DEBUG_GENERAL) System.out.println(this.getId() + separator + "Running StealthNetServerThread...");
@@ -362,14 +347,17 @@ public class StealthNetServerThread extends Thread {
 		        UserData userInfo;
 				byte msg_type;
 				
-				if (DEBUG_GENERAL) System.out.println(this.getId() + separator + "	. Packet command: " + StealthNetPacket.getCommandName(pckt.command) + ". Packet data: \"" + new String(pckt.data) + "\".");
+				if (DEBUG_GENERAL) {
+					if (pckt.data == null) System.out.println(this.getId() + separator + "	. Packet command: " + StealthNetPacket.getCommandName(pckt.command) + ".");
+					else	               System.out.println(this.getId() + separator + "	. Packet command: " + StealthNetPacket.getCommandName(pckt.command) + ". Packet data: \"" + new String(pckt.data) + "\".");
+				}
 
 				/** Perform the relevant action based on the packet command. */
 				switch (pckt.command) {
 					/***********************************************************
 					 * AUTHENTICATION
 					 **********************************************************/
-					case StealthNetPacket.CMD_AUTHKEY:
+					case StealthNetPacket.CMD_PUBLICKEY:
 						if (DEBUG_COMMANDS_AUTHKEY) System.out.println(this.getId() + separator + "Received authentication key.");
 						stealthComms.keyExchange(new String(pckt.data));
 						break;

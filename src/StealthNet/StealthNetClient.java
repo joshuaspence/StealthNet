@@ -110,7 +110,7 @@ public class StealthNetClient {
 	private static final boolean DEBUG_COMMANDS_CREATESECRET = true && (System.getProperty("debug.StealthNetClient.Commands.CreateSecret", "false").equals("true") || System.getProperty("debug.StealthNetClient", "false").equals("true") || System.getProperty("debug.StealthNetClient.Commands", "false").equals("true"));
 	private static final boolean DEBUG_COMMANDS_SECRETLIST   = true && (System.getProperty("debug.StealthNetClient.Commands.SecretList",   "false").equals("true") || System.getProperty("debug.StealthNetClient", "false").equals("true") || System.getProperty("debug.StealthNetClient.Commands", "false").equals("true"));
 	private static final boolean DEBUG_COMMANDS_GETSECRET    = true && (System.getProperty("debug.StealthNetClient.Commands.GetSecret",    "false").equals("true") || System.getProperty("debug.StealthNetClient", "false").equals("true") || System.getProperty("debug.StealthNetClient.Commands", "false").equals("true"));
-	private static final boolean DEBUG_COMMANDS_AUTHKEY      = true && (System.getProperty("debug.StealthNetClient.Commands.AuthKey",      "false").equals("true") || System.getProperty("debug.StealthNetClient", "false").equals("true") || System.getProperty("debug.StealthNetClient.Commands", "false").equals("true"));
+	private static final boolean DEBUG_COMMANDS_PUBLICKEY    = true && (System.getProperty("debug.StealthNetClient.Commands.PublicKey",    "false").equals("true") || System.getProperty("debug.StealthNetClient", "false").equals("true") || System.getProperty("debug.StealthNetClient.Commands", "false").equals("true"));
 	@SuppressWarnings("unused")
 	private static final boolean DEBUG_COMMANDS_CRYPTKEY     = true && (System.getProperty("debug.StealthNetClient.Commands.CryptKey",     "false").equals("true") || System.getProperty("debug.StealthNetClient", "false").equals("true") || System.getProperty("debug.StealthNetClient.Commands", "false").equals("true"));
 	@SuppressWarnings("unused")
@@ -620,8 +620,6 @@ public class StealthNetClient {
 	 * Start a chat session with the selected user. 
 	 *
 	 * @param row The user to chat with.
-	 * 
-	 * @author Joshua Spence Added debug code.
 	 */
 	private void startChat(int row) {
 		if (!isOKtoSendtoRow(row))
@@ -683,8 +681,6 @@ public class StealthNetClient {
 	 * Send a file to the selected user.
 	 * 
 	 * @param row The user to send the file to.
-	 * 
-	 * @author Joshua Spence Added debug code.
 	 */
     private void sendFile(int row) {
 		if (!isOKtoSendtoRow(row)) {
@@ -750,7 +746,6 @@ public class StealthNetClient {
 
     /** 
      * Process incoming packets.
-     * @author Joshua Spence Added debug code and handling of security packets. 
      */
     private void processPackets() {
 		/** Update credits box, stick it here for convenience. */
@@ -782,13 +777,13 @@ public class StealthNetClient {
                 if (DEBUG_GENERAL) System.out.println("Received packet. Packet command: " + StealthNetPacket.getCommandName(pckt.command) + ". Packet data: \"" + new String(pckt.data) + "\".");
                 
                 switch (pckt.command) {
-                	case StealthNetPacket.CMD_AUTHKEY:
-                		final String authKey = new String(pckt.data);
-                    	if (DEBUG_COMMANDS_AUTHKEY) System.out.println("Received an authorisation key command. Key: \"" + authKey + "\".");
+                	case StealthNetPacket.CMD_PUBLICKEY:
+                		final String pubKey = new String(pckt.data);
+                    	if (DEBUG_COMMANDS_PUBLICKEY) System.out.println("Received a public key command. Key: \"" + pubKey + "\".");
                     	
                     	if (DEBUG_GENERAL) System.out.println("Performing key exchange.");
                     	msgTextBox.append("[SEC] Performing key exchange.\n");
-                	    stealthComms.keyExchange(authKey);
+                	    stealthComms.keyExchange(pubKey);
                         break;
                 
                     case StealthNetPacket.CMD_MSG:
@@ -929,9 +924,6 @@ public class StealthNetClient {
      * Main client function to execute.
      * 
      * @param args The command line arguments.
-     * 
-     * @author Joshua Spence Added optional sever address and port number 
-     * specification from the command line.
      */
     public static void main(String[] args) {
     	/** Hostname of the server. */

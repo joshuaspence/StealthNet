@@ -59,13 +59,19 @@ import javax.crypto.spec.DHPublicKeySpec;
  */
 public class StealthNetKeyExchange {
 	/** Length of the key (in bits). */
-	public final static int NUM_BITS = 512;
+	public final static int NUM_BITS = 1024;
 	
 	/** Group parameters */
 	// {
-	private final BigInteger modulus;	// prime modulus
-	private final BigInteger base;		// generator
+	private final BigInteger prime;		// prime modulus (q)
+	private final BigInteger base;		// base (alpha)
 	// }
+	
+	/**
+	 * It is preferable for security, though not necessary, that base be a 
+	 * generator with respect to prime. Otherwise, the pool of possible keys is 
+	 * reduced, leaving the system more vulnerable to attack.
+	 */
 	
 	/** Our private key. */
 	private PrivateKey privateKey;
@@ -91,26 +97,26 @@ public class StealthNetKeyExchange {
 		
 		privateKey = kp.getPrivate();
 		publicValue = spec.getY();
-		modulus = spec.getP();
+		prime = spec.getP();
 		base = spec.getG();
 	}
 	
 	/**
 	 * Generate a Diffie-Hellman keypair using the specified parameters.
 	 *
-	 * @param modulus The Diffie-Hellman modulus P
-	 * @param base The Diffie-Hellman base G
+	 * @param prime The Diffie-Hellman large prime q.
+	 * @param base The Diffie-Hellman base alpha.
 	 * 
 	 * @throws NoSuchAlgorithmException 
 	 * @throws InvalidAlgorithmParameterException 
 	 * @throws InvalidKeySpecException 
 	 */
-	StealthNetKeyExchange(BigInteger modulus, BigInteger base, SecureRandom random) throws NoSuchAlgorithmException, InvalidAlgorithmParameterException, InvalidKeySpecException {
-		this.modulus = modulus;
+	StealthNetKeyExchange(BigInteger prime, BigInteger base, SecureRandom random) throws NoSuchAlgorithmException, InvalidAlgorithmParameterException, InvalidKeySpecException {
+		this.prime = prime;
 		this.base = base;
 		
 		KeyPairGenerator kpg = KeyPairGenerator.getInstance("DiffieHellman");
-		DHParameterSpec params = new DHParameterSpec(modulus, base);
+		DHParameterSpec params = new DHParameterSpec(prime, base);
 		kpg.initialize(params, random);
 		KeyPair kp = kpg.generateKeyPair();
 		DHPublicKeySpec spec = getDHPublicKeySpec(kp.getPublic());
@@ -119,7 +125,7 @@ public class StealthNetKeyExchange {
 		publicValue = spec.getY();
 	}
 	
-	static DHPublicKeySpec getDHPublicKeySpec(PublicKey key) throws NoSuchAlgorithmException, InvalidKeySpecException {
+	private static DHPublicKeySpec getDHPublicKeySpec(PublicKey key) throws NoSuchAlgorithmException, InvalidKeySpecException {
 		if (key instanceof DHPublicKey) {
 			DHPublicKey dhKey = (DHPublicKey) key;
 			DHParameterSpec params = dhKey.getParams();
@@ -131,8 +137,8 @@ public class StealthNetKeyExchange {
 	}
 
 	/** @return Returns the Diffie-Hellman modulus. */
-	public BigInteger getModulus() {
-		return modulus;
+	public BigInteger getPrime() {
+		return prime;
 	}
 	
 	/** @return Returns the Diffie-Hellman base (generator). */
@@ -164,9 +170,9 @@ public class StealthNetKeyExchange {
 	 * @throws IllegalStateException 
 	 * @throws InvalidKeyException 
 	 */
-	 SecretKey getAgreedSecret(BigInteger peerPublicValue) throws NoSuchAlgorithmException, InvalidKeySpecException, InvalidKeyException, IllegalStateException {
+	 SecretKey getSharedSecret(BigInteger peerPublicValue) throws NoSuchAlgorithmException, InvalidKeySpecException, InvalidKeyException, IllegalStateException {
 		 KeyFactory kf = KeyFactory.getInstance("DiffieHellman");
-		 DHPublicKeySpec spec = new DHPublicKeySpec(peerPublicValue, modulus, base);
+		 DHPublicKeySpec spec = new DHPublicKeySpec(peerPublicValue, prime, base);
 		 PublicKey publicKey = kf.generatePublic(spec);
 		 KeyAgreement ka = KeyAgreement.getInstance("DiffieHellman");
 		 

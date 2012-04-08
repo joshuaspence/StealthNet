@@ -1,13 +1,18 @@
 package StealthNet;
 
+import java.io.UnsupportedEncodingException;
+import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.KeyGenerator;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
+import javax.crypto.spec.IvParameterSpec;
+
+import org.apache.commons.codec.binary.Base64;
 
 /**
  * A class used to encrypt and decrypt messages, in order to provide 
@@ -19,94 +24,109 @@ import javax.crypto.SecretKey;
  * @author Joshua Spence
  */
 public class StealthNetEncryption {
-	private final SecretKey encryption_key;
-	private final Cipher encryption_cipher;
+	private SecretKey encryptionKey;
+	private Cipher encryptionCipher;
 	
-	private SecretKey decryption_key;
-	private Cipher decryption_cipher;
+	private SecretKey decryptionKey;
+	private Cipher decryptionCipher;
 	
-	private static final String ENCRYPTION_ALGORITHM = "AES";
-	private static final String CIPHER_ALGORITHM = "AES/ECB/PKCS5Padding";
+	private IvParameterSpec ips;
+	
+	public static final String HASH_ALGORITHM = "MD5";
+	public static final String KEY_ALGORITHM = "AES";
+	private static final String CIPHER_ALGORITHM = "AES/CBC/PKCS5Padding";
+	private static final byte[] initializationVector = {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00};
 	
 	/**
 	 * Constructor.
 	 * 
-	 * @throws NoSuchAlgorithmException
-	 * @throws NoSuchPaddingException
-	 * @throws InvalidKeyException
+	 * @param encryptKey The SecretKey to be used for encryption.
+	 * @param decryptKey The SecretKey to be used for decryption.
+	 * 
+	 * @throws NoSuchPaddingException 
+	 * @throws NoSuchAlgorithmException 
+	 * @throws InvalidKeyException 
+	 * @throws InvalidAlgorithmParameterException 
 	 */
-	public StealthNetEncryption() throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException {
-        KeyGenerator keygen = KeyGenerator.getInstance(ENCRYPTION_ALGORITHM);
-        
-        encryption_key = keygen.generateKey();
-        encryption_cipher = Cipher.getInstance(CIPHER_ALGORITHM);
-        encryption_cipher.init(Cipher.ENCRYPT_MODE, encryption_key);
+	public StealthNetEncryption(SecretKey encryptKey, SecretKey decryptKey) throws InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidAlgorithmParameterException {
+		encryptionKey = encryptKey;
+        decryptionKey = decryptKey;
+        ips = new IvParameterSpec(initializationVector);
+        initCiphers();
 	}
 	
 	/**
-	 * Sets the decryption key that should be used to decrypt encrypted
-	 * messsages.
+	 * Initialises Cipher objects.
 	 * 
-	 * @param key The decryption key.
-	 * @throws NoSuchAlgorithmException
-	 * @throws NoSuchPaddingException
-	 * @throws InvalidKeyException
+	 * @throws NoSuchPaddingException 
+	 * @throws NoSuchAlgorithmException 
+	 * @throws InvalidKeyException 
+	 * @throws InvalidAlgorithmParameterException 
 	 */
-	public void setDecryptionKey(SecretKey key) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException {
-		decryption_key = key;
-		decryption_cipher = Cipher.getInstance(CIPHER_ALGORITHM);
-		decryption_cipher.init(Cipher.ENCRYPT_MODE, decryption_key);
+	private void initCiphers() throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException {		
+		encryptionCipher = Cipher.getInstance(CIPHER_ALGORITHM);
+		encryptionCipher.init(Cipher.ENCRYPT_MODE, encryptionKey, ips);
+		
+		decryptionCipher = Cipher.getInstance(CIPHER_ALGORITHM);
+		decryptionCipher.init(Cipher.DECRYPT_MODE, decryptionKey, ips);
 	}
 	
 	/**
-	 * Encodes a message using the encryption key.
+	 * Encrypts a message using the encryption key.
 	 * 
-	 * @param data The message to encrypt.
+	 * @param cleartext The message to encrypt.
 	 * @return The encrypted message.
+	 * 
 	 * @throws IllegalBlockSizeException
 	 * @throws BadPaddingException
+	 * @throws UnsupportedEncodingException 
 	 */
-	public byte[] encode(String data) throws IllegalBlockSizeException, BadPaddingException {	          
-	    /** Encrypt the cleartext and return the ciphertext. */
-	    return encryption_cipher.doFinal(data.getBytes());
+	public String encrypt(String cleartext) throws UnsupportedEncodingException, IllegalBlockSizeException, BadPaddingException {
+		return encrypt(cleartext.getBytes());
 	}
 	
 	/**
-	 * Encodes a message using the encryption key.
+	 * Encrypts a message using the encryption key.
 	 * 
-	 * @param data The message to encrypt.
+	 * @param cleartext The message to encrypt.
 	 * @return The encrypted message.
+	 * 
 	 * @throws IllegalBlockSizeException
 	 * @throws BadPaddingException
+	 * @throws UnsupportedEncodingException 
 	 */
-	public byte[] encode(byte[] data) throws IllegalBlockSizeException, BadPaddingException {	          
-	    /** Encrypt the cleartext and return the ciphertext. */
-	    return encryption_cipher.doFinal(data);
+	public String encrypt(byte[] cleartext) throws IllegalBlockSizeException, BadPaddingException {		
+		byte[] encryptedValue = encryptionCipher.doFinal(cleartext);
+        byte[] encodedValue = Base64.encodeBase64(encryptedValue);    
+        return new String(encodedValue);
 	}
 	
 	/**
-	 * Decodes a message.
+	 * Decrypts a message.
 	 * 
-	 * @param data The message to be decoded.
-	 * @return The decoded message.
-	 * @throws IllegalBlockSizeException
-	 * @throws BadPaddingException
+	 * @param ciphertext The message to be decrypted.
+	 * @return The cleartext message.
+	 * 
+	 * @throws UnsupportedEncodingException 
+	 * @throws BadPaddingException 
+	 * @throws IllegalBlockSizeException 
 	 */
-	public byte[] decode(String data) throws IllegalBlockSizeException, BadPaddingException {	          
-		/** Decrypt the ciphertext and return the cleartext. */
-	    return decryption_cipher.doFinal(data.getBytes());
+	public String decrypt(String ciphertext) throws UnsupportedEncodingException, IllegalBlockSizeException, BadPaddingException {	 
+		return decrypt(ciphertext.getBytes());
 	}
 	
 	/**
-	 * Decodes a message.
+	 * Decrypts a message.
 	 * 
-	 * @param data The message to be decoded.
-	 * @return The decoded message.
-	 * @throws IllegalBlockSizeException
-	 * @throws BadPaddingException
+	 * @param ciphertext The message to be decrypted.
+	 * @return The cleartext message.
+	 * 
+	 * @throws BadPaddingException 
+	 * @throws IllegalBlockSizeException 
 	 */
-	public byte[] decode(byte[] data) throws IllegalBlockSizeException, BadPaddingException {	          
-		/** Decrypt the ciphertext and return the cleartext. */
-	    return decryption_cipher.doFinal(data);
+	public String decrypt(byte[] ciphertext) throws IllegalBlockSizeException, BadPaddingException {
+		byte[] decodedValue = Base64.decodeBase64(ciphertext);
+		byte[] decryptedValue = decryptionCipher.doFinal(decodedValue);
+		return new String(decryptedValue);
 	}
 }

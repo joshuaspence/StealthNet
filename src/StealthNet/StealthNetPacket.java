@@ -43,9 +43,7 @@ public class StealthNetPacket {
     public static final byte CMD_GETSECRET = 0x09;
     
     /** Security-specific commands. */
-    public static final byte CMD_AUTHKEY = 0x0A;
-    public static final byte CMD_CRYPTKEY = 0x0B;
-    public static final byte CMD_SEED = 0x0C;
+    public static final byte CMD_PUBLICKEY = 0x0A;
     
     /** Hexadecimal characters. */
     private static final char[] HEXTABLE = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
@@ -143,8 +141,6 @@ public class StealthNetPacket {
      * 
      * @param command The byte value of the command to query the name of.
      * @return A String containing the name of the command.
-     * 
-     * @author Joshua Spence
      */
     public static String getCommandName(byte command) {
     	switch (command) {
@@ -168,12 +164,8 @@ public class StealthNetPacket {
 				return "CMD_SECRETLIST";
     		case CMD_GETSECRET:
     			return "CMD_GETSECRET";
-    		case CMD_AUTHKEY:
-				return "CMD_AUTHKEY";
-    		case CMD_CRYPTKEY:
-    			return "CMD_CRYPTKEY";
-    		case CMD_SEED:
-    			return "CMD_SEED";
+    		case CMD_PUBLICKEY:
+				return "CMD_PUBLICKEY";
 			default:
 				return "UNKNOWN";
     	}
