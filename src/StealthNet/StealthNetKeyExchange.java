@@ -97,9 +97,6 @@ import javax.crypto.spec.DHPublicKeySpec;
  * @author Joshua Spence
  */
 public class StealthNetKeyExchange {
-	/** Length of the key (in bits). */
-	public final static int NUM_BITS = 1024;
-	
 	/** Test Diffie-Hellman prime and generator parameters? */
 	private static final boolean TEST_PARAMETERS = true;
 	

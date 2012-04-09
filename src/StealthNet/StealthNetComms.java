@@ -73,16 +73,17 @@ public class StealthNetComms {
     /** Default port for the StealthNet server. */
     public static final int DEFAULT_SERVERPORT = 5616;
     
-    /** Current host - defaults to DFEAULT_SERVERNAME */
+    /** This host - defaults to DFEAULT_SERVERNAME */
     public String servername;
     
-    /** Current port - defaults to DEFAULT_SERVERPORT. */
+    /** This port - defaults to DEFAULT_SERVERPORT. */
     public int port;
 
     /** Opened socket through which the communication is to be made. */
     private Socket commsSocket;
     
     /** Provides authentication for the communication. */
+	public final static int KEY_EXCHANGE_NUM_BITS = 1024;
     private StealthNetKeyExchange authenticationProvider;
     private SecretKey sharedSecretKey;
     
@@ -413,7 +414,7 @@ public class StealthNetComms {
     	}
     	
     	try {
-			authenticationProvider = new StealthNetKeyExchange(StealthNetKeyExchange.NUM_BITS, new SecureRandom());
+			authenticationProvider = new StealthNetKeyExchange(KEY_EXCHANGE_NUM_BITS, new SecureRandom());
 		} catch (Exception e) {
 			System.err.println("Unable to authenticated.");
 			if (DEBUG_ERROR_TRACE) e.printStackTrace();
