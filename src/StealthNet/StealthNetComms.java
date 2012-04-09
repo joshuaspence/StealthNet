@@ -47,6 +47,8 @@ import javax.crypto.spec.SecretKeySpec;
  * @author Stephen Gould
  * @author Matt Barrie
  * @author Ryan Junee
+ * @author Joshua Spence (Implemented security-related functionality. Also added
+ * debug code). 
  *
  */
 public class StealthNetComms {

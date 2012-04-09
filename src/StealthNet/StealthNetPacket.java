@@ -26,8 +26,8 @@ package StealthNet;
  * @author Matt Barrie
  * @author Stephen Gould
  * @author Ryan Junee
- * @author Joshua Spence Added security-related commands. Also added 
- * getCommandName function for debug purposes.
+ * @author Joshua Spence (Added security-related commands. Also added 
+ * getCommandName function for debug purposes.)
  */
 public class StealthNetPacket {
 	/** Commands. */

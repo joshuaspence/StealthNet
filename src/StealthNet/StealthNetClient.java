@@ -84,7 +84,7 @@ import javax.swing.JOptionPane;
  * @author Matt Barrie
  * @author Stephen Gould
  * @author Ryan Junee
- * @author Joshua Spence Added debug code and security features.
+ * @author Joshua Spence (Added debug code and security features.)
  */
 public class StealthNetClient {
 	/** 

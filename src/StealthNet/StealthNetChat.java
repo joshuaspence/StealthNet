@@ -46,6 +46,7 @@ import javax.swing.JTextField;
  * The chat window used to allow two StealthNet clients to communicate.
  * 
  * @author Matt Barrie
+ * @author Joshua Spence (Added debug functionality.)
  */
 public class StealthNetChat extends Thread {
 	/** 

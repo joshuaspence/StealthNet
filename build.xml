@@ -3,7 +3,7 @@
     Ant buildfile for ELEC5616 project.
     
     Joshua Spence (308216350)
-    Ahamad
+    Ahmad Al Mutawa
 -->
 <project name="ELEC5616" default="all" basedir=".">
 	<!-- Use ant-contrib -->

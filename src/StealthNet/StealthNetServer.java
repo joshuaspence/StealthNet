@@ -41,8 +41,8 @@ import java.net.Socket;
  * 
  * @author Matt Barrie 
  * @author Stephen Gould
- * @author Joshua Spence Added debug code and optional port number 
- * specification.
+ * @author Joshua Spence (Added debug code and optional port number 
+ * specification.)
  */
 public class StealthNetServer {
 	/** 

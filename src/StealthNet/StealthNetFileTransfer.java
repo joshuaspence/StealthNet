@@ -43,7 +43,7 @@ import javax.swing.JOptionPane;
  * 
  * @author Matt Barrie
  * @author Stephen Gould
- * @author Joshua Spence Added debug code.
+ * @author Joshua Spence (Added debug code.)
  */
 public class StealthNetFileTransfer extends Thread {
 	/** 

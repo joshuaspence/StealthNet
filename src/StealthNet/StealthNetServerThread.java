@@ -43,8 +43,8 @@ import javax.crypto.NoSuchPaddingException;
  * @author Stephen Gould
  * @author Matt Barrie
  * @author Ryan Junee
- * @author Joshua Spence Added debug code and handling of security-related 
- * packets.
+ * @author Joshua Spence (Added debug code and handling of security-related 
+ * packets.)
  */
 public class StealthNetServerThread extends Thread {
 	/** 
