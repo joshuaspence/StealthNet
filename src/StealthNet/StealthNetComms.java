@@ -66,6 +66,7 @@ public class StealthNetComms {
 	private static final boolean DEBUG_RECEIVE_READY    = true && (System.getProperty("debug.StealthNetComms.ReceiveReady",    "false").equals("true") || System.getProperty("debug.StealthNetComms", "false").equals("true"));
 	private static final boolean DEBUG_KEY_EXCHANGE     = true && (System.getProperty("debug.StealthNetComms.KeyExchange",     "false").equals("true") || System.getProperty("debug.StealthNetComms", "false").equals("true"));
 	private static final boolean DEBUG_ENCRYPTION       = true && (System.getProperty("debug.StealthNetComms.Encryption",      "false").equals("true") || System.getProperty("debug.StealthNetComms", "false").equals("true"));
+	private static final boolean DEBUG_INTEGRITY        = true && (System.getProperty("debug.StealthNetComms.Integrity",       "false").equals("true") || System.getProperty("debug.StealthNetComms", "false").equals("true"));
 	
 	/** Default host for the StealthNet server. */
     public static final String DEFAULT_SERVERNAME = "localhost";
@@ -91,8 +92,7 @@ public class StealthNetComms {
 	private StealthNetEncryption confidentialityProvider;
     
     /** Provides integrity through creating checksums for messages. */
-    @SuppressWarnings("unused")
-	private static final StealthNetChecksum integrityProvider = new StealthNetChecksum();
+	private static StealthNetMAC integrityProvider;
     
     /** Prevents replay attacks using a PRNG. */
     @SuppressWarnings("unused")
@@ -106,14 +106,14 @@ public class StealthNetComms {
     
     /** Constructor. */
     public StealthNetComms() {
-    	if (DEBUG_GENERAL) System.out.println("Creating StealthNetComms to " + DEFAULT_SERVERNAME + " on port " + DEFAULT_SERVERPORT + ".");
-    	
-    	commsSocket = null;
-        dataIn = null;
-        dataOut = null;
+    	this.commsSocket = null;
+    	this.dataIn = null;
+    	this.dataOut = null;
         
-        servername = DEFAULT_SERVERNAME;
-        port = DEFAULT_SERVERPORT;
+        this.servername = DEFAULT_SERVERNAME;
+        this.port = DEFAULT_SERVERPORT;
+        
+        if (DEBUG_GENERAL) System.out.println("Creating StealthNetComms to " + this.servername + " on port " + this.port + ".");
     }
     
     /** 
@@ -122,15 +122,15 @@ public class StealthNetComms {
      * @param s The servername of the StealthNet server.
      * @param p The port number for the StealthNet server.
      */
-    public StealthNetComms(String s, int p) {
-    	if (DEBUG_GENERAL) System.out.println("Creating StealthNetComms to " + s + " on port " + p + ".");
-    	
-        commsSocket = null;
-        dataIn = null;
-        dataOut = null;
+    public StealthNetComms(String s, int p) {    	
+    	this.commsSocket = null;
+        this.dataIn = null;
+        this.dataOut = null;
         
-        servername = s;
-        port = p;
+        this.servername = s;
+        this.port = p;
+        
+        if (DEBUG_GENERAL) System.out.println("Creating StealthNetComms to " + this.servername + " on port " + this.port + ".");
     }
 
     /** 
@@ -167,7 +167,7 @@ public class StealthNetComms {
         initKeyExchange();
         
         /** Wait for key exchange to finish. */
-        /* TODO: probably want a timeout on this */
+        /* TODO: possibly want a timeout on this? */
         if (DEBUG_GENERAL) System.out.println("Waiting for key exchange.");
         waitForKeyExchange();
         
@@ -495,17 +495,28 @@ public class StealthNetComms {
 			System.exit(1);
 		}
 		
+		SecretKey cryptKey = null;
 		try {
 			/** Use a hash shared secret key for encryption and decryption. */
 			if (DEBUG_ENCRYPTION) System.out.println("Generating AES encryption/decryption key.");
 			MessageDigest mdb = MessageDigest.getInstance(StealthNetEncryption.HASH_ALGORITHM);
 			
-			SecretKey cryptKey = new SecretKeySpec(mdb.digest(sharedSecretKey.getEncoded()), StealthNetEncryption.KEY_ALGORITHM);
-			String encdecKey = new String(getHexValue(cryptKey.getEncoded()));
-			if (DEBUG_ENCRYPTION) System.out.println("Generated AES encryption/decryption key: " + encdecKey);			
+			cryptKey = new SecretKeySpec(mdb.digest(sharedSecretKey.getEncoded()), StealthNetEncryption.KEY_ALGORITHM);
+			String cryptKeyString = new String(getHexValue(cryptKey.getEncoded()));
+			if (DEBUG_ENCRYPTION) System.out.println("Generated AES encryption/decryption key: " + cryptKeyString);			
 			confidentialityProvider = new StealthNetEncryption(cryptKey, cryptKey);
 		} catch (Exception e) {
-			System.err.println("Unable to provide encryption/decrypted. Failed to initialise encryption class.");
+			System.err.println("Unable to provide encryption/decryption. Failed to generate AES encryption/decryption key or initialise ciphers.");
+			if (DEBUG_ERROR_TRACE) e.printStackTrace();
+			System.exit(1);
+		}
+		
+		SecretKey integrityKey = null;
+		try {
+			integrityKey = cryptKey;
+			integrityProvider = new StealthNetMAC(integrityKey);
+		} catch (Exception e) {
+			System.err.println("Unable to provide integrity. Failed to initialise HMAC.");
 			if (DEBUG_ERROR_TRACE) e.printStackTrace();
 			System.exit(1);
 		}
