@@ -4,6 +4,7 @@ import java.io.UnsupportedEncodingException;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+import java.util.Random;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
@@ -35,7 +36,6 @@ public class StealthNetEncryption {
 	public static final String HASH_ALGORITHM = "MD5";
 	public static final String KEY_ALGORITHM = "AES";
 	private static final String CIPHER_ALGORITHM = "AES/CBC/PKCS5Padding";
-	private static final byte[] initializationVector = {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00};
 	
 	/**
 	 * Constructor.
@@ -49,9 +49,19 @@ public class StealthNetEncryption {
 	 * @throws InvalidAlgorithmParameterException 
 	 */
 	public StealthNetEncryption(SecretKey encryptKey, SecretKey decryptKey) throws InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidAlgorithmParameterException {
-		encryptionKey = encryptKey;
-        decryptionKey = decryptKey;
-        ips = new IvParameterSpec(initializationVector);
+		this.encryptionKey = encryptKey;
+        this.decryptionKey = decryptKey;
+        
+        /** 
+         * Generate the initialisation vector using a seeded random number
+         * generator.
+         */
+        byte[] initializationVector = new byte[16];
+        Random ivGenerator = new Random(encryptKey.hashCode());
+        for (int i = 0; i < 16; i++)
+        	initializationVector[i] = (byte) ivGenerator.nextInt();
+        
+        this.ips = new IvParameterSpec(initializationVector);
         initCiphers();
 	}
 	

@@ -96,10 +96,7 @@ import javax.crypto.spec.DHPublicKeySpec;
  *
  * @author Joshua Spence
  */
-public class StealthNetKeyExchange {
-	/** Test Diffie-Hellman prime and generator parameters? */
-	private static final boolean TEST_PARAMETERS = true;
-	
+public class StealthNetKeyExchange {	
 	/** 
 	 * Group parameters.
 	 *
@@ -135,7 +132,7 @@ public class StealthNetKeyExchange {
 	 * @throws InvalidKeySpecException 
 	 * @throws InvalidDHParameterException 
 	 */
-	public StealthNetKeyExchange(int keyLength, SecureRandom random) throws NoSuchAlgorithmException, InvalidKeySpecException, InvalidDHParameterException {
+	public StealthNetKeyExchange(int keyLength, SecureRandom random) throws NoSuchAlgorithmException, InvalidKeySpecException {
 		KeyPairGenerator kpg = KeyPairGenerator.getInstance("DiffieHellman");
 		kpg.initialize(keyLength, random);
 		KeyPair kp = kpg.generateKeyPair();
@@ -146,13 +143,6 @@ public class StealthNetKeyExchange {
 		this.publicValue = spec.getY();
 		this.prime = spec.getP();
 		this.generator = spec.getG();
-		
-		try {
-			if (TEST_PARAMETERS)
-				checkParameters(this.prime, this.generator);
-		} catch (InvalidDHParameterException e) {
-			throw new InvalidDHParameterException("Invalid Diffie-Hellman parameters. " + e.getMessage());
-		}
 	}
 	
 	/**
@@ -166,14 +156,7 @@ public class StealthNetKeyExchange {
 	 * @throws InvalidAlgorithmParameterException 
 	 * @throws InvalidKeySpecException 
 	 */
-	StealthNetKeyExchange(BigInteger prime, BigInteger generator, SecureRandom random) throws NoSuchAlgorithmException, InvalidAlgorithmParameterException, InvalidKeySpecException, InvalidDHParameterException {
-		try {
-			if (TEST_PARAMETERS)
-				checkParameters(prime, generator);
-		} catch (InvalidDHParameterException e) {
-			throw new InvalidDHParameterException("Invalid Diffie-Hellman parameters. " + e.getMessage());
-		}
-		
+	StealthNetKeyExchange(BigInteger prime, BigInteger generator, SecureRandom random) throws NoSuchAlgorithmException, InvalidAlgorithmParameterException, InvalidKeySpecException {
 		this.prime = prime;
 		this.generator = generator;
 		
@@ -262,94 +245,6 @@ public class StealthNetKeyExchange {
 		 ka.doPhase(publicKey, true);
 		 return ka.generateSecret("TlsPremasterSecret");
 	 }
-	 
-	 /**
-	  * Checks that the parameters for the key exchange meet all of the given
-	  * mathematical criteria.
-	  * 
-	  * @param p The specified prime number.
-	  * @param g The specified generator.
-	  * @return True if all criteria are met, otherwise false.
-	  * 
-	  * @throws InvalidDHParameterException 
-	  */
-	 private static boolean checkParameters(BigInteger p, BigInteger g) throws InvalidDHParameterException {
-		 /** Make sure 'g < p'. */
-		 if (g.compareTo(p) >= 0)
-			 throw new InvalidDHParameterException("'Generator' number must be less than 'prime' number.");
-		 
-		 /** Make sure 'prime' is really a prime number. */
-		 if (!isPrime(p))
-			 throw new InvalidDHParameterException("'Prime' number must be a prime number.");
-		 
-		 /** 
-		  * Make sure the following rule can be satisified: for every number 'n' 
-		  * between '1' and 'prime - 1' inclusive, there is a power 'k' of 
-		  * 'generator' such that 'n = generator^k mod prime'.
-		  */
-		 if (!isGenerator(p, g))
-			 throw new InvalidDHParameterException("'Generator' number must be a generator of 'prime' number.");
-		 
-		 return true;
-	 }
-	 
-	 /**
-	  * A simple method to test is a given number is prime. Not the most 
-	  * efficient method for primality testing, but this method is really only 
-	  * for test purposes.
-	  * 
-	  * @param p The number to test for primality.
-	  * @return True if the parameter is prime, otherwise false.
-	  */
-	 private static boolean isPrime(BigInteger p) {
-		 for (BigInteger i = BigInteger.valueOf(2); (i.compareTo(p) < 0); i = i.add(BigInteger.ONE)) {
-			  if (p.mod(i).compareTo(BigInteger.ZERO) == 0)
-				  return false;
-		  }
-		 
-		 return true;
-	 }
-	 
-	 /** 
-	  * A simple method to test that a given number 'g' is a generator of a 
-	  * given prime 'p' (NOTE: does not test if 'p' is prime). This method is 
-	  * not very efficient, but is only really used for testing purposes.
-	  * 
-	  * @param p The given prime number.
-	  * @param g The number to test if is a generator of 'p'.
-	  * @return True is 'g' is a generator of 'p', otherwise false.
-	  */
-	 private static boolean isGenerator(BigInteger p, BigInteger g) {
-		 for (BigInteger n = BigInteger.ONE; (n.compareTo(p) < 0); n = n.add(BigInteger.ONE)) {
-			 boolean found_k =  false;
-			 
-			 for (int k = 0; k <= Integer.MAX_VALUE; k++) {
-				 if (g.pow(k).mod(p) == n) {
-					 found_k = true;
-					 break;
-				 }
-			 }
-			 
-			 if (!found_k)
-				 return false;
-		 }
-		 
-		 return true;
-	 }
-}
-
-/**
- * An exception to be thrown if invalid 'prime' and 'generator' parameters are
- * specified when creating a StealthNetKeyExchange.
- * 
- * @author Joshua Spence
- */
-class InvalidDHParameterException extends Exception {
-	private static final long serialVersionUID = 1L;
-  
-	public InvalidDHParameterException(String msg) {
-		super(msg);
-	}
 }
 
 /******************************************************************************

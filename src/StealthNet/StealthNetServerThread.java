@@ -348,7 +348,7 @@ public class StealthNetServerThread extends Thread {
 				byte msg_type;
 				
 				if (DEBUG_GENERAL) {
-					if (pckt.data == null) System.out.println(this.getId() + separator + "	. Packet command: " + StealthNetPacket.getCommandName(pckt.command) + ".");
+					if (pckt.data == null)	 System.out.println(this.getId() + separator + "	. Packet command: " + StealthNetPacket.getCommandName(pckt.command) + ".");
 					else	               System.out.println(this.getId() + separator + "	. Packet command: " + StealthNetPacket.getCommandName(pckt.command) + ". Packet data: \"" + new String(pckt.data) + "\".");
 				}
 

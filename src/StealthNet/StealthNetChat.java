@@ -56,7 +56,8 @@ public class StealthNetChat extends Thread {
 	 */
 	private static final boolean DEBUG_GENERAL     = true && (System.getProperty("debug.StealthNetChat.General",    "false").equals("true") || System.getProperty("debug.StealthNetChat", "false").equals("true"));
 	private static final boolean DEBUG_ERROR_TRACE = true && (System.getProperty("debug.StealthNetChat.ErrorTrace", "false").equals("true") || System.getProperty("debug.StealthNetChat", "false").equals("true") || System.getProperty("debug.ErrorTrace", "false").equals("true"));
-    
+	private static final boolean DEBUG_COMMANDS_PUBLICKEY    = true && (System.getProperty("debug.StealthNetClient.Commands.PublicKey",    "false").equals("true") || System.getProperty("debug.StealthNetClient", "false").equals("true") || System.getProperty("debug.StealthNetClient.Commands", "false").equals("true"));
+	
 	private JFrame chatFrame;
     private JTextArea chatTextBox;
     private JTextField msgText;
@@ -185,6 +186,15 @@ public class StealthNetChat extends Thread {
                 pckt = stealthComms.recvPacket();
                 
                 switch (pckt.command) {
+	                case StealthNetPacket.CMD_PUBLICKEY:
+	            		final String pubKey = new String(pckt.data);
+	                	if (DEBUG_COMMANDS_PUBLICKEY) System.out.println("Received a public key command. Key: \"" + pubKey + "\".");
+	                	
+	                	if (DEBUG_GENERAL) System.out.println("Performing key exchange.");
+	                	chatTextBox.append("[SEC] Performing key exchange.\n");
+	            	    stealthComms.keyExchange(pubKey);
+	                    break;
+                
                     case StealthNetPacket.CMD_MSG:
                     	/** Chat message received. */
                     	final String msg = new String(pckt.data);

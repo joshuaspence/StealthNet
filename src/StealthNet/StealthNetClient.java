@@ -774,7 +774,7 @@ public class StealthNetClient {
             while (stealthComms.recvReady()) {
                 pckt = stealthComms.recvPacket();
                 
-                if (DEBUG_GENERAL) System.out.println("Received packet. Packet command: " + StealthNetPacket.getCommandName(pckt.command) + ". Packet data: \"" + new String(pckt.data) + "\".");
+                if (DEBUG_GENERAL) System.out.println("Received packet. Packet command: " + StealthNetPacket.getCommandName(pckt.command) + ". Packet data: \"" + new String(pckt.data).replaceAll("\n", ";") + "\".");
                 
                 switch (pckt.command) {
                 	case StealthNetPacket.CMD_PUBLICKEY:
