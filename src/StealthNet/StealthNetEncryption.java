@@ -25,17 +25,22 @@ import org.apache.commons.codec.binary.Base64;
  * @author Joshua Spence
  */
 public class StealthNetEncryption {
-	private SecretKey encryptionKey;
-	private Cipher encryptionCipher;
+	/** Encryption key and cipher. */
+	private final SecretKey encryptionKey;
+	private final Cipher encryptionCipher;
 	
-	private SecretKey decryptionKey;
-	private Cipher decryptionCipher;
+	/** Decryption key and cipher. */
+	private final SecretKey decryptionKey;
+	private final Cipher decryptionCipher;
 	
 	private IvParameterSpec ips;
 	
+	/** String constants. */
+	// {
 	public static final String HASH_ALGORITHM = "MD5";
 	public static final String KEY_ALGORITHM = "AES";
-	private static final String CIPHER_ALGORITHM = "AES/CBC/PKCS5Padding";
+	public static final String CIPHER_ALGORITHM = "AES/CBC/PKCS5Padding";
+	// }
 	
 	/**
 	 * Constructor.
@@ -57,26 +62,17 @@ public class StealthNetEncryption {
          * generator.
          */
         byte[] initializationVector = new byte[16];
-        Random ivGenerator = new Random(encryptKey.hashCode());
+        final Random ivGenerator = new Random(encryptKey.hashCode());
         for (int i = 0; i < 16; i++)
         	initializationVector[i] = (byte) ivGenerator.nextInt();
         
         this.ips = new IvParameterSpec(initializationVector);
-        initCiphers();
-	}
-	
-	/**
-	 * Initialises Cipher objects.
-	 * 
-	 * @throws NoSuchPaddingException 
-	 * @throws NoSuchAlgorithmException 
-	 * @throws InvalidKeyException 
-	 * @throws InvalidAlgorithmParameterException 
-	 */
-	private void initCiphers() throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException {		
-		encryptionCipher = Cipher.getInstance(CIPHER_ALGORITHM);
+        
+        /** Initialise encryption cipher. */
+        encryptionCipher = Cipher.getInstance(CIPHER_ALGORITHM);
 		encryptionCipher.init(Cipher.ENCRYPT_MODE, encryptionKey, ips);
 		
+		/** Initialise decryption cipher. */
 		decryptionCipher = Cipher.getInstance(CIPHER_ALGORITHM);
 		decryptionCipher.init(Cipher.DECRYPT_MODE, decryptionKey, ips);
 	}

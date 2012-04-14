@@ -94,24 +94,18 @@ public class StealthNetClient {
 	 */
 	private static final boolean DEBUG_GENERAL               = true && (System.getProperty("debug.StealthNetClient.General",               "false").equals("true") || System.getProperty("debug.StealthNetClient", "false").equals("true"));
 	private static final boolean DEBUG_ERROR_TRACE           = true && (System.getProperty("debug.StealthNetClient.ErrorTrace",            "false").equals("true") || System.getProperty("debug.StealthNetClient", "false").equals("true") || System.getProperty("debug.ErrorTrace",                "false").equals("true"));
-	@SuppressWarnings("unused")
 	private static final boolean DEBUG_SECURITY              = true && (System.getProperty("debug.StealthNetClient.Security",              "false").equals("true") || System.getProperty("debug.StealthNetClient", "false").equals("true") || System.getProperty("debug.Security",                  "false").equals("true"));
-	@SuppressWarnings("unused")
 	private static final boolean DEBUG_COMMANDS_NULL         = true && (System.getProperty("debug.StealthNetClient.Commands.Null",         "false").equals("true") || System.getProperty("debug.StealthNetClient", "false").equals("true") || System.getProperty("debug.StealthNetClient.Commands", "false").equals("true"));
-	@SuppressWarnings("unused")
 	private static final boolean DEBUG_COMMANDS_LOGIN        = true && (System.getProperty("debug.StealthNetClient.Commands.Login",        "false").equals("true") || System.getProperty("debug.StealthNetClient", "false").equals("true") || System.getProperty("debug.StealthNetClient.Commands", "false").equals("true"));
-	@SuppressWarnings("unused")
 	private static final boolean DEBUG_COMMANDS_LOGOUT       = true && (System.getProperty("debug.StealthNetClient.Commands.Logout",       "false").equals("true") || System.getProperty("debug.StealthNetClient", "false").equals("true") || System.getProperty("debug.StealthNetClient.Commands", "false").equals("true"));
 	private static final boolean DEBUG_COMMANDS_MSG          = true && (System.getProperty("debug.StealthNetClient.Commands.Msg",          "false").equals("true") || System.getProperty("debug.StealthNetClient", "false").equals("true") || System.getProperty("debug.StealthNetClient.Commands", "false").equals("true"));
 	private static final boolean DEBUG_COMMANDS_CHAT         = true && (System.getProperty("debug.StealthNetClient.Commands.Chat",         "false").equals("true") || System.getProperty("debug.StealthNetClient", "false").equals("true") || System.getProperty("debug.StealthNetClient.Commands", "false").equals("true"));
 	private static final boolean DEBUG_COMMANDS_FTP          = true && (System.getProperty("debug.StealthNetClient.Commands.FTP",          "false").equals("true") || System.getProperty("debug.StealthNetClient", "false").equals("true") || System.getProperty("debug.StealthNetClient.Commands", "false").equals("true"));
 	private static final boolean DEBUG_COMMANDS_LIST         = true && (System.getProperty("debug.StealthNetClient.Commands.List",         "false").equals("true") || System.getProperty("debug.StealthNetClient", "false").equals("true") || System.getProperty("debug.StealthNetClient.Commands", "false").equals("true"));
-	@SuppressWarnings("unused")
 	private static final boolean DEBUG_COMMANDS_CREATESECRET = true && (System.getProperty("debug.StealthNetClient.Commands.CreateSecret", "false").equals("true") || System.getProperty("debug.StealthNetClient", "false").equals("true") || System.getProperty("debug.StealthNetClient.Commands", "false").equals("true"));
 	private static final boolean DEBUG_COMMANDS_SECRETLIST   = true && (System.getProperty("debug.StealthNetClient.Commands.SecretList",   "false").equals("true") || System.getProperty("debug.StealthNetClient", "false").equals("true") || System.getProperty("debug.StealthNetClient.Commands", "false").equals("true"));
 	private static final boolean DEBUG_COMMANDS_GETSECRET    = true && (System.getProperty("debug.StealthNetClient.Commands.GetSecret",    "false").equals("true") || System.getProperty("debug.StealthNetClient", "false").equals("true") || System.getProperty("debug.StealthNetClient.Commands", "false").equals("true"));
 	private static final boolean DEBUG_COMMANDS_PUBLICKEY    = true && (System.getProperty("debug.StealthNetClient.Commands.PublicKey",    "false").equals("true") || System.getProperty("debug.StealthNetClient", "false").equals("true") || System.getProperty("debug.StealthNetClient.Commands", "false").equals("true"));
-	@SuppressWarnings("unused")
 	private static final boolean DEBUG_COMMANDS_CRYPTKEY     = true && (System.getProperty("debug.StealthNetClient.Commands.CryptKey",     "false").equals("true") || System.getProperty("debug.StealthNetClient", "false").equals("true") || System.getProperty("debug.StealthNetClient.Commands", "false").equals("true"));
 	@SuppressWarnings("unused")
 	private static final boolean DEBUG_COMMANDS_SEED         = true && (System.getProperty("debug.StealthNetClient.Commands.Seed",         "false").equals("true") || System.getProperty("debug.StealthNetClient", "false").equals("true") || System.getProperty("debug.StealthNetClient.Commands", "false").equals("true"));
@@ -774,18 +768,12 @@ public class StealthNetClient {
             while (stealthComms.recvReady()) {
                 pckt = stealthComms.recvPacket();
                 
+                if (pckt == null)
+                	continue;
+                
                 if (DEBUG_GENERAL) System.out.println("Received packet. Packet command: " + StealthNetPacket.getCommandName(pckt.command) + ". Packet data: \"" + new String(pckt.data).replaceAll("\n", ";") + "\".");
                 
-                switch (pckt.command) {
-                	case StealthNetPacket.CMD_PUBLICKEY:
-                		final String pubKey = new String(pckt.data);
-                    	if (DEBUG_COMMANDS_PUBLICKEY) System.out.println("Received a public key command. Key: \"" + pubKey + "\".");
-                    	
-                    	if (DEBUG_GENERAL) System.out.println("Performing key exchange.");
-                    	msgTextBox.append("[SEC] Performing key exchange.\n");
-                	    stealthComms.keyExchange(pubKey);
-                        break;
-                
+                switch (pckt.command) {                
                     case StealthNetPacket.CMD_MSG:
                     	final String msg = new String(pckt.data);
                     	if (DEBUG_COMMANDS_MSG) System.out.println("Received a message command. Message: \"" + msg + "\".");

@@ -122,6 +122,12 @@ public class StealthNetKeyExchange {
 	/** Public component of our key (= generator^random mod prime). */
 	private final BigInteger publicValue;
 	
+	/** String constants. */
+	// {
+	public static final String KEY_ALGORITHM = "DiffieHellman";
+	public static final String SECRET_KEY_ALGORITHM = "TlsPremasterSecret";
+	// }
+	
 	/** 
 	 * Generate a Diffie-Hellman keypair of the specified size. 
 	 * 
@@ -133,11 +139,13 @@ public class StealthNetKeyExchange {
 	 * @throws InvalidDHParameterException 
 	 */
 	public StealthNetKeyExchange(int keyLength, SecureRandom random) throws NoSuchAlgorithmException, InvalidKeySpecException {
-		KeyPairGenerator kpg = KeyPairGenerator.getInstance("DiffieHellman");
+		final KeyPairGenerator kpg = KeyPairGenerator.getInstance(KEY_ALGORITHM);
 		kpg.initialize(keyLength, random);
-		KeyPair kp = kpg.generateKeyPair();
-		KeyFactory kfactory = KeyFactory.getInstance("DiffieHellman");
-		DHPublicKeySpec spec = (DHPublicKeySpec) kfactory.getKeySpec(kp.getPublic(), DHPublicKeySpec.class);
+		
+		final KeyPair kp = kpg.generateKeyPair();
+		final KeyFactory kfactory = KeyFactory.getInstance(KEY_ALGORITHM);
+		
+		final DHPublicKeySpec spec = (DHPublicKeySpec) kfactory.getKeySpec(kp.getPublic(), DHPublicKeySpec.class);
 		
 		this.privateKey = kp.getPrivate();
 		this.publicValue = spec.getY();
@@ -146,7 +154,7 @@ public class StealthNetKeyExchange {
 	}
 	
 	/**
-	 * Generate a Diffie-Hellman keypair using the specified parameters.
+	 * Generate a Diffie-Hellman key pair using the specified parameters.
 	 *
 	 * @param prime The Diffie-Hellman large prime 'p'.
 	 * @param generator The Diffie-Hellman generator 'g'.
@@ -160,48 +168,50 @@ public class StealthNetKeyExchange {
 		this.prime = prime;
 		this.generator = generator;
 		
-		KeyPairGenerator kpg = KeyPairGenerator.getInstance("DiffieHellman");
-		DHParameterSpec params = new DHParameterSpec(this.prime, this.generator);
-		kpg.initialize(params, random);
-		KeyPair kp = kpg.generateKeyPair();
-		DHPublicKeySpec spec = getDHPublicKeySpec(kp.getPublic());
+		final KeyPairGenerator kpg = KeyPairGenerator.getInstance(KEY_ALGORITHM);
+		final DHParameterSpec params = new DHParameterSpec(this.prime, this.generator);
 		
-		privateKey = kp.getPrivate();
-		publicValue = spec.getY();
+		kpg.initialize(params, random);
+		final KeyPair kp = kpg.generateKeyPair();
+		final DHPublicKeySpec spec = getDHPublicKeySpec(kp.getPublic());
+		
+		this.privateKey = kp.getPrivate();
+		this.publicValue = spec.getY();
 	}
 	
 	/**
 	 * Returns the DHPublicKeySpec corresponding to a given PublicKey.
 	 * 
 	 * @param key The given PublicKey.
-	 * @return Returns the DHPublicKeySpec corresponding to a given PublicKey.
+	 * @return The DHPublicKeySpec corresponding to a given PublicKey.
+	 * 
 	 * @throws NoSuchAlgorithmException
 	 * @throws InvalidKeySpecException
 	 */
 	private static DHPublicKeySpec getDHPublicKeySpec(PublicKey key) throws NoSuchAlgorithmException, InvalidKeySpecException {
 		if (key instanceof DHPublicKey) {
-			DHPublicKey dhKey = (DHPublicKey) key;
-			DHParameterSpec params = dhKey.getParams();
+			final DHPublicKey dhKey = (DHPublicKey) key;
+			final DHParameterSpec params = dhKey.getParams();
 			return new DHPublicKeySpec(dhKey.getY(), params.getP(), params.getG());
 		}
 		
-		KeyFactory kfactory = KeyFactory.getInstance("DiffieHellman");
+		final KeyFactory kfactory = KeyFactory.getInstance(KEY_ALGORITHM);
 		return (DHPublicKeySpec) kfactory.getKeySpec(key, DHPublicKeySpec.class);
 	}
 
 	/** 
-	 * Returns the Diffie-Hellman modulus.
+	 * Gets the Diffie-Hellman modulus.
 	 * 
-	 * @return Returns the Diffie-Hellman prime number.
+	 * @return The Diffie-Hellman prime number.
 	 */
 	public BigInteger getPrime() {
 		return prime;
 	}
 	
 	/** 
-	 * Returns the Diffie-Hellman base (generator).
+	 * Gets the Diffie-Hellman base (generator).
 	 * 
-	 * @return Returns the Diffie-Hellman base (generator).
+	 * @return The Diffie-Hellman base (generator).
 	 */
 	public BigInteger getGenerator() {
 		return generator;
@@ -210,7 +220,7 @@ public class StealthNetKeyExchange {
 	/** 
 	 * Gets the public key of this end of the key exchange.
 	 * 
-	 * @return Gets the public key of this end of the key exchange.
+	 * @return The public key of this end of the key exchange.
 	 */
 	public BigInteger getPublicKey() {
 		return publicValue;
@@ -226,7 +236,7 @@ public class StealthNetKeyExchange {
 	 * It is illegal to call this member function if the private key has not 
 	 * been set (or generated).
 	 *
-	 * @param peerPublicKey The peer's public key.
+	 * @param peerPublicValue The peer's public key.
 	 * @return The secret, which is an unsigned big-endian integer the same size
 	 * as the Diffie-Hellman modulus.
 	 * 
@@ -236,14 +246,15 @@ public class StealthNetKeyExchange {
 	 * @throws InvalidKeyException 
 	 */
 	 public SecretKey getSharedSecret(BigInteger peerPublicValue) throws NoSuchAlgorithmException, InvalidKeySpecException, InvalidKeyException, IllegalStateException {
-		 KeyFactory kf = KeyFactory.getInstance("DiffieHellman");
-		 DHPublicKeySpec spec = new DHPublicKeySpec(peerPublicValue, prime, generator);
-		 PublicKey publicKey = kf.generatePublic(spec);
-		 KeyAgreement ka = KeyAgreement.getInstance("DiffieHellman");
+		 final KeyFactory kf = KeyFactory.getInstance(KEY_ALGORITHM);
+		 final KeyAgreement ka = KeyAgreement.getInstance(KEY_ALGORITHM);
+		 
+		 final DHPublicKeySpec spec = new DHPublicKeySpec(peerPublicValue, prime, generator);
+		 final PublicKey publicKey = kf.generatePublic(spec);
 		 
 		 ka.init(privateKey);
 		 ka.doPhase(publicKey, true);
-		 return ka.generateSecret("TlsPremasterSecret");
+		 return ka.generateSecret(SECRET_KEY_ALGORITHM);
 	 }
 }
 

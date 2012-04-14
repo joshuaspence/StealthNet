@@ -5,7 +5,7 @@
     Joshua Spence (308216350)
     Ahmad Al Mutawa
 -->
-<project name="ELEC5616" default="all" basedir=".">
+<project name="ELEC5616" default="default" basedir=".">
 	<!-- Use ant-contrib -->
 	<!-- see http://http://ant-contrib.sourceforge.net/ -->
 	<taskdef resource="net/sf/antcontrib/antcontrib.properties">
@@ -15,6 +15,18 @@
 	</taskdef>
 	
 	<!-- =========================== MAIN TARGETS ========================== -->
+	<!-- Default target -->
+    <target name="default" depends="-init, info, compile, jar" description="Default target" />
+    
+    <!-- Default target with verbose output -->
+    <target name="default-verbose" depends="-set-verbose, -init, info, compile, jar" description="Default target with verbose output" />
+    
+    <!-- Default debug target -->
+    <target name="default-debug" depends="-set-debug, -init, info, compile, jar" description="Default debug target" />
+    
+    <!-- Default debug target with verbose output -->
+    <target name="default-debug-verbose" depends="-set-verbose, -set-debug, -init, info, compile, jar" description="Default debug target with verbose output" />
+	
     <!-- Main target -->
     <target name="all" depends="-init, info, compile, jar, javadoc, tar" description="Main target" />
     
@@ -218,9 +230,9 @@
 		  	    <include name="*/StealthNetServerThread**" />
         		
 		  	    <include name="*/StealthNetComms**" />
-        		<include name="*/StealthNetChecksum**" />
         		<include name="*/StealthNetEncryption**" />
                 <include name="*/StealthNetKeyExchange**" />
+        		<include name="*/StealthNetMAC**" />
 		  	    <include name="*/StealthNetPacket**" />
         		<include name="*/StealthNetPRNG**" />
     		</fileset>
@@ -244,11 +256,11 @@
                 <include name="*/StealthNetClient**" />
         		
         		<include name="*/StealthNetChat**" />
-        		<include name="*/StealthNetChecksum**" />
                 <include name="*/StealthNetComms**" />
         		<include name="*/StealthNetEncryption**" />
         		<include name="*/StealthNetFileTransfer**" />
         		<include name="*/StealthNetKeyExchange**" />
+        		<include name="*/StealthNetMAC**" />
                 <include name="*/StealthNetPacket**" />
         		<include name="*/StealthNetPRNG**" />
             </fileset>

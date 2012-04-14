@@ -60,16 +60,12 @@ public class StealthNetServerThread extends Thread {
 	private static final boolean DEBUG_COMMANDS_MSG          = true && (System.getProperty("debug.StealthNetServerThread.Commands.Msg",          "false").equals("true") || System.getProperty("debug.StealthNetServerThread", "false").equals("true") || System.getProperty("debug.StealthNetServerThread.Commands", "false").equals("true"));
 	private static final boolean DEBUG_COMMANDS_CHAT         = true && (System.getProperty("debug.StealthNetServerThread.Commands.Chat",         "false").equals("true") || System.getProperty("debug.StealthNetServerThread", "false").equals("true") || System.getProperty("debug.StealthNetServerThread.Commands", "false").equals("true"));
 	private static final boolean DEBUG_COMMANDS_FTP          = true && (System.getProperty("debug.StealthNetServerThread.Commands.FTP",          "false").equals("true") || System.getProperty("debug.StealthNetServerThread", "false").equals("true") || System.getProperty("debug.StealthNetServerThread.Commands", "false").equals("true"));
-	@SuppressWarnings("unused")
 	private static final boolean DEBUG_COMMANDS_LIST         = true && (System.getProperty("debug.StealthNetServerThread.Commands.List",         "false").equals("true") || System.getProperty("debug.StealthNetServerThread", "false").equals("true") || System.getProperty("debug.StealthNetServerThread.Commands", "false").equals("true"));
 	private static final boolean DEBUG_COMMANDS_CREATESECRET = true && (System.getProperty("debug.StealthNetServerThread.Commands.CreateSecret", "false").equals("true") || System.getProperty("debug.StealthNetServerThread", "false").equals("true") || System.getProperty("debug.StealthNetServerThread.Commands", "false").equals("true"));
-	@SuppressWarnings("unused")
 	private static final boolean DEBUG_COMMANDS_SECRETLIST   = true && (System.getProperty("debug.StealthNetServerThread.Commands.SecretList",   "false").equals("true") || System.getProperty("debug.StealthNetServerThread", "false").equals("true") || System.getProperty("debug.StealthNetServerThread.Commands", "false").equals("true"));
 	private static final boolean DEBUG_COMMANDS_GETSECRET    = true && (System.getProperty("debug.StealthNetServerThread.Commands.GetSecret",    "false").equals("true") || System.getProperty("debug.StealthNetServerThread", "false").equals("true") || System.getProperty("debug.StealthNetServerThread.Commands", "false").equals("true"));
 	private static final boolean DEBUG_COMMANDS_AUTHKEY      = true && (System.getProperty("debug.StealthNetServerThread.Commands.AuthKey",      "false").equals("true") || System.getProperty("debug.StealthNetServerThread", "false").equals("true") || System.getProperty("debug.StealthNetServerThread.Commands", "false").equals("true"));
-	@SuppressWarnings("unused")
 	private static final boolean DEBUG_COMMANDS_CRYPTKEY     = true && (System.getProperty("debug.StealthNetServerThread.Commands.CryptKey",     "false").equals("true") || System.getProperty("debug.StealthNetServerThread", "false").equals("true") || System.getProperty("debug.StealthNetServerThread.Commands", "false").equals("true"));
-	@SuppressWarnings("unused")
 	private static final boolean DEBUG_COMMANDS_SEED         = true && (System.getProperty("debug.StealthNetServerThread.Commands.Seed",         "false").equals("true") || System.getProperty("debug.StealthNetServerThread", "false").equals("true") || System.getProperty("debug.StealthNetServerThread.Commands", "false").equals("true"));
 	
 	/** Used to separate thread ID from debug output. */
@@ -343,13 +339,18 @@ public class StealthNetServerThread extends Thread {
 				/** Receive a StealthNetPacket. */
 				pckt = stealthComms.recvPacket();
 				
+				if (pckt == null) {
+					pckt = new StealthNetPacket();
+					continue;
+				}
+				
 				String userKey, iAddr, msg;
 		        UserData userInfo;
 				byte msg_type;
 				
 				if (DEBUG_GENERAL) {
 					if (pckt.data == null)	 System.out.println(this.getId() + separator + "	. Packet command: " + StealthNetPacket.getCommandName(pckt.command) + ".");
-					else	               System.out.println(this.getId() + separator + "	. Packet command: " + StealthNetPacket.getCommandName(pckt.command) + ". Packet data: \"" + new String(pckt.data) + "\".");
+					else	                 System.out.println(this.getId() + separator + "	. Packet command: " + StealthNetPacket.getCommandName(pckt.command) + ". Packet data: \"" + new String(pckt.data) + "\".");
 				}
 
 				/** Perform the relevant action based on the packet command. */

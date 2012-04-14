@@ -9,28 +9,32 @@ import javax.crypto.SecretKey;
 import org.apache.commons.codec.binary.Base64;
 
 /**
- * Calculates a verifies packet checksums. This is used to ensure packet 
- * integrity between hosts.
+ * Calculates a verifies packet HMACs. This is used to ensure packet integrity 
+ * between peers.
  * 
  * @author Joshua Spence
  */
 public class StealthNetMAC {
-	/** 
-	 * Set to true in build.xml to output debug messages for this class. 
-	 * Alternatively, use the argument `-Ddebug.StealthNetChecksum=true' at the 
-	 * command line.
-	 */
-	private static final boolean DEBUG = true && System.getProperty("debug.StealthNetChecksum", "false").equals("true");
-	
 	private final SecretKey key;
 	private final Mac mac;
 	
+	/** String constants. */
+	// {
 	public static final String HMAC_ALGORITHM = "HmacMD5";
+	// }
 	
+	/**
+	 * Constructor
+	 * 
+	 * @param key The key to use for the HMAC algorithm.
+	 * 
+	 * @throws NoSuchAlgorithmException
+	 * @throws InvalidKeyException
+	 */
 	public StealthNetMAC(SecretKey key) throws NoSuchAlgorithmException, InvalidKeyException {
 		this.key = key;
 		
-		/** Create a MAC object using HMAC-MD5 and initialize with key. */
+		/** Create a MAC object using HMAC-MD5 and initialise with key. */
 		this.mac = Mac.getInstance(HMAC_ALGORITHM);
 	    this.mac.init(this.key);
 	}
@@ -39,21 +43,19 @@ public class StealthNetMAC {
 	 * Calculates the MAC for a given message.
 	 * 
 	 * @param message The message to calculate the MAC for.
-	 * @return The digest of the given message.
+	 * @return The digest of the given message (in base-64 encoding).
 	 */
 	public String createMAC(String message) {
-		if (DEBUG) System.out.println("Creating checksum for message \"" + message + "\".");
-	    byte[] messageBytes = message.getBytes();
-	    return createMAC(messageBytes);
+	    return createMAC(message.getBytes());
 	}
 	
 	/**
 	 * Calculates the MAC for a given message.
 	 * 
 	 * @param message The message to calculate the MAC for.
-	 * @return The digest of the given message.
+	 * @return The digest of the given message (in base-64 encoding).
 	 */
-	public String createMAC(byte[] message) {
+	private String createMAC(byte[] message) {
 		byte[] digest = this.mac.doFinal(message);
 		return Base64.encodeBase64String(digest);
 	}
@@ -62,13 +64,12 @@ public class StealthNetMAC {
 	 * Verifies a given message against a given MAC digest.
 	 * 
 	 * @param message The message to check.
-	 * @param mac The given MAC digest.
+	 * @param mac The given MAC digest (in base-64 encoding).
 	 * 
 	 * @return True if the message matches the given MAC digest, otherwise 
 	 * false.
 	 */
 	public boolean verifyMAC(String message, byte[] mac) {
-		if (DEBUG) System.out.println("Verifying MAC \"" + new String(mac) + "\" for message \"" + new String(message) + "\".");
 		return verifyMAC(message.getBytes(), mac);
 	}
 	
@@ -76,13 +77,14 @@ public class StealthNetMAC {
 	 * Verifies a given message against a given MAC.
 	 * 
 	 * @param message The message to check.
-	 * @param mac The given MAC digest.
+	 * @param mac The given MAC digest (in base-64 encoding).
 	 * 
 	 * @return True if the message matches the given MAC digest, otherwise 
 	 * false.
 	 */
 	public boolean verifyMAC(byte[] message, byte[] mac) {
 		byte[] digest = this.mac.doFinal(message);
+		digest = Base64.encodeBase64String(digest).getBytes();
 		
 		if (digest.length != mac.length) {
 	        return false;

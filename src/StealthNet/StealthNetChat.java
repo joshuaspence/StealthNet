@@ -185,16 +185,10 @@ public class StealthNetChat extends Thread {
             while ((pckt.command != StealthNetPacket.CMD_LOGOUT) && (stealthComms.recvReady())) {
                 pckt = stealthComms.recvPacket();
                 
-                switch (pckt.command) {
-	                case StealthNetPacket.CMD_PUBLICKEY:
-	            		final String pubKey = new String(pckt.data);
-	                	if (DEBUG_COMMANDS_PUBLICKEY) System.out.println("Received a public key command. Key: \"" + pubKey + "\".");
-	                	
-	                	if (DEBUG_GENERAL) System.out.println("Performing key exchange.");
-	                	chatTextBox.append("[SEC] Performing key exchange.\n");
-	            	    stealthComms.keyExchange(pubKey);
-	                    break;
+                if (pckt == null)
+                	continue;
                 
+                switch (pckt.command) {                
                     case StealthNetPacket.CMD_MSG:
                     	/** Chat message received. */
                     	final String msg = new String(pckt.data);

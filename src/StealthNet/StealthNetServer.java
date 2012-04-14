@@ -58,11 +58,6 @@ public class StealthNetServer {
 	 * 
 	 * @param args The command line arguments.
 	 * @throws IOException
-	 * 
-	 * @author Matt Barrie 
-     * @author Stephen Gould
-	 * @author Joshua Spence Added debug code. Also modified code to accept an 
-	 * optional port number parameter from the command line.
 	 */
     public static void main(String[] args) throws IOException {
     	/** Port that the server is listening on. */
