@@ -33,7 +33,6 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.math.BigInteger;
 import java.net.Socket;
-import java.security.Key;
 import java.security.MessageDigest;
 import java.security.SecureRandom;
 
@@ -262,7 +261,7 @@ public class StealthNetComms {
      * 
      * @param command The command to be sent.
      * @param data The data to be sent.
-     * @param size The size of the data field.
+     * @param dataSize The size of the data field.
      * @return True if successful, otherwise false.
      */
     public boolean sendPacket(byte command, byte[] data, int dataSize) {

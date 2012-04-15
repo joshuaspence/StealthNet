@@ -1,0 +1,46 @@
+\ProvidesPackage{StealthNet}
+
+% Provides page numbers and headings on each page
+\pagestyle{plain}
+%\pagestyle{headings}
+
+% Packages
+\usepackage{bold-extra}			% to allow boldface and small caps (see http://www.tex.ac.uk/cgi-bin/texfaq2html?label=bold-extras)
+\usepackage{boxedminipage} 		% for disclaimer box
+\usepackage[small,bf]{caption}	% for changing the appearance of captions
+\usepackage{enumitem}  			% for nested enumerate
+\usepackage{float}				% for preventing floating tables
+\usepackage{hyperref}			% for PDF links
+\usepackage{ifpdf}				% to check if we are using latex/pdflatex
+\usepackage{graphicx}			% for graphics
+\usepackage{multirow}			% for merging row cells in tables
+\usepackage{subfig}				% for subfloats
+\usepackage{tabularx}			% for simple column stretching
+\usepackage{url}				% for web URLs
+\usepackage{verbatim}			% for block commenting
+\usepackage{wrapfig}			% for wrapping text around figures
+
+% To allow single landscape pages
+\ifpdf
+\usepackage{pdflscape}			% for making single pages landscape
+\else
+\usepackage{lscape}				% for making single pages landscape
+\fi
+
+% Start each section on a new page
+% See ftp://tug.ctan.org/pub/tex-archive/macros/latex/contrib/titlesec/titlesec.pdf
+\usepackage{titlesec}
+\newcommand{\sectionbreak}{\clearpage}
+
+% To allow us to easily format a table row
+% See http://www.latex-community.org/forum/viewtopic.php?f=5&t=3293
+\usepackage{array}
+\newcolumntype{+}{>{\global\let\currentrowstyle\relax}}
+\newcolumntype{^}{>{\currentrowstyle}}
+\newcommand{\rowstyle}[1]{\gdef\currentrowstyle{#1}%
+#1\ignorespaces
+}
+
+% Custom formatting commands
+\newcommand{\singleQuote}[1]{`#1'}
+\newcommand{\doubleQuote}[1]{``#1''}

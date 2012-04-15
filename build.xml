@@ -2,10 +2,11 @@
 <!--
     Ant buildfile for ELEC5616 project.
     
-    Joshua Spence (308216350)
-    Ahmad Al Mutawa
+    Authors:
+        - Joshua Spence (308216350)
+        - Ahmad Al Mutawa
 -->
-<project name="ELEC5616" default="default" basedir=".">
+<project name="StealthNet" default="default" basedir=".">
 	<!-- Use ant-contrib -->
 	<!-- see http://http://ant-contrib.sourceforge.net/ -->
 	<taskdef resource="net/sf/antcontrib/antcontrib.properties">
@@ -14,30 +15,47 @@
 	    </classpath>
 	</taskdef>
 	
-	<!-- =========================== MAIN TARGETS ========================== -->
+	<!-- ========================= DEFAULT TARGETS ========================= -->
 	<!-- Default target -->
-    <target name="default" depends="-init, info, compile, jar" description="Default target" />
+    <target name="default" depends="-init, info, compile, jar" description="Default target">
+    	<echo>Done!</echo>
+	</target>
     
     <!-- Default target with verbose output -->
-    <target name="default-verbose" depends="-set-verbose, -init, info, compile, jar" description="Default target with verbose output" />
+    <target name="default-verbose" depends="-set-verbose, -init, info, compile, jar" description="Default target with verbose output">
+        <echo>Done!</echo>
+    </target>
     
     <!-- Default debug target -->
-    <target name="default-debug" depends="-set-debug, -init, info, compile, jar" description="Default debug target" />
+    <target name="default-debug" depends="-set-debug, -init, info, compile, jar" description="Default debug target">
+        <echo>Done!</echo>
+    </target>
     
     <!-- Default debug target with verbose output -->
-    <target name="default-debug-verbose" depends="-set-verbose, -set-debug, -init, info, compile, jar" description="Default debug target with verbose output" />
+    <target name="default-debug-verbose" depends="-set-verbose, -set-debug, -init, info, compile, jar" description="Default debug target with verbose output">
+        <echo>Done!</echo>
+    </target>
 	
+	<!-- =========================== FULL TARGETS ========================== -->
     <!-- Main target -->
-    <target name="all" depends="-init, info, compile, jar, javadoc, tar" description="Main target" />
+    <target name="all" depends="-init, info, compile, jar, javadoc, latex, tar" description="Full target">
+        <echo>Done!</echo>
+    </target>
     
     <!-- Main target with verbose output -->
-    <target name="all-verbose" depends="-set-verbose, -init, info, compile, jar, javadoc, tar" description="Main target with verbose output" />
+    <target name="all-verbose" depends="-set-verbose, -init, info, compile, jar, javadoc, latex, tar" description="Full target with verbose output">
+        <echo>Done!</echo>
+    </target>
     
     <!-- Debug target -->
-    <target name="all-debug" depends="-set-debug, -init, info, compile, jar, javadoc, tar" description="Debug target" />
+    <target name="all-debug" depends="-set-debug, -init, info, compile, jar, javadoc, latex, tar" description="Debug target">
+        <echo>Done!</echo>
+    </target>
     
     <!-- Debug target with verbose output -->
-    <target name="all-debug-verbose" depends="-set-verbose, -set-debug, -init, info, compile, jar, javadoc, tar" description="Debug target with verbose output" />
+    <target name="all-debug-verbose" depends="-set-verbose, -set-debug, -init, info, compile, jar, javadoc, latex, tar" description="Debug target with verbose output">
+        <echo>Done!</echo>
+    </target>
     <!-- =================================================================== -->
 	
 	<!-- ====================== INITIALISATION TARGETS ===================== -->	
@@ -53,14 +71,14 @@
 	
 	<!-- Main initialisation target -->
 	<target name="-init">
-		<!-- Set verbose (if not already set) -->
+		<!-- Set verbose off, if not already set -->
 		<condition property="global.verbose" value="false">
 		    <not>  
 		        <isset property="global.verbose" />
 		     </not>
 		</condition>
 		
-		<!-- Set debug (if not already set) -->
+		<!-- Set debug off, if not already set -->
 		<condition property="global.debug" value="false">
 		   <not>  
 		      <isset property="global.debug" />
@@ -68,14 +86,17 @@
 		</condition>
 			
 	    <!-- Initialise path properties -->
-    	<property name="path.build"   value="build" />
-    	<property name="path.docs"    value="docs" />
-        <property name="path.img"     value="img" />
-        <property name="path.lib"     value="lib" />
-        <property name="path.src"     value="src" />
-        <property name="path.classes" value="${path.build}/classes" />
-        <property name="path.jar"     value="${path.build}/jar" />
+    	<property name="path.build"           value="build" />
+    	<property name="path.docs"            value="docs" />
+        <property name="path.img"             value="img" />
+		<property name="path.latex"           value="latex" />
+		<property name="path.latex.output"    value="${path.latex}/output" />
+        <property name="path.lib"             value="lib" />
+        <property name="path.src"             value="src" />
+        <property name="path.classes"         value="${path.build}/classes" />
+        <property name="path.jar"             value="${path.build}/jar" />
 		
+		<!-- VERBOSE: Output path properties -->
 		<if>
 			<equals arg1="${global.verbose}" arg2="true" />
 			<then>
@@ -87,17 +108,20 @@
         		<echo>Class output path:      ${path.classes}</echo>
         		<echo>JAR output path:        ${path.jar}</echo>
 				<echo />
-			  </then>
+			</then>
 		</if>
 		
 	    <!-- Initialise file names -->
-    	<property name="file.jar"         value="${path.jar}/${ant.project.name}.jar" />
-		<property name="file.jar.server"  value="${path.jar}/${ant.project.name}_server.jar" />
-    	<property name="file.jar.client"  value="${path.jar}/${ant.project.name}_client.jar" />
-    	<property name="file.tar.gz"      value="${ant.project.name}.tar.gz" />
-    	<property name="file.tar.gz.md5"  value="${ant.project.name}.tar.gz.md5" />
-    	<property name="file.tar.gz.sha1" value="${ant.project.name}.tar.gz.sha1" />
+    	<property name="file.jar"                 value="${path.jar}/${ant.project.name}.jar" />
+		<property name="file.jar.server"          value="${path.jar}/${ant.project.name}_server.jar" />
+    	<property name="file.jar.client"          value="${path.jar}/${ant.project.name}_client.jar" />
+    	<property name="file.tar.gz"              value="${ant.project.name}.tar.gz" />
+    	<property name="file.tar.gz.md5"          value="${ant.project.name}.tar.gz.md5" />
+		<property name="file.latex.output"        value="${path.latex.output}/StealthNet.pdf" />
+		<basename property="root.latex.output"    file="${file.latex.output}" />
+		<property name="file.runscript"           value="run.sh" />
 	
+		<!-- VERBOSE: Output file properties. -->
 		<if>
             <equals arg1="${global.verbose}" arg2="true" />
             <then>
@@ -106,7 +130,8 @@
         		<echo>Client JAR file:        ${file.jar.client}</echo>
         		<echo>GZIPed TAR file:        ${file.tar.gz}</echo>
             	<echo>TAR MD5 hash file:      ${file.tar.gz.md5}</echo>
-        	    <echo>TAR SHA1 hash file:     ${file.tar.gz.sha1}</echo>
+        	    <echo>Latex output file:      ${file.latex.output}</echo>
+            	<echo>Run script:             ${file.runscript}</echo>
             	<echo />
     	    </then>
 		</if>
@@ -117,6 +142,7 @@
     	<property name="class.main"    value="${class.client}" />               <!-- Main class for the main JAR file -->
     	<property name="class.package" value="StealthNet" />                    <!-- Package name -->
 	
+		<!-- VERBOSE: Output class properties -->
 		<if>
             <equals arg1="${global.verbose}" arg2="true" />
             <then>
@@ -138,6 +164,7 @@
         <property name="compile.jdk-version.target" value="1.5" />
         <property name="compile.includeantruntime"  value="false" />
 	
+		<!-- VERBOSE: Output compile properties -->
 		<if>
             <equals arg1="${global.verbose}" arg2="true" />
             <then>
@@ -171,6 +198,7 @@
             </mapper>
     	</pathconvert>
 		
+		<!-- VERBOSE: Output classpath -->
 		<if>
             <equals arg1="${global.verbose}" arg2="true" />
             <then>
@@ -182,7 +210,7 @@
 	<!-- =================================================================== -->
   
 	<!-- Compilation target -->
-    <target name="compile" description="Compilation target">
+    <target name="compile" depends="-init" description="Compilation target">
     	<!-- Make output directory -->
     	<mkdir dir="${path.classes}" />
     	
@@ -273,10 +301,10 @@
             </manifest>
         </jar>
     	
+    	<!-- Set the JARs to be executable -->
     	<chmod file="${file.jar}" perm="ugo+x"/>
     	<chmod file="${file.jar.server}" perm="ugo+x"/>
 		<chmod file="${file.jar.client}" perm="ugo+x"/>
-    	
     </target>
 	
 	<!-- Javadoc target -->
@@ -299,6 +327,15 @@
 	    </javadoc>
 	</target>
 	
+	<!-- Latex target -->
+    <target name="latex" depends="-init" description="Create LaTeX documentation">        
+        <!-- Run 'make' within the latex subdirectory -->
+    	<exec executable="make" dir="${path.latex}" />
+    	
+    	<!-- Symlink output PDF to root directory -->
+    	<symlink link="${root.latex.output}" resource="${file.latex.output}" overwrite="true" />
+    </target>
+	
 	<!-- ========================== CLEAN TARGETS ========================== -->
 	<!-- Clean target -->
 	<target name="clean" depends="-init" description="Clean the project">
@@ -308,23 +345,35 @@
 		<echo>Deleting ${path.docs}.</echo>
 		<delete dir="${path.docs}" />
 		
-		<echo>Deleting ${file.tar.gz}.</echo>
-		<delete file="${file.tar.gz}" />
-		
-		<echo>Deleting ${file.tar.gz.md5}.</echo>
-		<delete file="${file.tar.gz.md5}" />
-		
-		<echo>Deleting ${file.tar.gz.sha1}.</echo>
-		<delete file="${file.tar.gz.sha1}" />
+		<!-- Run 'make' within the latex subdirectory -->
+		<echo>Cleaning ${path.latex}.</echo>
+        <exec executable="make" dir="${path.latex}">
+    	   <arg value="clean" />
+    	</exec>
     </target>
 	
 	<!-- Distribution clean target -->
-    <target name="dist-clean" depends="-init" description="Clean the project">
+    <target name="distclean" depends="-init" description="Clean the project">
     	<echo>Deleting ${path.build}.</echo>
         <delete dir="${path.build}" />
         
         <echo>Deleting ${path.docs}.</echo>
         <delete dir="${path.docs}" />
+    	
+    	<echo>Deleting ${file.tar.gz}.</echo>
+        <delete file="${file.tar.gz}" />
+        
+        <echo>Deleting ${file.tar.gz.md5}.</echo>
+        <delete file="${file.tar.gz.md5}" />
+        
+        <echo>Deleting ${root.latex.output}.</echo>
+        <delete file="${root.latex.output}" />
+    	
+    	<!-- Run 'make' within the latex subdirectory -->
+        <echo>Cleaning ${path.latex}.</echo>
+        <exec executable="make" dir="${path.latex}">
+           <arg value="distclean" />
+        </exec>
     </target>
 	<!-- =================================================================== -->
 	
@@ -334,42 +383,24 @@
 	
 	<!-- Run client target -->
 	<target name="run_client" depends="compile, jar" description="Run StealthNet client">
-		<java jar="${file.jar.client}" spawn="true" fork="true">
-            <classpath>
-                <path refid="compile.classpath" />
-                <path location="${file.jar}" />
-            </classpath>
-        </java>
+		<echo>Running StealthNet client...</echo>
+		<exec executable="${file.runclient}" spawn="true" />
 	</target>
 	
 	<!-- Run a second client instance (exactly the same as the "run_client" target) -->
 	<target name="-run_client2" depends="compile, jar">
 		<echo>Running StealthNet client...</echo>
-		<java jar="${file.jar.client}" spawn="true" fork="true">
-            <classpath>
-                <path refid="compile.classpath" />
-                <path location="${file.jar}" />
-            </classpath>
-        </java>
+		<exec executable="./${file.runscript}">
+			<arg value="--client" />
+		</exec>
 	</target>
 	
 	<!-- Run server target -->
 	<target name="run_server" depends="compile, jar" description="Run StealthNet server">
 		<echo>Running StealthNet server...</echo>
-		<echo>${debug.StealthNet.StealthNetChat}</echo>
-		<java jar="${file.jar.server}" spawn="true" fork="true">
-            <classpath>
-                <path refid="compile.classpath" />
-                <path location="${file.jar}" />
-            </classpath>
-			
-			<sysproperty key="debug.StealthNet.StealthNetChat"         value="${debug.StealthNet.StealthNetChat}" />
-		    <sysproperty key="debug.StealthNet.StealthNetClient"       value="${debug.StealthNet.StealthNetClient}" />
-		    <sysproperty key="debug.StealthNet.StealthNetComms"        value="${debug.StealthNet.StealthNetComms}" />
-		    <sysproperty key="debug.StealthNet.StealthNetFileTransfer" value="${debug.StealthNet.StealthNetFileTransfer}" />
-		    <sysproperty key="debug.StealthNet.StealthNetServer"       value="${debug.StealthNet.StealthNetServer}" />
-		    <sysproperty key="debug.StealthNet.StealthNetServerThread" value="${debug.StealthNet.StealthNetServerThread}" />
-        </java>
+		<exec executable="./${file.runscript}">
+	        <arg value="--server" />
+		</exec>
     </target>
 	<!-- =================================================================== -->
 	
@@ -378,17 +409,17 @@
 	<target name="tar" depends="maximal-tar" description="Create a tar archive" />
     	
 	<!-- Create a TAR file with all of the relevant content (excludes Eclipse files, git metadata and any built files) -->
-	<target name="minimal-tar" description="Create a minimal tar archive">
+	<target name="minimal-tar" depends="latex" description="Create a minimal tar archive">
 		<!-- Delete old TAR file -->
 		<delete file="${file.tar.gz}" />
 		<delete file="${file.tar.gz.md5}" />
-		<delete file="${file.tar.gz.sha1}" />
 		
     	<tar destfile="${file.tar.gz}" longfile="gnu" compression="gzip">
             <tarfileset dir="${basedir}">
             	<!-- Exclude unnecessary files that can be built -->
             	<exclude name="**/${path.build}/**" />
                 <exclude name="**/${path.docs}/**" />
+            	<exclude name="**/${path.latex}/**" />
                 
             	<!-- Exclude git metadata -->
             	<exclude name=".git" />
@@ -401,21 +432,20 @@
             </tarfileset>
         </tar>
         <checksum file="${file.tar.gz}" algorithm="md5" />
-        <checksum file="${file.tar.gz}" algorithm="sha1" />
 	</target>
 	
 	<!-- Create a TAR file with all of the relevant content (includes Eclipse files but excludes git metadata and any built files) -->
-    <target name="normal-tar" description="Create a normal tar archive">
+    <target name="normal-tar" depends="latex" description="Create a normal tar archive">
     	<!-- Delete old TAR file -->
         <delete file="${file.tar.gz}" />
         <delete file="${file.tar.gz.md5}" />
-        <delete file="${file.tar.gz.sha1}" />
     	
     	<tar destfile="${file.tar.gz}" longfile="gnu" compression="gzip">
             <tarfileset dir="${basedir}">
             	<!-- Exclude unnecessary files that can be built -->
                 <exclude name="**/${path.build}/**" />
                 <exclude name="**/${path.docs}/**" />
+            	<exclude name="**/${path.latex}/**" />
                 
                 <!-- Exclude git metadata -->
                 <exclude name=".git" />
@@ -423,15 +453,13 @@
             </tarfileset>
         </tar>
         <checksum file="${file.tar.gz}" algorithm="md5" />
-        <checksum file="${file.tar.gz}" algorithm="sha1" />
     </target>
 	
 	<!-- Create a TAR file with all of the relevant content (includes Eclipse files and any built files but excludes git metadata) -->
-    <target name="maximal-tar" depends="compile, jar, javadoc" description="Create a maximal tar archive">
+    <target name="maximal-tar" depends="compile, jar, javadoc, latex" description="Create a maximal tar archive">
         <!-- Delete old TAR file -->
         <delete file="${file.tar.gz}" />
         <delete file="${file.tar.gz.md5}" />
-        <delete file="${file.tar.gz.sha1}" />
         
         <tar destfile="${file.tar.gz}" longfile="gnu" compression="gzip">
             <tarfileset dir="${basedir}">
@@ -441,7 +469,6 @@
             </tarfileset>
         </tar>
         <checksum file="${file.tar.gz}" algorithm="md5" />
-        <checksum file="${file.tar.gz}" algorithm="sha1" />
     </target>
 	<!-- =================================================================== -->
 	

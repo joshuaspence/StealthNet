@@ -44,7 +44,7 @@ DEBUG_ARG=
 
 # Get program command line options
 PN=`basename $0`
-ARGS=`getopt --name "$PN" --long debug --options d -- "$@"`
+ARGS=`getopt --name "$PN" --long debug,client,server --options d -- "$@"`
 if [ $? -ne 0 ]; then
     echo "getopt failed!" >&2
     exit 1
@@ -55,13 +55,27 @@ while [ $# -gt 0 ]; do
         -d | --debug)
             DEBUG_ARG=$DEBUG
             ;;
+            
+        --client)
+        	JAR_FILE=StealthNet_client.jar
+        	;;
+        	
+        --server)
+        	JAR_FILE=StealthNet_server.jar
+        	;;
     esac
     shift
 done
 
+# Make sure client or server mode was specified
+if [ -z "$JAR_FILE" ]; then
+	echo "You must specify client (\`--client') or server (\`--server') mode." >&2
+	exit 1
+fi
+
 # Execute
 if [ -n "$CLASSPATH" ]; then
-	$JRE $DEBUG_ARG -classpath "$CLASSPATH" $JRE_FLAGS -jar $JAR_DIR/ELEC5616_client.jar $@
+	$JRE $DEBUG_ARG -classpath "$CLASSPATH" $JRE_FLAGS -jar $JAR_DIR/$JAR_FILE $@
 else
-	$JRE $DEBUG_ARG $JRE_FLAGS -jar $JAR_DIR/ELEC5616_client.jar $@
+	$JRE $DEBUG_ARG $JRE_FLAGS -jar $JAR_DIR/$JAR_FILE $@
 fi

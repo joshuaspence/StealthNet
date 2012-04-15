@@ -1,0 +1,24 @@
+\documentclass[a4paper,11pt,titlepage]{article}
+
+\usepackage{StealthNet}
+
+% Graphics directory
+\ifpdf
+    % pdflatex requires bitmap images.
+    \graphicspath{{./img/png/}}
+\else
+    % latex requires vector images.
+    \graphicspath{{./img/eps/}}
+\fi
+
+% Title page details
+\title{}
+\author{}
+\date{}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{document}
+
+Test
+
+\end{document}
