@@ -46,14 +46,10 @@ import javax.swing.JOptionPane;
  * @author Joshua Spence (Added debug code.)
  */
 public class StealthNetFileTransfer extends Thread {
-	/** 
-	 * Use the argument `-Ddebug.StealthNetFileTransfer.XXX=true' at the command
-	 * line to enable debug messages. Use the argument 
-	 * `-Ddebug.StealthNetFileTransfer=true' to enable all debug messages. 
-	 */
-	private static final boolean DEBUG_GENERAL     = true && (System.getProperty("debug.StealthNetFileTransfer.General",    "false").equals("true") || System.getProperty("debug.StealthNetFileTansfer", "false").equals("true"));
-	private static final boolean DEBUG_ERROR_TRACE = true && (System.getProperty("debug.StealthNetFileTransfer.ErrorTrace", "false").equals("true") || System.getProperty("debug.StealthNetFileTransfer", "false").equals("true") || System.getProperty("debug.ErrorTrace", "false").equals("true"));
-	private static final boolean DEBUG_TRANSFER    = true && (System.getProperty("debug.StealthNetFileTransfer.Transfer",   "false").equals("true") || System.getProperty("debug.StealthNetFileTransfer", "false").equals("true"));
+	/** Debug options. */
+	private static final boolean DEBUG_GENERAL     = StealthNetDebug.isDebug("StealthNetFileTransfer.General");
+	private static final boolean DEBUG_ERROR_TRACE = StealthNetDebug.isDebug("StealthNetFileTransfer.ErrorTrace");
+	private static final boolean DEBUG_TRANSFER    = StealthNetDebug.isDebug("StealthNetFileTransfer.Transfer");
 	
 	/** Number of bytes to send at a time. */
     private static final int PACKETSIZE = 256;

@@ -87,19 +87,15 @@ import javax.swing.JOptionPane;
  * @author Joshua Spence (Added debug code and security features.)
  */
 public class StealthNetClient {
-	/** 
-	 * Use the argument `-Ddebug.StealthNetClient.XXX=true' at the command line
-	 * to enable debug messages. Use the argument 
-	 * `-Ddebug.StealthNetClient=true' to enable all debug messages. 
-	 */
-	private static final boolean DEBUG_GENERAL               = true && (System.getProperty("debug.StealthNetClient.General",               "false").equals("true") || System.getProperty("debug.StealthNetClient", "false").equals("true"));
-	private static final boolean DEBUG_ERROR_TRACE           = true && (System.getProperty("debug.StealthNetClient.ErrorTrace",            "false").equals("true") || System.getProperty("debug.StealthNetClient", "false").equals("true") || System.getProperty("debug.ErrorTrace",                "false").equals("true"));
-	private static final boolean DEBUG_COMMANDS_MSG          = true && (System.getProperty("debug.StealthNetClient.Commands.Msg",          "false").equals("true") || System.getProperty("debug.StealthNetClient", "false").equals("true") || System.getProperty("debug.StealthNetClient.Commands", "false").equals("true"));
-	private static final boolean DEBUG_COMMANDS_CHAT         = true && (System.getProperty("debug.StealthNetClient.Commands.Chat",         "false").equals("true") || System.getProperty("debug.StealthNetClient", "false").equals("true") || System.getProperty("debug.StealthNetClient.Commands", "false").equals("true"));
-	private static final boolean DEBUG_COMMANDS_FTP          = true && (System.getProperty("debug.StealthNetClient.Commands.FTP",          "false").equals("true") || System.getProperty("debug.StealthNetClient", "false").equals("true") || System.getProperty("debug.StealthNetClient.Commands", "false").equals("true"));
-	private static final boolean DEBUG_COMMANDS_LIST         = true && (System.getProperty("debug.StealthNetClient.Commands.List",         "false").equals("true") || System.getProperty("debug.StealthNetClient", "false").equals("true") || System.getProperty("debug.StealthNetClient.Commands", "false").equals("true"));
-	private static final boolean DEBUG_COMMANDS_SECRETLIST   = true && (System.getProperty("debug.StealthNetClient.Commands.SecretList",   "false").equals("true") || System.getProperty("debug.StealthNetClient", "false").equals("true") || System.getProperty("debug.StealthNetClient.Commands", "false").equals("true"));
-	private static final boolean DEBUG_COMMANDS_GETSECRET    = true && (System.getProperty("debug.StealthNetClient.Commands.GetSecret",    "false").equals("true") || System.getProperty("debug.StealthNetClient", "false").equals("true") || System.getProperty("debug.StealthNetClient.Commands", "false").equals("true"));
+	/** Debug options. */
+	private static final boolean DEBUG_GENERAL             = StealthNetDebug.isDebug("StealthNetClient.General");
+	private static final boolean DEBUG_ERROR_TRACE         = StealthNetDebug.isDebug("StealthNetClient.ErrorTrace");
+	private static final boolean DEBUG_COMMANDS_MSG        = StealthNetDebug.isDebug("StealthNetClient.Commands.Msg");
+	private static final boolean DEBUG_COMMANDS_CHAT       = StealthNetDebug.isDebug("StealthNetClient.Commands.Chat");
+	private static final boolean DEBUG_COMMANDS_FTP        = StealthNetDebug.isDebug("StealthNetClient.Commands.FTP");
+	private static final boolean DEBUG_COMMANDS_LIST       = StealthNetDebug.isDebug("StealthNetClient.Commands.List");
+	private static final boolean DEBUG_COMMANDS_SECRETLIST = StealthNetDebug.isDebug("StealthNetClient.Commands.SecretList");
+	private static final boolean DEBUG_COMMANDS_GETSECRET  = StealthNetDebug.isDebug("StealthNetClient.Commands.GetSecret");
 	
 	/** StealthNet server (defaults to StealthNetComms.DEFAULT_SERVERNAME). */
 	private final String server_hostname;

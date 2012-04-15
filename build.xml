@@ -258,6 +258,7 @@
 		  	    <include name="*/StealthNetServerThread**" />
         		
 		  	    <include name="*/StealthNetComms**" />
+        		<include name="*/StealthNetDebug**" />
         		<include name="*/StealthNetEncryption**" />
                 <include name="*/StealthNetKeyExchange**" />
         		<include name="*/StealthNetMAC**" />
@@ -285,6 +286,7 @@
         		
         		<include name="*/StealthNetChat**" />
                 <include name="*/StealthNetComms**" />
+        		<include name="*/StealthNetDebug**" />
         		<include name="*/StealthNetEncryption**" />
         		<include name="*/StealthNetFileTransfer**" />
         		<include name="*/StealthNetKeyExchange**" />

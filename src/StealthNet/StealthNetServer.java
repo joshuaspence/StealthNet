@@ -45,13 +45,9 @@ import java.net.Socket;
  * specification.)
  */
 public class StealthNetServer {
-	/** 
-	 * Use the argument `-Ddebug.StealthNetServer.XXX=true' at the command line
-	 * to enable debug messages. Use the argument 
-	 * `-Ddebug.StealthNetServer=true' to enable all debug messages. 
-	 */
-	private static final boolean DEBUG_GENERAL     = true && (System.getProperty("debug.StealthNetServer.General",    "false").equals("true") || System.getProperty("debug.StealthNetServer", "false").equals("true"));
-	private static final boolean DEBUG_ERROR_TRACE = true && (System.getProperty("debug.StealthNetServer.ErrorTrace", "false").equals("true") || System.getProperty("debug.StealthNetServer", "false").equals("true") || System.getProperty("debug.ErrorTrace", "false").equals("true"));
+	/** Debug options. */
+	private static final boolean DEBUG_GENERAL     = StealthNetDebug.isDebug("StealthNetServer.General");
+	private static final boolean DEBUG_ERROR_TRACE = StealthNetDebug.isDebug("StealthNetServer.ErrorTrace") || StealthNetDebug.isDebug("ErrorTrace");
 	
 	/** 
 	 * The main StealthNetServer function.
@@ -83,7 +79,7 @@ public class StealthNetServer {
         try {
             svrSocket = new ServerSocket(port);
         } catch (IOException e) {
-            System.err.println("Could not listen on port: " + port);
+            System.err.println("Could not listen on port " + port);
             if (DEBUG_ERROR_TRACE) e.printStackTrace();
             System.exit(1);
         }
@@ -97,7 +93,8 @@ public class StealthNetServer {
          */
         while (true) {
         	Socket conn;
-            new StealthNetServerThread(conn = svrSocket.accept()).start();
+        	final StealthNetServerThread thread = new StealthNetServerThread(conn = svrSocket.accept());
+        	thread.start();
             
             if (DEBUG_GENERAL)
             	System.out.println("Server accepted connection from " + conn.getInetAddress() + " on port " + conn.getPort() + ".");

@@ -49,13 +49,9 @@ import javax.swing.JTextField;
  * @author Joshua Spence (Added debug functionality.)
  */
 public class StealthNetChat extends Thread {
-	/** 
-	 * Use the argument `-Ddebug.StealthNetChat.XXX=true' at the command line
-	 * to enable debug messages. Use the argument 
-	 * `-Ddebug.StealthNetChat=true' to enable all debug messages. 
-	 */
-	private static final boolean DEBUG_GENERAL     = true && (System.getProperty("debug.StealthNetChat.General",    "false").equals("true") || System.getProperty("debug.StealthNetChat", "false").equals("true"));
-	private static final boolean DEBUG_ERROR_TRACE = true && (System.getProperty("debug.StealthNetChat.ErrorTrace", "false").equals("true") || System.getProperty("debug.StealthNetChat", "false").equals("true") || System.getProperty("debug.ErrorTrace", "false").equals("true"));
+	/** Debug options. */
+	private static final boolean DEBUG_GENERAL     = StealthNetDebug.isDebug("StealthNetChat.General");
+	private static final boolean DEBUG_ERROR_TRACE = StealthNetDebug.isDebug("StealthNetChat.ErrorTrace");
 	
 	private JFrame chatFrame;
     private JTextArea chatTextBox;

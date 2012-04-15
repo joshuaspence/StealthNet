@@ -47,22 +47,18 @@ import javax.crypto.NoSuchPaddingException;
  * packets.)
  */
 public class StealthNetServerThread extends Thread {
-	/** 
-	 * Use the argument `-Ddebug.StealthNetServerThread.XXX=true' at the command
-	 * line to enable debug messages. Use the argument 
-	 * `-Ddebug.StealthNetServerThread=true' to enable all debug messages. 
-	 */
-	private static final boolean DEBUG_GENERAL               = true && (System.getProperty("debug.StealthNetServerThread.General",               "false").equals("true") || System.getProperty("debug.StealthNetServerThread", "false").equals("true"));
-	private static final boolean DEBUG_ERROR_TRACE           = true && (System.getProperty("debug.StealthNetServerThread.ErrorTrace",            "false").equals("true") || System.getProperty("debug.StealthNetServerThread", "false").equals("true") || System.getProperty("debug.StealthNetServerThread.Commands", "false").equals("true"));
-	private static final boolean DEBUG_COMMANDS_NULL         = true && (System.getProperty("debug.StealthNetServerThread.Commands.Null",         "false").equals("true") || System.getProperty("debug.StealthNetServerThread", "false").equals("true") || System.getProperty("debug.StealthNetServerThread.Commands", "false").equals("true"));
-	private static final boolean DEBUG_COMMANDS_LOGIN        = true && (System.getProperty("debug.StealthNetServerThread.Commands.Login",        "false").equals("true") || System.getProperty("debug.StealthNetServerThread", "false").equals("true") || System.getProperty("debug.StealthNetServerThread.Commands", "false").equals("true"));
-	private static final boolean DEBUG_COMMANDS_LOGOUT       = true && (System.getProperty("debug.StealthNetServerThread.Commands.Logout",       "false").equals("true") || System.getProperty("debug.StealthNetServerThread", "false").equals("true") || System.getProperty("debug.StealthNetServerThread.Commands", "false").equals("true"));
-	private static final boolean DEBUG_COMMANDS_MSG          = true && (System.getProperty("debug.StealthNetServerThread.Commands.Msg",          "false").equals("true") || System.getProperty("debug.StealthNetServerThread", "false").equals("true") || System.getProperty("debug.StealthNetServerThread.Commands", "false").equals("true"));
-	private static final boolean DEBUG_COMMANDS_CHAT         = true && (System.getProperty("debug.StealthNetServerThread.Commands.Chat",         "false").equals("true") || System.getProperty("debug.StealthNetServerThread", "false").equals("true") || System.getProperty("debug.StealthNetServerThread.Commands", "false").equals("true"));
-	private static final boolean DEBUG_COMMANDS_FTP          = true && (System.getProperty("debug.StealthNetServerThread.Commands.FTP",          "false").equals("true") || System.getProperty("debug.StealthNetServerThread", "false").equals("true") || System.getProperty("debug.StealthNetServerThread.Commands", "false").equals("true"));
-	private static final boolean DEBUG_COMMANDS_CREATESECRET = true && (System.getProperty("debug.StealthNetServerThread.Commands.CreateSecret", "false").equals("true") || System.getProperty("debug.StealthNetServerThread", "false").equals("true") || System.getProperty("debug.StealthNetServerThread.Commands", "false").equals("true"));
-	private static final boolean DEBUG_COMMANDS_GETSECRET    = true && (System.getProperty("debug.StealthNetServerThread.Commands.GetSecret",    "false").equals("true") || System.getProperty("debug.StealthNetServerThread", "false").equals("true") || System.getProperty("debug.StealthNetServerThread.Commands", "false").equals("true"));
-	private static final boolean DEBUG_COMMANDS_AUTHKEY      = true && (System.getProperty("debug.StealthNetServerThread.Commands.AuthKey",      "false").equals("true") || System.getProperty("debug.StealthNetServerThread", "false").equals("true") || System.getProperty("debug.StealthNetServerThread.Commands", "false").equals("true"));
+	/** Debug options. */
+	private static final boolean DEBUG_GENERAL               = StealthNetDebug.isDebug("StealthNetServerThread.General");
+	private static final boolean DEBUG_ERROR_TRACE           = StealthNetDebug.isDebug("StealthNetServerThread.ErrorTrace");
+	private static final boolean DEBUG_COMMANDS_NULL         = StealthNetDebug.isDebug("StealthNetServerThread.Commands.Null");
+	private static final boolean DEBUG_COMMANDS_LOGIN        = StealthNetDebug.isDebug("StealthNetServerThread.Commands.Login");
+	private static final boolean DEBUG_COMMANDS_LOGOUT       = StealthNetDebug.isDebug("StealthNetServerThread.Commands.Logout");
+	private static final boolean DEBUG_COMMANDS_MSG          = StealthNetDebug.isDebug("StealthNetServerThread.Commands.Msg");
+	private static final boolean DEBUG_COMMANDS_CHAT         = StealthNetDebug.isDebug("StealthNetServerThread.Commands.Chat");
+	private static final boolean DEBUG_COMMANDS_FTP          = StealthNetDebug.isDebug("StealthNetServerThread.Commands.FTP");
+	private static final boolean DEBUG_COMMANDS_CREATESECRET = StealthNetDebug.isDebug("StealthNetServerThread.Commands.CreateSecret");
+	private static final boolean DEBUG_COMMANDS_GETSECRET    = StealthNetDebug.isDebug("StealthNetServerThread.Commands.GetSecret");
+	private static final boolean DEBUG_COMMANDS_AUTHKEY      = StealthNetDebug.isDebug("StealthNetServerThread.Commands.AuthKey");
 	
 	/** Used to separate thread ID from debug output. */
 	private static final String separator = " >> ";

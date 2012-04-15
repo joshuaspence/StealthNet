@@ -60,16 +60,16 @@ public class StealthNetComms {
 	 * to enable debug messages. Use the argument `-Ddebug.StealthNetComms=true'
 	 * to enable all debug messages. 
 	 */
-	private static final boolean DEBUG_GENERAL          = true && (System.getProperty("debug.StealthNetComms.General",         "false").equals("true") || System.getProperty("debug.StealthNetComms", "false").equals("true"));
-	private static final boolean DEBUG_ERROR_TRACE      = true && (System.getProperty("debug.StealthNetComms.ErrorTrace",      "false").equals("true") || System.getProperty("debug.StealthNetComms", "false").equals("true") || System.getProperty("debug.ErrorTrace", "false").equals("true"));
-	private static final boolean DEBUG_RAW_PACKET       = true && (System.getProperty("debug.StealthNetComms.RawOutput",       "false").equals("true") || System.getProperty("debug.StealthNetComms", "false").equals("true"));
-	private static final boolean DEBUG_DECODED_PACKET   = true && (System.getProperty("debug.StealthNetComms.DecodedOutput",   "false").equals("true") || System.getProperty("debug.StealthNetComms", "false").equals("true"));
-	private static final boolean DEBUG_ENCRYPTED_PACKET = true && (System.getProperty("debug.StealthNetComms.EncryptedOutput", "false").equals("true") || System.getProperty("debug.StealthNetComms", "false").equals("true"));
-	private static final boolean DEBUG_DECRYPTED_PACKET = true && (System.getProperty("debug.StealthNetComms.DecryptedOutput", "false").equals("true") || System.getProperty("debug.StealthNetComms", "false").equals("true"));
-	private static final boolean DEBUG_RECEIVE_READY    = true && (System.getProperty("debug.StealthNetComms.ReceiveReady",    "false").equals("true") || System.getProperty("debug.StealthNetComms", "false").equals("true"));
-	private static final boolean DEBUG_KEY_EXCHANGE     = true && (System.getProperty("debug.StealthNetComms.KeyExchange",     "false").equals("true") || System.getProperty("debug.StealthNetComms", "false").equals("true"));
-	private static final boolean DEBUG_ENCRYPTION       = true && (System.getProperty("debug.StealthNetComms.Encryption",      "false").equals("true") || System.getProperty("debug.StealthNetComms", "false").equals("true"));
-	private static final boolean DEBUG_INTEGRITY        = true && (System.getProperty("debug.StealthNetComms.Integrity",       "false").equals("true") || System.getProperty("debug.StealthNetComms", "false").equals("true"));
+	private static final boolean DEBUG_GENERAL          = StealthNetDebug.isDebug("StealthNetComms.General");
+	private static final boolean DEBUG_ERROR_TRACE      = StealthNetDebug.isDebug("StealthNetComms.ErrorTrace");
+	private static final boolean DEBUG_RAW_PACKET       = StealthNetDebug.isDebug("StealthNetComms.RawOutput");
+	private static final boolean DEBUG_DECODED_PACKET   = StealthNetDebug.isDebug("StealthNetComms.DecodedOutput");
+	private static final boolean DEBUG_ENCRYPTED_PACKET = StealthNetDebug.isDebug("StealthNetComms.EncryptedOutput");
+	private static final boolean DEBUG_DECRYPTED_PACKET = StealthNetDebug.isDebug("StealthNetComms.DecryptedOutput");
+	private static final boolean DEBUG_RECEIVE_READY    = StealthNetDebug.isDebug("StealthNetComms.ReceiveReady");
+	private static final boolean DEBUG_KEY_EXCHANGE     = StealthNetDebug.isDebug("StealthNetComms.KeyExchange");
+	private static final boolean DEBUG_ENCRYPTION       = StealthNetDebug.isDebug("StealthNetComms.Encryption");
+	private static final boolean DEBUG_INTEGRITY        = StealthNetDebug.isDebug("StealthNetComms.Integrity");
 	
 	/** Defaults. */
     public static final String DEFAULT_SERVERNAME = "localhost";	/** Default host for the StealthNet server. */
@@ -94,7 +94,8 @@ public class StealthNetComms {
 	private StealthNetMAC integrityProvider = null;
     
     /** Prevents replay attacks using a PRNG. */
-    private StealthNetPRNG replayPrevention;
+    @SuppressWarnings("unused")
+	private StealthNetPRNG replayPrevention;
 
     /** Output data stream for the socket. */
     private PrintWriter dataOut;            
