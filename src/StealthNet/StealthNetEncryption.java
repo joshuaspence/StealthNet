@@ -1,4 +1,20 @@
+/******************************************************************************
+ * ELEC5616
+ * Computer and Network Security, The University of Sydney
+ * Copyright (C) 2002-2004, Matt Barrie and Stephen Gould
+ *
+ * PROJECT:         StealthNet
+ * FILENAME:        StealthNetEncryption.java
+ * AUTHORS:         Joshua Spence and Ahmad Al Mutawa
+ * DESCRIPTION:     Implementation of AES encryption for ELEC5616 programming 
+ * assignment.
+ * VERSION:         1.0
+ *
+ *****************************************************************************/
+
 package StealthNet;
+
+/* Import Libraries **********************************************************/
 
 import java.io.UnsupportedEncodingException;
 import java.security.InvalidAlgorithmParameterException;
@@ -14,6 +30,8 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 
 import org.apache.commons.codec.binary.Base64;
+
+/* StealthNetEncryption Class Definition *************************************/
 
 /**
  * A class used to encrypt and decrypt messages, in order to provide 

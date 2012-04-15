@@ -265,7 +265,7 @@ public class StealthNetComms {
      * @return True if successful, otherwise false.
      */
     public boolean sendPacket(byte command, byte[] data, int dataSize) {
-        final StealthNetPacket pckt = new StealthNetPacket(command, data, dataSize, integrityProvider);
+        final StealthNetPacket pckt = new StealthNetPacket(command, data, dataSize, integrityProvider, null);
         return sendPacket(pckt);
     }
 

@@ -1,6 +1,24 @@
+/******************************************************************************
+ * ELEC5616
+ * Computer and Network Security, The University of Sydney
+ * Copyright (C) 2002-2004, Matt Barrie and Stephen Gould
+ *
+ * PROJECT:         StealthNet
+ * FILENAME:        StealthPRNG.java
+ * AUTHORS:         Joshua Spence and Ahmad Al Mutawa
+ * DESCRIPTION:     Implementation of a pseudo-random number generator (PRNG)
+ * 					for ELEC5616 programming assignment.
+ * VERSION:         1.0
+ *
+ *****************************************************************************/
+
 package StealthNet;
 
+/* Import Libraries **********************************************************/
+
 import java.util.Random;
+
+/* StealthNetPRNG Class Definition ********************************************/
 
 /**
  * A psuedo-random number generator (PRNG) that accepts a seed value. Two 
@@ -14,14 +32,6 @@ import java.util.Random;
  * @author Joshua Spence
  */
 public class StealthNetPRNG {
-	/** 
-	 * Set to true in build.xml to output debug messages for this class. 
-	 * Alternatively, use the argument `-Ddebug.StealthNetPRNG=true' at the 
-	 * command line. 
-	 */
-	@SuppressWarnings("unused")
-	private static final boolean DEBUG = true && (System.getProperty("debug.StealthNetPRNG", "false").equals("true"));
-	
 	/** The PRNG. */
 	private final Random prng;
 	
@@ -29,7 +39,16 @@ public class StealthNetPRNG {
 	private final long seed;
 	
 	/** The next sequence number. */
-	Integer next;
+	Long next;
+	
+	/** Constructor. */
+	public StealthNetPRNG() {
+		Random seedGenerator = new Random();
+		this.seed = seedGenerator.nextLong();
+		
+		this.prng = new Random(this.seed);
+		this.next = null;
+	}
 	
 	/**
 	 * Constructor.
@@ -37,9 +56,9 @@ public class StealthNetPRNG {
 	 * @param s Seed for the PRNG.
 	 */
 	public StealthNetPRNG(long s) {
-		prng = new Random(s);
-		seed = s;
-		next = null;
+		this.prng = new Random(s);
+		this.seed = s;
+		this.next = null;
 	}
 	
 	 /** 
@@ -48,9 +67,9 @@ public class StealthNetPRNG {
 	  * 
 	  * @return The next sequence number.
 	  */
-	public int getNextSequenceNumber() {
-		next = prng.nextInt();
-		return next;
+	public long getNext() {
+		next = prng.nextLong();
+		return next.longValue();
 	}
 	
 	/** 
@@ -61,12 +80,12 @@ public class StealthNetPRNG {
 	 * @return True if the received sequence number matches the expected
 	 * sequence number, false otherwise.
 	 */
-	public boolean isExpectedSequenceNumber(int seq) {
+	public boolean isExpected(long seq) {
 		if (next == null) 
-			next = getNextSequenceNumber();
+			next = getNext();
 			
-		if (seq == next.intValue()) {
-			next = getNextSequenceNumber();
+		if (seq == next.longValue()) {
+			next = getNext();
 			return true;
 		}
 			

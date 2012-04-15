@@ -56,7 +56,6 @@ public class StealthNetChat extends Thread {
 	 */
 	private static final boolean DEBUG_GENERAL     = true && (System.getProperty("debug.StealthNetChat.General",    "false").equals("true") || System.getProperty("debug.StealthNetChat", "false").equals("true"));
 	private static final boolean DEBUG_ERROR_TRACE = true && (System.getProperty("debug.StealthNetChat.ErrorTrace", "false").equals("true") || System.getProperty("debug.StealthNetChat", "false").equals("true") || System.getProperty("debug.ErrorTrace", "false").equals("true"));
-	private static final boolean DEBUG_COMMANDS_PUBLICKEY    = true && (System.getProperty("debug.StealthNetClient.Commands.PublicKey",    "false").equals("true") || System.getProperty("debug.StealthNetClient", "false").equals("true") || System.getProperty("debug.StealthNetClient.Commands", "false").equals("true"));
 	
 	private JFrame chatFrame;
     private JTextArea chatTextBox;

@@ -1,4 +1,20 @@
+/******************************************************************************
+ * ELEC5616
+ * Computer and Network Security, The University of Sydney
+ * Copyright (C) 2002-2004, Matt Barrie and Stephen Gould
+ *
+ * PROJECT:         StealthNet
+ * FILENAME:        StealthMAC.java
+ * AUTHORS:         Joshua Spence and Ahmad Al Mutawa
+ * DESCRIPTION:     Implementation of a hashed message authentication code 
+ * 					(HMAC) for ELEC5616 programming assignment.
+ * VERSION:         1.0
+ *
+ *****************************************************************************/
+
 package StealthNet;
+
+/* Import Libraries **********************************************************/
 
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
@@ -7,6 +23,8 @@ import javax.crypto.Mac;
 import javax.crypto.SecretKey;
 
 import org.apache.commons.codec.binary.Base64;
+
+/* StealthNetMAC Class Definition *********************************************/
 
 /**
  * Calculates a verifies packet HMACs. This is used to ensure packet integrity 
