@@ -18,6 +18,7 @@
 \usepackage{url}				% for web URLs
 \usepackage{verbatim}			% for block commenting
 \usepackage{wrapfig}			% for wrapping text around figures
+\usepackage{amsmath}			% for maths
 
 % To allow us to easily format a table row
 % See http://www.latex-community.org/forum/viewtopic.php?f=5&t=3293
@@ -28,6 +29,11 @@
 #1\ignorespaces
 }
 
+% Variables
+\newcommand{\packageName}{\doubleQuote{StealthNet}}
+\newcommand{\serviceName}{\emph{StealthNet}}
+
 % Custom formatting commands
 \newcommand{\singleQuote}[1]{`#1'}
 \newcommand{\doubleQuote}[1]{``#1''}
+\newcommand{\attackName}[1]{\emph{#1}}

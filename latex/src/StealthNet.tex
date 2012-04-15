@@ -21,20 +21,125 @@
 
 \maketitle
 
+% INTRODUCTION
 \section{Introduction}
+This document outlines the modifications that were made to the \packageName{} in
+order to secure the communications provided by the application. The provided
+source code for the \packageName{} package is vulnerable to a wide range of 
+\singleQuote{attacks}, including but not limited to the following.
 
-\section{Security Features}
-\subsection{Authentication}
-\subsection{Encryption}
-\subsection{Integrity}
-\subsection{Replay prevention}
+\begin{description}
 
-\section{Implementation}
-\subsection{Authentication}
-\subsection{Encryption}
-\subsection{Integrity}
-\subsection{Replay prevention}
+\item[Eavesdropping] The communications implemented in \packageName{} transmit
+messages in cleartext over sockets. This allows an attacker who has gained 
+access to data paths in the network to eavesdrop on \packageName{} 
+communications.
 
+\item[Data Modification] As a follow-on from \attackName{eavesdropping}, an 
+attacker would additionally be able to alter the transmitted data. An attacker
+can modify the data in the packet without the knowledge of the sender or 
+receiver.
+
+\item[Denial-of-Service] A \attackName{denial-of-service} attack prevents normal
+of the \serviceName{} service. An attacker could overwhelm the \serviceName{} 
+server such that it is unable to process legitimate connections from legitimate 
+users. Alternatively, an attacker could simply block network traffic completely,
+resulting in a complete lack of communication between \serviceName{} peers.
+
+\item[Man-in-the-Middle] A \attackName{man-in-the-middle} attack occurs when 
+someone between two \serviceName{} peers is actively monitoring, capturing, and 
+controlling your communication transparently. An attacker makes independent 
+connections with the victims and relays messages between them, making them 
+believe that they are talking directly to each other over a private connection.
+
+\end{description}
+
+% AUTHENTICATION
+\section{Authentication}
+
+\subsection{Introduction}
+
+\subsection{Details}
+Diffie-Hellman key exchanges involves combining your private key with your 
+partner's public key to generate a number. The peer does the same with its 
+private key and our public key. Through the magic of Diffie-Hellman we both come
+up with the same number. This number is secret (discounting MITM attacks) and 
+hence called the shared secret. It has the same length as the modulus, e.g. 512 
+or 1024 bit. Man-in-the-middle attacks are typically countered by an independent
+authentication step using certificates (RSA, DSA, etc.).
+
+The thing to note is that the shared secret is constant for two partners with 
+constant private keys. This is often not what we want, which is why it is 
+generally a good idea to create a new private key for each session. Generating a
+private key involves one modular exponentiation assuming suitable Diffie-Hellman
+parameters are available.
+
+In TLS the server chooses the parameter values itself, the client must use those
+sent to it by the server.
+
+The use of ephemeral keys as described above also achieves what is called 
+``forward secrecy''. This means that even if the authentication keys are broken 
+at a later date, the shared secret remains secure. The session is compromised 
+only if the authentication keys are already broken at the time the key exchange 
+takes place and an active MITM attack is used. This is in contrast to 
+straightforward encrypting RSA key exchanges.
+
+The protocol depends on the discrete logarithm problem for its security. It 
+assumes that it is computationally infeasible to calculate the shared secret key
+$k = generator^{ab} \bmod prime$ given the two public values 
+$generator^{a} \bmod prime$ and $generator^{b} \bmod prime$ when the prime is 
+sufficiently large. Maurer has shown that breaking the Diffie-Hellman protocol 
+is equivalent to computing discrete logarithms under certain assumptions.
+
+The Diffie-Hellman key exchange is vulnerable to a man-in-the-middle attack. In 
+this attack, an opponent Carol intercepts Alice's public value and sends her own
+public value to Bob. When Bob transmits his public value, Carol substitutes it 
+with her own and sends it to Alice. Carol and Alice thus agree on one shared key
+and Carol and Bob agree on another shared key. After this exchange, Carol simply
+decrypts any messages sent out by Alice or Bob, and then reads and possibly 
+modifies them before re-encrypting with the appropriate key and transmitting 
+them to the other party. This vulnerability is present because Diffie-Hellman 
+key exchange does not authenticate the participants. Possible solutions include 
+the use of digital signatures and other protocol variants.
+
+\subsection{Implementation}
+
+\subsection{Outstanding vulnerabilities}
+ 
+% ENCRYPTION
+\section{Encryption}
+
+\subsection{Introduction}
+
+\subsection{Details}
+
+\subsection{Implementation}
+
+\subsection{Outstanding vulnerabilities}
+
+% INTEGRITY
+\section{Integrity}
+
+\subsection{Introduction}
+
+\subsection{Details}
+
+\subsection{Implementation}
+
+\subsection{Outstanding vulnerabilities}
+
+% REPLAY PREVENTION
+\section{Replay prevention}
+
+\subsection{Introduction}
+
+\subsection{Details}
+
+\subsection{Implementation}
+
+\subsection{Outstanding vulnerabilities}
+
+% CONCLUSION
 \section{Conclusion}
 
 \end{document}
