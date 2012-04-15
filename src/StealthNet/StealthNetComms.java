@@ -367,8 +367,7 @@ public class StealthNetComms {
         if (DEBUG_DECODED_PACKET) {
     		if (pckt.data.length <= 0) {
     			if (pckt.digest.length <= 0)
-    				System.out.println("(decoded)   recvPacket(" + StealthNetPacket.getCommandName(pckt.command) + ", null, null)");
-    			else
+    				System.out.println("(decoded)   recvPacket(" + StealthNetPacket.getCommandName(pckt.command) + ", null, null)");    			else
     				System.out.println("(decoded)   recvPacket(" + StealthNetPacket.getCommandName(pckt.command) + ", null, " + (new String(pckt.digest)) + ")");
     		} else {
     			if (pckt.digest.length <= 0)
