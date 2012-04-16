@@ -3,22 +3,22 @@
  * Computer and Network Security, The University of Sydney
  * Copyright (C) 2002-2004, Matt Barrie and Stephen Gould
  *
- * PROJECT:         StealthNet
- * FILENAME:        StealthPRNG.java
+ * PACKAGE:         StealthNet.Security
+ * FILENAME:        PRNGTokenGenerator.java
  * AUTHORS:         Joshua Spence and Ahmad Al Mutawa
  * DESCRIPTION:     Implementation of a pseudo-random number generator (PRNG)
- * 					for ELEC5616 programming assignment.
+ * 					for token generation.
  * VERSION:         1.0
  *
  *****************************************************************************/
 
-package StealthNet;
+package StealthNet.Security;
 
 /* Import Libraries **********************************************************/
 
 import java.util.Random;
 
-/* StealthNetPRNG Class Definition ********************************************/
+/* PRNGTokenGenerator Class Definition ***************************************/
 
 /**
  * A psuedo-random number generator (PRNG) that accepts a seed value. Two 
@@ -31,7 +31,7 @@ import java.util.Random;
  * 
  * @author Joshua Spence
  */
-public class StealthNetPRNG {
+public class PRNGTokenGenerator {
 	/** The PRNG. */
 	private final Random prng;
 	
@@ -42,7 +42,7 @@ public class StealthNetPRNG {
 	Long next;
 	
 	/** Constructor. */
-	public StealthNetPRNG() {
+	public PRNGTokenGenerator() {
 		Random seedGenerator = new Random();
 		this.seed = seedGenerator.nextLong();
 		
@@ -55,7 +55,7 @@ public class StealthNetPRNG {
 	 * 
 	 * @param s Seed for the PRNG.
 	 */
-	public StealthNetPRNG(long s) {
+	public PRNGTokenGenerator(long s) {
 		this.prng = new Random(s);
 		this.seed = s;
 		this.next = null;
@@ -101,3 +101,7 @@ public class StealthNetPRNG {
 		return seed;
 	}
 }
+
+/******************************************************************************
+ * END OF FILE:     PRNGTokenGenerator.java
+ *****************************************************************************/

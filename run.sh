@@ -28,18 +28,7 @@ else
 fi
 
 # Debug options
-DEBUG=" \
-	-Ddebug.StealthNetChat=true \
-	-Ddebug.StealthNetClient=true \
-	-Ddebug.StealthNetComms=true \
-	-Ddebug.StealthNetEncryption=true \
-	-Ddebug.StealthNetFileTranser=true \
-	-Ddebug.StealthNetKeyExchange=true \
-	-Ddebug.StealthNetPacket=true \
-	-Ddebug.StealthNetPRNG=true \
-	-Ddebug.StealthNetServer=true \
-	-Ddebug.StealthNetServerThread=true \
-	"
+DEBUG="-Ddebug.StealthNet=true"
 DEBUG_ARG=
 
 # Get program command line options

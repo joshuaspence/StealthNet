@@ -3,8 +3,8 @@
  * Computer and Network Security, The University of Sydney
  * Copyright (C) 2002-2004, Matt Barrie and Stephen Gould
  *
- * PROJECT:         StealthNet
- * FILENAME:        StealthNetKeyExchange.java
+ * PACKAGE:         StealthNet.Security
+ * FILENAME:        DiffieHellmanKeyExchange.java
  * AUTHORS:         Joshua Spence and Ahmad Al Mutawa
  * DESCRIPTION:     Implementation of Diffie-Hellman key exchange for ELEC5616
  *                  programming assignment.
@@ -12,7 +12,7 @@
  *
  *****************************************************************************/
 
-package StealthNet;
+package StealthNet.Security;
 
 /* Import Libraries **********************************************************/
 
@@ -34,7 +34,7 @@ import javax.crypto.interfaces.DHPublicKey;
 import javax.crypto.spec.DHParameterSpec;
 import javax.crypto.spec.DHPublicKeySpec;
 
-/* StealthNetKeyExchange Class Definition *************************************/
+/* DiffieHellmanKeyExchange Class Definition *********************************/
 
 /**
  * This class implements the Diffie-Hellman key exchange algorithm. 
@@ -55,9 +55,9 @@ import javax.crypto.spec.DHPublicKeySpec;
  * suitable Diffie-Hellman parameters are available.
  *
  * General usage of this class:
- *  - If we are server, call StealthNetKeyExchange(keyLength, random). This 
+ *  - If we are server, call DiffieHellman(keyLength, random). This 
  *    generates an ephemeral keypair of the request length.
- *  - If we are client, call StealthNetKeyExchange(modulus, base, random). This
+ *  - If we are client, call DiffieHellman(modulus, base, random). This
  *    generates an ephemeral keypair using the parameters specified by the 
  *    server.
  *  - Send parameters and public value to remote peer.
@@ -96,7 +96,7 @@ import javax.crypto.spec.DHPublicKeySpec;
  *
  * @author Joshua Spence
  */
-public class StealthNetKeyExchange {	
+public class DiffieHellmanKeyExchange implements KeyExchange {	
 	/** 
 	 * Group parameters.
 	 *
@@ -111,7 +111,7 @@ public class StealthNetKeyExchange {
 	// }
 	
 	/**
-	 * It is preferable for security, though not necessary, that base be a 
+	 * NOTE: It is preferable for security, though not necessary, that base be a 
 	 * generator with respect to prime. Otherwise, the pool of possible keys is 
 	 * reduced, leaving the system more vulnerable to attack.
 	 */
@@ -138,7 +138,7 @@ public class StealthNetKeyExchange {
 	 * @throws InvalidKeySpecException 
 	 * @throws InvalidDHParameterException 
 	 */
-	public StealthNetKeyExchange(int keyLength, SecureRandom random) throws NoSuchAlgorithmException, InvalidKeySpecException {
+	public DiffieHellmanKeyExchange(int keyLength, SecureRandom random) throws NoSuchAlgorithmException, InvalidKeySpecException {
 		final KeyPairGenerator kpg = KeyPairGenerator.getInstance(KEY_ALGORITHM);
 		kpg.initialize(keyLength, random);
 		
@@ -164,7 +164,7 @@ public class StealthNetKeyExchange {
 	 * @throws InvalidAlgorithmParameterException 
 	 * @throws InvalidKeySpecException 
 	 */
-	StealthNetKeyExchange(BigInteger prime, BigInteger generator, SecureRandom random) throws NoSuchAlgorithmException, InvalidAlgorithmParameterException, InvalidKeySpecException {
+	DiffieHellmanKeyExchange(BigInteger prime, BigInteger generator, SecureRandom random) throws NoSuchAlgorithmException, InvalidAlgorithmParameterException, InvalidKeySpecException {
 		this.prime = prime;
 		this.generator = generator;
 		
@@ -259,5 +259,5 @@ public class StealthNetKeyExchange {
 }
 
 /******************************************************************************
- * END OF FILE:     StealthNetKeyExchange.java
+ * END OF FILE:     DiffieHellmanKeyExchange.java
  *****************************************************************************/

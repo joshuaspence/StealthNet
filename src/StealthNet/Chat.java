@@ -2,8 +2,8 @@
  * ELEC5616
  * Computer and Network Security, The University of Sydney
  *
- * PROJECT:         StealthNet
- * FILENAME:        StealthNetChat.java
+ * PACKAGE:         StealthNet
+ * FILENAME:        Chat.java
  * AUTHORS:         Matt Barrie
  * DESCRIPTION:     Implementation of StealthNet Client Chat for ELEC5616
  *                  programming assignment.
@@ -40,7 +40,7 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
-/* StealthNetChat Class Definition *******************************************/
+/* Chat Class Definition *****************************************************/
 
 /**
  * The chat window used to allow two StealthNet clients to communicate.
@@ -48,10 +48,10 @@ import javax.swing.JTextField;
  * @author Matt Barrie
  * @author Joshua Spence (Added debug functionality.)
  */
-public class StealthNetChat extends Thread {
+public class Chat extends Thread {
 	/** Debug options. */
-	private static final boolean DEBUG_GENERAL     = StealthNetDebug.isDebug("StealthNetChat.General");
-	private static final boolean DEBUG_ERROR_TRACE = StealthNetDebug.isDebug("StealthNetChat.ErrorTrace");
+	private static final boolean DEBUG_GENERAL     = Debug.isDebug("StealthNetChat.General");
+	private static final boolean DEBUG_ERROR_TRACE = Debug.isDebug("StealthNetChat.ErrorTrace") || Debug.isDebug("ErrorTrace");
 	
 	private JFrame chatFrame;
     private JTextArea chatTextBox;
@@ -61,7 +61,7 @@ public class StealthNetChat extends Thread {
      * The StealthNet communications instance used to allow the clients to 
      * communicate.
      */
-    private StealthNetComms stealthComms = null;
+    private Comms stealthComms = null;
     
     /** The ID of the user owning the chat session. */
     private String userID;
@@ -73,7 +73,7 @@ public class StealthNetChat extends Thread {
      * @param snComms The StealthNet communications class used to allow the
      * clients to communicate.
      */
-    public StealthNetChat(String id, StealthNetComms snComms) {
+    public Chat(String id, Comms snComms) {
         userID = id;
         stealthComms = snComms;
     }
@@ -89,7 +89,7 @@ public class StealthNetChat extends Thread {
     }
 
     /** 
-     * Creates the GUI for the StealthNetChat instance.
+     * Creates the GUI for the Chat instance.
      * 
      * @return An AWT component containing the chat elements.
      */
@@ -126,7 +126,7 @@ public class StealthNetChat extends Thread {
             public void actionPerformed(ActionEvent e) {
                 if (stealthComms != null) {
                 	if (DEBUG_GENERAL) System.out.println("Terminating chat session.");
-                    stealthComms.sendPacket(StealthNetPacket.CMD_LOGOUT);
+                    stealthComms.sendPacket(Packet.CMD_LOGOUT);
                     stealthComms.terminateSession();
                 }
                 stealthComms = null;
@@ -155,7 +155,7 @@ public class StealthNetChat extends Thread {
         chatTextBox.append(msg + "\n");
         if (stealthComms != null) {
         	if (DEBUG_GENERAL) System.out.println("Sending chat message: \"" + msg + "\".");
-            stealthComms.sendPacket(StealthNetPacket.CMD_MSG, msg);
+            stealthComms.sendPacket(Packet.CMD_MSG, msg);
         }
         msgText.setText("");
     }
@@ -167,31 +167,31 @@ public class StealthNetChat extends Thread {
                 return;
         } catch (IOException e) {
             if (stealthComms != null) {
-                stealthComms.sendPacket(StealthNetPacket.CMD_LOGOUT);
+                stealthComms.sendPacket(Packet.CMD_LOGOUT);
                 stealthComms.terminateSession();
             }
             stealthComms = null;
             return;
         }
 
-        StealthNetPacket pckt = new StealthNetPacket();
+        Packet pckt = new Packet();
 
         try {
-            while ((pckt.command != StealthNetPacket.CMD_LOGOUT) && (stealthComms.recvReady())) {
+            while ((pckt.command != Packet.CMD_LOGOUT) && (stealthComms.recvReady())) {
                 pckt = stealthComms.recvPacket();
                 
                 if (pckt == null)
                 	continue;
                 
                 switch (pckt.command) {                
-                    case StealthNetPacket.CMD_MSG:
+                    case Packet.CMD_MSG:
                     	/** Chat message received. */
                     	final String msg = new String(pckt.data);
                     	if (DEBUG_GENERAL) System.out.println("Received chat message: \"" + msg + "\".");
                 	    chatTextBox.append(msg + "\n");
                         break;
                         
-                    case StealthNetPacket.CMD_LOGOUT:
+                    case Packet.CMD_LOGOUT:
                     	/** Terminate chat session. */
                     	if (DEBUG_GENERAL) System.out.println("Terminating chat session.");
                         JOptionPane.showMessageDialog(chatFrame,
@@ -211,7 +211,7 @@ public class StealthNetChat extends Thread {
         }
     }
 
-    /** The main function for StealthNetChat. */
+    /** The main function for Chat. */
     public void run() {
         Dimension screenDim = Toolkit.getDefaultToolkit().getScreenSize();
 
@@ -224,7 +224,7 @@ public class StealthNetChat extends Thread {
         chatFrame.addWindowListener(new WindowAdapter() {
             public void windowClosing(WindowEvent e) {
                 if (stealthComms != null) {
-                    stealthComms.sendPacket(StealthNetPacket.CMD_LOGOUT);
+                    stealthComms.sendPacket(Packet.CMD_LOGOUT);
                     stealthComms.terminateSession();
                 }
                 stealthComms = null;
@@ -252,5 +252,5 @@ public class StealthNetChat extends Thread {
 }
 
 /******************************************************************************
- * END OF FILE:     StealthNetChat.java
+ * END OF FILE:     Chat.java
  *****************************************************************************/

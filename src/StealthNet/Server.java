@@ -3,8 +3,8 @@
  * Computer and Network Security, The University of Sydney
  * Copyright (C) 2002-2004, Matt Barrie and Stephen Gould
  *
- * PROJECT:         StealthNet
- * FILENAME:        StealthNetServer.java
+ * PACKAGE:         StealthNet
+ * FILENAME:        Server.java
  * AUTHORS:         Matt Barrie and Stephen Gould
  * DESCRIPTION:     Implementation of StealthNet Server for ELEC5616/NETS3016
  *                  programming assignment.
@@ -26,13 +26,14 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 
-/* StealthNetServer Class Definition *****************************************/
+/* Server Class Definition ***************************************************/
 
 /**
  * A server process for StealthNet communications. Opens a server socket, 
  * listening on the specified listening port. For each incoming connection on 
- * this port, a new StealthNetServerThread is created. The 
- * StealthNetServerThread is responsible for communicating with that client.
+ * this port, a new StealthNet.ServerThread is created. The 
+ * StealthNet.ServerThread class is responsible for communicating with that 
+ * client.
  * 
  * The server is responsible for maintaining a list of users, as well as a list
  * of secrets. Whenever the server is sent a command, the server needs only to
@@ -44,20 +45,20 @@ import java.net.Socket;
  * @author Joshua Spence (Added debug code and optional port number 
  * specification.)
  */
-public class StealthNetServer {
+public class Server {
 	/** Debug options. */
-	private static final boolean DEBUG_GENERAL     = StealthNetDebug.isDebug("StealthNetServer.General");
-	private static final boolean DEBUG_ERROR_TRACE = StealthNetDebug.isDebug("StealthNetServer.ErrorTrace") || StealthNetDebug.isDebug("ErrorTrace");
+	private static final boolean DEBUG_GENERAL     = Debug.isDebug("StealthNet.Server.General");
+	private static final boolean DEBUG_ERROR_TRACE = Debug.isDebug("StealthNet.Server.ErrorTrace") || Debug.isDebug("ErrorTrace");
 	
 	/** 
-	 * The main StealthNetServer function.
+	 * The main StealthNet.Server function.
 	 * 
 	 * @param args The command line arguments.
 	 * @throws IOException
 	 */
     public static void main(String[] args) throws IOException {
     	/** Port that the server is listening on. */
-    	int port = StealthNetComms.DEFAULT_SERVERPORT;
+    	int port = Comms.DEFAULT_SERVERPORT;
     	
     	/** Check if a port number was specified at the command line. */
     	if (args.length > 0) {
@@ -93,7 +94,7 @@ public class StealthNetServer {
          */
         while (true) {
         	Socket conn;
-        	final StealthNetServerThread thread = new StealthNetServerThread(conn = svrSocket.accept());
+        	final ServerThread thread = new ServerThread(conn = svrSocket.accept());
         	thread.start();
             
             if (DEBUG_GENERAL)
@@ -105,5 +106,5 @@ public class StealthNetServer {
 }
 
 /******************************************************************************
- * END OF FILE:     StealthNetServer.java
+ * END OF FILE:     Server.java
  *****************************************************************************/

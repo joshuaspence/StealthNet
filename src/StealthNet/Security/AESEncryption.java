@@ -3,16 +3,16 @@
  * Computer and Network Security, The University of Sydney
  * Copyright (C) 2002-2004, Matt Barrie and Stephen Gould
  *
- * PROJECT:         StealthNet
- * FILENAME:        StealthNetEncryption.java
+ * PACKAGE:         StealthNet.Security
+ * FILENAME:        AESEncryption.java
  * AUTHORS:         Joshua Spence and Ahmad Al Mutawa
  * DESCRIPTION:     Implementation of AES encryption for ELEC5616 programming 
- * assignment.
+ * 					assignment.
  * VERSION:         1.0
  *
  *****************************************************************************/
 
-package StealthNet;
+package StealthNet.Security;
 
 /* Import Libraries **********************************************************/
 
@@ -31,18 +31,14 @@ import javax.crypto.spec.IvParameterSpec;
 
 import org.apache.commons.codec.binary.Base64;
 
-/* StealthNetEncryption Class Definition *************************************/
+/* AESEncryption Class Definition ********************************************/
 
 /**
- * A class used to encrypt and decrypt messages, in order to provide 
- * confidentiality.
- * 
- * Ideally, only the sender should be able to encrypt the message; and only the
- * receiver should be able to decrypt the message.
+ * A class used to encrypt and decrypt messages using AES.
  * 
  * @author Joshua Spence
  */
-public class StealthNetEncryption {
+public class AESEncryption implements EncryptionHandler {
 	/** Encryption key and cipher. */
 	private final SecretKey encryptionKey;
 	private final Cipher encryptionCipher;
@@ -71,7 +67,7 @@ public class StealthNetEncryption {
 	 * @throws InvalidKeyException 
 	 * @throws InvalidAlgorithmParameterException 
 	 */
-	public StealthNetEncryption(SecretKey encryptKey, SecretKey decryptKey) throws InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidAlgorithmParameterException {
+	public AESEncryption(SecretKey encryptKey, SecretKey decryptKey) throws InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidAlgorithmParameterException {
 		this.encryptionKey = encryptKey;
         this.decryptionKey = decryptKey;
         
@@ -154,3 +150,7 @@ public class StealthNetEncryption {
 		return new String(decryptedValue);
 	}
 }
+
+/******************************************************************************
+ * END OF FILE:     AESEncryption.java
+ *****************************************************************************/

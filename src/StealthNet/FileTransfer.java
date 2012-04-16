@@ -3,8 +3,8 @@
  * Computer and Network Security, The University of Sydney
  * Copyright (C) 2002-2004, Matt Barrie and Stephen Gould
  *
- * PROJECT:         StealthNet
- * FILENAME:        StealthNetFileTransfer.java
+ * PACKAGE:         StealthNet
+ * FILENAME:        FileTransfer.java
  * AUTHORS:         Matt Barrie and Stephen Gould
  * DESCRIPTION:     Implementation of StealthNet Client FTP for ELEC5616
  *                  programming assignment.
@@ -36,7 +36,7 @@ import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.JOptionPane;
 
-/* StealthNetFileTransfer Class Definition ************************************/
+/* FileTransfer Class Definition *********************************************/
 
 /**
  * A class to manage a file transfer between multiple StealthNet clients.
@@ -45,11 +45,11 @@ import javax.swing.JOptionPane;
  * @author Stephen Gould
  * @author Joshua Spence (Added debug code.)
  */
-public class StealthNetFileTransfer extends Thread {
+public class FileTransfer extends Thread {
 	/** Debug options. */
-	private static final boolean DEBUG_GENERAL     = StealthNetDebug.isDebug("StealthNetFileTransfer.General");
-	private static final boolean DEBUG_ERROR_TRACE = StealthNetDebug.isDebug("StealthNetFileTransfer.ErrorTrace");
-	private static final boolean DEBUG_TRANSFER    = StealthNetDebug.isDebug("StealthNetFileTransfer.Transfer");
+	private static final boolean DEBUG_GENERAL     = Debug.isDebug("StealthNet.FileTransfer.General");
+	private static final boolean DEBUG_ERROR_TRACE = Debug.isDebug("StealthNet.FileTransfer.ErrorTrace") || Debug.isDebug("ErrorTrace");
+	private static final boolean DEBUG_TRANSFER    = Debug.isDebug("StealthNet.FileTransfer.Transfer");
 	
 	/** Number of bytes to send at a time. */
     private static final int PACKETSIZE = 256;
@@ -58,7 +58,7 @@ public class StealthNetFileTransfer extends Thread {
     private JProgressBar progressBar = null;
     
     /** The communications class through which to perform the transfer. */
-    private StealthNetComms stealthComms = null;
+    private Comms stealthComms = null;
     
     /** The filename of the file being transferred. */
     private String filename;
@@ -69,11 +69,11 @@ public class StealthNetFileTransfer extends Thread {
     /** 
      * Constructor. 
      * 
-     * @param snComms The StealthNetComm instance to use for the transfer.
+     * @param snComms The StealthNet.Comms instance to use for the transfer.
      * @param fn The filename of the file to be transferred.
      * @param send True to indicate sending, false to indicate receiving.
      */
-    public StealthNetFileTransfer(StealthNetComms snComms, String fn, boolean send) {
+    public FileTransfer(Comms snComms, String fn, boolean send) {
         stealthComms = snComms;
         filename = fn.trim();
         bSend = send;
@@ -140,7 +140,7 @@ public class StealthNetFileTransfer extends Thread {
         try {
         	/** Setup the transfer. */
         	if (DEBUG_GENERAL) System.out.println("Setting up file transfer.");
-            stealthComms.sendPacket(StealthNetPacket.CMD_FTP, Integer.toString(fileLen));
+            stealthComms.sendPacket(Packet.CMD_FTP, Integer.toString(fileLen));
             
             /** Receive server response. */
             if (DEBUG_GENERAL) System.out.println("Waiting for server response.");
@@ -153,7 +153,7 @@ public class StealthNetFileTransfer extends Thread {
                 if (bufLen > 0) {
                 	/** Send a part of the file. */
                 	if (DEBUG_TRANSFER) System.out.println("Sending " + bufLen + " bytes of \"" + filename + "\".");
-                    stealthComms.sendPacket(StealthNetPacket.CMD_FTP, buf, bufLen);
+                    stealthComms.sendPacket(Packet.CMD_FTP, buf, bufLen);
                     
                     /** Wait for server response. */
                     if (DEBUG_TRANSFER) System.out.println("Waiting for server response.");
@@ -167,7 +167,7 @@ public class StealthNetFileTransfer extends Thread {
             /** Close file handle. */
             fid.close();
             if (DEBUG_GENERAL) System.out.println("Sending terminating file transfer packet.");
-            stealthComms.sendPacket(StealthNetPacket.CMD_FTP);
+            stealthComms.sendPacket(Packet.CMD_FTP);
         } catch (IOException e) {
             System.err.println("Error reading from file \"" + filename + "\".");
             if (DEBUG_ERROR_TRACE) e.printStackTrace();
@@ -184,7 +184,7 @@ public class StealthNetFileTransfer extends Thread {
             
             /** Acknowledge with a NULL packet. */
             if (DEBUG_GENERAL) System.out.println("Sending acknowledgement to sender.");
-            stealthComms.sendPacket(StealthNetPacket.CMD_NULL);
+            stealthComms.sendPacket(Packet.CMD_NULL);
             
             /** Set the scale on the progress bar. */
             progressBar.setMaximum(fileLen);
@@ -205,7 +205,7 @@ public class StealthNetFileTransfer extends Thread {
                 
                 /** Send an acknowledgement (NULL packet). */
                 if (DEBUG_TRANSFER) System.out.println("Sending acknowledgement.");
-                stealthComms.sendPacket(StealthNetPacket.CMD_NULL);
+                stealthComms.sendPacket(Packet.CMD_NULL);
                 
                 /** Write the file data to the file output stream. */
                 fid.write(buf);
@@ -224,5 +224,5 @@ public class StealthNetFileTransfer extends Thread {
 }
 
 /******************************************************************************
- * END OF FILE:     StealthNetFileTransfer.java
+ * END OF FILE:     FileTransfer.java
  *****************************************************************************/

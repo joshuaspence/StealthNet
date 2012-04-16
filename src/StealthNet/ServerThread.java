@@ -3,8 +3,8 @@
  * Computer and Network Security, The University of Sydney
  * Copyright (C) 2002-2004, Stephen Gould, Matt Barrie and Ryan Junee
  *
- * PROJECT:         StealthNet
- * FILENAME:        StealthNetServerThread.java
+ * PACKAGE:         StealthNet
+ * FILENAME:        ServerThread.java
  * AUTHORS:         Stephen Gould, Matt Barrie, Ryan Junee
  * DESCRIPTION:     Implementation of StealthNet Server for ELEC5616
  *                  programming assignment.
@@ -31,7 +31,7 @@ import java.util.Hashtable;
 import java.util.StringTokenizer;
 import javax.crypto.NoSuchPaddingException;
 
-/* StealthNetServerThread Class Definition ***********************************/
+/* ServerThread Class Definition *********************************************/
 
 /**
  * Represents a thread within the operating system.
@@ -46,19 +46,19 @@ import javax.crypto.NoSuchPaddingException;
  * @author Joshua Spence (Added debug code and handling of security-related 
  * packets.)
  */
-public class StealthNetServerThread extends Thread {
+public class ServerThread extends Thread {
 	/** Debug options. */
-	private static final boolean DEBUG_GENERAL               = StealthNetDebug.isDebug("StealthNetServerThread.General");
-	private static final boolean DEBUG_ERROR_TRACE           = StealthNetDebug.isDebug("StealthNetServerThread.ErrorTrace");
-	private static final boolean DEBUG_COMMANDS_NULL         = StealthNetDebug.isDebug("StealthNetServerThread.Commands.Null");
-	private static final boolean DEBUG_COMMANDS_LOGIN        = StealthNetDebug.isDebug("StealthNetServerThread.Commands.Login");
-	private static final boolean DEBUG_COMMANDS_LOGOUT       = StealthNetDebug.isDebug("StealthNetServerThread.Commands.Logout");
-	private static final boolean DEBUG_COMMANDS_MSG          = StealthNetDebug.isDebug("StealthNetServerThread.Commands.Msg");
-	private static final boolean DEBUG_COMMANDS_CHAT         = StealthNetDebug.isDebug("StealthNetServerThread.Commands.Chat");
-	private static final boolean DEBUG_COMMANDS_FTP          = StealthNetDebug.isDebug("StealthNetServerThread.Commands.FTP");
-	private static final boolean DEBUG_COMMANDS_CREATESECRET = StealthNetDebug.isDebug("StealthNetServerThread.Commands.CreateSecret");
-	private static final boolean DEBUG_COMMANDS_GETSECRET    = StealthNetDebug.isDebug("StealthNetServerThread.Commands.GetSecret");
-	private static final boolean DEBUG_COMMANDS_AUTHKEY      = StealthNetDebug.isDebug("StealthNetServerThread.Commands.AuthKey");
+	private static final boolean DEBUG_GENERAL               = Debug.isDebug("StealthNet.ServerThread.General");
+	private static final boolean DEBUG_ERROR_TRACE           = Debug.isDebug("StealthNet.ServerThread.ErrorTrace") || Debug.isDebug("ErrorTrace");
+	private static final boolean DEBUG_COMMANDS_NULL         = Debug.isDebug("StealthNet.ServerThread.Commands.Null");
+	private static final boolean DEBUG_COMMANDS_LOGIN        = Debug.isDebug("StealthNet.ServerThread.Commands.Login");
+	private static final boolean DEBUG_COMMANDS_LOGOUT       = Debug.isDebug("StealthNet.ServerThread.Commands.Logout");
+	private static final boolean DEBUG_COMMANDS_MSG          = Debug.isDebug("StealthNet.ServerThread.Commands.Msg");
+	private static final boolean DEBUG_COMMANDS_CHAT         = Debug.isDebug("StealthNet.ServerThread.Commands.Chat");
+	private static final boolean DEBUG_COMMANDS_FTP          = Debug.isDebug("StealthNet.ServerThread.Commands.FTP");
+	private static final boolean DEBUG_COMMANDS_CREATESECRET = Debug.isDebug("StealthNet.ServerThread.Commands.CreateSecret");
+	private static final boolean DEBUG_COMMANDS_GETSECRET    = Debug.isDebug("StealthNet.ServerThread.Commands.GetSecret");
+	private static final boolean DEBUG_COMMANDS_AUTHKEY      = Debug.isDebug("StealthNet.ServerThread.Commands.AuthKey");
 	
 	/** Used to separate thread ID from debug output. */
 	private static final String separator = " >> ";
@@ -68,7 +68,7 @@ public class StealthNetServerThread extends Thread {
 	 * communicate with.
 	 */
 	private class UserData {
-		StealthNetServerThread userThread = null;
+		ServerThread userThread = null;
 	}
 
 	/** Client secret data. */
@@ -91,7 +91,7 @@ public class StealthNetServerThread extends Thread {
 	private String userID = null;
 
 	/** A StealthNetComms class to handle communications for this client. */
-	private StealthNetComms stealthComms = null;
+	private Comms stealthComms = null;
 
 	/**
 	 * Constructor.
@@ -102,14 +102,14 @@ public class StealthNetServerThread extends Thread {
 	 * @throws NoSuchPaddingException 
 	 * @throws InvalidKeyException
 	 */
-	public StealthNetServerThread(Socket socket) {		
+	public ServerThread(Socket socket) {		
 		/** Thread constructor. */
-		super("StealthNetServerThread");
+		super("StealthNet.ServerThread");
 
-		if (DEBUG_GENERAL) System.out.println(this.getId() + separator + "Creating a StealthNetServerThread.");
+		if (DEBUG_GENERAL) System.out.println(this.getId() + separator + "Creating a StealthNet.ServerThread.");
 		
-		/** Create a new StealthNetComms instance and accept sessions. */
-		stealthComms = new StealthNetComms();
+		/** Create a new StealthNet.Comms instance and accept sessions. */
+		stealthComms = new Comms();
 		stealthComms.acceptSession(socket);
 	}
 
@@ -194,7 +194,6 @@ public class StealthNetServerThread extends Thread {
 	 * @param name The name of the secret data to remove.
 	 * @return True on success, false on failure.
 	 */
-	@SuppressWarnings("unused")
 	private synchronized boolean removeSecret(String name) {
 		secretList.remove(name);
 		if (DEBUG_GENERAL) System.out.println(this.getId() + separator + "Removed secret \"" + name + "\" from the secret list.");
@@ -266,9 +265,9 @@ public class StealthNetServerThread extends Thread {
 				if (userInfo.userThread.stealthComms == null) {
 					userInfo.userThread = null;
 				} else {
-					/** Send this user the user list in a StealthNetPacket. */
+					/** Send this user the user list in a StealthNet.Packet. */
 					if (DEBUG_GENERAL) System.out.println(this.getId() + separator + "Sending the user list to user \"" + userKey + "\".");
-					userInfo.userThread.stealthComms.sendPacket(StealthNetPacket.CMD_LIST, userTable);
+					userInfo.userThread.stealthComms.sendPacket(Packet.CMD_LIST, userTable);
 				}
 			}
 		}
@@ -290,9 +289,9 @@ public class StealthNetServerThread extends Thread {
 				if (userInfo.userThread.stealthComms == null) {
 					userInfo.userThread = null;
 				} else {
-					/** Send this user the secret list in a StealthNetPacket. */
+					/** Send this user the secret list in a StealthNet.Packet. */
 					if (DEBUG_GENERAL) System.out.println(this.getId() + separator + "Sending the secret list to user \"" + userKey + "\".");
-					userInfo.userThread.stealthComms.sendPacket(StealthNetPacket.CMD_SECRETLIST, secretTable);
+					userInfo.userThread.stealthComms.sendPacket(Packet.CMD_SECRETLIST, secretTable);
 				}
 			}
 		}
@@ -319,20 +318,20 @@ public class StealthNetServerThread extends Thread {
 	 * started between the specified users.
 	 * 
 	 * If the packet contains the create secret command, then we create secret
-	 * data from the StealthNetPacket data, and retransmit the list of secrets
+	 * data from the StealthNet.Packet data, and retransmit the list of secrets
 	 * to all currently logged in users.
 	 */
 	public void run() {
-		if (DEBUG_GENERAL) System.out.println(this.getId() + separator + "Running StealthNetServerThread...");
+		if (DEBUG_GENERAL) System.out.println(this.getId() + separator + "Running StealthNet.ServerThread...");
 
-		StealthNetPacket pckt = new StealthNetPacket();
+		Packet pckt = new Packet();
 		try {
-			while (pckt.command != StealthNetPacket.CMD_LOGOUT) {
-				/** Receive a StealthNetPacket. */
+			while (pckt.command != Packet.CMD_LOGOUT) {
+				/** Receive a StealthNet.Packet. */
 				pckt = stealthComms.recvPacket();
 				
 				if (pckt == null) {
-					pckt = new StealthNetPacket();
+					pckt = new Packet();
 					continue;
 				}
 				
@@ -341,8 +340,8 @@ public class StealthNetServerThread extends Thread {
 				byte msg_type;
 				
 				if (DEBUG_GENERAL) {
-					if (pckt.data == null)	 System.out.println(this.getId() + separator + "	. Packet command: " + StealthNetPacket.getCommandName(pckt.command) + ".");
-					else	                 System.out.println(this.getId() + separator + "	. Packet command: " + StealthNetPacket.getCommandName(pckt.command) + ". Packet data: \"" + new String(pckt.data) + "\".");
+					if (pckt.data == null)	 System.out.println(this.getId() + separator + "	. Packet command: " + Packet.getCommandName(pckt.command) + ".");
+					else	                 System.out.println(this.getId() + separator + "	. Packet command: " + Packet.getCommandName(pckt.command) + ". Packet data: \"" + new String(pckt.data) + "\".");
 				}
 
 				/** Perform the relevant action based on the packet command. */
@@ -350,7 +349,7 @@ public class StealthNetServerThread extends Thread {
 					/***********************************************************
 					 * AUTHENTICATION
 					 **********************************************************/
-					case StealthNetPacket.CMD_PUBLICKEY:
+					case Packet.CMD_PUBLICKEY:
 						if (DEBUG_COMMANDS_AUTHKEY) System.out.println(this.getId() + separator + "Received authentication key.");
 						stealthComms.keyExchange(new String(pckt.data));
 						break;
@@ -358,14 +357,14 @@ public class StealthNetServerThread extends Thread {
 					/***********************************************************
 					 * NULL command
 					 **********************************************************/
-					case StealthNetPacket.CMD_NULL:
+					case Packet.CMD_NULL:
 						if (DEBUG_COMMANDS_NULL) System.out.println(this.getId() + separator + "Received NULL command.");
 						break;
 	
 					/***********************************************************
 					 * Login command
 					 **********************************************************/
-					case StealthNetPacket.CMD_LOGIN:
+					case Packet.CMD_LOGIN:
 						if (DEBUG_COMMANDS_LOGIN) System.out.println("Received login command.");
 	
 						if (userID != null) {
@@ -382,7 +381,7 @@ public class StealthNetServerThread extends Thread {
 							System.out.println(this.getId() + separator + "User \"" + userID + "\" is already logged in.");
 
 							/** Cancel the current login attempt. */
-							pckt.command = StealthNetPacket.CMD_LOGOUT;
+							pckt.command = Packet.CMD_LOGOUT;
 							userID = null;
 						} else {
 							System.out.println(this.getId() + separator + "User \"" + userID + "\" has logged in.");
@@ -408,7 +407,7 @@ public class StealthNetServerThread extends Thread {
 					/***********************************************************
 					 * Logout command
 					 **********************************************************/
-					case StealthNetPacket.CMD_LOGOUT:
+					case Packet.CMD_LOGOUT:
 						if (DEBUG_COMMANDS_LOGOUT) System.out.println(this.getId() + separator + "Received logout command.");
 	
 						if (userID == null)
@@ -422,7 +421,7 @@ public class StealthNetServerThread extends Thread {
 					/***********************************************************
 					 * Message command
 					 **********************************************************/
-					case StealthNetPacket.CMD_MSG:
+					case Packet.CMD_MSG:
 						if (DEBUG_COMMANDS_MSG) System.out.println(this.getId() + separator + "Received message command.");
 	
 						if (userID == null) {
@@ -441,7 +440,7 @@ public class StealthNetServerThread extends Thread {
 
 							if ((userInfo != null) && (userInfo.userThread != null)) {
 								if (DEBUG_COMMANDS_MSG) System.out.println(this.getId() + separator + "Sending message \"" + msg + "\" to user \"" + userKey + "\".");
-								userInfo.userThread.stealthComms.sendPacket(StealthNetPacket.CMD_MSG, msg);
+								userInfo.userThread.stealthComms.sendPacket(Packet.CMD_MSG, msg);
 							}
 						}
 						break;
@@ -449,7 +448,7 @@ public class StealthNetServerThread extends Thread {
 					/***********************************************************
 					 * Chat command
 					 **********************************************************/
-					case StealthNetPacket.CMD_CHAT:
+					case Packet.CMD_CHAT:
 						if (DEBUG_COMMANDS_CHAT) System.out.println(this.getId() + separator + "Received chat command.");
 	
 						if (userID == null) {
@@ -463,19 +462,19 @@ public class StealthNetServerThread extends Thread {
 						userInfo = userList.get(userKey);
 						
 						if ((userInfo == null) || (userInfo.userThread == null)) {
-							msg_type = StealthNetPacket.CMD_MSG;
+							msg_type = Packet.CMD_MSG;
 							msg = "[*SVR*] User not logged in";
 							
 							if (DEBUG_COMMANDS_CHAT) System.out.println(this.getId() + separator + "Returning error message \"" + msg + "\".");
 							stealthComms.sendPacket(msg_type, msg);
 						} else if (userInfo.userThread == Thread.currentThread()) {
-							msg_type = StealthNetPacket.CMD_MSG;
+							msg_type = Packet.CMD_MSG;
 							msg = "[*SVR*] Cannot chat to self";
 							
 							if (DEBUG_COMMANDS_CHAT) System.out.println(this.getId() + separator + "Returning error message \"" + msg + "\".");
 							stealthComms.sendPacket(msg_type, msg);
 						} else {
-							msg_type = StealthNetPacket.CMD_CHAT;
+							msg_type = Packet.CMD_CHAT;
 							msg = userID + "@" + iAddr;
 							
 							if (DEBUG_COMMANDS_CHAT) System.out.println(this.getId() + separator + "Sending chat message \"" + msg + "\" to user \"" + userKey + "\".");
@@ -487,7 +486,7 @@ public class StealthNetServerThread extends Thread {
 					/***********************************************************
 					 * FTP command
 					 **********************************************************/
-					case StealthNetPacket.CMD_FTP:
+					case Packet.CMD_FTP:
 						if (DEBUG_COMMANDS_FTP) System.out.println(this.getId() + separator + "Received FTP command.");
 	
 						if (userID == null) {
@@ -501,19 +500,19 @@ public class StealthNetServerThread extends Thread {
 						userInfo = userList.get(userKey);
 						
 						if ((userInfo == null) || (userInfo.userThread == null)) {
-							msg_type = StealthNetPacket.CMD_MSG;
+							msg_type = Packet.CMD_MSG;
 							msg = "[*SVR*] User not logged in";
 							
 							if (DEBUG_COMMANDS_FTP) System.out.println(this.getId() + separator + "Returning error message \"" + msg + "\".");
 							stealthComms.sendPacket(msg_type, msg);
 						} else if (userInfo.userThread == Thread.currentThread()) {
-							msg_type = StealthNetPacket.CMD_MSG;
+							msg_type = Packet.CMD_MSG;
 							msg = "[*SVR*] Cannot ftp to self";
 							
 							if (DEBUG_COMMANDS_FTP) System.out.println(this.getId() + separator + "Returning error message \"" + msg + "\".");
 							stealthComms.sendPacket(msg_type, msg);
 						} else {
-							msg_type = StealthNetPacket.CMD_FTP;
+							msg_type = Packet.CMD_FTP;
 							msg = userID + "@" + iAddr;
 							
 							if (DEBUG_COMMANDS_FTP) System.out.println(this.getId() + separator + "Sending file transfer message \"" + msg + "\" to user \"" + userKey + "\".");
@@ -524,7 +523,7 @@ public class StealthNetServerThread extends Thread {
 					/***********************************************************
 					 * Create Secret command
 					 **********************************************************/
-					case StealthNetPacket.CMD_CREATESECRET:
+					case Packet.CMD_CREATESECRET:
 						if (DEBUG_COMMANDS_CREATESECRET) System.out.println(this.getId() + separator + "Received create secret command.");
 	
 						if (userID == null) {
@@ -565,7 +564,7 @@ public class StealthNetServerThread extends Thread {
 					/***********************************************************
 					 * Get Secret command
 					 **********************************************************/
-					case StealthNetPacket.CMD_GETSECRET:
+					case Packet.CMD_GETSECRET:
 						if (DEBUG_COMMANDS_GETSECRET) System.out.println(this.getId() + separator + "Received Get Secret command.");
 	
 						if (userID == null) {
@@ -579,7 +578,7 @@ public class StealthNetServerThread extends Thread {
 						final SecretData secretInfo = secretList.get(name);
 						
 						if (secretInfo == null) {
-							msg_type = StealthNetPacket.CMD_MSG;
+							msg_type = Packet.CMD_MSG;
 							msg = "[*SVR*] Secret is not available";
 							
 							if (DEBUG_COMMANDS_GETSECRET) System.out.println(this.getId() + separator + "Returning error message \"" + msg + "\".");
@@ -589,20 +588,20 @@ public class StealthNetServerThread extends Thread {
 							userInfo = userList.get(user);
 
 							if ((userInfo == null) || (userInfo.userThread == null)) {
-								msg_type = StealthNetPacket.CMD_MSG;
+								msg_type = Packet.CMD_MSG;
 								msg = "[*SVR*] Secret is not currently available";
 								
 								if (DEBUG_COMMANDS_GETSECRET) System.out.println(this.getId() + separator + "Returning error message \"" + msg + "\".");
 								stealthComms.sendPacket(msg_type, msg);
 							} else if (userInfo.userThread == Thread.currentThread()) {
-								msg_type = StealthNetPacket.CMD_MSG;
+								msg_type = Packet.CMD_MSG;
 								msg = "[*SVR*] You can't purchase a secret from yourself!";
 								
 								if (DEBUG_COMMANDS_GETSECRET) System.out.println(this.getId() + separator + "Returning error message \"" + msg + "\".");
 								stealthComms.sendPacket(msg_type, msg);
 							} else {
 								final String fName = secretInfo.dirname + secretInfo.filename;
-								msg_type = StealthNetPacket.CMD_GETSECRET;
+								msg_type = Packet.CMD_GETSECRET;
 								msg = fName + "@" + iAddr;
 								
 								if (DEBUG_COMMANDS_GETSECRET) System.out.println(this.getId() + separator + "Sending get secret message \"" + msg + "\" to user \"" + user + "\".");
@@ -649,5 +648,5 @@ public class StealthNetServerThread extends Thread {
 }
 
 /******************************************************************************
- * END OF FILE: StealthNetServerThread.java
+ * END OF FILE: ServerThread.java
  *****************************************************************************/

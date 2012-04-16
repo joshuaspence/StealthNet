@@ -3,16 +3,16 @@
  * Computer and Network Security, The University of Sydney
  * Copyright (C) 2002-2004, Matt Barrie and Stephen Gould
  *
- * PROJECT:         StealthNet
- * FILENAME:        StealthMAC.java
+ * PACKAGE:         StealthNet.Security
+ * FILENAME:        HashedMessageAuthenticationCode.java
  * AUTHORS:         Joshua Spence and Ahmad Al Mutawa
- * DESCRIPTION:     Implementation of a hashed message authentication code 
+ * DESCRIPTION:     Implementation of a Hashed Message Authentication Code 
  * 					(HMAC) for ELEC5616 programming assignment.
  * VERSION:         1.0
  *
  *****************************************************************************/
 
-package StealthNet;
+package StealthNet.Security;
 
 /* Import Libraries **********************************************************/
 
@@ -24,15 +24,14 @@ import javax.crypto.SecretKey;
 
 import org.apache.commons.codec.binary.Base64;
 
-/* StealthNetMAC Class Definition *********************************************/
+/* HashedMessageAuthenticationCode Class Definition **************************/
 
 /**
- * Calculates a verifies packet HMACs. This is used to ensure packet integrity 
- * between peers.
+ * Calculates a verifies packet HMACs.
  * 
  * @author Joshua Spence
  */
-public class StealthNetMAC {
+public class HashedMessageAuthenticationCode implements MessageAuthenticationCode {
 	private final SecretKey key;
 	private final Mac mac;
 	
@@ -49,7 +48,7 @@ public class StealthNetMAC {
 	 * @throws NoSuchAlgorithmException
 	 * @throws InvalidKeyException
 	 */
-	public StealthNetMAC(SecretKey key) throws NoSuchAlgorithmException, InvalidKeyException {
+	public HashedMessageAuthenticationCode(SecretKey key) throws NoSuchAlgorithmException, InvalidKeyException {
 		this.key = key;
 		
 		/** Create a MAC object using HMAC-MD5 and initialise with key. */
@@ -115,3 +114,7 @@ public class StealthNetMAC {
 		return true;
 	}
 }
+
+/******************************************************************************
+ * END OF FILE:     HashedMessageAuthenticationCode.java
+ *****************************************************************************/

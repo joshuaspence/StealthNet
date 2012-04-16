@@ -2,8 +2,8 @@
  * ELEC5616
  * Computer and Network Security, The University of Sydney
  *
- * PROJECT:         StealthNet
- * FILENAME:        StealthNetComms.java
+ * PACKAGE:         StealthNet
+ * FILENAME:        Comms.java
  * AUTHORS:         Stephen Gould, Matt Barrie, Ryan Junee
  * DESCRIPTION:     Implementation of StealthNet Communications for ELEC5616
  *                  programming assignment.
@@ -42,7 +42,15 @@ import javax.crypto.spec.SecretKeySpec;
 
 import org.apache.commons.codec.binary.Base64;
 
-/* StealthNetComms class *****************************************************/
+import StealthNet.Security.AESEncryption;
+import StealthNet.Security.DiffieHellmanKeyExchange;
+import StealthNet.Security.EncryptionHandler;
+import StealthNet.Security.HashedMessageAuthenticationCode;
+import StealthNet.Security.KeyExchange;
+import StealthNet.Security.MessageAuthenticationCode;
+import StealthNet.Security.TokenGenerator;
+
+/* Comms class ***************************************************************/
 
 /**
  * A class to buffered write and buffered read to and from an opened socket.
@@ -54,22 +62,18 @@ import org.apache.commons.codec.binary.Base64;
  * debug code). 
  *
  */
-public class StealthNetComms {
-	/** 
-	 * Use the argument `-Ddebug.StealthNetCommsXXX=true' at the command line
-	 * to enable debug messages. Use the argument `-Ddebug.StealthNetComms=true'
-	 * to enable all debug messages. 
-	 */
-	private static final boolean DEBUG_GENERAL          = StealthNetDebug.isDebug("StealthNetComms.General");
-	private static final boolean DEBUG_ERROR_TRACE      = StealthNetDebug.isDebug("StealthNetComms.ErrorTrace");
-	private static final boolean DEBUG_RAW_PACKET       = StealthNetDebug.isDebug("StealthNetComms.RawOutput");
-	private static final boolean DEBUG_DECODED_PACKET   = StealthNetDebug.isDebug("StealthNetComms.DecodedOutput");
-	private static final boolean DEBUG_ENCRYPTED_PACKET = StealthNetDebug.isDebug("StealthNetComms.EncryptedOutput");
-	private static final boolean DEBUG_DECRYPTED_PACKET = StealthNetDebug.isDebug("StealthNetComms.DecryptedOutput");
-	private static final boolean DEBUG_RECEIVE_READY    = StealthNetDebug.isDebug("StealthNetComms.ReceiveReady");
-	private static final boolean DEBUG_KEY_EXCHANGE     = StealthNetDebug.isDebug("StealthNetComms.KeyExchange");
-	private static final boolean DEBUG_ENCRYPTION       = StealthNetDebug.isDebug("StealthNetComms.Encryption");
-	private static final boolean DEBUG_INTEGRITY        = StealthNetDebug.isDebug("StealthNetComms.Integrity");
+public class Comms {
+	/** Debug options. */
+	private static final boolean DEBUG_GENERAL          = Debug.isDebug("StealthNet.Comms.General");
+	private static final boolean DEBUG_ERROR_TRACE      = Debug.isDebug("StealthNet.Comms.ErrorTrace") || Debug.isDebug("ErrorTrace");
+	private static final boolean DEBUG_RAW_PACKET       = Debug.isDebug("StealthNet.Comms.RawOutput");
+	private static final boolean DEBUG_DECODED_PACKET   = Debug.isDebug("StealthNet.Comms.DecodedOutput");
+	private static final boolean DEBUG_ENCRYPTED_PACKET = Debug.isDebug("StealthNet.Comms.EncryptedOutput");
+	private static final boolean DEBUG_DECRYPTED_PACKET = Debug.isDebug("StealthNet.Comms.DecryptedOutput");
+	private static final boolean DEBUG_RECEIVE_READY    = Debug.isDebug("StealthNet.Comms.ReceiveReady");
+	private static final boolean DEBUG_KEY_EXCHANGE     = Debug.isDebug("StealthNet.Comms.KeyExchange");
+	private static final boolean DEBUG_ENCRYPTION       = Debug.isDebug("StealthNet.Comms.Encryption");
+	private static final boolean DEBUG_INTEGRITY        = Debug.isDebug("StealthNet.Comms.Integrity");
 	
 	/** Defaults. */
     public static final String DEFAULT_SERVERNAME = "localhost";	/** Default host for the StealthNet server. */
@@ -84,18 +88,17 @@ public class StealthNetComms {
     
     /** Provides authentication for the communication. */
 	private final static int KEY_EXCHANGE_NUM_BITS = 1024;
-    private StealthNetKeyExchange authenticationProvider = null;
+    private KeyExchange authenticationProvider = null;
     private SecretKey sharedSecretKey = null;
     
     /** Provides encryption and decryption for the communications. */
-	private StealthNetEncryption confidentialityProvider = null;
+	private EncryptionHandler confidentialityProvider = null;
     
     /** Provides integrity through creating checksums for messages. */
-	private StealthNetMAC integrityProvider = null;
+	private MessageAuthenticationCode integrityProvider = null;
     
     /** Prevents replay attacks using a PRNG. */
-    @SuppressWarnings("unused")
-	private StealthNetPRNG replayPrevention;
+	private TokenGenerator replayPrevention;
 
     /** Output data stream for the socket. */
     private PrintWriter dataOut;            
@@ -104,7 +107,7 @@ public class StealthNetComms {
     private BufferedReader dataIn;    
     
     /** Constructor. */
-    public StealthNetComms() {
+    public Comms() {
     	this.commsSocket = null;
     	this.dataIn = null;
     	this.dataOut = null;
@@ -112,7 +115,7 @@ public class StealthNetComms {
         this.servername = DEFAULT_SERVERNAME;
         this.port = DEFAULT_SERVERPORT;
         
-        if (DEBUG_GENERAL) System.out.println("Creating StealthNetComms to " + this.servername + " on port " + this.port + ".");
+        if (DEBUG_GENERAL) System.out.println("Creating StealthNet.Comms to " + this.servername + " on port " + this.port + ".");
     }
     
     /** 
@@ -121,7 +124,7 @@ public class StealthNetComms {
      * @param s The servername of the StealthNet server.
      * @param p The port number for the StealthNet server.
      */
-    public StealthNetComms(String s, int p) {    	
+    public Comms(String s, int p) {    	
     	this.commsSocket = null;
         this.dataIn = null;
         this.dataOut = null;
@@ -129,7 +132,7 @@ public class StealthNetComms {
         this.servername = s;
         this.port = p;
         
-        if (DEBUG_GENERAL) System.out.println("Creating StealthNetComms to " + this.servername + " on port " + this.port + ".");
+        if (DEBUG_GENERAL) System.out.println("Creating StealthNet.Comms to " + this.servername + " on port " + this.port + ".");
     }
 
     /** 
@@ -146,14 +149,14 @@ public class StealthNetComms {
     /** 
      * Initiates a communications session. This occurs on the client side. The
      * peer that initiates the session is also responsible for initiating the 
-     * Diffie-Hellman key exchange, as well as sharing the HMAC key.
+     * key exchange, as well as sharing the MAC key.
      * 
      * @param socket The socket through which the connection is made. 
      * @return True if the initialisation succeeds. False if the initialisation 
      * fails. 
      */
     public boolean initiateSession(Socket socket) {
-    	if (DEBUG_GENERAL) System.out.println("Initiating StealthNetComms session.");
+    	if (DEBUG_GENERAL) System.out.println("Initiating StealthNet.Comms session.");
         try {
             commsSocket = socket;
             dataOut = new PrintWriter(commsSocket.getOutputStream(), true);
@@ -164,7 +167,7 @@ public class StealthNetComms {
             return false;
         }
         
-        /** Perform Diffie-Hellman key exchange. */
+        /** Perform key exchange. */
         initKeyExchange();
         
         /** 
@@ -173,7 +176,10 @@ public class StealthNetComms {
          */
         waitForKeyExchange();
         
-        /** Generate and transmit HMAC key. Then wait for the peer to send an acknowledgement, */
+        /** 
+         * Generate and transmit MAC key. Then wait for the peer to send an 
+         * acknowledgement.
+         */
         doIntegrityKey();
         
         return true;
@@ -187,7 +193,7 @@ public class StealthNetComms {
      * fails. 
      */
     public boolean acceptSession(Socket socket) {
-    	if (DEBUG_GENERAL) System.out.println("Accepting StealthNetComms session on port " + socket.getPort() + ".");
+    	if (DEBUG_GENERAL) System.out.println("Accepting StealthNet.Comms session on port " + socket.getPort() + ".");
         try {
             commsSocket = socket;
             dataOut = new PrintWriter(commsSocket.getOutputStream(), true);
@@ -208,7 +214,7 @@ public class StealthNetComms {
      * @return True if the termination succeeds, otherwise false.
      */
     public boolean terminateSession() {
-    	if (DEBUG_GENERAL) System.out.println("Terminating StealthNetComms session.");
+    	if (DEBUG_GENERAL) System.out.println("Terminating StealthNet.Comms session.");
         try {
             if (commsSocket == null)
                 return false;
@@ -266,7 +272,7 @@ public class StealthNetComms {
      * @return True if successful, otherwise false.
      */
     public boolean sendPacket(byte command, byte[] data, int dataSize) {
-        final StealthNetPacket pckt = new StealthNetPacket(command, data, dataSize, integrityProvider, null);
+        final Packet pckt = new Packet(command, data, dataSize, integrityProvider, null);
         return sendPacket(pckt);
     }
 
@@ -280,20 +286,20 @@ public class StealthNetComms {
      * @param pckt The packet to be sent.
      * @return True if successful, otherwise false.
      */
-    public boolean sendPacket(StealthNetPacket pckt) {    	
+    public boolean sendPacket(Packet pckt) {    	
     	/** Print debug information. */
     	if (DEBUG_RAW_PACKET)     System.out.println("(raw)       sendPacket(" + pckt.toString() + ")");
     	if (DEBUG_DECODED_PACKET) {
     		if (pckt.data.length <= 0) {
     			if (pckt.digest.length <= 0)
-    				System.out.println("(decoded)   sendPacket(" + StealthNetPacket.getCommandName(pckt.command) + ", null, null)");
+    				System.out.println("(decoded)   sendPacket(" + Packet.getCommandName(pckt.command) + ", null, null)");
     			else
-    				System.out.println("(decoded)   sendPacket(" + StealthNetPacket.getCommandName(pckt.command) + ", null, " + (new String(pckt.digest)) + ")");
+    				System.out.println("(decoded)   sendPacket(" + Packet.getCommandName(pckt.command) + ", null, " + (new String(pckt.digest)) + ")");
     		} else {
     			if (pckt.digest.length <= 0)
-    				System.out.println("(decoded)   sendPacket(" + StealthNetPacket.getCommandName(pckt.command) + ", " + (new String(pckt.data)).replaceAll("\n", ";") + ", null)");
+    				System.out.println("(decoded)   sendPacket(" + Packet.getCommandName(pckt.command) + ", " + (new String(pckt.data)).replaceAll("\n", ";") + ", null)");
     			else
-    				System.out.println("(decoded)   sendPacket(" + StealthNetPacket.getCommandName(pckt.command) + ", " + (new String(pckt.data)).replaceAll("\n", ";") + ", " + (new String(pckt.digest)) + ")");
+    				System.out.println("(decoded)   sendPacket(" + Packet.getCommandName(pckt.command) + ", " + (new String(pckt.data)).replaceAll("\n", ";") + ", " + (new String(pckt.digest)) + ")");
     		}
     	}
     	
@@ -328,8 +334,8 @@ public class StealthNetComms {
      * 
      * @return The packet that was received.
      */
-    public StealthNetPacket recvPacket() throws IOException {
-        StealthNetPacket pckt = null;
+    public Packet recvPacket() throws IOException {
+        Packet pckt = null;
         
         /** Read data from the input buffer. */
         final String str = dataIn.readLine();
@@ -353,7 +359,7 @@ public class StealthNetComms {
     	}
     	
     	/** Construct the packet. */
-    	pckt = new StealthNetPacket(packetString);
+    	pckt = new Packet(packetString);
     	
     	/** Check the integrity of the message. */
     	if (!pckt.verifyMAC(integrityProvider)) {
@@ -368,35 +374,35 @@ public class StealthNetComms {
         if (DEBUG_DECODED_PACKET) {
     		if (pckt.data.length <= 0) {
     			if (pckt.digest.length <= 0)
-    				System.out.println("(decoded)   recvPacket(" + StealthNetPacket.getCommandName(pckt.command) + ", null, null)");    			else
-    				System.out.println("(decoded)   recvPacket(" + StealthNetPacket.getCommandName(pckt.command) + ", null, " + (new String(pckt.digest)) + ")");
+    				System.out.println("(decoded)   recvPacket(" + Packet.getCommandName(pckt.command) + ", null, null)");    			else
+    				System.out.println("(decoded)   recvPacket(" + Packet.getCommandName(pckt.command) + ", null, " + (new String(pckt.digest)) + ")");
     		} else {
     			if (pckt.digest.length <= 0)
-    				System.out.println("(decoded)   recvPacket(" + StealthNetPacket.getCommandName(pckt.command) + ", " + (new String(pckt.data)).replaceAll("\n", ";") + ", null)");
+    				System.out.println("(decoded)   recvPacket(" + Packet.getCommandName(pckt.command) + ", " + (new String(pckt.data)).replaceAll("\n", ";") + ", null)");
     			else
-    				System.out.println("(decoded)   recvPacket(" + StealthNetPacket.getCommandName(pckt.command) + ", " + (new String(pckt.data)).replaceAll("\n", ";") + ", " + (new String(pckt.digest)) + ")");
+    				System.out.println("(decoded)   recvPacket(" + Packet.getCommandName(pckt.command) + ", " + (new String(pckt.data)).replaceAll("\n", ";") + ", " + (new String(pckt.digest)) + ")");
     		}
     	}
         
         /** Check for special security-related packets, which we will handle here. */
         switch (pckt.command) {
-	    	case StealthNetPacket.CMD_PUBLICKEY:
+	    	case Packet.CMD_PUBLICKEY:
 	    		final String pubKey = new String(pckt.data);
 	    		if (DEBUG_KEY_EXCHANGE) System.out.println("Received public key: " + pubKey);
 	        	if (DEBUG_GENERAL) System.out.println("Performing key exchange.");
 	    	    keyExchange(pubKey);
 	            return null;
 	        
-	    	case StealthNetPacket.CMD_INTEGRITYKEY:
+	    	case Packet.CMD_INTEGRITYKEY:
 	    		byte[] keyBytes = Base64.decodeBase64(pckt.data);
-	    		final SecretKey integrityKey = new SecretKeySpec(keyBytes, 0, keyBytes.length, StealthNetMAC.HMAC_ALGORITHM);
+	    		final SecretKey integrityKey = new SecretKeySpec(keyBytes, 0, keyBytes.length, HashedMessageAuthenticationCode.HMAC_ALGORITHM);
 	    		if (DEBUG_INTEGRITY) System.out.println("Received HMAC key: " + getHexValue(integrityKey.getEncoded()));
 	        	
 	    		/** Initialise StealthNetMAC. */
-	    		StealthNetMAC tmp = null;
+	    		MessageAuthenticationCode tmp = null;
 	    		if (DEBUG_GENERAL) System.out.println("Initialising HMAC.");
 	        	try {
-	        		tmp = new StealthNetMAC(integrityKey);
+	        		tmp = new HashedMessageAuthenticationCode(integrityKey);
 	        	} catch(Exception e) {
 	        		System.err.println("Failed to initialise StealthNetMAC!");
 	        		return null;
@@ -404,7 +410,7 @@ public class StealthNetComms {
 	        	
 	        	/** Send acknowledgement. */
 	        	if (DEBUG_INTEGRITY) System.out.println("Sending acknowledgement of integrity key.");
-	        	sendPacket(StealthNetPacket.CMD_NULL);
+	        	sendPacket(Packet.CMD_NULL);
 	        	
 	        	/** Done! */
 	        	integrityProvider = tmp;
@@ -459,13 +465,13 @@ public class StealthNetComms {
     }
     
     /** 
-     * Perform a Diffie-Hellman key exchange with the other party. This function
-     * is called by the peer that wishes to initiate the key exchange.
+     * Perform a key exchange with the other party. This function is called by 
+     * the peer that wishes to initiate the key exchange.
      * 
-     * @see StealthNetKeyExchange 
+     * @see KeyExchange 
      */
     public void initKeyExchange() {
-    	if (DEBUG_KEY_EXCHANGE) System.out.println("Initiating Diffie-Hellman key exchange.");
+    	if (DEBUG_KEY_EXCHANGE) System.out.println("Initiating key exchange.");
     	
     	if (authenticationProvider != null) {
     		System.err.println("Key exchange has already been initialised!");
@@ -474,7 +480,7 @@ public class StealthNetComms {
     	
     	try {
     		if (DEBUG_KEY_EXCHANGE) System.out.println("Generating Diffie-Hellman public/private keys.");
-			authenticationProvider = new StealthNetKeyExchange(KEY_EXCHANGE_NUM_BITS, new SecureRandom());
+			authenticationProvider = new DiffieHellmanKeyExchange(KEY_EXCHANGE_NUM_BITS, new SecureRandom());
 			if (DEBUG_KEY_EXCHANGE) System.out.println("Generated Diffie-Hellman public/private keys.");
 		} catch (Exception e) {
 			System.err.println("Diffie-Hellman key exchange failed. Failed to generate public/private keys.");			
@@ -485,7 +491,7 @@ public class StealthNetComms {
     	/** Transmit our public key. */
     	String pubKey = authenticationProvider.getPublicKey().toString();
     	if (DEBUG_KEY_EXCHANGE) System.out.println("Sending public key to peer: " + pubKey);
-    	sendPacket(StealthNetPacket.CMD_PUBLICKEY, pubKey);
+    	sendPacket(Packet.CMD_PUBLICKEY, pubKey);
     	if (DEBUG_KEY_EXCHANGE) System.out.println("Sent public key to peer.");
     }
     
@@ -498,13 +504,13 @@ public class StealthNetComms {
     	
     	while (sharedSecretKey == null) {
     		try {
-	        	StealthNetPacket pckt = recvPacket();
+	        	Packet pckt = recvPacket();
 	            
 	        	if (pckt == null)
 	        		continue;
 	        	
 	            switch (pckt.command) {
-	            	case StealthNetPacket.CMD_PUBLICKEY:
+	            	case Packet.CMD_PUBLICKEY:
 	            		final String pubKey = new String(pckt.data);
 	                	if (DEBUG_ENCRYPTION) System.out.println("Received a public key command. Key: \"" + pubKey + "\".");
 	                	if (DEBUG_GENERAL) System.out.println("Performing key exchange.");
@@ -527,7 +533,7 @@ public class StealthNetComms {
      * communication should be initialised.
      * 
      * @param publicKey The public key that was sent to us.
-     * @see StealthNetKeyExchange 
+     * @see KeyExchange 
      */
     public void keyExchange(String publicKey) {
     	if (authenticationProvider == null) {
@@ -553,13 +559,13 @@ public class StealthNetComms {
 		try {
 			/** Use a hash of the shared secret key for encryption and decryption. */
 			if (DEBUG_ENCRYPTION) System.out.println("Generating AES encryption/decryption key.");
-			MessageDigest mdb = MessageDigest.getInstance(StealthNetEncryption.HASH_ALGORITHM);
+			MessageDigest mdb = MessageDigest.getInstance(AESEncryption.HASH_ALGORITHM);
 			
-			cryptKey = new SecretKeySpec(mdb.digest(sharedSecretKey.getEncoded()), StealthNetEncryption.KEY_ALGORITHM);
+			cryptKey = new SecretKeySpec(mdb.digest(sharedSecretKey.getEncoded()), AESEncryption.KEY_ALGORITHM);
 			String cryptKeyString = new String(getHexValue(cryptKey.getEncoded()));
 			if (DEBUG_ENCRYPTION) System.out.println("Generated AES encryption/decryption key: " + cryptKeyString);
 			
-			confidentialityProvider = new StealthNetEncryption(cryptKey, cryptKey);
+			confidentialityProvider = new AESEncryption(cryptKey, cryptKey);
 		} catch (Exception e) {
 			System.err.println("Unable to provide encryption/decryption. Failed to generate AES encryption/decryption key or initialise ciphers.");
 			if (DEBUG_ERROR_TRACE) e.printStackTrace();
@@ -569,35 +575,35 @@ public class StealthNetComms {
     
     /** 
      * 
-     * @see StealthNetKeyExchange 
+     * @see KeyExchange 
      */
     private void doIntegrityKey() {
     	SecretKey integrityKey = null;
 		try {
 			if (DEBUG_INTEGRITY) System.out.println("Generating MD5 HMAC key.");
-			final KeyGenerator keyGen = KeyGenerator.getInstance(StealthNetMAC.HMAC_ALGORITHM);
+			final KeyGenerator keyGen = KeyGenerator.getInstance(HashedMessageAuthenticationCode.HMAC_ALGORITHM);
 			integrityKey = keyGen.generateKey();
 			
 			final String integrityKeyString = new String(getHexValue(integrityKey.getEncoded()));
 			if (DEBUG_INTEGRITY) System.out.println("Generated MD5 HMAC key: " + integrityKeyString);
 			
 			/** Share integrity key. */
-			sendPacket(StealthNetPacket.CMD_INTEGRITYKEY, Base64.encodeBase64String(integrityKey.getEncoded()));
+			sendPacket(Packet.CMD_INTEGRITYKEY, Base64.encodeBase64String(integrityKey.getEncoded()));
 			
 			/** Wait for acknowledgement. */
-			StealthNetPacket pckt;
+			Packet pckt;
 			while (true) {
 				pckt = recvPacket();
 				
 				if (pckt == null)
 					continue;
 				
-				if (pckt.command == StealthNetPacket.CMD_NULL)
+				if (pckt.command == Packet.CMD_NULL)
 					break;
 			}
 			
 			/** Enable HMAC. */
-			integrityProvider = new StealthNetMAC(integrityKey);
+			integrityProvider = new HashedMessageAuthenticationCode(integrityKey);
 		} catch (Exception e) {
 			System.err.println("Unable to provide integrity. Failed to initialise HMAC.");
 			if (DEBUG_ERROR_TRACE) e.printStackTrace();
@@ -627,5 +633,5 @@ public class StealthNetComms {
 }
 
 /******************************************************************************
- * END OF FILE:     StealthNetComms.java
+ * END OF FILE:     Comms.java
  *****************************************************************************/
