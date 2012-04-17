@@ -210,7 +210,7 @@ public class Comms {
         } catch (Exception e) {
             System.err.println("Connection terminated!");
             if (DEBUG_ERROR_TRACE) e.printStackTrace();
-            System.exit(1);
+            return false;
         }
         
         /** 

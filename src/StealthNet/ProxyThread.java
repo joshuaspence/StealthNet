@@ -32,6 +32,12 @@ import java.util.Random;
  * them to the other peer. To simulate various security attacks, the packets 
  * may be altered/retransmitted/dropped.
  * 
+ * A ProxyThread is "paired" with another ProxyThread such that when one thread
+ * ends, the paired thread can be ended as well. This is because for a single 
+ * client<=>server connection, for example, two ProxyThreads will be created -
+ * one to handle the client->server communications and another to handle the
+ * server->client communications.
+ * 
  * @author Joshua Spence
  */
 public class ProxyThread extends Thread {
@@ -41,7 +47,7 @@ public class ProxyThread extends Thread {
 	
 	/** How malicious should we be? */
 	private static final boolean isMalicious = false;			/** True to enable simulated security attacks. */
-	private static final long noMaliciousnessPacketCount = 5;	/** Don't perform any malicious activity for the first X packets. */
+	private static final long noMaliciousPacketCount = 5;		/** Don't perform any malicious activity for the first X packets. */
 	private static final int replayProbability = 50;			/** Probability (as an integer out of 100) of a replay attack after the first X packets. */
 	private static final int corruptionProbability = 50;		/** Probability (as an integer out of 100) of a corruption attack after the first X packets. */
 	
@@ -55,7 +61,10 @@ public class ProxyThread extends Thread {
 	/** Paired thread (to be killed when this thread terminates). */
 	private ProxyThread pairedThread;
 	
-	/** Boolean to indicate that this thread should be stopped. */
+	/** 
+	 * Boolean to indicate that this thread should be stopped. Set by this 
+	 * thread's "paired" thread. 
+	 */
 	private boolean shouldStop = false;
 
 	/**
@@ -81,14 +90,16 @@ public class ProxyThread extends Thread {
 	/**
 	 * Set a ProxyThread to be terminated when this thread terminates.
 	 * 
-	 * @param pair The ProxyThread to be paired with this thread.
+	 * @param thread The ProxyThread to be paired with this thread.
 	 */
-	public void setPairedThread(ProxyThread pair) {
-		pairedThread = pair;
+	public void setPairedThread(ProxyThread thread) {
+		pairedThread = thread;
 	}
 	
 	/**
-	 * Set whether or not a thread should stop executing.
+	 * Set whether or not a thread should stop executing. This should be set by
+	 * this thread's "paired" thread when the paired thread itself wishes to
+	 * terminate.
 	 * 
 	 * @param stop True if this thread should stop executing, otherwise false.
 	 */
@@ -97,7 +108,9 @@ public class ProxyThread extends Thread {
 	}
 	
 	/**
-	 * Checks if a thread should stop executing.
+	 * Checks if a thread should stop executing. This should be called within 
+	 * this thread to provide thread-safe access to the `shouldStop' boolean
+	 * variable, which may be set by this thread's paired thread.
 	 * 
 	 * @return True if the thread should stop executing, otherwise false.
 	 */
@@ -120,42 +133,54 @@ public class ProxyThread extends Thread {
 	/**
 	 * The main function for the class. This function forwards packets from
 	 * source to destination.
+	 * 
+	 * If isMalicious is true, then the proxy will attempt to randomly simulate
+	 * various security attacks. After the initial noMaliciousPacketCount 
+	 * received packets (during which no malicious activity will occur - to 
+	 * allow the communicating parties to perform various security protocols),
+	 * the server will randomly simulate a security attack with some 
+	 * probability based on a pseudo-random number generator.  
 	 */
 	@SuppressWarnings("unused")
 	public void run() {
 		if (DEBUG_GENERAL) System.out.println(this.getId() + separator + "Running ProxyThread...");
 
-		String str = new String();
-		Random rnd = new Random();
-		BigInteger counter = BigInteger.ZERO;
+		String packetString = new String();
+		final Random rnd = new Random();
+		BigInteger pcktCounter = BigInteger.ZERO;
 		
 		try {
-			while (str != null && !getShouldStop()) {
+			while (packetString != null && !getShouldStop()) {
 				/** Receive a StealthNet packet. */
-				str = stealthCommsSource.recvString();
+				packetString = stealthCommsSource.recvString();
 				
-				if (str == null)
+				if (packetString == null)
 					break;
 				
-				counter = counter.add(BigInteger.ONE);
-				System.out.println(counter);
+				/** Increment the packet counter. */
+				pcktCounter = pcktCounter.add(BigInteger.ONE);
+				
 				/** Decide whether or not to corrupt a message. */
-				if (isMalicious && (counter.compareTo(BigInteger.valueOf(noMaliciousnessPacketCount)) > 0) && ((rnd.nextInt() % 100) < corruptionProbability)) {
+				if (isMalicious && (pcktCounter.compareTo(BigInteger.valueOf(noMaliciousPacketCount)) > 0) && ((rnd.nextInt() % 100) < corruptionProbability)) {
 					if (DEBUG_GENERAL) System.out.println(this.getId() + separator + "Corrupting packet...");
-					stealthCommsDestination.sendString(new StringBuffer(str).reverse().toString());
+					/** Simply reverse the packet string. */
+					stealthCommsDestination.sendString(new StringBuffer(packetString).reverse().toString());
 				} else {
-					stealthCommsDestination.sendString(str);
+					stealthCommsDestination.sendString(packetString);
 				}
 				
 				/** Decide whether or not to replay a message. */
-				if (isMalicious && (counter.compareTo(BigInteger.valueOf(noMaliciousnessPacketCount)) > 0) && (rnd.nextInt() % 100) < replayProbability) {
+				if (isMalicious && (pcktCounter.compareTo(BigInteger.valueOf(noMaliciousPacketCount)) > 0) && (rnd.nextInt() % 100) < replayProbability) {
 					if (DEBUG_GENERAL) System.out.println(this.getId() + separator + "Replaying last packet...");
-					stealthCommsDestination.sendString(str);
+					stealthCommsDestination.sendString(packetString);
 				}
 				
 			}
 		} catch (SocketException e) {
-			/** This is a fairly "clean" exit. */
+			/** 
+			 * This is a fairly "clean" exit which can, but hopefully won't 
+			 * occur.
+			 */
 			System.out.println(this.getId() + separator + "Session terminated.");
 		} catch (IOException e) {
 			System.out.println(this.getId() + separator + "Session terminated.");
@@ -176,8 +201,8 @@ public class ProxyThread extends Thread {
 		}
 		
 		/** Kill the other thread. */
-		if (pairedThread != null && !pairedThread.getShouldStop()) {
-			if (DEBUG_GENERAL) System.out.println("Killing paired thread.");
+		if ((pairedThread != null) && (!pairedThread.getShouldStop())) {
+			if (DEBUG_GENERAL) System.out.println(this.getId() + separator + "Killing paired thread " + pairedThread.getId() + ".");
 			pairedThread.setShouldStop(true);
 		}
 	}

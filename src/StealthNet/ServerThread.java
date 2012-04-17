@@ -65,21 +65,21 @@ public class ServerThread extends Thread {
 		ServerThread userThread = null;
 	}
 
-	/** Client secret data. */
+	/** Used to store client secret data. */
 	private class SecretData {
 		String name = null;
 		String description = null;
 		int cost = 0;
-		String owner = null; // Server knows, but clients should not
+		String owner = null; /** Server knows, but clients should not. */
 		String dirname = null;
 		String filename = null;
 	}
 
 	/** A list of users, indexed by their ID. */
-	private static Hashtable<String, UserData> userList = new Hashtable<String, UserData>();
+	private static final Hashtable<String, UserData> userList = new Hashtable<String, UserData>();
 
 	/** A list of secret data, indexed by the SecretData.name field. */
-	private static Hashtable<String, SecretData> secretList = new Hashtable<String, SecretData>();
+	private static final Hashtable<String, SecretData> secretList = new Hashtable<String, SecretData>();
 
 	/** The user ID for the user owning the thread. */
 	private String userID = null;
@@ -154,7 +154,6 @@ public class ServerThread extends Thread {
 		} else {
 			/** Add the secret data to the secret list. */
 			secretList.put(t.name, t);
-			
 			if (DEBUG_GENERAL) System.out.println(this.getId() + separator + "Added secret \"" + t.name + "\" to the secret list.");
 			return true;
 		}
@@ -168,7 +167,7 @@ public class ServerThread extends Thread {
 	 * doesn't exist in the user list.
 	 */
 	private synchronized boolean removeUser(String id) {
-		UserData userInfo = userList.get(id);
+		final UserData userInfo = userList.get(id);
 		if (userInfo != null) {
 			userInfo.userThread = null;
 			if (DEBUG_GENERAL) System.out.println(this.getId() + separator + "Removed user \"" + id + "\" from the user list.");
@@ -179,7 +178,7 @@ public class ServerThread extends Thread {
 	}
 
 	/**
-	 * Remove secret data from this thread's secret list.
+	 * Remove secret data from the secret list.
 	 * 
 	 * @param name The name of the secret data to remove.
 	 * @return True on success, false on failure.
@@ -192,13 +191,14 @@ public class ServerThread extends Thread {
 	}
 
 	/**
-	 * Convert the user list to a String.
+	 * Convert the user list to a String. Used to distribute the user list in a 
+	 * packet.
 	 * 
 	 * @return A String representing the user list.
 	 */
 	private synchronized String userListAsString() {
 		String userTable = "";
-		Enumeration<String> i = userList.keys();
+		final Enumeration<String> i = userList.keys();
 		
 		while (i.hasMoreElements()) {
 			final String userKey = i.nextElement();
@@ -216,13 +216,14 @@ public class ServerThread extends Thread {
 	}
 
 	/**
-	 * Convert the secret list to a String.
+	 * Convert the secret list to a String. Used to distribute the secret list 
+	 * in a packet.
 	 * 
 	 * @return A String representing the secret list.
 	 */
 	private synchronized String secretListAsString() {
 		String secretTable = "";
-		Enumeration<String> i = secretList.keys();
+		final Enumeration<String> i = secretList.keys();
 		
 		while (i.hasMoreElements()) {
 			final String secretKey = i.nextElement();
@@ -245,12 +246,12 @@ public class ServerThread extends Thread {
 	 * in users (including the new user) whenever a new user logs on.
 	 */
 	private synchronized void sendUserList() {
-		Enumeration<String> i = userList.keys();
+		final Enumeration<String> i = userList.keys();
 		final String userTable = userListAsString();
 
 		while (i.hasMoreElements()) {
 			final String userKey = i.nextElement();
-			UserData userInfo = userList.get(userKey);
+			final UserData userInfo = userList.get(userKey);
 
 			if ((userInfo != null) && (userInfo.userThread != null)) {
 				if (userInfo.userThread.stealthComms == null) {
@@ -269,12 +270,12 @@ public class ServerThread extends Thread {
 	 * logged in users (including the new user) whenever a new user logs on.
 	 */
 	private synchronized void sendSecretList() {
-		Enumeration<String> i = userList.keys();
+		final Enumeration<String> i = userList.keys();
 		final String secretTable = secretListAsString();
 
 		while (i.hasMoreElements()) {
 			final String userKey = i.nextElement();
-			UserData userInfo = userList.get(userKey);
+			final UserData userInfo = userList.get(userKey);
 
 			if ((userInfo != null) && (userInfo.userThread != null)) {
 				if (userInfo.userThread.stealthComms == null) {
@@ -299,8 +300,8 @@ public class ServerThread extends Thread {
 	 * If the packet contains the logout command, then the user is logged out of
 	 * StealthNet, and this thread is terminated.
 	 * 
-	 * If the packet contains the message command, then the message contained in
-	 * the packet data is sent to all logged in users.
+	 * If the packet contains the message command, then the chat message 
+	 * contained in the packet data is sent to the destined user.
 	 * 
 	 * If the packet contains the chat command, then a chat session is started
 	 * between the specified users.
@@ -321,10 +322,8 @@ public class ServerThread extends Thread {
 				/** Receive a StealthNet.Packet. */
 				pckt = stealthComms.recvPacket();
 				
-				if (pckt == null) {
-					pckt = new Packet();
-					continue;
-				}
+				if (pckt == null)
+					break;
 				
 				String userKey, iAddr, msg;
 		        UserData userInfo;
@@ -352,7 +351,7 @@ public class ServerThread extends Thread {
 	
 						if (userID != null) {
 							/** A user is already logged in. */
-							System.err.println(this.getId() + separator + "User " + userID + " trying to log in twice.");
+							System.err.println(this.getId() + separator + "User \"" + userID + "\" trying to log in twice.");
 							break;
 						}
 						
@@ -371,9 +370,8 @@ public class ServerThread extends Thread {
 
 							if (DEBUG_COMMANDS_LOGIN) {
 								System.out.println("Distributing user list...");
-
 								final String userTable = userListAsString();
-								System.out.println(this.getId() + separator + "User list: \"" + userTable.replace('\n', ';') + "\"");
+								System.out.println(this.getId() + separator + "Distributing user list: \"" + userTable.replace('\n', ';') + "\"");
 							}
 							sendUserList();
 
@@ -381,7 +379,7 @@ public class ServerThread extends Thread {
 								System.out.println(this.getId() + separator + "Distributing secret list...");
 
 								final String secretTable = secretListAsString();
-								System.out.println(this.getId() + separator + "Secret list: \"" + secretTable.replace('\n', ';') + "\"");
+								System.out.println(this.getId() + separator + "Distributing secret list: \"" + secretTable.replace('\n', ';') + "\"");
 							}
 							sendSecretList();
 						}
@@ -515,7 +513,7 @@ public class ServerThread extends Thread {
 						}
 						
 						/** Depacketise the create command. */
-						SecretData t = new SecretData();
+						final SecretData t = new SecretData();
 						t.owner = userID;
 						t.name = "";
 						t.description = "";
@@ -536,10 +534,11 @@ public class ServerThread extends Thread {
 						else
 							System.out.println(this.getId() + separator + "Added secret.\n");
 
-						System.out.println(this.getId() + separator + "Distributing secret list.\n");
 						if (DEBUG_COMMANDS_CREATESECRET) {
 							final String secretTable = secretListAsString();
-							System.out.println(this.getId() + separator + "Secret list is \"" + secretTable + "\"");
+							System.out.println(this.getId() + separator + "Distributing secret list: \"" + secretTable + "\"");
+						} else {
+							System.out.println(this.getId() + separator + "Distributing secret list.\n");
 						}
 						sendSecretList();
 						break;
@@ -601,7 +600,7 @@ public class ServerThread extends Thread {
 				}
 			}
 		} catch (IOException e) {
-			System.out.println(this.getId() + separator + "User \"" + userID + "\" session terminated.");
+			System.err.println(this.getId() + separator + "User \"" + userID + "\" session terminated.");
 			if (DEBUG_ERROR_TRACE) e.printStackTrace();
 		} catch (Exception e) {
 			System.err.println(this.getId() + separator + "Error running server thread.");
@@ -620,6 +619,12 @@ public class ServerThread extends Thread {
 		 * currently logged in users.
 		 */
 		if (DEBUG_GENERAL) System.out.println(this.getId() + separator + "Distributing user list...");
+		if (DEBUG_GENERAL) {
+			final String userTable = userListAsString();
+			System.out.println(this.getId() + separator + "Distributing user list: \"" + userTable + "\"");
+		} else {
+			System.out.println(this.getId() + separator + "Distributing user list.\n");
+		}
 		sendUserList();
 
 		/** Clean up. */

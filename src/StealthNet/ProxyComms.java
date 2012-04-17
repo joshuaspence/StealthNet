@@ -104,7 +104,8 @@ public class ProxyComms {
     }
 
     /** 
-     * Initiates a communications session.
+     * Initiates a communications session on the given socket. Note that, unlike
+     * the Comms class, no security protocols are implemented here.
      * 
      * @param socket The socket through which the connection is made. 
      * @return True if the initialisation succeeds. False if the initialisation 
@@ -126,7 +127,8 @@ public class ProxyComms {
     }
     
     /** 
-     * Accepts a connection on the given socket.
+     * Accepts a connection on the given socket. Note that, unlike the Comms 
+     * class, no security protocols are implemented here.
      * 
      * @param socket The socket through which the connection is made. 
      * @return True if the initialisation succeeds. False if the initialisation 
@@ -141,7 +143,7 @@ public class ProxyComms {
         } catch (Exception e) {
             System.err.println("Connection terminated!");
             if (DEBUG_ERROR_TRACE) e.printStackTrace();
-            System.exit(1);
+            return false;
         }
 
         return true;
@@ -192,9 +194,9 @@ public class ProxyComms {
     }
 
     /**
-     * Reads string from the buffered reader for the socket.
+     * Reads a string from the buffered reader for the socket.
      * 
-     * @return The packet that was received.
+     * @return A string representing the packet that was received.
      */
     public String recvString() throws IOException, SocketException {        
         /** Read data from the input buffer. */
@@ -206,14 +208,15 @@ public class ProxyComms {
     	return packetString;
     }
     
-    // Just to limit the verbosity of output in recvReady
- 	// {
+    /**
+     * To limit the verbosity of output in recvReady, we will only print these 
+     * values if they change.
+     */
     private boolean prev_isconnected = false;
     private boolean prev_isclosed = false;
     private boolean prev_isinputshutdown = false;
     private boolean prev_isoutputshutdown = false;
     private boolean is_first_time = true;
-    // }
     
     /**
      * Checks if the class is ready to receive more data.  
@@ -222,8 +225,10 @@ public class ProxyComms {
      * @throws IOException
      */
     public boolean recvReady() throws IOException {
-    	// Just to limit the verbosity of output
-    	// {
+    	/**
+         * To limit the verbosity of output in recvReady, we will only print  
+         * these values if they change.
+         */
     	final boolean isconnected = commsSocket.isConnected();
     	final boolean isclosed = commsSocket.isClosed();
     	final boolean isinputshutdown = commsSocket.isInputShutdown();
@@ -242,8 +247,8 @@ public class ProxyComms {
     	}
     	
     	is_first_time = false;
-    	// }
     	
+    	/** Return the result - the only real useful code in this function. */
         return dataIn.ready();
     }
 }

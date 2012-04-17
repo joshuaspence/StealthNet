@@ -97,8 +97,9 @@ public class Proxy {
         System.out.println("Proxy server online...");
         
         /** 
-         * Wait for and accept connections on the proxy server socket. Create a 
-         * new thread for each connection.
+         * Wait for and accept connections on the proxy server socket. Create  
+         * two new threads for each connection - one to handle communication in
+         * each direction.
          */
         while (true) {
         	try {
@@ -114,6 +115,7 @@ public class Proxy {
 	        	clientThread.setPairedThread(serverThread);
 	        	serverThread.setPairedThread(clientThread);
 	        	
+	        	/* Start thread execution. */
 	        	clientThread.start();
 	        	serverThread.start();
 	            
