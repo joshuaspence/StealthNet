@@ -43,7 +43,7 @@ import org.apache.commons.codec.binary.Base64;
 
 import StealthNet.Security.AESEncryption;
 import StealthNet.Security.DiffieHellmanKeyExchange;
-import StealthNet.Security.EncryptionHandler;
+import StealthNet.Security.Encryption;
 import StealthNet.Security.HashedMessageAuthenticationCode;
 import StealthNet.Security.KeyExchange;
 import StealthNet.Security.MessageAuthenticationCode;
@@ -92,7 +92,7 @@ public class Comms {
     private SecretKey sharedSecretKey = null;
     
     /** Provides encryption and decryption for the communications. */
-	private EncryptionHandler confidentialityProvider = null;
+	private Encryption confidentialityProvider = null;
 	private SecretKey cryptKey = null;
     
     /** Provides integrity through creating checksums for messages. */

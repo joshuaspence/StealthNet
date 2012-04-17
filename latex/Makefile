@@ -9,14 +9,14 @@
 
 ACROREAD		:= acroread
 BACKGROUND		:= &
-DELETE			:= rm -f
+DELETE			:= rm --force
 ECHO			:= echo
 EVINCE			:= evince
 FIND			:= find
 IGNORE_RESULT 	:= -
-LINK		  	:= ln -s
+LINK		  	:= ln --symbolic
 MAKE			:= make
-MKDIR			:= mkdir -p
+MKDIR			:= mkdir --parents
 MUTE			:= @
 SILENT			:= >/dev/null
 SPACE 			:= $(empty) $(empty)
@@ -53,16 +53,15 @@ all: pre
 	$(MUTE)$(MAKE) -C $(BUILD_DIR) $@
 		
 # To be run before make
-pre: make-directories make-symlinks
+pre: create-directories create-symlinks
 	
 # Make output directories
-make-directories:
+create-directories:
 	$(IGNORE_RESULT)$(MUTE)$(ECHO) "Creating directories."
 	$(MUTE)$(MKDIR) $(OUT_DIR)
 	
 # Make symbolic links
-.PHONY: make-symlinks
-make-symlinks: 
+create-symlinks: 
 	$(IGNORE_RESULT)$(MUTE)$(ECHO) "Creating symbolic links."
 	$(MUTE)$(LINK) $(foreach bib, $(BIB_SRC), "$(realpath $(bib))") $(BUILD_DIR)/ $(VERYSILENT) || true
 	$(MUTE)$(LINK) $(foreach bst, $(BST_SRC), "$(realpath $(bst))") $(BUILD_DIR)/ $(VERYSILENT) || true

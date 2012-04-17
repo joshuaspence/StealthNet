@@ -1,7 +1,6 @@
 /******************************************************************************
  * ELEC5616
  * Computer and Network Security, The University of Sydney
- * Copyright (C) 2002-2004, Matt Barrie and Stephen Gould
  *
  * PACKAGE:         StealthNet.Security
  * FILENAME:        DiffieHellmanKeyExchange.java
@@ -34,7 +33,7 @@ import javax.crypto.interfaces.DHPublicKey;
 import javax.crypto.spec.DHParameterSpec;
 import javax.crypto.spec.DHPublicKeySpec;
 
-/* DiffieHellmanKeyExchange Class Definition *********************************/
+/* StealthNet.Security.DiffieHellmanKeyExchange Class Definition *************/
 
 /**
  * This class implements the Diffie-Hellman key exchange algorithm. 
@@ -44,9 +43,7 @@ import javax.crypto.spec.DHPublicKeySpec;
  * private key and our public key. Through the magic of Diffie-Hellman we both 
  * come up with the same number. This number is secret (discounting MITM 
  * attacks) and hence called the shared secret. It has the same length as the 
- * modulus, e.g. 512 or 1024 bit. Man-in-the-middle attacks are typically 
- * countered by an independent authentication step using certificates (RSA, DSA,
- * etc.).
+ * modulus, e.g. 512 or 1024 bit.
  *
  * The thing to note is that the shared secret is constant for two partners with
  * constant private keys. This is often not what we want, which is why it is
@@ -54,25 +51,6 @@ import javax.crypto.spec.DHPublicKeySpec;
  * Generating a private key involves one modular exponentiation assuming 
  * suitable Diffie-Hellman parameters are available.
  *
- * General usage of this class:
- *  - If we are server, call DiffieHellman(keyLength, random). This 
- *    generates an ephemeral keypair of the request length.
- *  - If we are client, call DiffieHellman(modulus, base, random). This
- *    generates an ephemeral keypair using the parameters specified by the 
- *    server.
- *  - Send parameters and public value to remote peer.
- *  - Receive peers ephemeral public key
- *  - Call getAgreedSecret() to calculate the shared secret.
- *
- * In TLS the server chooses the parameter values itself, the client must use
- * those sent to it by the server.
- *
- * The use of ephemeral keys as described above also achieves what is called
- * "forward secrecy". This means that even if the authentication keys are
- * broken at a later date, the shared secret remains secure. The session is
- * compromised only if the authentication keys are already broken at the time
- * the key exchange takes place and an active MITM attack is used. This is in
- * contrast to straightforward encrypting RSA key exchanges.
  * 
  * The protocol depends on the discrete logarithm problem for its security. It 
  * assumes that it is computationally infeasible to calculate the shared secret 
@@ -100,15 +78,13 @@ public class DiffieHellmanKeyExchange implements KeyExchange {
 	/** 
 	 * Group parameters.
 	 *
-	 * Parameter 'prime' is a prime number and parameter 'generator' is an 
+	 * Parameter `prime' is a prime number and parameter `generator' is an 
 	 * integer less than 'prime', with the following property: for every number 
-	 * 'n' between '1' and 'prime - 1' inclusive, there is a power 'k' of 
-	 * 'generator' such that 'n = generator^k mod prime'.
+	 * `n' between `1' and `prime - 1' inclusive, there is a power `k' of 
+	 * `generator' such that `n = generator^k mod prime'.
 	 */
-	// {
 	private final BigInteger prime;
 	private final BigInteger generator;
-	// }
 	
 	/**
 	 * NOTE: It is preferable for security, though not necessary, that base be a 
@@ -119,14 +95,12 @@ public class DiffieHellmanKeyExchange implements KeyExchange {
 	/** Our private key. */
 	private final PrivateKey privateKey;
 	
-	/** Public component of our key (= generator^random mod prime). */
+	/** Public component of our key (= `generator^random mod prime'). */
 	private final BigInteger publicValue;
 	
 	/** String constants. */
-	// {
 	public static final String KEY_ALGORITHM = "DiffieHellman";
 	public static final String SECRET_KEY_ALGORITHM = "TlsPremasterSecret";
-	// }
 	
 	/** 
 	 * Generate a Diffie-Hellman keypair of the specified size. 
@@ -200,7 +174,7 @@ public class DiffieHellmanKeyExchange implements KeyExchange {
 	}
 
 	/** 
-	 * Gets the Diffie-Hellman modulus.
+	 * Gets the Diffie-Hellman prime number parameter.
 	 * 
 	 * @return The Diffie-Hellman prime number.
 	 */
@@ -209,9 +183,9 @@ public class DiffieHellmanKeyExchange implements KeyExchange {
 	}
 	
 	/** 
-	 * Gets the Diffie-Hellman base (generator).
+	 * Gets the Diffie-Hellman generator parameter.
 	 * 
-	 * @return The Diffie-Hellman base (generator).
+	 * @return The Diffie-Hellman generator.
 	 */
 	public BigInteger getGenerator() {
 		return generator;

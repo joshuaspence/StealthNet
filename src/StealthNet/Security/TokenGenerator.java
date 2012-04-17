@@ -1,7 +1,6 @@
 /******************************************************************************
  * ELEC5616
  * Computer and Network Security, The University of Sydney
- * Copyright (C) 2002-2004, Matt Barrie and Stephen Gould
  *
  * PACKAGE:         StealthNet.Security
  * FILENAME:        TokenGenerator.java
@@ -16,12 +15,16 @@ package StealthNet.Security;
 
 /* Import Libraries **********************************************************/
 
-/* TokenGenerator Interface Definition ***************************************/
+/* StealthNet.Security.TokenGenerator Interface Definition *******************/
 
 /**
  * An interface to create token identifiers for StealthNet packets. This is used
- * to prevent message replay attacks because both parties should be able to 
- * predict the next expected token.
+ * to prevent message replay attacks by "generating" and "consuming" tokens.
+ * 
+ * When a packet is sent, a token is generated and appended to the message. At
+ * the receiving end of the communications, the peer is able to check if a 
+ * message with the received token has been received before. If yes, then this
+ * packet is probably a replay, and is consequently discarded silently.
  * 
  * @author Joshua Spence
  */
@@ -30,14 +33,14 @@ public interface TokenGenerator {
 	 * Check if a given token is the expected token.
 	 * 
 	 * @param tok The token that was received.
-	 * @return True if the received token matches the expected token, false 
+	 * @return True if the received token has not been consumed. False 
 	 * otherwise.
 	 */
 	public boolean isAllowed(long tok);
 	
 	/**
-	 * Gets the seed that the other peers can use to replicate the token 
-	 * generator sequence.
+	 * Gets the seed for the TokenGenerators, that other peers can use to 
+	 * replicate the token generator sequence.
 	 * 
 	 * @return The seed used to initialise the TokenGenerator.
 	 */

@@ -1,13 +1,12 @@
 /******************************************************************************
  * ELEC5616
  * Computer and Network Security, The University of Sydney
- * Copyright (C) 2002-2004, Matt Barrie and Stephen Gould
  *
  * PACKAGE:         StealthNet.Security
  * FILENAME:        AESEncryption.java
  * AUTHORS:         Joshua Spence and Ahmad Al Mutawa
- * DESCRIPTION:     Implementation of AES encryption for ELEC5616 programming 
- * 					assignment.
+ * DESCRIPTION:     Implementation of AES encryption for encrypting and 
+ * 					decrpyting StealthNet communications.
  * VERSION:         1.0
  *
  *****************************************************************************/
@@ -31,14 +30,14 @@ import javax.crypto.spec.IvParameterSpec;
 
 import org.apache.commons.codec.binary.Base64;
 
-/* AESEncryption Class Definition ********************************************/
+/* StealthNet.Security.AESEncryption Class Definition ************************/
 
 /**
  * A class used to encrypt and decrypt messages using AES.
  * 
  * @author Joshua Spence
  */
-public class AESEncryption implements EncryptionHandler {
+public class AESEncryption implements Encryption {
 	/** Encryption key and cipher. */
 	private final SecretKey encryptionKey;
 	private final Cipher encryptionCipher;
@@ -47,14 +46,13 @@ public class AESEncryption implements EncryptionHandler {
 	private final SecretKey decryptionKey;
 	private final Cipher decryptionCipher;
 	
-	private IvParameterSpec ips;
+	private final IvParameterSpec encryptionIPS;
+	private final IvParameterSpec decryptionIPS;
 	
 	/** String constants. */
-	// {
 	public static final String HASH_ALGORITHM = "MD5";
 	public static final String KEY_ALGORITHM = "AES";
 	public static final String CIPHER_ALGORITHM = "AES/CBC/PKCS5Padding";
-	// }
 	
 	/**
 	 * Constructor.
@@ -73,22 +71,29 @@ public class AESEncryption implements EncryptionHandler {
         
         /** 
          * Generate the initialisation vector using a seeded random number
-         * generator.
+         * generator, with the seed equal to the has of the encryption key. In 
+         * this way, bothy peers should generate the same initialisation 
+         * vectors.
          */
-        byte[] initializationVector = new byte[16];
-        final Random ivGenerator = new Random(encryptKey.hashCode());
+        final byte[] encryptionIV = new byte[16];
+        final Random encryptionIVGenerator = new Random(encryptKey.hashCode());
         for (int i = 0; i < 16; i++)
-        	initializationVector[i] = (byte) ivGenerator.nextInt();
+        	encryptionIV[i] = (byte) encryptionIVGenerator.nextInt();
+        this.encryptionIPS = new IvParameterSpec(encryptionIV);
         
-        this.ips = new IvParameterSpec(initializationVector);
+        final byte[] decryptionIV = new byte[16];
+        final Random decryptionIVGenerator = new Random(decryptKey.hashCode());
+        for (int i = 0; i < 16; i++)
+        	decryptionIV[i] = (byte) decryptionIVGenerator.nextInt();
+        this.decryptionIPS = new IvParameterSpec(encryptionIV);
         
         /** Initialise encryption cipher. */
         encryptionCipher = Cipher.getInstance(CIPHER_ALGORITHM);
-		encryptionCipher.init(Cipher.ENCRYPT_MODE, encryptionKey, ips);
+		encryptionCipher.init(Cipher.ENCRYPT_MODE, encryptionKey, this.encryptionIPS);
 		
 		/** Initialise decryption cipher. */
 		decryptionCipher = Cipher.getInstance(CIPHER_ALGORITHM);
-		decryptionCipher.init(Cipher.DECRYPT_MODE, decryptionKey, ips);
+		decryptionCipher.init(Cipher.DECRYPT_MODE, decryptionKey, this.decryptionIPS);
 	}
 	
 	/**

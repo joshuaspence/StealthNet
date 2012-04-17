@@ -4,7 +4,7 @@
     
     Authors:
         - Joshua Spence (308216350)
-        - Ahmad Al Mutawa
+        - Ahmad Al Mutawa (312003919)
 -->
 <project name="StealthNet" default="default" basedir=".">
 	<!-- Use ant-contrib -->
@@ -371,7 +371,7 @@
 		<echo>Deleting ${path.docs}.</echo>
 		<delete dir="${path.docs}" />
 		
-		<!-- Run 'make' within the latex subdirectory -->
+		<!-- Run `make clean' within the latex subdirectory -->
 		<echo>Cleaning ${path.latex}.</echo>
         <exec executable="make" dir="${path.latex}">
     	   <arg value="clean" />
@@ -395,7 +395,7 @@
         <echo>Deleting ${root.latex.output}.</echo>
         <delete file="${root.latex.output}" />
     	
-    	<!-- Run 'make' within the latex subdirectory -->
+    	<!-- Run `make dstclean' within the latex subdirectory -->
         <echo>Cleaning ${path.latex}.</echo>
         <exec executable="make" dir="${path.latex}">
            <arg value="distclean" />
@@ -405,7 +405,7 @@
 	
 	<!-- ======================== EXECUTION TARGETS ======================== -->
 	<!-- Run target -->
-	<target name="run" depends="run_server, run_client, -run_client2" description="Run a single StealthNet server and two clients" />
+	<target name="run" depends="run_proxy, run_server, run_client, -run_client2" description="Run a single StealthNet proxy, a single server and two clients" />
 	
 	<!-- Run client target -->
 	<target name="run_client" depends="compile, jar" description="Run StealthNet client">
@@ -427,6 +427,14 @@
 		<exec executable="./${file.runscript}">
 	        <arg value="--server" />
 		</exec>
+    </target>
+	
+	<!-- Run proxy target -->
+    <target name="run_proxy" depends="compile, jar" description="Run StealthNet proxy">
+        <echo>Running StealthNet proxy...</echo>
+        <exec executable="./${file.runscript}">
+            <arg value="--proxy" />
+        </exec>
     </target>
 	<!-- =================================================================== -->
 	
@@ -515,13 +523,13 @@
         <echo>JRE version: ${java.version}</echo>
     </target>
 	
-	<!-- Print the classpath -->
+	<!-- Print the classpath. Used by the run.sh script. -->
     <target name="classpath" depends="-init" description="Print the classpath">
     	<property name="print.classpath" refid="compile.classpath" />
 	    <echo>Classpath: '${print.classpath}'</echo>
 	</target>
 	
-	<!-- Print the directory where the JAR files are stored -->
+	<!-- Print the directory where the JAR files are stored. Used by the run.sh script. -->
 	<target name="jar_dir" depends="-init" description="Print the directory that the JARs are stored in">
 		<echo>JAR directory: '${path.jar}'</echo>
 	</target>

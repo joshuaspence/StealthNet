@@ -1,7 +1,6 @@
 /******************************************************************************
  * ELEC5616
  * Computer and Network Security, The University of Sydney
- * Copyright (C) 2002-2004, Matt Barrie and Stephen Gould
  *
  * PACKAGE:         StealthNet.Security
  * FILENAME:        KeyExchange.java
@@ -27,7 +26,9 @@ import javax.crypto.SecretKey;
 
 /**
  * This is an interface to provide authentication methods to StealthNet through
- * use of a key exchange protocol.
+ * use of a key exchange protocol. This involves both peer generate some private
+ * key and some public key, exchanging public keys, and then being able to 
+ * generate a shared secret key using the received public key.
  *
  * @author Joshua Spence
  */
@@ -40,7 +41,7 @@ public interface KeyExchange {
 	public BigInteger getPublicKey();
 	
 	/**
-	 * Get the secret data that has been agreed on through the key exchange
+	 * Get the shared secret key that has been agreed on through the key exchange
 	 * protocol.
 	 *
 	 * @param peerPublicValue The peer's public key.

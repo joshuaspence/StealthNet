@@ -1,13 +1,12 @@
 /******************************************************************************
  * ELEC5616
  * Computer and Network Security, The University of Sydney
- * Copyright (C) 2002-2004, Matt Barrie and Stephen Gould
  *
  * PACKAGE:         StealthNet.Securtity
- * FILENAME:        EncryptionHandler.java
+ * FILENAME:        Encryption.java
  * AUTHORS:         Joshua Spence and Ahmad Al Mutawa
- * DESCRIPTION:     An interface to provide encryption and decryption of 
- * 					communications to StealthNet.
+ * DESCRIPTION:     An interface to provide the encryption and decryption of 
+ * 					packets in StealthNet.
  * VERSION:         1.0
  *
  *****************************************************************************/
@@ -21,18 +20,18 @@ import java.io.UnsupportedEncodingException;
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 
-/* EncryptionHandler Interface Definition ************************************/
+/* StealthNet.Security.Encryption Interface Definition ***********************/
 
 /**
  * An interface to provide encryption and decryption of messages, in order to 
- * provide confidentiality of the communications.
+ * provide confidentiality of the communications in StealthNet.
  * 
  * Ideally, only the sender should be able to encrypt the message; and only the
  * receiver should be able to decrypt the message.
  * 
  * @author Joshua Spence
  */
-public interface EncryptionHandler {
+public interface Encryption {
 	/**
 	 * Encrypts a message using the encryption key.
 	 * 
@@ -59,5 +58,5 @@ public interface EncryptionHandler {
 }
 
 /******************************************************************************
- * END OF FILE:     EncryptionHandler.java
+ * END OF FILE:     Encryption.java
  *****************************************************************************/

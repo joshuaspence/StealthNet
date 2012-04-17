@@ -1,5 +1,11 @@
 #!/bin/sh
 
+#
+# Author: Joshua Spence
+# 
+# Script to easily run a StealthNet client, proxy or server.
+# 
+
 # Java configuration
 JRE=java
 JRE_FLAGS="-enableassertions -enablesystemassertions"

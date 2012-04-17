@@ -1,7 +1,6 @@
 /******************************************************************************
  * ELEC5616
  * Computer and Network Security, The University of Sydney
- * Copyright (C) 2002-2004, Matt Barrie and Stephen Gould
  *
  * PACKAGE:         StealthNet.Security
  * FILENAME:        PRNGTokenGenerator.java
@@ -20,16 +19,18 @@ import java.util.HashSet;
 import java.util.Random;
 import java.util.Set;
 
-/* PRNGTokenGenerator Class Definition ***************************************/
+/* StealthNet.Security.PRNGTokenGenerator Class Definition *******************/
 
 /**
  * A psuedo-random number generator (PRNG) that accepts a seed value. Two 
  * instances of this classes with the same seeds should produce the same 
- * sequences of pseudo-random numbers.
+ * sequences of pseudo-random numbers. This class keeps tracked of pseudo-random
+ * numbers that have been consumed, such that a peer receiving a packet is able
+ * to check whether that packet is being replayed.
  * 
- * This is used to prevent message replay attacks because both parties should be
- * able to predict the next expected sequence number of a packet if they share 
- * the PRNG seed.
+ * A peer uses a single instance for the transmission of packets (which it uses
+ * to generate token numbers) and a single instance for the reception of 
+ * packets (which it uses to verify allowable token numbers).
  * 
  * @author Joshua Spence
  */
@@ -40,15 +41,19 @@ public class PRNGTokenGenerator implements TokenGenerator {
 	/** The seed for the PRNG. */
 	private final long seed;
 	
+	/** 
+	 * The set of all consumed tokens. If a token in this set is received again,
+	 * it should be discarded.
+	 */
 	private final Set<Long> consumedTokens; 
 	
 	/** Constructor. */
 	public PRNGTokenGenerator() {
-		Random seedGenerator = new Random();
+		/** Use an unseeded pseudo-random number generator to create a seed, */
+		final Random seedGenerator = new Random();
 		this.seed = seedGenerator.nextLong();
 		
 		this.prng = new Random(this.seed);
-		
 		this.consumedTokens = new HashSet<Long>();
 	}
 	
@@ -60,7 +65,6 @@ public class PRNGTokenGenerator implements TokenGenerator {
 	public PRNGTokenGenerator(long s) {
 		this.prng = new Random(s);
 		this.seed = s;
-		
 		this.consumedTokens = new HashSet<Long>();
 	}
 	
@@ -75,20 +79,22 @@ public class PRNGTokenGenerator implements TokenGenerator {
 	}
 	
 	/** 
-	 * Check if a given sequence number is the expected sequence number by 
-	 * comparing it to the PRNG's value. 
+	 * Check if a given token number is allowed by checking whether it has been
+	 * previously consumed.
 	 * 
-	 * @param seq The sequence number that was received.
-	 * @return True if the received sequence number matches the expected
-	 * sequence number, false otherwise.
+	 * @param tok The sequence number that was received.
+	 * @return True if the received token number has not been previously 
+	 * consumed. False otherwise
 	 */
-	public boolean isAllowed(long seq) {
-		Long lSeq = new Long(seq);
+	public boolean isAllowed(long tok) {
+		Long lTok = new Long(tok);
 		
-		if (consumedTokens.contains(lSeq))
+		if (consumedTokens.contains(lTok))
 			return false;
 		
-		consumedTokens.add(lSeq);
+		/** Consume the token. */
+		consumedTokens.add(lTok);
+		
 		return true;
 	}
 	

@@ -1,13 +1,12 @@
 /******************************************************************************
  * ELEC5616
  * Computer and Network Security, The University of Sydney
- * Copyright (C) 2002-2004, Matt Barrie and Stephen Gould
  *
  * PACKAGE:         StealthNet.Security
  * FILENAME:        HashedMessageAuthenticationCode.java
  * AUTHORS:         Joshua Spence and Ahmad Al Mutawa
  * DESCRIPTION:     Implementation of a Hashed Message Authentication Code 
- * 					(HMAC) for ELEC5616 programming assignment.
+ * 					(HMAC) for StealthNet communications.
  * VERSION:         1.0
  *
  *****************************************************************************/
@@ -24,21 +23,22 @@ import javax.crypto.SecretKey;
 
 import org.apache.commons.codec.binary.Base64;
 
-/* HashedMessageAuthenticationCode Class Definition **************************/
+/* StealthNet.Security.HashedMessageAuthenticationCode Class Definition ******/
 
 /**
- * Calculates a verifies packet HMACs.
+ * A class to calculate a verify packet HMACs.
  * 
  * @author Joshua Spence
  */
 public class HashedMessageAuthenticationCode implements MessageAuthenticationCode {
+	/** The secret key used for creating hash digests. */
 	private final SecretKey key;
+	
+	/** The Mac instace used to create digests. */
 	private final Mac mac;
 	
 	/** String constants. */
-	// {
 	public static final String HMAC_ALGORITHM = "HmacMD5";
-	// }
 	
 	/**
 	 * Constructor
@@ -100,14 +100,14 @@ public class HashedMessageAuthenticationCode implements MessageAuthenticationCod
 	 * false.
 	 */
 	public boolean verifyMAC(byte[] message, byte[] mac) {
-		byte[] digest = this.mac.doFinal(message);
-		digest = Base64.encodeBase64String(digest).getBytes();
+		final byte[] digest = this.mac.doFinal(message);
+		final byte[] digest_base64 = Base64.encodeBase64String(digest).getBytes();
 		
-		if (digest.length != mac.length) {
+		if (digest_base64.length != mac.length) {
 	        return false;
 	    } else {
 	        for (int i = 0; i < mac.length; i++)
-	            if (mac[i] != digest[i])
+	            if (mac[i] != digest_base64[i])
 	                return false;
 	    }
 		
