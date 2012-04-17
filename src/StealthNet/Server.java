@@ -12,9 +12,7 @@
  *                  cryptography and computer security. It is to be used as
  *                  a demonstration only. No attempt has been made to optimise
  *                  the source code.
- * VERSION:         1.0-ICE
- *
- * REVISION HISTORY:
+ * VERSION:         1.0-ICE\
  *
  *****************************************************************************/
 

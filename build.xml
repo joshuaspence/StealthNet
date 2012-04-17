@@ -262,6 +262,7 @@
 		  	    <include name="StealthNet/ServerThread**" />
         		
 		  	    <include name="StealthNet/Comms**" />
+        		<include name="StealthNet/CommsInterface**" />
         		<include name="StealthNet/Debug**" />
 		  	    <include name="StealthNet/Packet**" />
         		<include name="StealthNet/Security/**" />
@@ -282,8 +283,10 @@
                 <!-- NOTE: Must list the files to be included in the proxy JAR file here!!! -->
                 <include name="StealthNet/Proxy**" />
                 <include name="StealthNet/ProxyThread**" />
+            	<include name="StealthNet/ProxyComms**" />
                 
                 <include name="StealthNet/Comms**" />
+            	<include name="StealthNet/CommsInterface**" />
                 <include name="StealthNet/Debug**" />
                 <include name="StealthNet/Packet**" />
                 <include name="StealthNet/Security/**" />
@@ -309,6 +312,7 @@
         		
         		<include name="StealthNet/Chat**" />
                 <include name="StealthNet/Comms**" />
+        		<include name="StealthNet/CommsInterface**" />
         		<include name="StealthNet/Debug**" />
                 <include name="StealthNet/Packet**" />
         		<include name="StealthNet/Security/**" />

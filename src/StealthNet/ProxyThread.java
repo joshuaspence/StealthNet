@@ -39,8 +39,8 @@ public class ProxyThread extends Thread {
 	private static final String separator = " >> ";
 	
 	/** Comms classes to handle communications to/from each peer. */
-	private CommsInterface stealthCommsSource = null;
-	private CommsInterface stealthCommsDestination = null;
+	private ProxyComms stealthCommsSource = null;
+	private ProxyComms stealthCommsDestination = null;
 
 	/**
 	 * Constructor.
@@ -81,18 +81,18 @@ public class ProxyThread extends Thread {
 	public void run() {
 		if (DEBUG_GENERAL) System.out.println(this.getId() + separator + "Running ProxyThread...");
 
-		Packet pckt = new Packet();
+		String str = new String();
 		try {
-			while (pckt.command != Packet.CMD_LOGOUT) {
+			while (str != null) {
 				/** Receive a StealthNet packet. */
-				pckt = stealthCommsSource.recvPacket();
+				str = stealthCommsSource.recvString();
 				
-				if (pckt == null) {
-					pckt = new Packet();
+				if (str == null) {
+					str = new String();
 					continue;
 				}
 				
-				stealthCommsDestination.sendPacket(pckt);
+				stealthCommsDestination.sendString(str);
 			}
 		} catch (IOException e) {
 			System.out.println(this.getId() + separator + "Session terminated.");
