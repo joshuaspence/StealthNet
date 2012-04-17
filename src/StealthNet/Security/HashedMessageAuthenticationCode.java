@@ -34,7 +34,7 @@ public class HashedMessageAuthenticationCode implements MessageAuthenticationCod
 	/** The secret key used for creating hash digests. */
 	private final SecretKey key;
 	
-	/** The Mac instace used to create digests. */
+	/** The Mac instance used to create digests. */
 	private final Mac mac;
 	
 	/** String constants. */

@@ -140,14 +140,17 @@ public class Packet {
         	System.arraycopy(d, 0, this.data, 0, dLen);
         }
         
+        /** Create the token (if possible). */
+        if (tokenGenerator != null)
+        	this.token = new Long(tokenGenerator.getNext());
+        else
+        	this.token = null;
+        
         /** Create the MAC digest (if possible). */
         if (mac == null)
         	this.digest = new byte[0];
         else
         	this.digest = mac.createMAC(getContents()).getBytes();
-        
-        /** Create the token. */
-        this.token = new Long(tokenGenerator.getNext());
     }
 
     /** 
@@ -156,7 +159,7 @@ public class Packet {
      * 
      * @param str A string consisting of the packet contents.
      */
-    public Packet(String str) {
+    public Packet(String str) {  
     	/** Add padding if necessary. */
     	if (str.length() % 2 == 1)
             str = "0" + str;
@@ -172,47 +175,30 @@ public class Packet {
         	int current = 0;
         	
         	/** Command (1 byte). */
-            this.command = (byte) (16 * hexToInt(str.charAt(current++)) + hexToInt(str.charAt(current++)));
+            this.command = (byte) (16 * singleHexToInt(str.charAt(current++)) + singleHexToInt(str.charAt(current++)));
             
             /** Data length (2 bytes). */
-            int dataLen = 4096 * hexToInt(str.charAt(current++)) + 
-            		       256 * hexToInt(str.charAt(current++)) + 
-            		        16 * hexToInt(str.charAt(current++)) + 
-            		         1 * hexToInt(str.charAt(current++));
+            int dataLen = hexToInt(str.substring(current, current + 8));
+            current += 8;
             
             /** Data (dataLen bytes). */
             this.data = new byte[dataLen];
             for (int i = 0; i < data.length; i++)
-            	this.data[i] = (byte) (16 * hexToInt(str.charAt(current++)) + hexToInt(str.charAt(current++)));
+            	this.data[i] = (byte) (16 * singleHexToInt(str.charAt(current++)) + singleHexToInt(str.charAt(current++)));
             
-            /** Token (8 bytes). */
-            this.token = new Long(1152921504606846976L * (long) hexToInt(str.charAt(current++)) + 
-            		                72057594037927936L * (long) hexToInt(str.charAt(current++)) + 
-            		                 4503599627370496L * (long) hexToInt(str.charAt(current++)) + 
-            		                  281474976710656L * (long) hexToInt(str.charAt(current++)) + 
-            		                   17592186044416L * (long) hexToInt(str.charAt(current++)) + 
-            		                    1099511627776L * (long) hexToInt(str.charAt(current++)) + 
-            		                      68719476736L * (long) hexToInt(str.charAt(current++)) + 
-            		                       4294967296L * (long) hexToInt(str.charAt(current++)) + 
-            		                        268435456L * (long) hexToInt(str.charAt(current++)) + 
-            		                         16777216L * (long) hexToInt(str.charAt(current++)) + 
-            		                          1048576L * (long) hexToInt(str.charAt(current++)) + 
-            	                                65536L * (long) hexToInt(str.charAt(current++)) + 
-            		                             4096L * (long) hexToInt(str.charAt(current++)) + 
-            		                              256L * (long) hexToInt(str.charAt(current++)) + 
-            		                               16L * (long) hexToInt(str.charAt(current++)) + 
-            		                                1L * (long) hexToInt(str.charAt(current++)));
+            /** Token (8 bytes + 1 byte for sign). */
+            boolean negativeToken = ((str.charAt(current++) != '0') & (str.charAt(current++) != '0'));         
+            this.token = new Long((negativeToken ? -1 : 1) * hexToLong(str.substring(current, current + 16)));
+            current += 16;
             
             /** Digest length (2 bytes). */
-            int digestLen = 4096 * hexToInt(str.charAt(current++)) + 
-            		         256 * hexToInt(str.charAt(current++)) + 
-            		          16 * hexToInt(str.charAt(current++)) + 
-            		           1 * hexToInt(str.charAt(current++));
+            int digestLen = hexToInt(str.substring(current, current + 8));
+            current += 8;
             
             /** Digest (digestLen bytes). */
             this.digest = new byte[digestLen];
             for (int i = 0; i < digest.length; i++)
-            	this.digest[i] = (byte) (16 * hexToInt(str.charAt(current++)) + hexToInt(str.charAt(current++)));
+            	this.digest[i] = (byte) (16 * singleHexToInt(str.charAt(current++)) + singleHexToInt(str.charAt(current++)));
         }
     }
     
@@ -234,22 +220,7 @@ public class Packet {
         str += HEXTABLE[lowHalfByte];
         
         /** Data length (2 bytes). */
-        final int dataLenHi = (data.length / 256);
-        final int dataLenLo = (data.length % 256);
-        
-        /* First byte */
-        highHalfByte = (dataLenHi >= 0) ? dataLenHi : (256 + dataLenHi);
-        lowHalfByte = highHalfByte & 0xF;
-        highHalfByte /= 16;
-        str += HEXTABLE[highHalfByte];
-        str += HEXTABLE[lowHalfByte];
-        
-        /* Second byte */
-        highHalfByte = (dataLenLo >= 0) ? dataLenLo : (256 + dataLenLo);
-        lowHalfByte = highHalfByte & 0xF;
-        highHalfByte /= 16;
-        str += HEXTABLE[highHalfByte];
-        str += HEXTABLE[lowHalfByte];
+        str += intToHex(data.length);
         
         /** Data (dataLen bytes). */
         for (int i = 0; i < data.length; i++) {
@@ -261,21 +232,20 @@ public class Packet {
         }
         
         /** Token (8 bytes). */
-        long t;
-        if (token == null)
-        	t = 0L;
-        else
-        	t = token.longValue();
-        long divisor = 1152921504606846976L;
-        for (int i = 0; i < 15; i++) {
-        	final int current = (int) (t / divisor);
-        	t = t % divisor;
-        	divisor /= 16;
-        	
-        	str += HEXTABLE[current];
+        if (token == null) {
+        	str += "00"; /* positive */ 
+        	str += longToHex(0L);
+        } else {
+        	if (token.longValue() < 0) {
+        		str += "11"; /* negative */ 
+        		str += longToHex(-token.longValue());
+        	} else {
+        		str += "00"; /* positive */ 
+        		str += longToHex(token.longValue());
+        	}
         }
-        str += HEXTABLE[(int) t];
         
+        /** Done. */
         return str;
     }
 
@@ -291,22 +261,7 @@ public class Packet {
         int lowHalfByte, highHalfByte;
         
         /** MAC Digest length (2 bytes) */
-        final int digestLenHi = (digest.length / 256);
-        final int digestLenLo = (digest.length % 256);
-        
-        /* First byte */
-        highHalfByte = (digestLenHi >= 0) ? digestLenHi : (256 + digestLenHi);
-        lowHalfByte = highHalfByte & 0xF;
-        highHalfByte /= 16;
-        str += HEXTABLE[highHalfByte];
-        str += HEXTABLE[lowHalfByte];
-        
-        /* Second byte */
-        highHalfByte = (digestLenLo >= 0) ? digestLenLo : (256 + digestLenLo);
-        lowHalfByte = highHalfByte & 0xF;
-        highHalfByte /= 16;
-        str += HEXTABLE[highHalfByte];
-        str += HEXTABLE[lowHalfByte];
+        str += intToHex(digest.length);
         
         /** MAC Digest (digestLen bytes). */
         for (int i = 0; i < digest.length; i++) {
@@ -333,22 +288,75 @@ public class Packet {
     public boolean verifyMAC(MessageAuthenticationCode mac) {
     	if (mac == null)
     		return true;
-    	else 
+    	else
     		return mac.verifyMAC(getContents(), digest);
     }
 
     /** 
-     * A utility function to convert hexadecimal numbers to decimal integers.
+     * A utility function to convert a single hexadecimal character to a decimal
+     * integer.
      * 
      * @param hex The hexadecimal character to convert to an integer.
      * @return The integer value of the hexadecimal character.
      */
-    private static int hexToInt(char hex) {
+    private static int singleHexToInt(char hex) {
              if ((hex >= '0') && (hex <= '9')) return (hex - '0');
         else if ((hex >= 'A') && (hex <= 'F')) return (hex - 'A' + 10);
         else if ((hex >= 'a') && (hex <= 'f')) return (hex - 'a' + 10);
         else return 0;
     }
+    
+    /**
+     * Convert a hexadecimal string to a long.
+     * 
+     * @param hex The string to convert.
+     * @return The long represented by the hexadecimal string.
+     */
+    private static long hexToLong(String hex) {
+    	return Long.parseLong(hex, 16);
+	}
+
+    /**
+     * Convert a long to a hexadecimal string.
+     * 
+     * @param value The long to convert.
+     * @return The hexadecimal string representing the long.
+     */
+	private static String longToHex(long value) {
+		String result = Long.toHexString(value);
+		
+		/** Pad the result to use the full 8 bytes of a long. */
+		while (result.length() < 16)
+			result = "0" + result;
+		
+		return result;
+	}
+	
+	/**
+     * Convert an integer to a hexadecimal string.
+     * 
+     * @param value The integer to convert.
+     * @return The hexadecimal string representing the integer.
+     */
+	private static String intToHex(int value) {
+		String result = Integer.toHexString(value);
+		
+		/** Pad the result to use the full 4 bytes of an integer. */
+		while (result.length() < 8)
+			result = "0" + result;
+		
+		return result;
+	}
+	
+	/**
+     * Convert a hexadecimal string to an integer.
+     * 
+     * @param hex The string to convert.
+     * @return An integer representing the hexadecimal string.
+     */
+	private static int hexToInt(String hex) {
+    	return Integer.parseInt(hex, 16);
+	}
     
     /**
      * Get the name of a command from its byte value. For debug purposes only.

@@ -175,6 +175,9 @@ public class Comms {
         /** Wait for key exchange to finish. */
         waitForKeyExchange();
         
+        /** Encrypt the communications. */
+        initEncryption();
+        
         /** Generate and transmit integrity (HMAC) key. */
         initIntegrityKey();
         
@@ -215,6 +218,9 @@ public class Comms {
          * should be initiated on the other end of the communications.
          */
         waitForKeyExchange();
+        
+        /** Encrypt the communications. */
+        initEncryption();
         
         /** 
          * Wait for integrity key (AES key) exchange to occur. This should be 
@@ -361,7 +367,7 @@ public class Comms {
         
         /** Debug information. */
         if (DEBUG_RAW_PACKET)
-        			System.out.println("(raw)       sendPacket(" + packetString + ")");
+        			System.out.println("(raw)       recvPacket(" + packetString + ")");
         
         /** Attempt to decrypt the packet. */
     	if (confidentialityProvider != null) {
@@ -379,6 +385,10 @@ public class Comms {
     	/** Construct the packet. */
     	pckt = new Packet(packetString);
     	
+    	/** Print debug information. */
+        if (DEBUG_DECODED_PACKET)
+        			System.out.println("(decoded)   recvPacket(" + pckt.getDecodedString() + ")");
+    	
     	/** Check the integrity of the message. */
     	if (integrityProvider != null) {
 	    	if (!pckt.verifyMAC(integrityProvider)) {
@@ -391,12 +401,6 @@ public class Comms {
     				System.out.println("(verified)  recvPacket - Packet passed MAC verification.");
 	    	}
     	}
-    	
-    	/** Print debug information. */
-        if (DEBUG_RAW_PACKET)
-        			System.out.println("(raw)       recvPacket(" + packetString + ")");
-        if (DEBUG_DECODED_PACKET)
-        			System.out.println("(decoded)   recvPacket(" + pckt.getDecodedString() + ")");
         
         if (replayPreventionRX != null) {
         	if (!replayPreventionRX.isAllowed(pckt.token)) {
@@ -584,11 +588,12 @@ public class Comms {
      */
     private void initIntegrityKey() {
     	if (DEBUG_INTEGRITY) System.out.println("Initiating integrity key.");
+    	String integrityKeyString = null;
 		try {
 			if (DEBUG_INTEGRITY) System.out.println("Generating MD5 HMAC key.");
 			final KeyGenerator keyGen = KeyGenerator.getInstance(HashedMessageAuthenticationCode.HMAC_ALGORITHM);
 			integrityKey = keyGen.generateKey();
-			final String integrityKeyString = new String(getHexValue(integrityKey.getEncoded()));
+			integrityKeyString = new String(getHexValue(integrityKey.getEncoded()));
 			if (DEBUG_INTEGRITY) System.out.println("Generated MD5 HMAC key: " + integrityKeyString);
 		} catch (Exception e) {
 			System.err.println("Unable to provide integrity. Failed to initialise HMAC.");
@@ -597,9 +602,8 @@ public class Comms {
 		}
 		
 		/** Transmit our integrity key. */
-    	final String intKey = Base64.encodeBase64String(integrityKey.getEncoded());
-    	if (DEBUG_AUTHENTICATION) System.out.println("Sending integrity key to peer: " + intKey);
-    	sendPacket(Packet.CMD_INTEGRITYKEY, intKey);
+    	if (DEBUG_AUTHENTICATION) System.out.println("Sending integrity key to peer with base 64 encoding: " + integrityKeyString);
+    	sendPacket(Packet.CMD_INTEGRITYKEY, Base64.encodeBase64String(integrityKey.getEncoded()));
     	if (DEBUG_AUTHENTICATION) System.out.println("Sent integrity key to peer.");
     }
     
@@ -626,7 +630,7 @@ public class Comms {
 	            	case Packet.CMD_INTEGRITYKEY:
 	            	    byte[] keyBytes = Base64.decodeBase64(pckt.data);
 	    	    		integrityKey = new SecretKeySpec(keyBytes, 0, keyBytes.length, HashedMessageAuthenticationCode.HMAC_ALGORITHM);
-	    	    		if (DEBUG_INTEGRITY) System.out.println("Received HMAC key: " + getHexValue(integrityKey.getEncoded()));
+	    	    		if (DEBUG_INTEGRITY) System.out.println("Received HMAC key in base 64 encoding: " + getHexValue(integrityKey.getEncoded()));
 	    	        	
 	    	        	/** Send acknowledgement. */
 	    	        	if (DEBUG_INTEGRITY) System.out.println("Sending acknowledgement of integrity key.");
@@ -649,7 +653,7 @@ public class Comms {
     	
     	/** Done. Enable integrity provision. */
     	try {
-    		if (DEBUG_INTEGRITY) System.out.println("Initiating hashed MAC provider.");
+    		if (DEBUG_INTEGRITY) System.out.println("Initiating hashed MAC provider with key: " + getHexValue(integrityKey.getEncoded()));
 			integrityProvider = new HashedMessageAuthenticationCode(integrityKey);
 		} catch (Exception e) {
 			System.err.println("Failed to initiate integrity provider.");			
