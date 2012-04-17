@@ -151,8 +151,10 @@ fi
 # Execute
 if [ -n "$CLASSPATH" ]; then
 	echo "$JRE $DEBUG_ARG -classpath "$CLASSPATH" $JRE_FLAGS -jar $JAR_DIR/$JAR_FILE $@"
+	echo ""
 	$JRE $DEBUG_ARG -classpath "$CLASSPATH" $JRE_FLAGS -jar $JAR_DIR/$JAR_FILE $@
 else
 	echo "$JRE $DEBUG_ARG $JRE_FLAGS -jar $JAR_DIR/$JAR_FILE $@"
+	echo ""
 	$JRE $DEBUG_ARG $JRE_FLAGS -jar $JAR_DIR/$JAR_FILE $@
 fi
