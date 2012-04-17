@@ -64,7 +64,7 @@ import javax.swing.JOptionPane;
 
 /** 
  * A client for the StealthNet chat program. Receives information about clients 
- * and secrets from the StealthNet server.
+ * and secrets from a StealthNet server.
  * 
  * If the client wants to start a chat session with a user, then the first 
  * client sends a command to the server, containing an IP address and port 
@@ -81,7 +81,7 @@ import javax.swing.JOptionPane;
  * @author Matt Barrie
  * @author Stephen Gould
  * @author Ryan Junee
- * @author Joshua Spence (Added debug code and security features.)
+ * @author Joshua Spence
  */
 public class Client {
 	/** Debug options. */
@@ -162,12 +162,12 @@ public class Client {
 	 */
     public Client(String s, int p)  {    	
     	/** Create a timer to process packets every 100ms. */
-        stealthTimer = new Timer(100, new ActionListener() {
+        this.stealthTimer = new Timer(100, new ActionListener() {
             public void actionPerformed(ActionEvent e) { processPackets(); }
         });
         
-        server_hostname = s;
-        server_port = p;
+        this.server_hostname = s;
+        this.server_port = p;
     }
     
     /**
@@ -416,7 +416,7 @@ public class Client {
             if (DEBUG_ERROR_TRACE) e.printStackTrace();
         }
         
-        /** We should now be connected to the StealthNet server. */
+        /** NOTE: We should now be connected to the StealthNet server. */
 
 		msgTextBox.append("Connected to StealthNet.\n");
 		if (DEBUG_GENERAL) System.out.println("Connected to StealthNet.");
@@ -560,7 +560,8 @@ public class Client {
 				snComms.acceptSession(conn = ftpSocket.accept());
 				
 				if (DEBUG_GENERAL) System.out.println("Accepted connection from '" + conn.getInetAddress() + ":" + conn.getPort() + "' for transfer of secret.");
-				new FileTransfer(snComms, fileSave.getDirectory() + fileSave.getFile(), false).start();
+				final FileTransfer ft = new FileTransfer(snComms, fileSave.getDirectory() + fileSave.getFile(), false);
+				ft.start();
 			} catch (Exception e) {
 				System.err.println("Transfer failed.");
 				msgTextBox.append("[*ERR*] Transfer failed.\n");
@@ -576,8 +577,8 @@ public class Client {
      * @param row The user to check.
      */
 	private boolean isOKtoSendtoRow(int row) {
-		String myid = (String) buddyTable.getValueAt(row, 0);
-		String mystatus = (String) buddyTable.getValueAt(row,1);
+		final String myid = (String) buddyTable.getValueAt(row, 0);
+		final String mystatus = (String) buddyTable.getValueAt(row,1);
 
 		if (myid.equals(userID)) {
 			System.err.println("Can't send to self.");
@@ -605,7 +606,7 @@ public class Client {
 			return;
         
 		/** Get the ID of the target user. */ 
-        String myid = (String) buddyTable.getValueAt(row, 0);
+        final String myid = (String) buddyTable.getValueAt(row, 0);
         		
         /** Set up socket on a free port for the chat session. */
         ServerSocket chatSocket = null;
@@ -642,13 +643,14 @@ public class Client {
         try {
         	if (DEBUG_GENERAL) System.out.println("Waiting for target client to connect.");
         	
-        	Socket conn;
             chatSocket.setSoTimeout(2000);  // 2 second timeout
-            Comms snComms = new Comms();
-            snComms.acceptSession(conn = chatSocket.accept());
+            final Comms snComms = new Comms();
+            final Socket conn = chatSocket.accept();
+            snComms.acceptSession(conn);
             
             if (DEBUG_GENERAL) System.out.println("Accepted connection from '" + conn.getInetAddress() + ":" + conn.getPort() + "' for chat session.");
-            new Chat(userID, snComms).start();
+            final Chat chat = new Chat(userID, snComms);
+            chat.start();
         } catch (Exception e) {
         	System.err.println("Chat failed.");
             msgTextBox.append("[*ERR*] Chat failed.\n");
@@ -667,10 +669,10 @@ public class Client {
 		}
 		
 		/** Get the user ID. */
-		String myid = (String) buddyTable.getValueAt(row, 0);
+		final String myid = (String) buddyTable.getValueAt(row, 0);
 
 		/** Select the file to send. */
-        FileDialog fileOpen = new FileDialog(clientFrame, "Open...", FileDialog.LOAD);
+        final FileDialog fileOpen = new FileDialog(clientFrame, "Open...", FileDialog.LOAD);
         fileOpen.setVisible(true);
         if (fileOpen.getFile().length() == 0)
             return;
@@ -709,13 +711,14 @@ public class Client {
         try {
         	if (DEBUG_GENERAL) System.out.println("Waiting for target client to connect for file transfer.");
         	
-        	Socket conn;
             ftpSocket.setSoTimeout(2000);  // 2 second timeout
-            Comms snComms = new Comms();
-            snComms.acceptSession(conn = ftpSocket.accept());
+            final Comms snComms = new Comms();
+            final Socket conn = ftpSocket.accept();
+            snComms.acceptSession(conn);
             
             if (DEBUG_GENERAL) System.out.println("Accepted connection from '" + conn.getInetAddress() + ":" + conn.getPort() + "' for FTP transfer.");
-            new FileTransfer(snComms, fileOpen.getDirectory() + fileOpen.getFile(), true).start();
+            final FileTransfer ft = new FileTransfer(snComms, fileOpen.getDirectory() + fileOpen.getFile(), true);
+            ft.start();
         } catch (Exception e) {
         	System.err.println("FTP failed.");
             msgTextBox.append("[*ERR*] FTP failed.\n");
@@ -723,9 +726,7 @@ public class Client {
         }
     }
 
-    /** 
-     * Process incoming packets.
-     */
+    /** Process incoming packets. */
     private void processPackets() {
 		/** Update credits box, stick it here for convenience. */
 		creditsBox.setText(new Integer(credits).toString());
@@ -801,7 +802,8 @@ public class Client {
                         fileSave.setVisible(true);
                         if ((fileSave.getFile() != null) && (fileSave.getFile().length() > 0)) {
                         	if (DEBUG_GENERAL) System.out.println("File will be saved to '" + fileSave.getDirectory() + fileSave.getFile() + "'. Starting file transfer.");                        	
-                            new FileTransfer(snComms, fileSave.getDirectory() + fileSave.getFile(), false).start();
+                            final FileTransfer ft = new FileTransfer(snComms, fileSave.getDirectory() + fileSave.getFile(), false);
+                            ft.start();
                         }
                         break;
 
@@ -841,7 +843,7 @@ public class Client {
                         if (DEBUG_COMMANDS_SECRETLIST) System.out.println("Received a secret list: \"" + secretTable.replaceAll("\n", "; ") + "\".");
                         
                         while (secretTable.length() > 0) {
-                            int indx = secretTable.indexOf("\n");
+                            final int indx = secretTable.indexOf("\n");
                             String row;
                             
                             if (indx > 0) {
@@ -877,7 +879,8 @@ public class Client {
 						
 						msgTextBox.append("[INFO] Sending out a secret.\n");
 						if (DEBUG_GENERAL) System.out.println("Starting file transfer.");
-						new FileTransfer(snComms,	fName, true).start();
+						final FileTransfer ft = new FileTransfer(snComms,	fName, true);
+						ft.start();
 						break;
 
                     default:

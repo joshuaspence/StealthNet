@@ -198,6 +198,10 @@ public class ProxyComms {
     public String recvString() throws IOException {        
         /** Read data from the input buffer. */
         final String packetString = dataIn.readLine();
+        
+        /** Print debug information. */
+    	if (DEBUG_RAW_PACKET) System.out.println("(raw)       sendPacket(" + packetString + ")");
+    	
     	return packetString;
     }
     

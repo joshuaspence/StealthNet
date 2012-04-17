@@ -31,9 +31,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.math.BigInteger;
 import java.net.Socket;
-import java.security.InvalidKeyException;
 import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 
 import javax.crypto.KeyGenerator;
@@ -568,6 +566,7 @@ public class Comms {
      * Generate a key for the HMAC and transmit it to the other peer.
      */
     private void initIntegrityKey() {
+    	if (DEBUG_INTEGRITY) System.out.println("Iniating integrity key.");
 		try {
 			if (DEBUG_INTEGRITY) System.out.println("Generating MD5 HMAC key.");
 			final KeyGenerator keyGen = KeyGenerator.getInstance(HashedMessageAuthenticationCode.HMAC_ALGORITHM);

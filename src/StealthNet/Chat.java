@@ -46,16 +46,19 @@ import javax.swing.JTextField;
  * The chat window used to allow two StealthNet clients to communicate.
  * 
  * @author Matt Barrie
- * @author Joshua Spence (Added debug functionality.)
+ * @author Joshua Spence
  */
 public class Chat extends Thread {
 	/** Debug options. */
-	private static final boolean DEBUG_GENERAL     = Debug.isDebug("StealthNetChat.General");
-	private static final boolean DEBUG_ERROR_TRACE = Debug.isDebug("StealthNetChat.ErrorTrace") || Debug.isDebug("ErrorTrace");
+	private static final boolean DEBUG_GENERAL     = Debug.isDebug("StealthNet.Chat.General");
+	private static final boolean DEBUG_ERROR_TRACE = Debug.isDebug("StealthNet.Chat.ErrorTrace") || Debug.isDebug("ErrorTrace");
 	
+	/** GUI elements. */
+	// {
 	private JFrame chatFrame;
     private JTextArea chatTextBox;
     private JTextField msgText;
+    // }
     
     /** 
      * The StealthNet communications instance used to allow the clients to 
@@ -64,14 +67,14 @@ public class Chat extends Thread {
     private Comms stealthComms = null;
     
     /** The ID of the user owning the chat session. */
-    private String userID;
+    private final String userID;
 
     /** 
      * Constructor.
      * 
      * @param id The ID of the user owning the chat session.
-     * @param snComms The StealthNet communications class used to allow the
-     * clients to communicate.
+     * @param snComms The StealthNet Comms class used to allow the clients to 
+     * communicate.
      */
     public Chat(String id, Comms snComms) {
         userID = id;
@@ -101,7 +104,7 @@ public class Chat extends Thread {
         chatTextBox.setEditable(false);
         chatTextBox.setBackground(Color.lightGray);
         
-        JScrollPane chatScrollPane = new JScrollPane(chatTextBox);
+        final JScrollPane chatScrollPane = new JScrollPane(chatTextBox);
         chatScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
         chatScrollPane.setPreferredSize(new Dimension(280, 100));
         chatScrollPane.setBorder(
@@ -133,13 +136,13 @@ public class Chat extends Thread {
             }
         });
         
-        JPanel btnPane = new JPanel();
+        final JPanel btnPane = new JPanel();
         btnPane.setLayout(new BorderLayout());
         btnPane.add(msgText);
         btnPane.add(quitBtn, BorderLayout.EAST);
 
         /** Create top-level panel and add components. */
-        JPanel pane = new JPanel();
+        final JPanel pane = new JPanel();
         pane.setBorder(BorderFactory.createEmptyBorder(10, 10, 5, 10));
         pane.setLayout(new BorderLayout());
         pane.add(chatScrollPane);
@@ -175,13 +178,14 @@ public class Chat extends Thread {
         }
 
         Packet pckt = new Packet();
-
         try {
             while ((pckt.command != Packet.CMD_LOGOUT) && (stealthComms.recvReady())) {
                 pckt = stealthComms.recvPacket();
                 
-                if (pckt == null)
+                if (pckt == null) {
+                	pckt = new Packet();
                 	continue;
+                }
                 
                 switch (pckt.command) {                
                     case Packet.CMD_MSG:
@@ -213,7 +217,7 @@ public class Chat extends Thread {
 
     /** The main function for Chat. */
     public void run() {
-        Dimension screenDim = Toolkit.getDefaultToolkit().getScreenSize();
+        final Dimension screenDim = Toolkit.getDefaultToolkit().getScreenSize();
 
         /** Set up chat window. */
         chatFrame = new JFrame("stealthnet chat [" + userID + "]");
@@ -232,8 +236,8 @@ public class Chat extends Thread {
         });
 
         /** Centre the window. */
-        int x = (screenDim.width - chatFrame.getSize().width) / 2;
-        int y = (screenDim.height - chatFrame.getSize().height) / 2;
+        final int x = (screenDim.width - chatFrame.getSize().width) / 2;
+        final int y = (screenDim.height - chatFrame.getSize().height) / 2;
         chatFrame.setLocation(x, y);
         chatFrame.setVisible(true);
 
