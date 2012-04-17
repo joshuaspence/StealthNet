@@ -16,8 +16,10 @@ package StealthNet;
 /* Import Libraries **********************************************************/
 
 import java.io.IOException;
+import java.math.BigInteger;
 import java.net.Socket;
 import java.net.SocketException;
+import java.util.Random;
 
 /* StealthNet.ProxyThread Class Definition ***********************************/
 
@@ -36,6 +38,12 @@ public class ProxyThread extends Thread {
 	/** Debug options. */
 	private static final boolean DEBUG_GENERAL     = Debug.isDebug("StealthNet.ProxyThread.General");
 	private static final boolean DEBUG_ERROR_TRACE = Debug.isDebug("StealthNet.ProxyThread.ErrorTrace") || Debug.isDebug("ErrorTrace");
+	
+	/** How malicious should we be? */
+	private static final boolean isMalicious = false;			/** True to enable simulated security attacks. */
+	private static final long noMaliciousnessPacketCount = 5;	/** Don't perform any malicious activity for the first X packets. */
+	private static final int replayProbability = 50;			/** Probability (as an integer out of 100) of a replay attack after the first X packets. */
+	private static final int corruptionProbability = 50;		/** Probability (as an integer out of 100) of a corruption attack after the first X packets. */
 	
 	/** Used to separate thread ID from debug output. */
 	private static final String separator = " >> ";
@@ -113,10 +121,14 @@ public class ProxyThread extends Thread {
 	 * The main function for the class. This function forwards packets from
 	 * source to destination.
 	 */
+	@SuppressWarnings("unused")
 	public void run() {
 		if (DEBUG_GENERAL) System.out.println(this.getId() + separator + "Running ProxyThread...");
 
 		String str = new String();
+		Random rnd = new Random();
+		BigInteger counter = BigInteger.ZERO;
+		
 		try {
 			while (str != null && !getShouldStop()) {
 				/** Receive a StealthNet packet. */
@@ -125,7 +137,22 @@ public class ProxyThread extends Thread {
 				if (str == null)
 					break;
 				
-				stealthCommsDestination.sendString(str);
+				counter = counter.add(BigInteger.ONE);
+				System.out.println(counter);
+				/** Decide whether or not to corrupt a message. */
+				if (isMalicious && (counter.compareTo(BigInteger.valueOf(noMaliciousnessPacketCount)) > 0) && ((rnd.nextInt() % 100) < corruptionProbability)) {
+					if (DEBUG_GENERAL) System.out.println(this.getId() + separator + "Corrupting packet...");
+					stealthCommsDestination.sendString(new StringBuffer(str).reverse().toString());
+				} else {
+					stealthCommsDestination.sendString(str);
+				}
+				
+				/** Decide whether or not to replay a message. */
+				if (isMalicious && (counter.compareTo(BigInteger.valueOf(noMaliciousnessPacketCount)) > 0) && (rnd.nextInt() % 100) < replayProbability) {
+					if (DEBUG_GENERAL) System.out.println(this.getId() + separator + "Replaying last packet...");
+					stealthCommsDestination.sendString(str);
+				}
+				
 			}
 		} catch (SocketException e) {
 			/** This is a fairly "clean" exit. */

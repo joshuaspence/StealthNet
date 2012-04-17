@@ -331,8 +331,8 @@ public class ServerThread extends Thread {
 				byte msg_type;
 				
 				if (DEBUG_GENERAL) {
-					if (pckt.data == null)	 System.out.println(this.getId() + separator + "	. Packet command: " + Packet.getCommandName(pckt.command) + ".");
-					else	                 System.out.println(this.getId() + separator + "	. Packet command: " + Packet.getCommandName(pckt.command) + ". Packet data: \"" + new String(pckt.data) + "\".");
+					if (pckt.data == null)	 System.out.println(this.getId() + separator + "Received packet. Packet command: " + Packet.getCommandName(pckt.command) + ".");
+					else	                 System.out.println(this.getId() + separator + "Receiced packet. Packet command: " + Packet.getCommandName(pckt.command) + ". Packet data: \"" + new String(pckt.data) + "\".");
 				}
 
 				/** Perform the relevant action based on the packet command. */

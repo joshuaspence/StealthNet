@@ -375,7 +375,6 @@ public class Comms {
 				packetString = confidentialityProvider.decrypt(packetString);
 			} catch (Exception e) {
 				System.err.println("Failed to decrypt packet! Discarding...");
-				if (DEBUG_ERROR_TRACE) e.printStackTrace();
 				return null;
 			}
     		if (DEBUG_DECRYPTED_PACKET)	
@@ -383,7 +382,7 @@ public class Comms {
     	}
     	
     	/** Construct the packet. */
-    	pckt = new Packet(packetString);
+		pckt = new Packet(packetString);
     	
     	/** Print debug information. */
         if (DEBUG_DECODED_PACKET)
