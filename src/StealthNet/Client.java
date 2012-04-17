@@ -60,23 +60,25 @@ import javax.swing.Timer;
 import javax.swing.UIManager;
 import javax.swing.JOptionPane;
 
-/* Client Class Definition ***************************************************/
+/* StealthNet.Client Class Definition ****************************************/
 
 /** 
  * A client for the StealthNet chat program. Receives information about clients 
  * and secrets from a StealthNet server.
  * 
- * If the client wants to start a chat session with a user, then the first 
+ * If the client wants to start a chat session with a user, then the source 
  * client sends a command to the server, containing an IP address and port 
- * number on which the first client is waiting for a connection from the second
- * client. The server relays this information to the second client, which should
- * then connect with the first client to start the chat session.
+ * number on which the source client is waiting to accept a connection from the 
+ * destination client. The server relays this information to the destination 
+ * client, which should then connect with the source client to start the chat 
+ * session.
  * 
  * Similarly, if the clients wants to send a file to another client, then the
- * first clients send a command to the server, containing an IP address and port
- * number on which the first client is waiting for a connection from the second 
- * client. The server relays this information to the second client, which should
- * then connect with the first client to start the file transfer.
+ * source client sends a command to the server, containing an IP address and 
+ * port number on which the source client is waiting to accept a connection from
+ * the destination client. The server relays this information to the destination
+ * client, which should then connect with the source client to start the file 
+ * transfer.
  * 
  * @author Matt Barrie
  * @author Stephen Gould
@@ -146,12 +148,12 @@ public class Client {
     /** Constructor. */
     public Client() {
     	/** Create a timer to process packets every 100ms. */
-        stealthTimer = new Timer(100, new ActionListener() {
+    	this.stealthTimer = new Timer(100, new ActionListener() {
             public void actionPerformed(ActionEvent e) { processPackets(); }
         });
         
-        server_hostname = ProxyComms.DEFAULT_PROXYNAME;
-        server_port = ProxyComms.DEFAULT_PROXYPORT;
+        this.server_hostname = ProxyComms.DEFAULT_PROXYNAME;
+        this.server_port = ProxyComms.DEFAULT_PROXYPORT;
     }
 
     /** 
@@ -401,19 +403,21 @@ public class Client {
             stealthComms.initiateSession(new Socket(server_hostname, server_port));
             
             /** Send the server a login command. */
-            if (DEBUG_GENERAL) System.out.println("Sending the server a login packet for user '" + userID + "'.");
+            if (DEBUG_GENERAL) System.out.println("Sending the server a login packet for user \"" + userID + "\".");
             stealthComms.sendPacket(Packet.CMD_LOGIN, userID);
             
             /** Start periodically checking for packets. */
             stealthTimer.start();
         } catch (UnknownHostException e) {
-        	System.err.println("Unknown host for StealthNet server: '" + server_hostname + "'.");
+        	System.err.println("Unknown host for StealthNet server: \"" + server_hostname + "\".");
             msgTextBox.append("[*ERR*] Unknown host: '" + server_hostname + "'.\n");
             if (DEBUG_ERROR_TRACE) e.printStackTrace();
+            return;
         } catch (IOException e) {
         	System.err.println("Could not connect to StealthNet server on port " + server_port + ".");
             msgTextBox.append("[*ERR*] Could not connect to host on port " + server_port + ".\n");
             if (DEBUG_ERROR_TRACE) e.printStackTrace();
+            return;
         }
         
         /** NOTE: We should now be connected to the StealthNet server. */
@@ -522,9 +526,9 @@ public class Client {
 			return;
 		}
 		
-		if (DEBUG_GENERAL) System.out.println("Set up socket " + ftpSocket.getLocalPort() + " for transfer of secret file \"" + name + "\".");
+		if (DEBUG_GENERAL) System.out.println("Set up socket on port " + ftpSocket.getLocalPort() + " for transfer of secret file \"" + name + "\".");
 
-		/** Discover the IP address of this client. */
+		/** Discover our own IP address. */
 		String iAddr;
 		try {
 			iAddr = InetAddress.getLocalHost().toString();
@@ -554,10 +558,11 @@ public class Client {
 			try {
 				if (DEBUG_GENERAL) System.out.println("Waiting for target client to connect.");
 				
-				Socket conn;
-				ftpSocket.setSoTimeout(2000);  // 2 second timeout
+				/** Set a 2 second timeout on the socket. */
+				ftpSocket.setSoTimeout(2000);
 				final Comms snComms = new Comms();
-				snComms.acceptSession(conn = ftpSocket.accept());
+				final Socket conn = ftpSocket.accept();
+				snComms.acceptSession(conn);
 				
 				if (DEBUG_GENERAL) System.out.println("Accepted connection from '" + conn.getInetAddress() + ":" + conn.getPort() + "' for transfer of secret.");
 				final FileTransfer ft = new FileTransfer(snComms, fileSave.getDirectory() + fileSave.getFile(), false);
@@ -570,8 +575,7 @@ public class Client {
 		}
     }    
 
-    /** 
-     * 
+    /**
      * Check if we are able to send a message to a specified user.
      * 
      * @param row The user to check.
@@ -620,7 +624,7 @@ public class Client {
             return;
         }
         
-        if (DEBUG_GENERAL) System.out.println("Set up socket " + chatSocket.getLocalPort() + " for chat session with \"" + myid + "\".");
+        if (DEBUG_GENERAL) System.out.println("Set up socket on port " + chatSocket.getLocalPort() + " for chat session with \"" + myid + "\".");
 
         /**
          * Send message to server with target user and listening address and
@@ -643,7 +647,8 @@ public class Client {
         try {
         	if (DEBUG_GENERAL) System.out.println("Waiting for target client to connect.");
         	
-            chatSocket.setSoTimeout(2000);  // 2 second timeout
+        	/** Set 2 second timeout on socket. */
+            chatSocket.setSoTimeout(2000);
             final Comms snComms = new Comms();
             final Socket conn = chatSocket.accept();
             snComms.acceptSession(conn);
@@ -688,7 +693,7 @@ public class Client {
             return;
         }
 
-        if (DEBUG_GENERAL) System.out.println("Set up socket " + ftpSocket.getLocalPort() + " for transfer of file \"" + fileOpen.getFile() + "\" to \"" + myid + "\".");
+        if (DEBUG_GENERAL) System.out.println("Set up socket on port " + ftpSocket.getLocalPort() + " for transfer of file \"" + fileOpen.getFile() + "\" to \"" + myid + "\".");
         
         /**
          * Send message to server with target user and listening address and 
@@ -711,7 +716,8 @@ public class Client {
         try {
         	if (DEBUG_GENERAL) System.out.println("Waiting for target client to connect for file transfer.");
         	
-            ftpSocket.setSoTimeout(2000);  // 2 second timeout
+        	/** Set 2 second timeout on socket. */
+            ftpSocket.setSoTimeout(2000);
             final Comms snComms = new Comms();
             final Socket conn = ftpSocket.accept();
             snComms.acceptSession(conn);
@@ -755,7 +761,7 @@ public class Client {
                 pckt = stealthComms.recvPacket();
                 
                 if (pckt == null)
-                	continue;
+                	break;
                 
                 if (DEBUG_GENERAL) System.out.println("Received packet. Packet command: " + Packet.getCommandName(pckt.command) + ". Packet data: \"" + new String(pckt.data).replaceAll("\n", ";") + "\".");
                 
@@ -772,15 +778,15 @@ public class Client {
                         iPort = new Integer(iAddr.substring(iAddr.lastIndexOf(":") + 1));
                         iAddr = iAddr.substring(0, iAddr.lastIndexOf(":"));
                         
-                        if (DEBUG_COMMANDS_CHAT) System.out.println("Received a chat command. Target host: \"" + iAddr + ":" + iPort + "\".");
+                        if (DEBUG_COMMANDS_CHAT) System.out.println("Received a chat command. Target host: '" + iAddr + ":" + iPort + "'.");
                         
                         snComms = new Comms();
                         snComms.initiateSession(new Socket(iAddr, iPort.intValue()));
-                        if (DEBUG_GENERAL) System.out.println("Opened a communications session with " + iAddr + ".");
+                        if (DEBUG_GENERAL) System.out.println("Opened a communications session with '" + iAddr + "'.");
                         
                         
                         new Chat(userID, snComms).start();
-                        if (DEBUG_GENERAL) System.out.println("Started a chat session with " + iAddr + ".");
+                        if (DEBUG_GENERAL) System.out.println("Started a chat session with '" + iAddr + "'.");
                         break;
 
                     case Packet.CMD_FTP:                    	
@@ -795,13 +801,13 @@ public class Client {
 
                         snComms = new Comms();
                         snComms.initiateSession(new Socket(iAddr, iPort.intValue()));
-                        if (DEBUG_GENERAL) System.out.println("Opened a communications session with " + iAddr + ".");
+                        if (DEBUG_GENERAL) System.out.println("Opened a communications session with '" + iAddr + "'.");
                         
                         final FileDialog fileSave = new FileDialog(clientFrame, "Save As...", FileDialog.SAVE);
                         fileSave.setFile(fName);
                         fileSave.setVisible(true);
                         if ((fileSave.getFile() != null) && (fileSave.getFile().length() > 0)) {
-                        	if (DEBUG_GENERAL) System.out.println("File will be saved to '" + fileSave.getDirectory() + fileSave.getFile() + "'. Starting file transfer.");                        	
+                        	if (DEBUG_GENERAL) System.out.println("File will be saved to \"" + fileSave.getDirectory() + fileSave.getFile() + "\". Starting file transfer.");                        	
                             final FileTransfer ft = new FileTransfer(snComms, fileSave.getDirectory() + fileSave.getFile(), false);
                             ft.start();
                         }
@@ -871,11 +877,11 @@ public class Client {
 						iAddr = iAddr.substring(0, iAddr.lastIndexOf(":"));
 						fName = fName.substring(0, fName.lastIndexOf("@"));
 						
-						if (DEBUG_COMMANDS_GETSECRET) System.out.println("Received a get secret command. Target host: '" + iAddr + ":" + iPort + "'. The filename is '" + fName + "'.");
+						if (DEBUG_COMMANDS_GETSECRET) System.out.println("Received a get secret command. Target host: '" + iAddr + ":" + iPort + "'. The filename is \"" + fName + "\".");
 
 						snComms = new Comms();
 						snComms.initiateSession(new Socket(iAddr, iPort.intValue()));
-						if (DEBUG_GENERAL) System.out.println("Opened a communications session with " + iAddr + ".");
+						if (DEBUG_GENERAL) System.out.println("Opened a communications session with '" + iAddr + "'.");
 						
 						msgTextBox.append("[INFO] Sending out a secret.\n");
 						if (DEBUG_GENERAL) System.out.println("Starting file transfer.");
@@ -902,16 +908,16 @@ public class Client {
      * @param args The command line arguments.
      */
     public static void main(String[] args) {
-    	/** Hostname of the server. */
+    	/** Hostname of the proxy. */
     	String hostname = ProxyComms.DEFAULT_PROXYNAME;
     	
-    	/** Port that the server is listening on. */
+    	/** Port that the proxy is listening on. */
     	int port = ProxyComms.DEFAULT_PROXYPORT;
     	
     	/** Check if a host and port was specified at the command line. */
     	if (args.length > 0) {
     		try {
-    			String[] input = args[0].split(":", 2);
+    			final String[] input = args[0].split(":", 2);
     			
     			hostname = input[0];
     			if (input.length > 1)
@@ -940,7 +946,7 @@ public class Client {
         	if (DEBUG_ERROR_TRACE) e.printStackTrace();
         	System.exit(1);
         }
-        Component contents = app.createGUI();
+        final Component contents = app.createGUI();
         clientFrame.getContentPane().add(contents, BorderLayout.CENTER);
 
         /** 

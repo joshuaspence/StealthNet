@@ -39,7 +39,14 @@ public interface TokenGenerator {
 	public boolean isAllowed(long tok);
 	
 	/**
-	 * Gets the seed for the TokenGenerators, that other peers can use to 
+	 * Gets the next token produced by the TokenGenerator.
+	 * 
+	 * @return The next token produced by the TokenGenerator.
+	 */
+	public long getNext();
+	
+	/**
+	 * Gets the seed for the TokenGenerator, that other peers can use to 
 	 * replicate the token generator sequence.
 	 * 
 	 * @return The seed used to initialise the TokenGenerator.

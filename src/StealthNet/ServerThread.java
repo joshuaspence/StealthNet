@@ -26,7 +26,7 @@ import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.StringTokenizer;
 
-/* ServerThread Class Definition *********************************************/
+/* StealthNet.ServerThread Class Definition **********************************/
 
 /**
  * Represents a thread within the operating system for communications between
@@ -53,7 +53,6 @@ public class ServerThread extends Thread {
 	private static final boolean DEBUG_COMMANDS_FTP          = Debug.isDebug("StealthNet.ServerThread.Commands.FTP");
 	private static final boolean DEBUG_COMMANDS_CREATESECRET = Debug.isDebug("StealthNet.ServerThread.Commands.CreateSecret");
 	private static final boolean DEBUG_COMMANDS_GETSECRET    = Debug.isDebug("StealthNet.ServerThread.Commands.GetSecret");
-	private static final boolean DEBUG_COMMANDS_AUTHKEY      = Debug.isDebug("StealthNet.ServerThread.Commands.AuthKey");
 	
 	/** Used to separate thread ID from debug output. */
 	private static final String separator = " >> ";
@@ -337,15 +336,7 @@ public class ServerThread extends Thread {
 				}
 
 				/** Perform the relevant action based on the packet command. */
-				switch (pckt.command) {
-					/***********************************************************
-					 * AUTHENTICATION
-					 **********************************************************/
-					case Packet.CMD_PUBLICKEY:
-						if (DEBUG_COMMANDS_AUTHKEY) System.out.println(this.getId() + separator + "Received authentication key.");
-						stealthComms.keyExchange(new String(pckt.data));
-						break;
-						
+				switch (pckt.command) {						
 					/***********************************************************
 					 * NULL command
 					 **********************************************************/

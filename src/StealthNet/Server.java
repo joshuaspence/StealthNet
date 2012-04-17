@@ -24,7 +24,7 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 
-/* Server Class Definition ***************************************************/
+/* StealthNet.Server Class Definition ****************************************/
 
 /**
  * A server process for StealthNet communications. Opens a server socket, 

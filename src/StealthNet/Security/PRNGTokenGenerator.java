@@ -75,7 +75,9 @@ public class PRNGTokenGenerator implements TokenGenerator {
 	  * @return The next sequence number.
 	  */
 	public long getNext() {
-		return prng.nextLong();
+		Long next = prng.nextLong();
+		consumedTokens.add(new Long(next));
+		return next;
 	}
 	
 	/** 

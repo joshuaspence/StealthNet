@@ -33,7 +33,6 @@ import java.math.BigInteger;
 import java.net.Socket;
 import java.security.MessageDigest;
 import java.security.SecureRandom;
-import java.util.Set;
 
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
@@ -50,7 +49,7 @@ import StealthNet.Security.MessageAuthenticationCode;
 import StealthNet.Security.PRNGTokenGenerator;
 import StealthNet.Security.TokenGenerator;
 
-/* Comms class ***************************************************************/
+/* StealthNet.Comms class ****************************************************/
 
 /**
  * A class to buffered write and buffered read to and from an opened socket.
@@ -59,21 +58,20 @@ import StealthNet.Security.TokenGenerator;
  * @author Matt Barrie
  * @author Ryan Junee
  * @author Joshua Spence
- *
  */
 public class Comms {
 	/** Debug options. */
-	private static final boolean DEBUG_GENERAL          = Debug.isDebug("StealthNet.Comms.General");
-	private static final boolean DEBUG_ERROR_TRACE      = Debug.isDebug("StealthNet.Comms.ErrorTrace") || Debug.isDebug("ErrorTrace");
-	private static final boolean DEBUG_RAW_PACKET       = Debug.isDebug("StealthNet.Comms.RawOutput");
-	private static final boolean DEBUG_DECODED_PACKET   = Debug.isDebug("StealthNet.Comms.DecodedOutput");
-	private static final boolean DEBUG_ENCRYPTED_PACKET = Debug.isDebug("StealthNet.Comms.EncryptedOutput");
-	private static final boolean DEBUG_DECRYPTED_PACKET = Debug.isDebug("StealthNet.Comms.DecryptedOutput");
-	private static final boolean DEBUG_RECEIVE_READY    = Debug.isDebug("StealthNet.Comms.ReceiveReady");
-	private static final boolean DEBUG_KEY_EXCHANGE     = Debug.isDebug("StealthNet.Comms.KeyExchange");
-	private static final boolean DEBUG_ENCRYPTION       = Debug.isDebug("StealthNet.Comms.Encryption");
-	private static final boolean DEBUG_INTEGRITY        = Debug.isDebug("StealthNet.Comms.Integrity");
-	private static final boolean DEBUG_REPLAY           = Debug.isDebug("StealthNet.Comms.ReplayPrevention");
+	private static final boolean DEBUG_GENERAL            = Debug.isDebug("StealthNet.Comms.General");
+	private static final boolean DEBUG_ERROR_TRACE        = Debug.isDebug("StealthNet.Comms.ErrorTrace") || Debug.isDebug("ErrorTrace");
+	private static final boolean DEBUG_RAW_PACKET         = Debug.isDebug("StealthNet.Comms.RawOutput");
+	private static final boolean DEBUG_DECODED_PACKET     = Debug.isDebug("StealthNet.Comms.DecodedOutput");
+	private static final boolean DEBUG_ENCRYPTED_PACKET   = Debug.isDebug("StealthNet.Comms.EncryptedOutput");
+	private static final boolean DEBUG_DECRYPTED_PACKET   = Debug.isDebug("StealthNet.Comms.DecryptedOutput");
+	private static final boolean DEBUG_RECEIVE_READY      = Debug.isDebug("StealthNet.Comms.ReceiveReady");
+	private static final boolean DEBUG_AUTHENTICATION     = Debug.isDebug("StealthNet.Comms.Authentication");
+	private static final boolean DEBUG_ENCRYPTION         = Debug.isDebug("StealthNet.Comms.Encryption");
+	private static final boolean DEBUG_INTEGRITY          = Debug.isDebug("StealthNet.Comms.Integrity");
+	private static final boolean DEBUG_REPLAY_PREVENTION  = Debug.isDebug("StealthNet.Comms.ReplayPrevention");
 	
 	/** Defaults. */
     public static final String DEFAULT_SERVERNAME = "localhost";	/** Default host for the StealthNet server. */
@@ -89,19 +87,19 @@ public class Comms {
     /** Provides authentication for the communication. */
 	private final static int KEY_EXCHANGE_NUM_BITS = 1024;
     private KeyExchange authenticationProvider = null;
-    private SecretKey sharedSecretKey = null;
+    private SecretKey authenticationKey = null;
     
     /** Provides encryption and decryption for the communications. */
 	private Encryption confidentialityProvider = null;
-	private SecretKey cryptKey = null;
+	private SecretKey confidentialityKey = null;
     
     /** Provides integrity through creating checksums for messages. */
 	private MessageAuthenticationCode integrityProvider = null;
 	private SecretKey integrityKey = null;
     
     /** Prevents replay attacks using a PRNG. */
-	private TokenGenerator replayPreventionTX;
-	private TokenGenerator replayPreventionRX;
+	private TokenGenerator replayPreventionTX = null;
+	private TokenGenerator replayPreventionRX = null;
 
     /** Output data stream for the socket. */
     private PrintWriter dataOut;            
@@ -126,7 +124,6 @@ public class Comms {
      * 
      * @param s The servername of the StealthNet server.
      * @param p The port number for the StealthNet server.
-     * @param disableSecurity Disable all security measures.
      */
     public Comms(String s, int p) {    	
     	this.commsSocket = null;
@@ -151,9 +148,10 @@ public class Comms {
     }
 
     /** 
-     * Initiates a communications session. This occurs on the client side. The
-     * peer that initiates the session is also responsible for initiating the 
-     * key exchange, as well as sharing the MAC key.
+     * Initiates a communications session. This usually occurs on the client 
+     * side. The peer that initiates the session is also responsible for 
+     * initiating the security features (key exchange, encryption, MAC and 
+     * replay prevention token).
      * 
      * @param socket The socket through which the connection is made. 
      * @return True if the initialisation succeeds. False if the initialisation 
@@ -171,27 +169,30 @@ public class Comms {
             return false;
         }
         
-        /** Perform key exchange. */
+        /** Perform key exchange (Diffie-Hellman key exchange). */
         initKeyExchange();
         
         /** Wait for key exchange to finish. */
         waitForKeyExchange();
         
-        /** Generate and transmit MAC key. */
+        /** Generate and transmit integrity (HMAC) key. */
         initIntegrityKey();
         
         /** Wait for the peer to send acknowledgement of integrity key. */
         waitForIntegrityKey();
         
+        /** Generate and transmit replay prevention RX seed (PRNG seed). */ 
         initReplayPrevention();
         
+        /** Wait for the peer to send replay prevention TX seed (PRNG seed). */
         waitForReplayPreventionSeed();
         
         return true;
     }
 
     /** 
-     * Accepts a connection on the given socket. This occurs on the server side.
+     * Accepts a connection on the given socket. This usually occurs on the 
+     * server side.
      * 
      * @param socket The socket through which the connection is made. 
      * @return True if the initialisation succeeds. False if the initialisation 
@@ -209,12 +210,22 @@ public class Comms {
             System.exit(1);
         }
         
-        /** Wait for key exchange. */
+        /** 
+         * Wait for key exchange (Diffie-Hellman key exchange) to occur. This 
+         * should be initiated on the other end of the communications.
+         */
         waitForKeyExchange();
         
-        /** Wait for integrity key. */
+        /** 
+         * Wait for integrity key (AES key) exchange to occur. This should be 
+         * initiated on the other end of the communications.  
+         */
         waitForIntegrityKey();
         
+        /**
+         * Wait for replay prevent seed (PRNG seed) exchange to occur. This 
+         * should be initiated on the other end of the communications.
+         */
         waitForReplayPreventionSeed();
 
         return true;
@@ -285,16 +296,18 @@ public class Comms {
      * @return True if successful, otherwise false.
      */
     public boolean sendPacket(byte command, byte[] data, int dataSize) {
-        final Packet pckt = new Packet(command, data, dataSize, integrityProvider, null);
+        final Packet pckt = new Packet(command, data, dataSize, integrityProvider, replayPreventionTX);
         return sendPacket(pckt);
     }
 
     /**
      * Sends a StealthNet packet by writing it to the print writer for the 
-     * socket. Before transmitting the packet, the packet is encrypted. If 
-     * packet encryption cannot be performed yet (because 
-     * confidentialityProvider is null, then an unencrypted packet will be sent.
-     * Beware that this may not always be what is wanted.
+     * socket. Before transmitting the packet, any established security 
+     * protocols are applied to the message. If any single security protocol
+     * can be applied (because it hasn't yet been initialised), then the
+     * application of that security protocol will be skipped. Beware that this 
+     * may not always be what is wanted. This should be checked at a higher 
+     * layer.
      * 
      * @param pckt The packet to be sent.
      * @return True if successful, otherwise false.
@@ -303,19 +316,8 @@ public class Comms {
     	/** Print debug information. */
     	if (DEBUG_RAW_PACKET)
     				System.out.println("(raw)       sendPacket(" + pckt.toString() + ")");
-    	if (DEBUG_DECODED_PACKET) {
-    		if (pckt.data.length <= 0) {
-    			if (pckt.digest.length <= 0)
-    				System.out.println("(decoded)   sendPacket(" + Packet.getCommandName(pckt.command) + ", null, null)");
-    			else
-    				System.out.println("(decoded)   sendPacket(" + Packet.getCommandName(pckt.command) + ", null, " + (new String(pckt.digest)) + ")");
-    		} else {
-    			if (pckt.digest.length <= 0)
-    				System.out.println("(decoded)   sendPacket(" + Packet.getCommandName(pckt.command) + ", " + (new String(pckt.data)).replaceAll("\n", ";") + ", null)");
-    			else
-    				System.out.println("(decoded)   sendPacket(" + Packet.getCommandName(pckt.command) + ", " + (new String(pckt.data)).replaceAll("\n", ";") + ", " + (new String(pckt.digest)) + ")");
-    		}
-    	}
+    	if (DEBUG_DECODED_PACKET)
+    				System.out.println("(decoded)   sendPacket(" + pckt.getDecodedString() + ")");
     	
     	/** Attempt to encrypt the packet. */
     	String packetString = pckt.toString();
@@ -342,10 +344,9 @@ public class Comms {
     }
 
     /**
-     * Reads a StealthNet packet from the buffered reader for the socket. If the
-     * packet is a special command (authentication key, integrity key, etc.) 
-     * then this function handles that packet and does not return it to the 
-     * user (instead, it will return null).
+     * Reads a StealthNet packet from the buffered reader for the socket. Note
+     * that this function should (in the normal case) not return any security
+     * related packets (CMD_AUTHENTICATIONKEY, CMD_INTEGRITYKEY, CMD_TOKENSEED).
      * 
      * @return The packet that was received.
      */
@@ -353,20 +354,19 @@ public class Comms {
         Packet pckt = null;
         
         /** Read data from the input buffer. */
-        final String str = dataIn.readLine();
+        String packetString = dataIn.readLine();
         
-        if (str == null)
+        if (packetString == null)
         	return null;
         
         /** Debug information. */
         if (DEBUG_RAW_PACKET)
-        			System.out.println("(raw)       sendPacket(" + str + ")");
+        			System.out.println("(raw)       sendPacket(" + packetString + ")");
         
         /** Attempt to decrypt the packet. */
-        String packetString = str;
     	if (confidentialityProvider != null) {
     		try {
-				packetString = confidentialityProvider.decrypt(str);
+				packetString = confidentialityProvider.decrypt(packetString);
 			} catch (Exception e) {
 				System.err.println("Failed to decrypt packet! Discarding...");
 				if (DEBUG_ERROR_TRACE) e.printStackTrace();
@@ -374,53 +374,55 @@ public class Comms {
 			}
     		if (DEBUG_DECRYPTED_PACKET)	
     				System.out.println("(decrypted) recvPacket(" + packetString + ")");
-    	} else {
-    		if (DEBUG_DECRYPTED_PACKET)	
-    				System.out.println("(decrypted) Packet is not encrypted.");
     	}
     	
     	/** Construct the packet. */
     	pckt = new Packet(packetString);
     	
     	/** Check the integrity of the message. */
-    	if (!pckt.verifyMAC(integrityProvider)) {
-					System.err.println("(verified)  Packet failed MAC verification! Discarding...");
-    		return null;
-    	} else {
-    		if (DEBUG_INTEGRITY) 
-    				System.out.println("(verified)  Packet passed MAC verification.");
+    	if (integrityProvider != null) {
+	    	if (!pckt.verifyMAC(integrityProvider)) {
+					System.err.println("(verified)  recvPacket - Packet failed MAC verification! Discarding...");
+				
+				/** Retrieve another packet by recursion. */
+	    		return recvPacket();
+	    	} else {
+	    		if (DEBUG_INTEGRITY) 
+    				System.out.println("(verified)  recvPacket - Packet passed MAC verification.");
+	    	}
     	}
-        
+    	
     	/** Print debug information. */
         if (DEBUG_RAW_PACKET)
-        			System.out.println("(raw)     recvPacket(" + packetString + ")");
-        if (DEBUG_DECODED_PACKET) {
-    		if (pckt.data.length <= 0) {
-    			if (pckt.digest.length <= 0)
-    				System.out.println("(decoded)   recvPacket(" + Packet.getCommandName(pckt.command) + ", null, null)");    			else
-    				System.out.println("(decoded)   recvPacket(" + Packet.getCommandName(pckt.command) + ", null, " + (new String(pckt.digest)) + ")");
-    		} else {
-    			if (pckt.digest.length <= 0)
-    				System.out.println("(decoded)   recvPacket(" + Packet.getCommandName(pckt.command) + ", " + (new String(pckt.data)).replaceAll("\n", ";") + ", null)");
-    			else
-    				System.out.println("(decoded)   recvPacket(" + Packet.getCommandName(pckt.command) + ", " + (new String(pckt.data)).replaceAll("\n", ";") + ", " + (new String(pckt.digest)) + ")");
-    		}
-    	}
+        			System.out.println("(raw)       recvPacket(" + packetString + ")");
+        if (DEBUG_DECODED_PACKET)
+        			System.out.println("(decoded)   recvPacket(" + pckt.getDecodedString() + ")");
         
-        if (replayPreventionRX != null && !replayPreventionRX.isAllowed(pckt.token))
-        	return null;
+        if (replayPreventionRX != null) {
+        	if (!replayPreventionRX.isAllowed(pckt.token)) {
+    				System.err.println("(verified)  recvPacket - Packet failed replay prevention! Discarding...");
+				
+				/** Retrieve another packet by recursion. */
+	    		return recvPacket();
+        	} else {
+        		if (DEBUG_INTEGRITY) 
+    				System.out.println("(verified)  recvPacket - Packet passed replay prevention.");
+        	}
+        }
         
+        /** Done. Return the packet. */
         return pckt;
     }
 
-    // Just to limit the verbosity of output in recvReady
- 	// {
+    /**
+     * To limit the verbosity of output in recvReady, we will only print these 
+     * values if they change.
+     */
     private boolean prev_isconnected = false;
     private boolean prev_isclosed = false;
     private boolean prev_isinputshutdown = false;
     private boolean prev_isoutputshutdown = false;
     private boolean is_first_time = true;
-    // }
     
     /**
      * Checks if the class is ready to receive more data.  
@@ -429,8 +431,10 @@ public class Comms {
      * @throws IOException
      */
     public boolean recvReady() throws IOException {
-    	// Just to limit the verbosity of output
-    	// {
+    	/**
+         * To limit the verbosity of output in recvReady, we will only print 
+         * these values if they change.
+         */
     	final boolean isconnected = commsSocket.isConnected();
     	final boolean isclosed = commsSocket.isClosed();
     	final boolean isinputshutdown = commsSocket.isInputShutdown();
@@ -449,8 +453,8 @@ public class Comms {
     	}
     	
     	is_first_time = false;
-    	// }
     	
+    	/** Return the result - the only real useful code in this function. */
         return dataIn.ready();
     }
     
@@ -460,7 +464,7 @@ public class Comms {
      * initiated the session).
      */
     public void initKeyExchange() {
-    	if (DEBUG_KEY_EXCHANGE) System.out.println("Initiating key exchange.");
+    	if (DEBUG_AUTHENTICATION) System.out.println("Initiating key exchange.");
     	
     	if (authenticationProvider != null) {
     		System.err.println("Key exchange has already been initialised!");
@@ -468,9 +472,9 @@ public class Comms {
     	}
     	
     	try {
-    		if (DEBUG_KEY_EXCHANGE) System.out.println("Generating Diffie-Hellman public/private keys.");
+    		if (DEBUG_AUTHENTICATION) System.out.println("Generating Diffie-Hellman public/private keys.");
 			authenticationProvider = new DiffieHellmanKeyExchange(KEY_EXCHANGE_NUM_BITS, new SecureRandom());
-			if (DEBUG_KEY_EXCHANGE) System.out.println("Generated Diffie-Hellman public/private keys.");
+			if (DEBUG_AUTHENTICATION) System.out.println("Generated Diffie-Hellman public/private keys.");
 		} catch (Exception e) {
 			System.err.println("Diffie-Hellman key exchange failed. Failed to generate public/private keys.");			
 			if (DEBUG_ERROR_TRACE) e.printStackTrace();
@@ -479,9 +483,9 @@ public class Comms {
     	
     	/** Transmit our public key. */
     	String pubKey = authenticationProvider.getPublicKey().toString();
-    	if (DEBUG_KEY_EXCHANGE) System.out.println("Sending public key to peer: " + pubKey);
-    	sendPacket(Packet.CMD_PUBLICKEY, pubKey);
-    	if (DEBUG_KEY_EXCHANGE) System.out.println("Sent public key to peer.");
+    	if (DEBUG_AUTHENTICATION) System.out.println("Sending public key to peer: " + pubKey);
+    	sendPacket(Packet.CMD_AUTHENTICATIONKEY, pubKey);
+    	if (DEBUG_AUTHENTICATION) System.out.println("Sent public key to peer.");
     }
     
     /**
@@ -489,9 +493,9 @@ public class Comms {
      * Diffie-Hellman key exchange has completed.
      */
     private void waitForKeyExchange() {
-    	if (DEBUG_KEY_EXCHANGE) System.out.println("Waiting for successful authentication key exchange...");
+    	if (DEBUG_AUTHENTICATION) System.out.println("Waiting for successful authentication key exchange...");
     	
-    	while (sharedSecretKey == null) {
+    	while (authenticationKey == null) {
     		try {
 	        	Packet pckt = recvPacket();
 	            
@@ -499,7 +503,7 @@ public class Comms {
 	        		continue;
 	        	
 	            switch (pckt.command) {
-	            	case Packet.CMD_PUBLICKEY:
+	            	case Packet.CMD_AUTHENTICATIONKEY:
 	            		final String pubKey = new String(pckt.data);
 	                	if (DEBUG_ENCRYPTION) System.out.println("Received a public key command. Key: \"" + pubKey + "\".");
 	                	if (DEBUG_GENERAL) System.out.println("Performing key exchange.");
@@ -531,10 +535,10 @@ public class Comms {
     	
     	/** Generate the shared key. */
 		try {
-			if (DEBUG_KEY_EXCHANGE) System.out.println("Generating the Diffie-Hellman shared secret key.");
-			sharedSecretKey = authenticationProvider.getSharedSecret(new BigInteger(publicKey));
-			if (DEBUG_KEY_EXCHANGE) {
-				final String sskey = new String(getHexValue(sharedSecretKey.getEncoded()));
+			if (DEBUG_AUTHENTICATION) System.out.println("Generating the Diffie-Hellman shared secret key.");
+			authenticationKey = authenticationProvider.getSharedSecret(new BigInteger(publicKey));
+			if (DEBUG_AUTHENTICATION) {
+				final String sskey = new String(getHexValue(authenticationKey.getEncoded()));
 				System.out.println("Generated Diffie-Hellman shared secret key: " + sskey);
 			}
 		} catch (Exception e) {
@@ -552,7 +556,7 @@ public class Comms {
      * decryption for this communication should be initialised.
      */
     public void initEncryption() {
-    	if (sharedSecretKey == null) {
+    	if (authenticationKey == null) {
     		System.err.println("Shared secret key has not yet been generated. Cannot create encryption key.");
     		System.exit(1);
     	}
@@ -562,11 +566,11 @@ public class Comms {
 			if (DEBUG_ENCRYPTION) System.out.println("Generating AES encryption/decryption key.");
 			final MessageDigest mdb = MessageDigest.getInstance(AESEncryption.HASH_ALGORITHM);
 			
-			cryptKey = new SecretKeySpec(mdb.digest(sharedSecretKey.getEncoded()), AESEncryption.KEY_ALGORITHM);
-			final String cryptKeyString = new String(getHexValue(cryptKey.getEncoded()));
+			confidentialityKey = new SecretKeySpec(mdb.digest(authenticationKey.getEncoded()), AESEncryption.KEY_ALGORITHM);
+			final String cryptKeyString = new String(getHexValue(confidentialityKey.getEncoded()));
 			if (DEBUG_ENCRYPTION) System.out.println("Generated AES encryption/decryption key: " + cryptKeyString);
 			
-			confidentialityProvider = new AESEncryption(cryptKey, cryptKey);
+			confidentialityProvider = new AESEncryption(confidentialityKey, confidentialityKey);
 		} catch (Exception e) {
 			System.err.println("Unable to provide encryption/decryption. Failed to generate AES encryption/decryption key or initialise ciphers.");
 			if (DEBUG_ERROR_TRACE) e.printStackTrace();
@@ -594,9 +598,9 @@ public class Comms {
 		
 		/** Transmit our integrity key. */
     	final String intKey = Base64.encodeBase64String(integrityKey.getEncoded());
-    	if (DEBUG_KEY_EXCHANGE) System.out.println("Sending integrity key to peer: " + intKey);
+    	if (DEBUG_AUTHENTICATION) System.out.println("Sending integrity key to peer: " + intKey);
     	sendPacket(Packet.CMD_INTEGRITYKEY, intKey);
-    	if (DEBUG_KEY_EXCHANGE) System.out.println("Sent integrity key to peer.");
+    	if (DEBUG_AUTHENTICATION) System.out.println("Sent integrity key to peer.");
     }
     
     /**
@@ -660,12 +664,12 @@ public class Comms {
     private void initReplayPrevention() {
     	Long rxSeed = null;
     	
-    	if (DEBUG_REPLAY) System.out.println("Initiating replay prevention.");
+    	if (DEBUG_REPLAY_PREVENTION) System.out.println("Initiating replay prevention.");
 		try {
-			if (DEBUG_REPLAY) System.out.println("Generating PRNG.");
+			if (DEBUG_REPLAY_PREVENTION) System.out.println("Generating PRNG.");
 			replayPreventionRX = new PRNGTokenGenerator();
 			rxSeed = new Long(replayPreventionRX.getSeed());
-			if (DEBUG_REPLAY) System.out.println("Generated PRNG with seed: " + rxSeed);
+			if (DEBUG_REPLAY_PREVENTION) System.out.println("Generated PRNG with seed: " + rxSeed);
 		} catch (Exception e) {
 			System.err.println("Unable to provide replay prevention. Failed to initialise PRNG.");
 			if (DEBUG_ERROR_TRACE) e.printStackTrace();
@@ -673,16 +677,16 @@ public class Comms {
 		}
 		
 		/** Transmit our replay prevention seed. */
-    	if (DEBUG_REPLAY) System.out.println("Sending replay prevention seed to peer: " + rxSeed);
+    	if (DEBUG_REPLAY_PREVENTION) System.out.println("Sending replay prevention seed to peer: " + rxSeed);
     	sendPacket(Packet.CMD_TOKENSEED, rxSeed.toString());
-    	if (DEBUG_REPLAY) System.out.println("Sent replay prevention seed to peer.");
+    	if (DEBUG_REPLAY_PREVENTION) System.out.println("Sent replay prevention seed to peer.");
     }
     
     /**
      * TODO
      */
     private void waitForReplayPreventionSeed() {
-    	if (DEBUG_REPLAY) System.out.println("Waiting for successful replay prevention seed exchange...");
+    	if (DEBUG_REPLAY_PREVENTION) System.out.println("Waiting for successful replay prevention seed exchange...");
     	
     	Packet pckt = new Packet();
     	boolean done = false;
@@ -698,7 +702,7 @@ public class Comms {
 	        	switch (pckt.command) {
 	            	case Packet.CMD_TOKENSEED:
 	            		long txSeed = Long.parseLong(new String(pckt.data));
-	    	    		if (DEBUG_REPLAY) System.out.println("Received replay prevention seed: " + txSeed);
+	    	    		if (DEBUG_REPLAY_PREVENTION) System.out.println("Received replay prevention seed: " + txSeed);
 	    	        	
 	    	    		try {
 	    	    			replayPreventionTX = new PRNGTokenGenerator(txSeed);
@@ -739,6 +743,7 @@ public class Comms {
 			buf.append(hexDigitChars.charAt(hn));
 			buf.append(hexDigitChars.charAt(ln));
 		}
+		
 		return buf.toString();
 	}
 }

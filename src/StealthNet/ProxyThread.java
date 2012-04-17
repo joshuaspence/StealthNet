@@ -17,12 +17,13 @@ package StealthNet;
 
 import java.io.IOException;
 import java.net.Socket;
+import java.net.SocketException;
 
-/* ProxyThread Class Definition **********************************************/
+/* StealthNet.ProxyThread Class Definition ***********************************/
 
 /**
  * Represents a thread within the operating system for communications between
- * the StealthNet server and a client.
+ * the StealthNet proxy and a client/server.
  * 
  * A new instance is created for each client such that multiple clients can be
  * active concurrently. This class receives packets from one peer and forwards
@@ -42,6 +43,12 @@ public class ProxyThread extends Thread {
 	/** ProxyComms classes to handle communications to/from each peer. */
 	private ProxyComms stealthCommsSource = null;
 	private ProxyComms stealthCommsDestination = null;
+	
+	/** Paired thread (to be killed when this thread terminates). */
+	private ProxyThread pairedThread;
+	
+	/** Boolean to indicate that this thread should be stopped. */
+	private boolean shouldStop = false;
 
 	/**
 	 * Constructor.
@@ -56,11 +63,38 @@ public class ProxyThread extends Thread {
 
 		if (DEBUG_GENERAL) System.out.println(this.getId() + separator + "Creating a ProxyThread.");
 		
-		/** Create a new StealthNet.Comms instance and accept sessions. */
+		/** Create a new ProxyComms instance and accept sessions. */
 		stealthCommsSource = new ProxyComms();
 		stealthCommsSource.acceptSession(sourceSocket);
 		stealthCommsDestination = new ProxyComms();
 		stealthCommsDestination.acceptSession(destinationSocket);
+	}
+	
+	/**
+	 * Set a ProxyThread to be terminated when this thread terminates.
+	 * 
+	 * @param pair The ProxyThread to be paired with this thread.
+	 */
+	public void setPairedThread(ProxyThread pair) {
+		pairedThread = pair;
+	}
+	
+	/**
+	 * Set whether or not a thread should stop executing.
+	 * 
+	 * @param stop True if this thread should stop executing, otherwise false.
+	 */
+	private synchronized void setShouldStop(boolean stop) {
+		shouldStop = stop;
+	}
+	
+	/**
+	 * Checks if a thread should stop executing.
+	 * 
+	 * @return True if the thread should stop executing, otherwise false.
+	 */
+	private synchronized boolean getShouldStop() {
+		return shouldStop;
 	}
 
 	/**
@@ -84,17 +118,18 @@ public class ProxyThread extends Thread {
 
 		String str = new String();
 		try {
-			while (str != null) {
+			while (str != null && !getShouldStop()) {
 				/** Receive a StealthNet packet. */
 				str = stealthCommsSource.recvString();
 				
-				if (str == null) {
-					str = new String();
-					continue;
-				}
+				if (str == null)
+					break;
 				
 				stealthCommsDestination.sendString(str);
 			}
+		} catch (SocketException e) {
+			/** This is a fairly "clean" exit. */
+			System.out.println(this.getId() + separator + "Session terminated.");
 		} catch (IOException e) {
 			System.out.println(this.getId() + separator + "Session terminated.");
 			if (DEBUG_ERROR_TRACE) e.printStackTrace();
@@ -111,6 +146,12 @@ public class ProxyThread extends Thread {
 		if (stealthCommsDestination != null) {
 			stealthCommsDestination.terminateSession();
 			stealthCommsDestination = null;
+		}
+		
+		/** Kill the other thread. */
+		if (pairedThread != null && !pairedThread.getShouldStop()) {
+			if (DEBUG_GENERAL) System.out.println("Killing paired thread.");
+			pairedThread.setShouldStop(true);
 		}
 	}
 }

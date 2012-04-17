@@ -1,7 +1,6 @@
 /******************************************************************************
  * ELEC5616
  * Computer and Network Security, The University of Sydney
- * Copyright (C) 2002-2004, Matt Barrie and Stephen Gould
  *
  * PACKAGE:         StealthNet
  * FILENAME:        Debug.java
@@ -18,7 +17,7 @@ package StealthNet;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-/* Debug Class Definition ****************************************************/
+/* StealthNet.Debug Class Definition *****************************************/
 
 /**
  * A simple class for providing debug functionality and the ability to turn 
@@ -64,6 +63,7 @@ public class Debug {
 			if (System.getProperty(propertyString, FALSE_STRING).equals(TRUE_STRING))
 				return true;
 			
+			/** Check if we are done. */
 			if (sections.size() <= 0)
 				break;
 			

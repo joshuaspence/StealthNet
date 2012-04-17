@@ -40,10 +40,11 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
-/* Chat Class Definition *****************************************************/
+/* StealthNet.Chat Class Definition ******************************************/
 
 /**
- * The chat window used to allow two StealthNet clients to communicate.
+ * The chat window used to allow two StealthNet clients to communicate in a 
+ * graphical chat window.
  * 
  * @author Matt Barrie
  * @author Joshua Spence
@@ -54,11 +55,9 @@ public class Chat extends Thread {
 	private static final boolean DEBUG_ERROR_TRACE = Debug.isDebug("StealthNet.Chat.ErrorTrace") || Debug.isDebug("ErrorTrace");
 	
 	/** GUI elements. */
-	// {
 	private JFrame chatFrame;
     private JTextArea chatTextBox;
     private JTextField msgText;
-    // }
     
     /** 
      * The StealthNet communications instance used to allow the clients to 
@@ -73,12 +72,11 @@ public class Chat extends Thread {
      * Constructor.
      * 
      * @param id The ID of the user owning the chat session.
-     * @param snComms The StealthNet Comms class used to allow the clients to 
-     * communicate.
+     * @param snComms The Comms class used to allow the clients to communicate.
      */
     public Chat(String id, Comms snComms) {
-        userID = id;
-        stealthComms = snComms;
+        this.userID = id;
+        this.stealthComms = snComms;
     }
 
     /** 
@@ -182,10 +180,8 @@ public class Chat extends Thread {
             while ((pckt.command != Packet.CMD_LOGOUT) && (stealthComms.recvReady())) {
                 pckt = stealthComms.recvPacket();
                 
-                if (pckt == null) {
-                	pckt = new Packet();
-                	continue;
-                }
+                if (pckt == null)
+                	break;
                 
                 switch (pckt.command) {                
                     case Packet.CMD_MSG:
@@ -210,7 +206,7 @@ public class Chat extends Thread {
                }
             }
         } catch (Exception e) {
-            System.err.println("Error running client thread.");
+            System.err.println("Error running chat thread.");
             if (DEBUG_ERROR_TRACE) e.printStackTrace();
         }
     }

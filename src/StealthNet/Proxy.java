@@ -19,7 +19,7 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 
-/* Proxy Class Definition ****************************************************/
+/* StealthNet.Proxy Class Definition *****************************************/
 
 /**
  * A proxy for StealthNet that can be used to simulate various security attacks.
@@ -40,7 +40,7 @@ public class Proxy {
 	 * @param args The command line arguments.
 	 * @throws IOException
 	 */
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) {
     	/** Port that the proxy is listening on. */
     	int proxyPort = ProxyComms.DEFAULT_PROXYPORT;
     	
@@ -101,21 +101,32 @@ public class Proxy {
          * new thread for each connection.
          */
         while (true) {
-        	final Socket clientConn = svrSocket.accept();
-        	final Socket serverConn = new Socket(serverHostname, serverPort);
-        	
-        	final ProxyThread clientThread = new ProxyThread(clientConn, serverConn);
-        	final ProxyThread serverThread = new ProxyThread(serverConn,clientConn);
-        	
-        	clientThread.start();
-        	serverThread.start();
-            
-            if (DEBUG_GENERAL) {
-            	System.out.println("Proxy accepted connection from " + clientConn.getInetAddress() + " on port " + clientConn.getPort() + ".");
-            	System.out.println("Proxy created connection to " + serverConn.getInetAddress() + " on port " + serverConn.getPort() + ".");
-            } else {
-            	System.out.println("Proxy accepted connection...");
-            }
+        	try {
+	        	final Socket clientConn = svrSocket.accept();
+	        	final Socket serverConn = new Socket(serverHostname, serverPort);
+	        	
+	        	final ProxyThread clientThread = new ProxyThread(clientConn, serverConn);
+	        	final ProxyThread serverThread = new ProxyThread(serverConn,clientConn);
+	        	
+	        	/** 
+	        	 * Mark the threads as paired so that they can kill each other.
+	        	 */
+	        	clientThread.setPairedThread(serverThread);
+	        	serverThread.setPairedThread(clientThread);
+	        	
+	        	clientThread.start();
+	        	serverThread.start();
+	            
+	            if (DEBUG_GENERAL) {
+	            	System.out.println("Proxy accepted connection from " + clientConn.getInetAddress() + " on port " + clientConn.getPort() + ".");
+	            	System.out.println("Proxy created connection to " + serverConn.getInetAddress() + " on port " + serverConn.getPort() + ".");
+	            } else {
+	            	System.out.println("Proxy accepted connection...");
+	            }
+        	} catch(IOException e) {
+        		System.err.println("IO Exception.");
+        		if (DEBUG_ERROR_TRACE) e.printStackTrace();
+        	}
         }
     }
 }

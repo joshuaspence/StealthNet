@@ -1,4 +1,4 @@
-/***********************************************************************************
+/******************************************************************************
  * ELEC5616
  * Computer and Network Security, The University of Sydney
  *
@@ -15,7 +15,7 @@
  *                  recvString();
  *                  recvReady();
  *
- **********************************************************************************/
+ *****************************************************************************/
 
 package StealthNet;
 
@@ -26,8 +26,9 @@ import java.io.InputStreamReader;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.net.SocketException;
 
-/* ProxyComms class **********************************************************/
+/* StealthNet.ProxyComms class ***********************************************/
 
 /**
  * A class to buffered write and buffered read to and from an opened socket.
@@ -176,7 +177,7 @@ public class ProxyComms {
      * @param str The string to be sent.
      * @return True if successful, otherwise false.
      */
-    public boolean sendString(String str) {    	
+    public boolean sendString(String str) throws SocketException {    	
     	/** Print debug information. */
     	if (DEBUG_RAW_PACKET) System.out.println("(raw)       sendString(" + str + ")");
     	
@@ -195,7 +196,7 @@ public class ProxyComms {
      * 
      * @return The packet that was received.
      */
-    public String recvString() throws IOException {        
+    public String recvString() throws IOException, SocketException {        
         /** Read data from the input buffer. */
         final String packetString = dataIn.readLine();
         

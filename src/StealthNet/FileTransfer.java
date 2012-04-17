@@ -34,7 +34,7 @@ import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.JOptionPane;
 
-/* FileTransfer Class Definition *********************************************/
+/* StealthNet.FileTransfer Class Definition **********************************/
 
 /**
  * A class to manage a file transfer between multiple StealthNet clients.
@@ -49,25 +49,25 @@ public class FileTransfer extends Thread {
 	private static final boolean DEBUG_ERROR_TRACE = Debug.isDebug("StealthNet.FileTransfer.ErrorTrace") || Debug.isDebug("ErrorTrace");
 	private static final boolean DEBUG_TRANSFER    = Debug.isDebug("StealthNet.FileTransfer.Transfer");
 	
-	/** Number of bytes to send at a time. */
+	/** Number of bytes to send at a time, before waiting for an acknowledgement. */
     private static final int PACKETSIZE = 256;
 
     /** A progress bar to visualise the transfer. */
     private JProgressBar progressBar = null;
     
     /** The communications class through which to perform the transfer. */
-    private Comms stealthComms = null;
+    private final Comms stealthComms;
     
     /** The filename of the file being transferred. */
-    private String filename;
+    private final String filename;
     
     /** True to indicate sending, false to indicate receiving. */
-    private boolean bSend;
+    private final boolean bSend;
 
     /** 
      * Constructor. 
      * 
-     * @param snComms The StealthNet.Comms instance to use for the transfer.
+     * @param snComms The Comms instance to use for the transfer.
      * @param fn The filename of the file to be transferred.
      * @param send True to indicate sending, false to indicate receiving.
      */
@@ -90,7 +90,7 @@ public class FileTransfer extends Thread {
         progressBar.setStringPainted(true);
 
         /** Create top-level panel and add components. */
-        JPanel pane = new JPanel();
+        final JPanel pane = new JPanel();
         pane.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         pane.setLayout(new BorderLayout());
         pane.add(progressBar, BorderLayout.NORTH);
@@ -98,7 +98,7 @@ public class FileTransfer extends Thread {
         return pane;
     }
 
-    /** Transfer the file. */
+    /** The main function - transfer the file. */
     public void run() {
     	/** Get the screen size. */
         final Dimension screenDim = Toolkit.getDefaultToolkit().getScreenSize();
@@ -129,14 +129,14 @@ public class FileTransfer extends Thread {
 
     /** Send the file. */
     private synchronized void sendFile() {
-        byte[] buf = new byte[PACKETSIZE];
+        final byte[] buf = new byte[PACKETSIZE];
         final int fileLen = (int) ((new File(filename)).length() / PACKETSIZE);
 
         if (DEBUG_GENERAL) System.out.println("Sending file \"" + filename + "\" of size " + fileLen + ".");
         
         progressBar.setMaximum(fileLen);
         try {
-        	/** Setup the transfer. */
+        	/** Setup the transfer, sending the file size to the receiver. */
         	if (DEBUG_GENERAL) System.out.println("Setting up file transfer.");
             stealthComms.sendPacket(Packet.CMD_FTP, Integer.toString(fileLen));
             
@@ -144,6 +144,7 @@ public class FileTransfer extends Thread {
             if (DEBUG_GENERAL) System.out.println("Waiting for server response.");
             stealthComms.recvPacket();
             
+            /** Send the file, PACKETSIZE bytes at a time. */
             final FileInputStream fid = new FileInputStream(filename);
             int bufLen;
             do {
@@ -191,18 +192,18 @@ public class FileTransfer extends Thread {
             final FileOutputStream fid = new FileOutputStream(filename);
             
             /** 
-             * Keep receiving file data, sending an acknowledgement (NULL 
-             * packet) each time. The file data is written to the file output 
-             * stream.
+             * Keep receiving file data, PACKETSIZE bytes at a time, sending an 
+             * acknowledgement (NULL packet) each time. The file data is written
+             * to the file output stream.
              */
             byte[] buf;
             do {
             	/** Receive file data. */
                 buf = stealthComms.recvPacket().data;
-                if (DEBUG_TRANSFER) System.out.println("Received " + buf.length + " bytes of file.");
+                if (DEBUG_TRANSFER) System.out.println("Received " + buf.length + " bytes of file \"" + filename + "\".");
                 
                 /** Send an acknowledgement (NULL packet). */
-                if (DEBUG_TRANSFER) System.out.println("Sending acknowledgement.");
+                if (DEBUG_TRANSFER) System.out.println("Sending acknowledgement to sender.");
                 stealthComms.sendPacket(Packet.CMD_NULL);
                 
                 /** Write the file data to the file output stream. */
@@ -218,7 +219,7 @@ public class FileTransfer extends Thread {
             System.err.println("Error writing to file \"" + filename + "\".");
             if (DEBUG_ERROR_TRACE) e.printStackTrace();
         }
-   }
+    }
 }
 
 /******************************************************************************
