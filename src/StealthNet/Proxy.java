@@ -44,7 +44,7 @@ public class Proxy {
 	 */
     public static void main(String[] args) throws IOException {
     	/** Port that the proxy is listening on. */
-    	int proxyPort = Comms.DEFAULT_PROXYPORT;
+    	int proxyPort = ProxyComms.DEFAULT_PROXYPORT;
     	
     	/** Check if a port number was specified at the command line. */
     	if (args.length > 0) {
@@ -105,8 +105,10 @@ public class Proxy {
         while (true) {
         	final Socket clientConn = svrSocket.accept();
         	final Socket serverConn = new Socket(serverHostname, serverPort);
+        	
         	final ProxyThread clientThread = new ProxyThread(clientConn, serverConn);
         	final ProxyThread serverThread = new ProxyThread(serverConn,clientConn);
+        	
         	clientThread.start();
         	serverThread.start();
             

@@ -39,8 +39,8 @@ public class ProxyThread extends Thread {
 	private static final String separator = " >> ";
 	
 	/** Comms classes to handle communications to/from each peer. */
-	private Comms stealthCommsSource = null;
-	private Comms stealthCommsDestination = null;
+	private CommsInterface stealthCommsSource = null;
+	private CommsInterface stealthCommsDestination = null;
 
 	/**
 	 * Constructor.
@@ -56,9 +56,9 @@ public class ProxyThread extends Thread {
 		if (DEBUG_GENERAL) System.out.println(this.getId() + separator + "Creating a ProxyThread.");
 		
 		/** Create a new StealthNet.Comms instance and accept sessions. */
-		stealthCommsSource = new Comms(false);
+		stealthCommsSource = new ProxyComms();
 		stealthCommsSource.acceptSession(sourceSocket);
-		stealthCommsDestination = new Comms(false);
+		stealthCommsDestination = new ProxyComms();
 		stealthCommsDestination.acceptSession(destinationSocket);
 	}
 

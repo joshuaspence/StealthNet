@@ -78,7 +78,6 @@ public class Comms {
 	/** Defaults. */
     public static final String DEFAULT_SERVERNAME = "localhost";	/** Default host for the StealthNet server. */
     public static final int DEFAULT_SERVERPORT = 5616;				/** Default port for the StealthNet server. */
-    public static final int DEFAULT_PROXYPORT = 5617;				/** Default port for the StealthNet proxy. */
     
     /** Current values. */
     private final String servername;	/** This host - defaults to DFEAULT_SERVERNAME */
@@ -107,9 +106,6 @@ public class Comms {
     /** Input data stream for the socket. */
     private BufferedReader dataIn;
     
-    /** Disable all security measures. Should be used with caution. */
-    private final boolean disableSecurity;
-    
     /** Constructor. */
     public Comms() {
     	this.commsSocket = null;
@@ -119,12 +115,7 @@ public class Comms {
         this.servername = DEFAULT_SERVERNAME;
         this.port = DEFAULT_SERVERPORT;
         
-        this.disableSecurity = false;
-        
-        if (this.disableSecurity)
-        	if (DEBUG_GENERAL) System.out.println("Creating insecure StealthNet.Comms to " + this.servername + " on port " + this.port + ".");
-    	else
-    		if (DEBUG_GENERAL) System.out.println("Creating secure StealthNet.Comms to " + this.servername + " on port " + this.port + ".");
+        if (DEBUG_GENERAL) System.out.println("Creating secure StealthNet.Comms to " + this.servername + " on port " + this.port + ".");
     }
     
     /** 
@@ -140,12 +131,7 @@ public class Comms {
         this.servername = DEFAULT_SERVERNAME;
         this.port = DEFAULT_SERVERPORT;
         
-        this.disableSecurity = disableSecurity;
-        
-        if (this.disableSecurity)
-        	if (DEBUG_GENERAL) System.out.println("Creating insecure StealthNet.Comms to " + this.servername + " on port " + this.port + ".");
-    	else
-    		if (DEBUG_GENERAL) System.out.println("Creating secure StealthNet.Comms to " + this.servername + " on port " + this.port + ".");
+        if (DEBUG_GENERAL) System.out.println("Creating secure StealthNet.Comms to " + this.servername + " on port " + this.port + ".");
     }
     
     /** 
@@ -163,12 +149,7 @@ public class Comms {
         this.servername = s;
         this.port = p;
         
-        this.disableSecurity = disableSecurity;
-        
-        if (this.disableSecurity)
-        	if (DEBUG_GENERAL) System.out.println("Creating insecure StealthNet.Comms to " + this.servername + " on port " + this.port + ".");
-    	else
-    		if (DEBUG_GENERAL) System.out.println("Creating secure StealthNet.Comms to " + this.servername + " on port " + this.port + ".");
+        if (DEBUG_GENERAL) System.out.println("Creating secure StealthNet.Comms to " + this.servername + " on port " + this.port + ".");
     }
 
     /** 
@@ -203,22 +184,20 @@ public class Comms {
             return false;
         }
         
-        if (!disableSecurity) {
-	        /** Perform key exchange. */
-	        initKeyExchange();
-	        
-	        /** 
-	         * Wait for key exchange to finish. 
-	         * @todo Possibly want a timeout on this.
-	         */
-	        waitForKeyExchange();
-	        
-	        /** 
-	         * Generate and transmit MAC key. Then wait for the peer to send an 
-	         * acknowledgement.
-	         */
-	        doIntegrityKey();
-        }
+        /** Perform key exchange. */
+        initKeyExchange();
+        
+        /** 
+         * Wait for key exchange to finish. 
+         * @todo Possibly want a timeout on this.
+         */
+        waitForKeyExchange();
+        
+        /** 
+         * Generate and transmit MAC key. Then wait for the peer to send an 
+         * acknowledgement.
+         */
+        doIntegrityKey();
         
         return true;
     }

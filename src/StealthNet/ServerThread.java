@@ -14,8 +14,6 @@
  *                  the source code.
  * VERSION:         1.0
  *
- * REVISION HISTORY:
- *
  *****************************************************************************/
 
 package StealthNet;
@@ -43,8 +41,7 @@ import javax.crypto.NoSuchPaddingException;
  * @author Stephen Gould
  * @author Matt Barrie
  * @author Ryan Junee
- * @author Joshua Spence (Added debug code and handling of security-related 
- * packets.)
+ * @author Joshua Spence
  */
 public class ServerThread extends Thread {
 	/** Debug options. */
@@ -106,7 +103,7 @@ public class ServerThread extends Thread {
 		/** Thread constructor. */
 		super("StealthNet.ServerThread");
 
-		if (DEBUG_GENERAL) System.out.println(this.getId() + separator + "Creating a StealthNet.ServerThread.");
+		if (DEBUG_GENERAL) System.out.println(this.getId() + separator + "Creating a ServerThread.");
 		
 		/** Create a new StealthNet.Comms instance and accept sessions. */
 		stealthComms = new Comms();
