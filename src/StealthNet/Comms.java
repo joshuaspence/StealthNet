@@ -78,6 +78,7 @@ public class Comms {
 	/** Defaults. */
     public static final String DEFAULT_SERVERNAME = "localhost";	/** Default host for the StealthNet server. */
     public static final int DEFAULT_SERVERPORT = 5616;				/** Default port for the StealthNet server. */
+    public static final int DEFAULT_PROXYPORT = 5617;				/** Default port for the StealthNet proxy. */
     
     /** Current values. */
     private final String servername;	/** This host - defaults to DFEAULT_SERVERNAME */
@@ -104,7 +105,10 @@ public class Comms {
     private PrintWriter dataOut;            
     
     /** Input data stream for the socket. */
-    private BufferedReader dataIn;    
+    private BufferedReader dataIn;
+    
+    /** Disable all security measures. Should be used with caution. */
+    private final boolean disableSecurity;
     
     /** Constructor. */
     public Comms() {
@@ -115,7 +119,33 @@ public class Comms {
         this.servername = DEFAULT_SERVERNAME;
         this.port = DEFAULT_SERVERPORT;
         
-        if (DEBUG_GENERAL) System.out.println("Creating StealthNet.Comms to " + this.servername + " on port " + this.port + ".");
+        this.disableSecurity = false;
+        
+        if (this.disableSecurity)
+        	if (DEBUG_GENERAL) System.out.println("Creating insecure StealthNet.Comms to " + this.servername + " on port " + this.port + ".");
+    	else
+    		if (DEBUG_GENERAL) System.out.println("Creating secure StealthNet.Comms to " + this.servername + " on port " + this.port + ".");
+    }
+    
+    /** 
+     * Constructor.
+     * 
+     * @param disableSecurity Disable all security measures.
+     */
+    public Comms(boolean disableSecurity) {
+    	this.commsSocket = null;
+    	this.dataIn = null;
+    	this.dataOut = null;
+        
+        this.servername = DEFAULT_SERVERNAME;
+        this.port = DEFAULT_SERVERPORT;
+        
+        this.disableSecurity = disableSecurity;
+        
+        if (this.disableSecurity)
+        	if (DEBUG_GENERAL) System.out.println("Creating insecure StealthNet.Comms to " + this.servername + " on port " + this.port + ".");
+    	else
+    		if (DEBUG_GENERAL) System.out.println("Creating secure StealthNet.Comms to " + this.servername + " on port " + this.port + ".");
     }
     
     /** 
@@ -123,8 +153,9 @@ public class Comms {
      * 
      * @param s The servername of the StealthNet server.
      * @param p The port number for the StealthNet server.
+     * @param disableSecurity Disable all security measures.
      */
-    public Comms(String s, int p) {    	
+    public Comms(String s, int p, boolean disableSecurity) {    	
     	this.commsSocket = null;
         this.dataIn = null;
         this.dataOut = null;
@@ -132,7 +163,12 @@ public class Comms {
         this.servername = s;
         this.port = p;
         
-        if (DEBUG_GENERAL) System.out.println("Creating StealthNet.Comms to " + this.servername + " on port " + this.port + ".");
+        this.disableSecurity = disableSecurity;
+        
+        if (this.disableSecurity)
+        	if (DEBUG_GENERAL) System.out.println("Creating insecure StealthNet.Comms to " + this.servername + " on port " + this.port + ".");
+    	else
+    		if (DEBUG_GENERAL) System.out.println("Creating secure StealthNet.Comms to " + this.servername + " on port " + this.port + ".");
     }
 
     /** 
@@ -167,20 +203,22 @@ public class Comms {
             return false;
         }
         
-        /** Perform key exchange. */
-        initKeyExchange();
-        
-        /** 
-         * Wait for key exchange to finish. 
-         * @todo Possibly want a timeout on this.
-         */
-        waitForKeyExchange();
-        
-        /** 
-         * Generate and transmit MAC key. Then wait for the peer to send an 
-         * acknowledgement.
-         */
-        doIntegrityKey();
+        if (!disableSecurity) {
+	        /** Perform key exchange. */
+	        initKeyExchange();
+	        
+	        /** 
+	         * Wait for key exchange to finish. 
+	         * @todo Possibly want a timeout on this.
+	         */
+	        waitForKeyExchange();
+	        
+	        /** 
+	         * Generate and transmit MAC key. Then wait for the peer to send an 
+	         * acknowledgement.
+	         */
+	        doIntegrityKey();
+        }
         
         return true;
     }
@@ -203,6 +241,8 @@ public class Comms {
             if (DEBUG_ERROR_TRACE) e.printStackTrace();
             System.exit(1);
         }
+        
+        /** TODO: maybe put some code here to wait for security stuff? */
 
         return true;
     }
@@ -574,8 +614,7 @@ public class Comms {
     }
     
     /** 
-     * 
-     * @see KeyExchange 
+     * TODO 
      */
     private void doIntegrityKey() {
     	SecretKey integrityKey = null;
@@ -583,7 +622,6 @@ public class Comms {
 			if (DEBUG_INTEGRITY) System.out.println("Generating MD5 HMAC key.");
 			final KeyGenerator keyGen = KeyGenerator.getInstance(HashedMessageAuthenticationCode.HMAC_ALGORITHM);
 			integrityKey = keyGen.generateKey();
-			
 			final String integrityKeyString = new String(getHexValue(integrityKey.getEncoded()));
 			if (DEBUG_INTEGRITY) System.out.println("Generated MD5 HMAC key: " + integrityKeyString);
 			
