@@ -16,7 +16,9 @@ package StealthNet.Security;
 
 /* Import Libraries **********************************************************/
 
+import java.util.HashSet;
 import java.util.Random;
+import java.util.Set;
 
 /* PRNGTokenGenerator Class Definition ***************************************/
 
@@ -31,15 +33,14 @@ import java.util.Random;
  * 
  * @author Joshua Spence
  */
-public class PRNGTokenGenerator {
+public class PRNGTokenGenerator implements TokenGenerator {
 	/** The PRNG. */
 	private final Random prng;
 	
 	/** The seed for the PRNG. */
 	private final long seed;
 	
-	/** The next sequence number. */
-	Long next;
+	private final Set<Long> consumedTokens; 
 	
 	/** Constructor. */
 	public PRNGTokenGenerator() {
@@ -47,7 +48,8 @@ public class PRNGTokenGenerator {
 		this.seed = seedGenerator.nextLong();
 		
 		this.prng = new Random(this.seed);
-		this.next = null;
+		
+		this.consumedTokens = new HashSet<Long>();
 	}
 	
 	/**
@@ -58,7 +60,8 @@ public class PRNGTokenGenerator {
 	public PRNGTokenGenerator(long s) {
 		this.prng = new Random(s);
 		this.seed = s;
-		this.next = null;
+		
+		this.consumedTokens = new HashSet<Long>();
 	}
 	
 	 /** 
@@ -68,8 +71,7 @@ public class PRNGTokenGenerator {
 	  * @return The next sequence number.
 	  */
 	public long getNext() {
-		next = prng.nextLong();
-		return next.longValue();
+		return prng.nextLong();
 	}
 	
 	/** 
@@ -80,16 +82,14 @@ public class PRNGTokenGenerator {
 	 * @return True if the received sequence number matches the expected
 	 * sequence number, false otherwise.
 	 */
-	public boolean isExpected(long seq) {
-		if (next == null) 
-			next = getNext();
-			
-		if (seq == next.longValue()) {
-			next = getNext();
-			return true;
-		}
-			
-		return false;
+	public boolean isAllowed(long seq) {
+		Long lSeq = new Long(seq);
+		
+		if (consumedTokens.contains(lSeq))
+			return false;
+		
+		consumedTokens.add(lSeq);
+		return true;
 	}
 	
 	/**

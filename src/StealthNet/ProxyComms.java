@@ -178,7 +178,7 @@ public class ProxyComms {
      */
     public boolean sendString(String str) {    	
     	/** Print debug information. */
-    	if (DEBUG_RAW_PACKET) System.out.println("(raw)       sendPacket(" + str + ")");
+    	if (DEBUG_RAW_PACKET) System.out.println("(raw)       sendString(" + str + ")");
     	
         if (dataOut == null) {
         	System.err.println("PrintWriter does not exist!");
@@ -200,7 +200,7 @@ public class ProxyComms {
         final String packetString = dataIn.readLine();
         
         /** Print debug information. */
-    	if (DEBUG_RAW_PACKET) System.out.println("(raw)       sendPacket(" + packetString + ")");
+    	if (DEBUG_RAW_PACKET) System.out.println("(raw)       recvString(" + packetString + ")");
     	
     	return packetString;
     }

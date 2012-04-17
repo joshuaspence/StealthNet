@@ -25,14 +25,7 @@ package StealthNet.Security;
  * 
  * @author Joshua Spence
  */
-public interface TokenGenerator {
-	 /** 
-	  * Get the next token. Also consumes a token.
-	  * 
-	  * @return The next sequence number.
-	  */
-	public long getNext();
-	
+public interface TokenGenerator {	
 	/** 
 	 * Check if a given token is the expected token.
 	 * 
@@ -40,7 +33,7 @@ public interface TokenGenerator {
 	 * @return True if the received token matches the expected token, false 
 	 * otherwise.
 	 */
-	public boolean isExpected(long tok);
+	public boolean isAllowed(long tok);
 	
 	/**
 	 * Gets the seed that the other peers can use to replicate the token 

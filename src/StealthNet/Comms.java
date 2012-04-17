@@ -33,6 +33,7 @@ import java.math.BigInteger;
 import java.net.Socket;
 import java.security.MessageDigest;
 import java.security.SecureRandom;
+import java.util.Set;
 
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
@@ -46,6 +47,7 @@ import StealthNet.Security.EncryptionHandler;
 import StealthNet.Security.HashedMessageAuthenticationCode;
 import StealthNet.Security.KeyExchange;
 import StealthNet.Security.MessageAuthenticationCode;
+import StealthNet.Security.PRNGTokenGenerator;
 import StealthNet.Security.TokenGenerator;
 
 /* Comms class ***************************************************************/
@@ -71,6 +73,7 @@ public class Comms {
 	private static final boolean DEBUG_KEY_EXCHANGE     = Debug.isDebug("StealthNet.Comms.KeyExchange");
 	private static final boolean DEBUG_ENCRYPTION       = Debug.isDebug("StealthNet.Comms.Encryption");
 	private static final boolean DEBUG_INTEGRITY        = Debug.isDebug("StealthNet.Comms.Integrity");
+	private static final boolean DEBUG_REPLAY           = Debug.isDebug("StealthNet.Comms.ReplayPrevention");
 	
 	/** Defaults. */
     public static final String DEFAULT_SERVERNAME = "localhost";	/** Default host for the StealthNet server. */
@@ -97,7 +100,8 @@ public class Comms {
 	private SecretKey integrityKey = null;
     
     /** Prevents replay attacks using a PRNG. */
-	private TokenGenerator replayPrevention;
+	private TokenGenerator replayPreventionTX;
+	private TokenGenerator replayPreventionRX;
 
     /** Output data stream for the socket. */
     private PrintWriter dataOut;            
@@ -179,6 +183,10 @@ public class Comms {
         /** Wait for the peer to send acknowledgement of integrity key. */
         waitForIntegrityKey();
         
+        initReplayPrevention();
+        
+        waitForReplayPreventionSeed();
+        
         return true;
     }
 
@@ -206,6 +214,8 @@ public class Comms {
         
         /** Wait for integrity key. */
         waitForIntegrityKey();
+        
+        waitForReplayPreventionSeed();
 
         return true;
     }
@@ -397,6 +407,9 @@ public class Comms {
     		}
     	}
         
+        if (replayPreventionRX != null && !replayPreventionRX.isAllowed(pckt.token))
+        	return null;
+        
         return pckt;
     }
 
@@ -566,7 +579,7 @@ public class Comms {
      * Generate a key for the HMAC and transmit it to the other peer.
      */
     private void initIntegrityKey() {
-    	if (DEBUG_INTEGRITY) System.out.println("Iniating integrity key.");
+    	if (DEBUG_INTEGRITY) System.out.println("Initiating integrity key.");
 		try {
 			if (DEBUG_INTEGRITY) System.out.println("Generating MD5 HMAC key.");
 			final KeyGenerator keyGen = KeyGenerator.getInstance(HashedMessageAuthenticationCode.HMAC_ALGORITHM);
@@ -590,11 +603,9 @@ public class Comms {
      * Continuously receives (and discards unrelated) packets until the 
      * integrity key exchange has completed. This is acknowledged by a NULL 
      * packet from the other peer.
-     * 
-     * @throws IOException 
      */
     private void waitForIntegrityKey() {
-    	if (DEBUG_KEY_EXCHANGE) System.out.println("Waiting for successful integrity key exchange...");
+    	if (DEBUG_INTEGRITY) System.out.println("Waiting for successful integrity key exchange...");
     	
     	Packet pckt = new Packet();
     	boolean done = false;
@@ -622,7 +633,7 @@ public class Comms {
 	                    break;
 	                 
 	            	case Packet.CMD_NULL:
-            			if (integrityProvider != null)
+            			if (integrityKey != null)
             				done = true;
             			break;
 	            
@@ -634,12 +645,81 @@ public class Comms {
     	
     	/** Done. Enable integrity provision. */
     	try {
+    		if (DEBUG_INTEGRITY) System.out.println("Initiating hashed MAC provider.");
 			integrityProvider = new HashedMessageAuthenticationCode(integrityKey);
 		} catch (Exception e) {
 			System.err.println("Failed to initiate integrity provider.");			
 			if (DEBUG_ERROR_TRACE) e.printStackTrace();
 			System.exit(1);
 		}
+    }
+    
+    /** 
+     * TODO
+     */
+    private void initReplayPrevention() {
+    	Long rxSeed = null;
+    	
+    	if (DEBUG_REPLAY) System.out.println("Initiating replay prevention.");
+		try {
+			if (DEBUG_REPLAY) System.out.println("Generating PRNG.");
+			replayPreventionRX = new PRNGTokenGenerator();
+			rxSeed = new Long(replayPreventionRX.getSeed());
+			if (DEBUG_REPLAY) System.out.println("Generated PRNG with seed: " + rxSeed);
+		} catch (Exception e) {
+			System.err.println("Unable to provide replay prevention. Failed to initialise PRNG.");
+			if (DEBUG_ERROR_TRACE) e.printStackTrace();
+			System.exit(1);
+		}
+		
+		/** Transmit our replay prevention seed. */
+    	if (DEBUG_REPLAY) System.out.println("Sending replay prevention seed to peer: " + rxSeed);
+    	sendPacket(Packet.CMD_TOKENSEED, rxSeed.toString());
+    	if (DEBUG_REPLAY) System.out.println("Sent replay prevention seed to peer.");
+    }
+    
+    /**
+     * TODO
+     */
+    private void waitForReplayPreventionSeed() {
+    	if (DEBUG_REPLAY) System.out.println("Waiting for successful replay prevention seed exchange...");
+    	
+    	Packet pckt = new Packet();
+    	boolean done = false;
+    	while (!done) {
+    		try {
+	        	pckt = recvPacket();
+	            
+	        	if (pckt == null) {
+	        		pckt = new Packet();
+	        		continue;
+	        	}
+	        	
+	        	switch (pckt.command) {
+	            	case Packet.CMD_TOKENSEED:
+	            		long txSeed = Long.parseLong(new String(pckt.data));
+	    	    		if (DEBUG_REPLAY) System.out.println("Received replay prevention seed: " + txSeed);
+	    	        	
+	    	    		try {
+	    	    			replayPreventionTX = new PRNGTokenGenerator(txSeed);
+	    	    		} catch (Exception e) {
+	    	    			System.err.println("Unable to provide replay prevention. Failed to initialise PRNG.");
+	    	    			if (DEBUG_ERROR_TRACE) e.printStackTrace();
+	    	    			System.exit(1);
+	    	    		}
+	    	    		
+	    	    		if (replayPreventionRX == null)
+	    	    			initReplayPrevention();
+	    	    		
+	    	        	/** Done! */
+	                    done = true;
+	                    break;
+	            
+	                default:
+	                    break;
+	            }
+    		} catch (IOException e) {}
+        }
     }
     
     /**
