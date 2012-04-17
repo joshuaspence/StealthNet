@@ -1,4 +1,4 @@
-/***********************************************************************************
+/******************************************************************************
  * ELEC5616
  * Computer and Network Security, The University of Sydney
  *
@@ -19,9 +19,7 @@
  *                  recvPacket();
  *                  recvReady();
  *
- * REVISION HISTORY:
- *
- **********************************************************************************/
+ *****************************************************************************/
 
 package StealthNet;
 
@@ -33,7 +31,9 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.math.BigInteger;
 import java.net.Socket;
+import java.security.InvalidKeyException;
 import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 
 import javax.crypto.KeyGenerator;
@@ -58,8 +58,7 @@ import StealthNet.Security.TokenGenerator;
  * @author Stephen Gould
  * @author Matt Barrie
  * @author Ryan Junee
- * @author Joshua Spence (Implemented security-related functionality. Also added
- * debug code). 
+ * @author Joshua Spence
  *
  */
 public class Comms {
@@ -93,9 +92,11 @@ public class Comms {
     
     /** Provides encryption and decryption for the communications. */
 	private EncryptionHandler confidentialityProvider = null;
+	private SecretKey cryptKey = null;
     
     /** Provides integrity through creating checksums for messages. */
 	private MessageAuthenticationCode integrityProvider = null;
+	private SecretKey integrityKey = null;
     
     /** Prevents replay attacks using a PRNG. */
 	private TokenGenerator replayPrevention;
@@ -115,23 +116,7 @@ public class Comms {
         this.servername = DEFAULT_SERVERNAME;
         this.port = DEFAULT_SERVERPORT;
         
-        if (DEBUG_GENERAL) System.out.println("Creating secure StealthNet.Comms to " + this.servername + " on port " + this.port + ".");
-    }
-    
-    /** 
-     * Constructor.
-     * 
-     * @param disableSecurity Disable all security measures.
-     */
-    public Comms(boolean disableSecurity) {
-    	this.commsSocket = null;
-    	this.dataIn = null;
-    	this.dataOut = null;
-        
-        this.servername = DEFAULT_SERVERNAME;
-        this.port = DEFAULT_SERVERPORT;
-        
-        if (DEBUG_GENERAL) System.out.println("Creating secure StealthNet.Comms to " + this.servername + " on port " + this.port + ".");
+        if (DEBUG_GENERAL) System.out.println("Creating Comms to " + this.servername + " on port " + this.port + ".");
     }
     
     /** 
@@ -141,7 +126,7 @@ public class Comms {
      * @param p The port number for the StealthNet server.
      * @param disableSecurity Disable all security measures.
      */
-    public Comms(String s, int p, boolean disableSecurity) {    	
+    public Comms(String s, int p) {    	
     	this.commsSocket = null;
         this.dataIn = null;
         this.dataOut = null;
@@ -149,7 +134,7 @@ public class Comms {
         this.servername = s;
         this.port = p;
         
-        if (DEBUG_GENERAL) System.out.println("Creating secure StealthNet.Comms to " + this.servername + " on port " + this.port + ".");
+        if (DEBUG_GENERAL) System.out.println("Creating Comms to " + this.servername + " on port " + this.port + ".");
     }
 
     /** 
@@ -173,7 +158,7 @@ public class Comms {
      * fails. 
      */
     public boolean initiateSession(Socket socket) {
-    	if (DEBUG_GENERAL) System.out.println("Initiating StealthNet.Comms session.");
+    	if (DEBUG_GENERAL) System.out.println("Initiating Comms session.");
         try {
             commsSocket = socket;
             dataOut = new PrintWriter(commsSocket.getOutputStream(), true);
@@ -187,17 +172,14 @@ public class Comms {
         /** Perform key exchange. */
         initKeyExchange();
         
-        /** 
-         * Wait for key exchange to finish. 
-         * @todo Possibly want a timeout on this.
-         */
+        /** Wait for key exchange to finish. */
         waitForKeyExchange();
         
-        /** 
-         * Generate and transmit MAC key. Then wait for the peer to send an 
-         * acknowledgement.
-         */
-        doIntegrityKey();
+        /** Generate and transmit MAC key. */
+        initIntegrityKey();
+        
+        /** Wait for the peer to send acknowledgement of integrity key. */
+        waitForIntegrityKey();
         
         return true;
     }
@@ -210,7 +192,7 @@ public class Comms {
      * fails. 
      */
     public boolean acceptSession(Socket socket) {
-    	if (DEBUG_GENERAL) System.out.println("Accepting StealthNet.Comms session on port " + socket.getPort() + ".");
+    	if (DEBUG_GENERAL) System.out.println("Accepting Comms session on port " + socket.getPort() + ".");
         try {
             commsSocket = socket;
             dataOut = new PrintWriter(commsSocket.getOutputStream(), true);
@@ -221,7 +203,11 @@ public class Comms {
             System.exit(1);
         }
         
-        /** TODO: maybe put some code here to wait for security stuff? */
+        /** Wait for key exchange. */
+        waitForKeyExchange();
+        
+        /** Wait for integrity key. */
+        waitForIntegrityKey();
 
         return true;
     }
@@ -233,7 +219,7 @@ public class Comms {
      * @return True if the termination succeeds, otherwise false.
      */
     public boolean terminateSession() {
-    	if (DEBUG_GENERAL) System.out.println("Terminating StealthNet.Comms session.");
+    	if (DEBUG_GENERAL) System.out.println("Terminating Comms session.");
         try {
             if (commsSocket == null)
                 return false;
@@ -307,7 +293,8 @@ public class Comms {
      */
     public boolean sendPacket(Packet pckt) {    	
     	/** Print debug information. */
-    	if (DEBUG_RAW_PACKET)     System.out.println("(raw)       sendPacket(" + pckt.toString() + ")");
+    	if (DEBUG_RAW_PACKET)
+    				System.out.println("(raw)       sendPacket(" + pckt.toString() + ")");
     	if (DEBUG_DECODED_PACKET) {
     		if (pckt.data.length <= 0) {
     			if (pckt.digest.length <= 0)
@@ -332,7 +319,8 @@ public class Comms {
 				if (DEBUG_ERROR_TRACE) e.printStackTrace();
 				return false;
 			}
-    		if (DEBUG_ENCRYPTED_PACKET)	System.out.println("(encrypted) sendPacket(" + packetString + ")");
+    		if (DEBUG_ENCRYPTED_PACKET)	
+    				System.out.println("(encrypted) sendPacket(" + packetString + ")");
     	}
     	
         if (dataOut == null) {
@@ -362,6 +350,10 @@ public class Comms {
         if (str == null)
         	return null;
         
+        /** Debug information. */
+        if (DEBUG_RAW_PACKET)
+        			System.out.println("(raw)       sendPacket(" + str + ")");
+        
         /** Attempt to decrypt the packet. */
         String packetString = str;
     	if (confidentialityProvider != null) {
@@ -372,9 +364,11 @@ public class Comms {
 				if (DEBUG_ERROR_TRACE) e.printStackTrace();
 				return null;
 			}
-    		if (DEBUG_DECRYPTED_PACKET)	System.out.println("(decrypted) recvPacket(" + packetString + ")");
+    		if (DEBUG_DECRYPTED_PACKET)	
+    				System.out.println("(decrypted) recvPacket(" + packetString + ")");
     	} else {
-    		if (DEBUG_DECRYPTED_PACKET)	System.out.println("Packet is not encrypted.");
+    		if (DEBUG_DECRYPTED_PACKET)	
+    				System.out.println("(decrypted) Packet is not encrypted.");
     	}
     	
     	/** Construct the packet. */
@@ -382,14 +376,16 @@ public class Comms {
     	
     	/** Check the integrity of the message. */
     	if (!pckt.verifyMAC(integrityProvider)) {
-    		System.err.println("Packet failed MAC verification! Discarding...");
+					System.err.println("(verified)  Packet failed MAC verification! Discarding...");
     		return null;
     	} else {
-    		if (DEBUG_INTEGRITY) System.out.println("Packet passed MAC verification.");
+    		if (DEBUG_INTEGRITY) 
+    				System.out.println("(verified)  Packet passed MAC verification.");
     	}
         
     	/** Print debug information. */
-        if (DEBUG_RAW_PACKET)     System.out.println("(raw)     recvPacket(" + packetString + ")");
+        if (DEBUG_RAW_PACKET)
+        			System.out.println("(raw)     recvPacket(" + packetString + ")");
         if (DEBUG_DECODED_PACKET) {
     		if (pckt.data.length <= 0) {
     			if (pckt.digest.length <= 0)
@@ -402,42 +398,6 @@ public class Comms {
     				System.out.println("(decoded)   recvPacket(" + Packet.getCommandName(pckt.command) + ", " + (new String(pckt.data)).replaceAll("\n", ";") + ", " + (new String(pckt.digest)) + ")");
     		}
     	}
-        
-        /** Check for special security-related packets, which we will handle here. */
-        switch (pckt.command) {
-	    	case Packet.CMD_PUBLICKEY:
-	    		final String pubKey = new String(pckt.data);
-	    		if (DEBUG_KEY_EXCHANGE) System.out.println("Received public key: " + pubKey);
-	        	if (DEBUG_GENERAL) System.out.println("Performing key exchange.");
-	    	    keyExchange(pubKey);
-	            return null;
-	        
-	    	case Packet.CMD_INTEGRITYKEY:
-	    		byte[] keyBytes = Base64.decodeBase64(pckt.data);
-	    		final SecretKey integrityKey = new SecretKeySpec(keyBytes, 0, keyBytes.length, HashedMessageAuthenticationCode.HMAC_ALGORITHM);
-	    		if (DEBUG_INTEGRITY) System.out.println("Received HMAC key: " + getHexValue(integrityKey.getEncoded()));
-	        	
-	    		/** Initialise StealthNetMAC. */
-	    		MessageAuthenticationCode tmp = null;
-	    		if (DEBUG_GENERAL) System.out.println("Initialising HMAC.");
-	        	try {
-	        		tmp = new HashedMessageAuthenticationCode(integrityKey);
-	        	} catch(Exception e) {
-	        		System.err.println("Failed to initialise StealthNetMAC!");
-	        		return null;
-	        	}
-	        	
-	        	/** Send acknowledgement. */
-	        	if (DEBUG_INTEGRITY) System.out.println("Sending acknowledgement of integrity key.");
-	        	sendPacket(Packet.CMD_NULL);
-	        	
-	        	/** Done! */
-	        	integrityProvider = tmp;
-	    		return null;
-    		
-    		default:
-    			break;
-        }
         
         return pckt;
     }
@@ -485,9 +445,8 @@ public class Comms {
     
     /** 
      * Perform a key exchange with the other party. This function is called by 
-     * the peer that wishes to initiate the key exchange.
-     * 
-     * @see KeyExchange 
+     * the peer that wishes to initiate the key exchange (ie. the peer that 
+     * initiated the session).
      */
     public void initKeyExchange() {
     	if (DEBUG_KEY_EXCHANGE) System.out.println("Initiating key exchange.");
@@ -519,7 +478,7 @@ public class Comms {
      * Diffie-Hellman key exchange has completed.
      */
     private void waitForKeyExchange() {
-    	if (DEBUG_KEY_EXCHANGE) System.out.println("Waiting for successful key exchange...");
+    	if (DEBUG_KEY_EXCHANGE) System.out.println("Waiting for successful authentication key exchange...");
     	
     	while (sharedSecretKey == null) {
     		try {
@@ -545,14 +504,13 @@ public class Comms {
     
     /** 
      * Perform a Diffie-Hellman key exchange with the other party. This function
-     * should be called when a peer receives a public key.
+     * should be called when a peer receives a public key (ie. by the peer that
+     * accepts the communications session).
      * 
      * After this function returns (unless an error occurred), the shared secret
-     * key should have been established and encryption/decryption for this 
-     * communication should be initialised.
+     * key should have been established.
      * 
      * @param publicKey The public key that was sent to us.
-     * @see KeyExchange 
      */
     public void keyExchange(String publicKey) {
     	if (authenticationProvider == null) {
@@ -565,7 +523,7 @@ public class Comms {
 			if (DEBUG_KEY_EXCHANGE) System.out.println("Generating the Diffie-Hellman shared secret key.");
 			sharedSecretKey = authenticationProvider.getSharedSecret(new BigInteger(publicKey));
 			if (DEBUG_KEY_EXCHANGE) {
-				String sskey = new String(getHexValue(sharedSecretKey.getEncoded()));
+				final String sskey = new String(getHexValue(sharedSecretKey.getEncoded()));
 				System.out.println("Generated Diffie-Hellman shared secret key: " + sskey);
 			}
 		} catch (Exception e) {
@@ -573,15 +531,28 @@ public class Comms {
 			if (DEBUG_ERROR_TRACE) e.printStackTrace();
 			return;
 		}
+    }
+    
+    /** 
+     * Enable encryption on the communications, using a hash of the shared secret
+     * key as the encryption key.
+     * 
+     * After this function returns (unless an error occurred), encryption and 
+     * decryption for this communication should be initialised.
+     */
+    public void initEncryption() {
+    	if (sharedSecretKey == null) {
+    		System.err.println("Shared secret key has not yet been generated. Cannot create encryption key.");
+    		System.exit(1);
+    	}
 		
-		SecretKey cryptKey = null;
 		try {
 			/** Use a hash of the shared secret key for encryption and decryption. */
 			if (DEBUG_ENCRYPTION) System.out.println("Generating AES encryption/decryption key.");
-			MessageDigest mdb = MessageDigest.getInstance(AESEncryption.HASH_ALGORITHM);
+			final MessageDigest mdb = MessageDigest.getInstance(AESEncryption.HASH_ALGORITHM);
 			
 			cryptKey = new SecretKeySpec(mdb.digest(sharedSecretKey.getEncoded()), AESEncryption.KEY_ALGORITHM);
-			String cryptKeyString = new String(getHexValue(cryptKey.getEncoded()));
+			final String cryptKeyString = new String(getHexValue(cryptKey.getEncoded()));
 			if (DEBUG_ENCRYPTION) System.out.println("Generated AES encryption/decryption key: " + cryptKeyString);
 			
 			confidentialityProvider = new AESEncryption(cryptKey, cryptKey);
@@ -593,36 +564,80 @@ public class Comms {
     }
     
     /** 
-     * TODO 
+     * Enable Message Authentication Codes (MACs) on the communications. 
+     * Generate a key for the HMAC and transmit it to the other peer.
      */
-    private void doIntegrityKey() {
-    	SecretKey integrityKey = null;
+    private void initIntegrityKey() {
 		try {
 			if (DEBUG_INTEGRITY) System.out.println("Generating MD5 HMAC key.");
 			final KeyGenerator keyGen = KeyGenerator.getInstance(HashedMessageAuthenticationCode.HMAC_ALGORITHM);
 			integrityKey = keyGen.generateKey();
 			final String integrityKeyString = new String(getHexValue(integrityKey.getEncoded()));
 			if (DEBUG_INTEGRITY) System.out.println("Generated MD5 HMAC key: " + integrityKeyString);
-			
-			/** Share integrity key. */
-			sendPacket(Packet.CMD_INTEGRITYKEY, Base64.encodeBase64String(integrityKey.getEncoded()));
-			
-			/** Wait for acknowledgement. */
-			Packet pckt;
-			while (true) {
-				pckt = recvPacket();
-				
-				if (pckt == null)
-					continue;
-				
-				if (pckt.command == Packet.CMD_NULL)
-					break;
-			}
-			
-			/** Enable HMAC. */
-			integrityProvider = new HashedMessageAuthenticationCode(integrityKey);
 		} catch (Exception e) {
 			System.err.println("Unable to provide integrity. Failed to initialise HMAC.");
+			if (DEBUG_ERROR_TRACE) e.printStackTrace();
+			System.exit(1);
+		}
+		
+		/** Transmit our integrity key. */
+    	final String intKey = Base64.encodeBase64String(integrityKey.getEncoded());
+    	if (DEBUG_KEY_EXCHANGE) System.out.println("Sending integrity key to peer: " + intKey);
+    	sendPacket(Packet.CMD_INTEGRITYKEY, intKey);
+    	if (DEBUG_KEY_EXCHANGE) System.out.println("Sent integrity key to peer.");
+    }
+    
+    /**
+     * Continuously receives (and discards unrelated) packets until the 
+     * integrity key exchange has completed. This is acknowledged by a NULL 
+     * packet from the other peer.
+     * 
+     * @throws IOException 
+     */
+    private void waitForIntegrityKey() {
+    	if (DEBUG_KEY_EXCHANGE) System.out.println("Waiting for successful integrity key exchange...");
+    	
+    	Packet pckt = new Packet();
+    	boolean done = false;
+    	while (!done) {
+    		try {
+	        	pckt = recvPacket();
+	            
+	        	if (pckt == null) {
+	        		pckt = new Packet();
+	        		continue;
+	        	}
+	        	
+	        	switch (pckt.command) {
+	            	case Packet.CMD_INTEGRITYKEY:
+	            	    byte[] keyBytes = Base64.decodeBase64(pckt.data);
+	    	    		integrityKey = new SecretKeySpec(keyBytes, 0, keyBytes.length, HashedMessageAuthenticationCode.HMAC_ALGORITHM);
+	    	    		if (DEBUG_INTEGRITY) System.out.println("Received HMAC key: " + getHexValue(integrityKey.getEncoded()));
+	    	        	
+	    	        	/** Send acknowledgement. */
+	    	        	if (DEBUG_INTEGRITY) System.out.println("Sending acknowledgement of integrity key.");
+	    	        	sendPacket(Packet.CMD_NULL);
+	    	        	
+	    	        	/** Done! */
+	                    done = true;
+	                    break;
+	                 
+	            	case Packet.CMD_NULL:
+            			if (integrityProvider != null)
+            				done = true;
+            			break;
+	            
+	                default:
+	                    break;
+	            }
+    		} catch (IOException e) {}
+        }
+    	
+    	/** Done. Enable integrity provision. */
+    	try {
+			integrityProvider = new HashedMessageAuthenticationCode(integrityKey);
+		} catch (Exception e) {
+			System.err.println("Failed to initiate integrity provider.");			
 			if (DEBUG_ERROR_TRACE) e.printStackTrace();
 			System.exit(1);
 		}

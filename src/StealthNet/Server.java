@@ -12,7 +12,7 @@
  *                  cryptography and computer security. It is to be used as
  *                  a demonstration only. No attempt has been made to optimise
  *                  the source code.
- * VERSION:         1.0-ICE\
+ * VERSION:         1.0-ICE
  *
  *****************************************************************************/
 
@@ -29,9 +29,8 @@ import java.net.Socket;
 /**
  * A server process for StealthNet communications. Opens a server socket, 
  * listening on the specified listening port. For each incoming connection on 
- * this port, a new StealthNet.ServerThread is created. The 
- * StealthNet.ServerThread class is responsible for communicating with that 
- * client.
+ * this port, a new ServerThread is created. The ServerThread class is 
+ * responsible for communicating with that client.
  * 
  * The server is responsible for maintaining a list of users, as well as a list
  * of secrets. Whenever the server is sent a command, the server needs only to
@@ -49,7 +48,7 @@ public class Server {
 	private static final boolean DEBUG_ERROR_TRACE = Debug.isDebug("StealthNet.Server.ErrorTrace") || Debug.isDebug("ErrorTrace");
 	
 	/** 
-	 * The main StealthNet.Server function.
+	 * The main Server function.
 	 * 
 	 * @param args The command line arguments.
 	 * @throws IOException
@@ -91,8 +90,8 @@ public class Server {
          * thread for each connection.
          */
         while (true) {
-        	Socket conn;
-        	final ServerThread thread = new ServerThread(conn = svrSocket.accept());
+        	final Socket conn = svrSocket.accept();
+        	final ServerThread thread = new ServerThread(conn);
         	thread.start();
             
             if (DEBUG_GENERAL)

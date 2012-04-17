@@ -6,10 +6,8 @@
  * FILENAME:        Proxy.java
  * AUTHORS:         Joshua Spence
  * DESCRIPTION:     A proxy for StealthNet that can be used to simulate various 
- * 					security attacks.
+ * 					security attacks; or just for normal StealthNet operation.
  * VERSION:         1.0
- *
- * REVISION HISTORY:
  *
  *****************************************************************************/
 

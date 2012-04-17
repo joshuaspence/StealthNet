@@ -14,8 +14,6 @@
  *                  the source code.
  * VERSION:         1.0-ICE
  *
- * REVISION HISTORY:
- *
  *****************************************************************************/
 
 package StealthNet;
@@ -40,7 +38,6 @@ import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
-import java.security.NoSuchAlgorithmException;
 import java.util.Hashtable;
 import javax.swing.AbstractButton;
 import javax.swing.BorderFactory;
@@ -97,10 +94,10 @@ public class Client {
 	private static final boolean DEBUG_COMMANDS_SECRETLIST = Debug.isDebug("StealthNet.Client.Commands.SecretList");
 	private static final boolean DEBUG_COMMANDS_GETSECRET  = Debug.isDebug("StealthNet.Client.Commands.GetSecret");
 	
-	/** StealthNet server (defaults to StealthNetComms.DEFAULT_SERVERNAME). */
+	/** StealthNet server (defaults to ProxyComms.DEFAULT_PROXYNAME). */
 	private final String server_hostname;
 	
-	/** StealthNet port (defaults to StealthNetComms.DEFAULT_SERVERNAME). */
+	/** StealthNet port (defaults to ProxyComms.DEFAULT_PROXYPORT). */
 	private final int server_port;
 	
 	/** The main frame for this client. */
@@ -153,8 +150,8 @@ public class Client {
             public void actionPerformed(ActionEvent e) { processPackets(); }
         });
         
-        server_hostname = Comms.DEFAULT_SERVERNAME;
-        server_port = Comms.DEFAULT_SERVERPORT;
+        server_hostname = ProxyComms.DEFAULT_PROXYNAME;
+        server_port = ProxyComms.DEFAULT_PROXYPORT;
     }
 
     /** 
@@ -162,8 +159,6 @@ public class Client {
 	 * 
 	 * @param s The hostname of the StealthNet server.
 	 * @param p The port that the StealthNet server is listening on.
-	 * 
-	 * @throws NoSuchAlgorithmException
 	 */
     public Client(String s, int p)  {    	
     	/** Create a timer to process packets every 100ms. */
@@ -180,13 +175,14 @@ public class Client {
      * 
      * @return An AWT component containing the client GUI.
      */
-    @SuppressWarnings("serial")
 	public Component createGUI() {
         final JPanel pane = new JPanel();
             	
         /** Create user list. */
         buddyListData = new DefaultTableModel() {
-        	public boolean isCellEditable(int row, int col) { return false; };
+			private static final long serialVersionUID = 1L;
+
+			public boolean isCellEditable(int row, int col) { return false; };
         };
         buddyListData.addColumn("User ID");
         buddyListData.addColumn("Online");
@@ -247,7 +243,9 @@ public class Client {
 
         /** Create secret window. */
         secretListData = new DefaultTableModel() {
-        	public boolean isCellEditable(int row, int col) { return false;	};
+			private static final long serialVersionUID = 1L;
+
+			public boolean isCellEditable(int row, int col) { return false;	};
         };
         secretListData.addColumn("Secret");
         secretListData.addColumn("Cost");
@@ -902,10 +900,10 @@ public class Client {
      */
     public static void main(String[] args) {
     	/** Hostname of the server. */
-    	String hostname = Comms.DEFAULT_SERVERNAME;
+    	String hostname = ProxyComms.DEFAULT_PROXYNAME;
     	
     	/** Port that the server is listening on. */
-    	int port = Comms.DEFAULT_SERVERPORT;
+    	int port = ProxyComms.DEFAULT_PROXYPORT;
     	
     	/** Check if a host and port was specified at the command line. */
     	if (args.length > 0) {

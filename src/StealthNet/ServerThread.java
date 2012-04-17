@@ -22,20 +22,18 @@ package StealthNet;
 
 import java.io.IOException;
 import java.net.Socket;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
 import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.StringTokenizer;
-import javax.crypto.NoSuchPaddingException;
 
 /* ServerThread Class Definition *********************************************/
 
 /**
- * Represents a thread within the operating system.
+ * Represents a thread within the operating system for communications between
+ * the StealthNet server and a client.
  * 
  * A new instance is created for each client such that multiple clients can be
- * active concurrently. This class handles StealthNetPackets and deals with them
+ * active concurrently. This class handles packets and deals with them
  * accordingly.
  * 
  * @author Stephen Gould
@@ -94,10 +92,6 @@ public class ServerThread extends Thread {
 	 * Constructor.
 	 * 
 	 * @param socket The socket that the server is listening on.
-	 * 
-	 * @throws NoSuchAlgorithmException 
-	 * @throws NoSuchPaddingException 
-	 * @throws InvalidKeyException
 	 */
 	public ServerThread(Socket socket) {		
 		/** Thread constructor. */
@@ -191,6 +185,7 @@ public class ServerThread extends Thread {
 	 * @param name The name of the secret data to remove.
 	 * @return True on success, false on failure.
 	 */
+	@SuppressWarnings("unused")
 	private synchronized boolean removeSecret(String name) {
 		secretList.remove(name);
 		if (DEBUG_GENERAL) System.out.println(this.getId() + separator + "Removed secret \"" + name + "\" from the secret list.");
@@ -319,7 +314,7 @@ public class ServerThread extends Thread {
 	 * to all currently logged in users.
 	 */
 	public void run() {
-		if (DEBUG_GENERAL) System.out.println(this.getId() + separator + "Running StealthNet.ServerThread...");
+		if (DEBUG_GENERAL) System.out.println(this.getId() + separator + "Running ServerThread...");
 
 		Packet pckt = new Packet();
 		try {

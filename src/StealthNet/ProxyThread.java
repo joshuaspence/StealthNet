@@ -21,7 +21,8 @@ import java.net.Socket;
 /* ProxyThread Class Definition **********************************************/
 
 /**
- * Represents a thread within the operating system.
+ * Represents a thread within the operating system for communications between
+ * the StealthNet server and a client.
  * 
  * A new instance is created for each client such that multiple clients can be
  * active concurrently. This class receives packets from one peer and forwards
@@ -32,13 +33,13 @@ import java.net.Socket;
  */
 public class ProxyThread extends Thread {
 	/** Debug options. */
-	private static final boolean DEBUG_GENERAL               = Debug.isDebug("StealthNet.ProxyThread.General");
-	private static final boolean DEBUG_ERROR_TRACE           = Debug.isDebug("StealthNet.ProxyThread.ErrorTrace") || Debug.isDebug("ErrorTrace");
+	private static final boolean DEBUG_GENERAL     = Debug.isDebug("StealthNet.ProxyThread.General");
+	private static final boolean DEBUG_ERROR_TRACE = Debug.isDebug("StealthNet.ProxyThread.ErrorTrace") || Debug.isDebug("ErrorTrace");
 	
 	/** Used to separate thread ID from debug output. */
 	private static final String separator = " >> ";
 	
-	/** Comms classes to handle communications to/from each peer. */
+	/** ProxyComms classes to handle communications to/from each peer. */
 	private ProxyComms stealthCommsSource = null;
 	private ProxyComms stealthCommsDestination = null;
 

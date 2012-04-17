@@ -11,8 +11,8 @@
  * IMPLEMENTS:      initiateSession();
  *                  acceptSession();
  *                  terminateSession();
- *                  sendPacket();
- *                  recvPacket();
+ *                  sendString();
+ *                  recvString();
  *                  recvReady();
  *
  **********************************************************************************/
@@ -40,12 +40,13 @@ import java.net.Socket;
  */
 public class ProxyComms {
 	/** Debug options. */
-	private static final boolean DEBUG_GENERAL          = Debug.isDebug("StealthNet.ProxyComms.General");
-	private static final boolean DEBUG_ERROR_TRACE      = Debug.isDebug("StealthNet.ProxyComms.ErrorTrace") || Debug.isDebug("ErrorTrace");
-	private static final boolean DEBUG_RAW_PACKET       = Debug.isDebug("StealthNet.ProxyComms.RawOutput");
-	private static final boolean DEBUG_RECEIVE_READY    = Debug.isDebug("StealthNet.ProxyComms.ReceiveReady");
+	private static final boolean DEBUG_GENERAL       = Debug.isDebug("StealthNet.ProxyComms.General");
+	private static final boolean DEBUG_ERROR_TRACE   = Debug.isDebug("StealthNet.ProxyComms.ErrorTrace") || Debug.isDebug("ErrorTrace");
+	private static final boolean DEBUG_RAW_PACKET    = Debug.isDebug("StealthNet.ProxyComms.RawOutput");
+	private static final boolean DEBUG_RECEIVE_READY = Debug.isDebug("StealthNet.ProxyComms.ReceiveReady");
 	
 	/** Defaults. */
+	public static final String DEFAULT_PROXYNAME = "localhost";		/** Default host for the StealthNet proxy. */
     public static final int DEFAULT_PROXYPORT = 5617;				/** Default port for the StealthNet proxy. */
     
     /** Current values. */
@@ -177,7 +178,7 @@ public class ProxyComms {
      */
     public boolean sendString(String str) {    	
     	/** Print debug information. */
-    	if (DEBUG_RAW_PACKET)     System.out.println("(raw)       sendPacket(" + str + ")");
+    	if (DEBUG_RAW_PACKET) System.out.println("(raw)       sendPacket(" + str + ")");
     	
         if (dataOut == null) {
         	System.err.println("PrintWriter does not exist!");
@@ -197,7 +198,6 @@ public class ProxyComms {
     public String recvString() throws IOException {        
         /** Read data from the input buffer. */
         final String packetString = dataIn.readLine();
-    	
     	return packetString;
     }
     

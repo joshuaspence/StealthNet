@@ -14,8 +14,6 @@
  *                  the source code.
  * VERSION:         1.0-ICE
  *
- * REVISION HISTORY:
- *
  *****************************************************************************/
 
 package StealthNet;
