@@ -171,8 +171,10 @@ generating the tokens. A PRNG token generator is implemented in the
 \verb+PRNGTokenGenerator+ class. This class uses a seeded number generator for
 token generation.
 
-% IMPLEMENTATION
-\section{Implementation}
+% GENERAL IMPLEMENTATION DETAILS
+\section{General Implementation Details}
+
+\subsection{Security Measures}
 The implementation of the various security measures implemented in 
 \packageName{} are detailed in the previous sections. In order to share
 cryptographic keys between parties, modifications were made to the 
@@ -191,6 +193,7 @@ These additional packet commands should not appear during normal execution of
 \serviceName{}, but rather should only exist during execution of the
 \verb+initiateSession()+ and \verb+acceptSession()+ functions.
 
+\subsection{Packet}
 In order to share additional data between communicating parties, the 
 \serviceName{} \verb+Packet+ class was exended such that it is composed of the
 following fields:
@@ -204,6 +207,35 @@ the receiving end of the communications.
 \item \verb+digest+: The MAC digest of the packet contents, used to 
 verify packet integrity.
 \end{itemize}
+
+\subsection{Order of Application of Security Measures}
+The security measures are applied to packet data in the following order:
+\begin{enumerate}
+\item Token generation
+\item MAC digest calculation
+\item Encryption
+\end{enumerate}
+
+This ordering effectively defines the degree to which the various security 
+protocols are effective. MAC digest calculation generates a MAC digest based on
+the packet's \verb+command+, \verb+data+ and \verb+token+ fields and can, 
+consequently, be used to verify the integrity of these three fields. Both 
+token generation and MAC digest calculation occur internally to the 
+\verb+Packet+ class, at the time that the packet is instantiated.
+
+Encryption is applied to all packet fields - \verb+command+, \verb+data+, 
+\verb+token+ and \verb+digest+. Whilst not strictly necessary, this ensures that
+all of these fields remain private from a potential attacker, giving the 
+attacker very little information on which to base an attack. A consequence of 
+applying encryption as the final stage is that if an attacker was to modify the
+transmitted data (let's say, for example, by reverse the packet string that is 
+transmitted over the communications channel), then when the packet string is 
+decrypted at the receiving end, it is possible for the decrypted packet to 
+contain garbage data. In fact, it may not even be possible to create a packet
+from the received packet string, as numeric fields encoded in the packet string
+may no longer be parsable to an integer. In the situation that an encrypted 
+packet is altered such that it cannot be decoded, the packet will be identified
+as corrupted and discarded silently.
 
 % VULNERABILITIES
 \section{Vulnerabilities}
