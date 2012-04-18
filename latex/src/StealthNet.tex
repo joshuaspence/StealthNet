@@ -60,51 +60,55 @@ believe that they are talking directly to each other over a private connection.
 \subsection{Introduction}
 
 \subsection{Details}
-Diffie-Hellman key exchanges involves combining your private key with your 
-partner's public key to generate a number. The peer does the same with its 
-private key and our public key. Through the magic of Diffie-Hellman we both come
-up with the same number. This number is secret (discounting MITM attacks) and 
-hence called the shared secret. It has the same length as the modulus, e.g. 512 
-or 1024 bit. Man-in-the-middle attacks are typically countered by an independent
-authentication step using certificates (RSA, DSA, etc.).
-
-The thing to note is that the shared secret is constant for two partners with 
-constant private keys. This is often not what we want, which is why it is 
-generally a good idea to create a new private key for each session. Generating a
-private key involves one modular exponentiation assuming suitable Diffie-Hellman
-parameters are available.
-
-In TLS the server chooses the parameter values itself, the client must use those
-sent to it by the server.
-
-The use of ephemeral keys as described above also achieves what is called 
-``forward secrecy''. This means that even if the authentication keys are broken 
-at a later date, the shared secret remains secure. The session is compromised 
-only if the authentication keys are already broken at the time the key exchange 
-takes place and an active MITM attack is used. This is in contrast to 
-straightforward encrypting RSA key exchanges.
+The \algorithm{Diffie-Hellman key exchange} method allows two parties that have 
+no prior knowledge of each other to jointly establish a shared secret key over 
+an insecure communications channel. \algorithm{Diffie-Hellman key exchange} 
+involves combining one party's private key with the other party's public key in 
+order to generate a number. The other party does the same with its own private 
+key and the original party's public key. Through the magic of 
+\algorithm{Diffie-Hellman}, both parties are able to generate the same shared 
+secret key.
 
 The protocol depends on the discrete logarithm problem for its security. It 
 assumes that it is computationally infeasible to calculate the shared secret key
 $k = generator^{ab} \bmod prime$ given the two public values 
 $generator^{a} \bmod prime$ and $generator^{b} \bmod prime$ when the prime is 
-sufficiently large. Maurer has shown that breaking the Diffie-Hellman protocol 
-is equivalent to computing discrete logarithms under certain assumptions.
-
-The Diffie-Hellman key exchange is vulnerable to a man-in-the-middle attack. In 
-this attack, an opponent Carol intercepts Alice's public value and sends her own
-public value to Bob. When Bob transmits his public value, Carol substitutes it 
-with her own and sends it to Alice. Carol and Alice thus agree on one shared key
-and Carol and Bob agree on another shared key. After this exchange, Carol simply
-decrypts any messages sent out by Alice or Bob, and then reads and possibly 
-modifies them before re-encrypting with the appropriate key and transmitting 
-them to the other party. This vulnerability is present because Diffie-Hellman 
-key exchange does not authenticate the participants. Possible solutions include 
-the use of digital signatures and other protocol variants.
+sufficiently large. Maurer has shown that breaking the 
+\algorithm{Diffie-Hellman protocol} is equivalent to computing discrete 
+logarithms under certain assumptions.
 
 \subsection{Implementation}
+Authentication is implemented in \packageName{} with the 
+\verb+KeyExchange+ interface. In particular, the \verb+DiffieHellmanKeyExchange+
+class implements the \verb+KeyExchange+ interface.
 
-\subsection{Outstanding vulnerabilities}
+The \verb+KeyExchange+ interface provides a method for getting the public key
+value, as well as a method to generate the shared secret. The actual 
+\algorithm{Diffie-Hellman} algorithm is implemented in the 
+\verb+DiffieHellmanKeyExchange+ class, which either generates or is passed a 
+large prime number and a generator in order to initialise the 
+\algorithm{Diffie-Hellman} public-private key pair. In our implementation of 
+\algorithm{Diffie-Hellman key exchange}, 1024 bit keys are used.
+
+\algorithm{Diffie-Hellman key exchange} is initialised in the 
+\verb+initiateSession()+ function, after a communications socket has been 
+established. The initiator of the connection (usually the client), calls the
+\verb+initKeyExchange()+ function, which generates their 
+\algorithm{Diffie-Hellman} key pairs and transmits their own public key value to
+the peer in a \verb+CMD_AUTHENTICATIONKEY+ packet. Once the public key has been 
+transmitted, the \serviceName{} peer calls the \verb+waitForKeyExchange()+ 
+function, rejecting all incoming packets until the peer receives the other
+party's public key value. On the accepting end of the communications, the peer
+does not initiate key exchange but rather calls \verb+waitForKeyExchange()+ 
+after establishing the communications socket.
+
+When the \verb+waitForKeyExchange()+ function returns, the StealthNet 
+communications class will have had its \verb+authenitcationProvider+ and 
+\verb+authenticationKey+ variables set.
+
+\algorithm{Diffie-Hellman key exchange} is implemented as a feature of the
+\serviceName{} \verb+Comms+ class, which means that every connection to and from
+a host will use a different public-private key pair.
  
 % ENCRYPTION
 \section{Encryption}
@@ -138,6 +142,48 @@ the use of digital signatures and other protocol variants.
 \subsection{Implementation}
 
 \subsection{Outstanding vulnerabilities}
+
+% IMPLEMENTATION
+\section{Implementation}
+The implementation of the various security measures implemented in 
+\packageName{} are detailed in the previous sections. In order to share
+cryptographic keys between parties, modifications were made to the 
+\packageName{} \verb+Packet+ class to accomodate three additional command types:
+\begin{itemize}
+\item \verb+CMD_AUTHENTICATIONKEY+: For exchanging Diffie-Hellman keys
+between the parties.
+\item \verb+CMD_INTEGRITYKEY+: For exchanging ``Hmac-MD5'' keys used 
+for Hashed Message Authentication Code (HMAC) generation and verification.
+\item \verb+CMD_TOKENSEED+: A seed for a \verb+PRNGTokenGenerator+, 
+which is used to generate and test token numbers that are appended to a packet
+in order to prevent replay prevention.
+\end{itemize}
+
+These additional packet commands should not appear during normal execution of 
+\serviceName{}, but rather should only exist during execution of the
+\verb+initiateSession()+ and \verb+acceptSession()+ functions.
+
+In order to share additional data between communicating parties, the 
+\serviceName{} \verb+Packet+ class was exended such that it is composed of the
+following fields:
+\begin{itemize}
+\item \verb+command+: The command type being transmitted in the 
+packet.
+\item \verb+data+: The command data being transmitted in the packet.
+\item \verb+token+: The unique token, generated by a pseudo-random
+number generator in order to allow a given message to be received only once on 
+the receiving end of the communications.
+\item \verb+digest+: The MAC digest of the packet contents, used to 
+verify packet integrity.
+\end{itemize}
+
+% VULNERABILITIES
+\section{Vulnerabilities}
+Whilst various security protocols have been implemented in \serviceName{} in 
+order to provide authentication, confidentialty, integrity and replay 
+prevention; the communications application is is still by no means completely
+secure. Of particular mention, the application is still vulnerable to a 
+\algorithm{Man-in-the-Middle attack}.
 
 % CONCLUSION
 \section{Conclusion}
