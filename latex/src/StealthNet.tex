@@ -237,6 +237,27 @@ may no longer be parsable to an integer. In the situation that an encrypted
 packet is altered such that it cannot be decoded, the packet will be identified
 as corrupted and discarded silently.
 
+\subsection{Proxy}
+In addition to the provided \serviceName{} \verb+Client+ and \verb+Server+ 
+classes, I have implemented an additional \serviceName{} entitty --- a 
+\serviceName{} \verb+Proxy+. This class acts as a ``man-in-the-middle'' for
+\serviceName{} communications. In its normal mode of operation, this class will
+simply accept incoming \serviceName{} communcations as if it were a 
+\serviceName{} server, and will then create its own additional \serviceName{}
+communcation to the \emph{real} \serviceName{} server. Once these channels have
+been created, the proxy simply forwards all received packet strings (note that 
+the proxy makes no attempt to parse strings into \verb+Packet+s) to the other
+party. So, in its normal mode of operation, using \serviceName{} through the
+proxy will be transparent to both the client and the server, and will have no
+impact on the quality of the communications.
+
+However, the \verb+Proxy+ class has additional functionality to simualte 
+various security attacks. The proxy server is, for example, able to replay 
+transmitted packets and modify the encrypted packet data. The usefulness of this
+class is that it can provide these simulations, thus allowing the effectiveness
+of the implementation of the security protocols in \serviceName{} to be 
+observed.
+
 % VULNERABILITIES
 \section{Vulnerabilities}
 Whilst various security protocols have been implemented in \serviceName{} in 
