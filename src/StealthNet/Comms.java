@@ -4,14 +4,23 @@
  *
  * PACKAGE:         StealthNet
  * FILENAME:        Comms.java
- * AUTHORS:         Stephen Gould, Matt Barrie, Ryan Junee
+ * AUTHORS:         Stephen Gould, Matt Barrie, Ryan Junee and Joshua Spence
  * DESCRIPTION:     Implementation of StealthNet Communications for ELEC5616
  *                  programming assignment.
+ *                  
  *                  This code has been written for the purposes of teaching
  *                  cryptography and computer security. It is to be used as
  *                  a demonstration only. No attempt has been made to optimise
  *                  the source code.
- * VERSION:         1.0
+ *                  
+ *                  Security protocols have been added to this class in an 
+ *                  attempt to make StealthNet communications secure. In 
+ *                  particular, Diffie-Hellman key exchange is performed to 
+ *                  provide authentication. AES encryption is performed to 
+ *                  ensure confidentialty. Hashed Message Authentication Codes
+ *                  (HMACs) are used to verify message integrity. Finally, a 
+ *                  PRNG is used to tokens in order to provide reply prevention.
+ * VERSION:         2.0
  * IMPLEMENTS:      initiateSession();
  *                  acceptSession();
  *                  terminateSession();
@@ -354,6 +363,11 @@ public class Comms {
      * that this function should (in the normal case) not return any security
      * related packets (CMD_AUTHENTICATIONKEY, CMD_INTEGRITYKEY, CMD_TOKENSEED).
      * 
+     * If any step (such as decryption) of an incoming packet fails, then this
+     * function will recursively call itself. The result is that the only 
+     * situation in which this function returns null is when the communications
+     * have in some way been closed.
+     * 
      * @return The packet that was received.
      */
     public Packet recvPacket() throws IOException {
@@ -375,14 +389,23 @@ public class Comms {
 				packetString = confidentialityProvider.decrypt(packetString);
 			} catch (Exception e) {
 				System.err.println("Failed to decrypt packet! Discarding...");
-				return null;
+				
+				/** Retrieve another packet by recursion. */
+	    		return recvPacket();
 			}
     		if (DEBUG_DECRYPTED_PACKET)	
     				System.out.println("(decrypted) recvPacket(" + packetString + ")");
     	}
     	
     	/** Construct the packet. */
-		pckt = new Packet(packetString);
+    	try {
+    		pckt = new Packet(packetString);
+    	} catch (Exception e) {
+    		if (DEBUG_GENERAL) System.out.println("Unable to instantiate packet. Discarding...");
+    		
+    		/** Retrieve another packet by recursion. */
+    		return recvPacket();
+    	}
     	
     	/** Print debug information. */
         if (DEBUG_DECODED_PACKET)

@@ -119,8 +119,6 @@ a host will use a different public-private key pair.
 
 \subsection{Implementation}
 
-\subsection{Outstanding vulnerabilities}
-
 % INTEGRITY
 \section{Integrity}
 
@@ -129,8 +127,6 @@ a host will use a different public-private key pair.
 \subsection{Details}
 
 \subsection{Implementation}
-
-\subsection{Outstanding vulnerabilities}
 
 % REPLAY PREVENTION
 \section{Replay prevention}
@@ -168,9 +164,12 @@ set is consulted every time a packet is received, in order to determine its
 validity.
 
 \subsection{Implementation}
-Packet tokens are provided by the \verb+TokenGenerator+ interface.
-
-\subsection{Outstanding vulnerabilities}
+Packet tokens are provided by the \verb+TokenGenerator+ interface, which 
+provides the \verb+isAllowed()+ function to verify whether a packet with a given
+token should be accepted or discard; as well as a \verb+getNext()+ function for
+generating the tokens. A PRNG token generator is implemented in the 
+\verb+PRNGTokenGenerator+ class. This class uses a seeded number generator for
+token generation.
 
 % IMPLEMENTATION
 \section{Implementation}
@@ -213,6 +212,8 @@ order to provide authentication, confidentialty, integrity and replay
 prevention; the communications application is is still by no means completely
 secure. Of particular mention, the application is still vulnerable to a 
 \algorithm{Man-in-the-Middle attack}.
+
+% CHOSEN PLAINTEXT ATTACK
 
 % CONCLUSION
 \section{Conclusion}

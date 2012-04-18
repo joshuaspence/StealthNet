@@ -36,25 +36,25 @@ public interface MessageAuthenticationCode {
 	/**
 	 * Calculates the Message Authentication Code (MAC) for a given message.
 	 * 
-	 * @param message The message to calculate the Message Authentication Codes 
+	 * @param packetContents The message to calculate the Message Authentication Codes 
 	 * (MAC) for.
 	 * @return The digest of the given message (in base-64 encoding).
 	 */
-	public String createMAC(String message);
+	public String createMAC(String packetContents);
 
 	
 	/**
 	 * Verifies a given message against a given Message Authentication Codes 
 	 * (MAC) digest.
 	 * 
-	 * @param message The message to check.
+	 * @param packetContents The message to check.
 	 * @param mac The given Message Authentication Codes (MAC) digest (in 
 	 * base-64 encoding).
 	 * 
 	 * @return True if the message matches the given MAC digest, otherwise 
 	 * false.
 	 */
-	public boolean verifyMAC(String message, byte[] mac);
+	public boolean verifyMAC(String packetContents, byte[] mac);
 }
 
 /******************************************************************************

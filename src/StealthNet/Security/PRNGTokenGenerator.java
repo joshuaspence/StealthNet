@@ -51,10 +51,7 @@ public class PRNGTokenGenerator implements TokenGenerator {
 	public PRNGTokenGenerator() {
 		/** Use an unseeded pseudo-random number generator to create a seed, */
 		final Random seedGenerator = new Random();
-		long s = -1L;
-		while (s < 0)
-			s = seedGenerator.nextLong();
-		this.seed = s;
+		this.seed = seedGenerator.nextLong();
 		
 		this.prng = new Random(this.seed);
 		this.consumedTokens = new HashSet<Long>();
@@ -78,7 +75,11 @@ public class PRNGTokenGenerator implements TokenGenerator {
 	  * @return The next sequence number.
 	  */
 	public long getNext() {
-		Long next = prng.nextLong();
+		Long next;
+		do {
+			next = prng.nextLong();
+		} while (consumedTokens.contains(new Long(next)));
+		
 		consumedTokens.add(new Long(next));
 		return next;
 	}

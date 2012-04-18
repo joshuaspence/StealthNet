@@ -5,14 +5,14 @@
  *
  * PACKAGE:         StealthNet
  * FILENAME:        Packet.java
- * AUTHORS:         Matt Barrie, Stephen Gould and Ryan Junee
+ * AUTHORS:         Matt Barrie, Stephen Gould, Ryan Junee and Joshua Spence
  * DESCRIPTION:     Implementation of StealthNet Communications for ELEC5616
  *                  programming assignment.
  *                  This code has been written for the purposes of teaching
  *                  cryptography and computer security. It is to be used as
  *                  a demonstration only. No attempt has been made to optimise
  *                  the source code.
- * VERSION:         1.0-ICE
+ * VERSION:         2.0
  *
  *****************************************************************************/
 
@@ -189,7 +189,7 @@ public class Packet {
             
             /** Data length (2 bytes). */
             int dataLen = hexToInt(str.substring(current, current + 8));
-            current += 8;
+        	current += 8;
             
             /** Data (dataLen bytes). */
             this.data = new byte[dataLen];
@@ -223,7 +223,7 @@ public class Packet {
             
             /** Digest length (2 bytes). */
             int digestLen = hexToInt(str.substring(current, current + 8));
-            current += 8;
+        	current += 8;
             
             /** Digest (digestLen bytes). */
             this.digest = new byte[digestLen];
@@ -354,8 +354,9 @@ public class Packet {
      * 
      * @param hex The string to convert.
      * @return The long represented by the hexadecimal string.
+     * @throws NumberFormatException
      */
-    private static long hexToLong(String hex) {
+    private static long hexToLong(String hex) throws NumberFormatException {
     	return Long.parseLong(hex, 16);
 	}
 
@@ -382,8 +383,9 @@ public class Packet {
      * 
      * @param hex The string to convert.
      * @return An integer representing the hexadecimal string.
+     * @throws NumberFormatException
      */
-	private static int hexToInt(String hex) {
+	private static int hexToInt(String hex) throws NumberFormatException {
     	return Integer.parseInt(hex, 16);
 	}
 	

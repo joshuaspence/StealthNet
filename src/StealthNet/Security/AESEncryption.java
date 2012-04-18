@@ -72,7 +72,7 @@ public class AESEncryption implements Encryption {
         /** 
          * Generate the initialisation vector using a seeded random number
          * generator, with the seed equal to the has of the encryption key. In 
-         * this way, bothy peers should generate the same initialisation 
+         * this way, both peers should generate the same initialisation 
          * vectors.
          */
         final byte[] encryptionIV = new byte[16];

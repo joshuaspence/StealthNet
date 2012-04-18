@@ -59,48 +59,48 @@ public class HashedMessageAuthenticationCode implements MessageAuthenticationCod
 	/**
 	 * Calculates the MAC for a given message.
 	 * 
-	 * @param message The message to calculate the MAC for.
+	 * @param packetContents The message to calculate the MAC for.
 	 * @return The digest of the given message (in base-64 encoding).
 	 */
-	public String createMAC(String message) {
-	    return createMAC(message.getBytes());
+	public String createMAC(String packetContents) {
+	    return createMAC(packetContents.getBytes());
 	}
 	
 	/**
 	 * Calculates the MAC for a given message.
 	 * 
-	 * @param message The message to calculate the MAC for.
+	 * @param packetContents The message to calculate the MAC for.
 	 * @return The digest of the given message (in base-64 encoding).
 	 */
-	private String createMAC(byte[] message) {
-		byte[] digest = this.mac.doFinal(message);
+	private String createMAC(byte[] packetContents) {
+		byte[] digest = this.mac.doFinal(packetContents);
 		return Base64.encodeBase64String(digest);
 	}
 	
 	/**
 	 * Verifies a given message against a given MAC digest.
 	 * 
-	 * @param message The message to check.
+	 * @param packetContents The message to check.
 	 * @param mac The given MAC digest (in base-64 encoding).
 	 * 
 	 * @return True if the message matches the given MAC digest, otherwise 
 	 * false.
 	 */
-	public boolean verifyMAC(String message, byte[] mac) {
-		return verifyMAC(message.getBytes(), mac);
+	public boolean verifyMAC(String packetContents, byte[] mac) {
+		return verifyMAC(packetContents.getBytes(), mac);
 	}
 	
 	/**
 	 * Verifies a given message against a given MAC.
 	 * 
-	 * @param message The message to check.
+	 * @param packetContents The message to check.
 	 * @param mac The given MAC digest (in base-64 encoding).
 	 * 
 	 * @return True if the message matches the given MAC digest, otherwise 
 	 * false.
 	 */
-	public boolean verifyMAC(byte[] message, byte[] mac) {
-		final byte[] digest = this.mac.doFinal(message);
+	public boolean verifyMAC(byte[] packetContents, byte[] mac) {
+		final byte[] digest = this.mac.doFinal(packetContents);
 		final byte[] digest_base64 = Base64.encodeBase64String(digest).getBytes();
 		
 		if (digest_base64.length != mac.length) {

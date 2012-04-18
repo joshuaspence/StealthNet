@@ -5,14 +5,14 @@
  *
  * PACKAGE:         StealthNet
  * FILENAME:        Server.java
- * AUTHORS:         Matt Barrie and Stephen Gould
+ * AUTHORS:         Matt Barrie, Stephen Gould and Joshua Spence
  * DESCRIPTION:     Implementation of StealthNet Server for ELEC5616/NETS3016
  *                  programming assignment.
  *                  This code has been written for the purposes of teaching
  *                  cryptography and computer security. It is to be used as
  *                  a demonstration only. No attempt has been made to optimise
  *                  the source code.
- * VERSION:         1.0-ICE
+ * VERSION:         2.0
  *
  *****************************************************************************/
 
