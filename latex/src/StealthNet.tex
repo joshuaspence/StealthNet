@@ -136,10 +136,39 @@ a host will use a different public-private key pair.
 \section{Replay prevention}
 
 \subsection{Introduction}
+Replay prevention is the process by which an attacker stores some transmitted 
+data and chooses to ``replay'' (that is, retransmit) that data at a later time 
+in an unaltered form. Since the message has not been modified in any way, the 
+server would otherwise be unaware that this message is being replayed. The MAC
+digest of the message would remain intact and the message itself would remain
+encrypted. And so the party receiving the replayed message may be convinced that
+this is a legitimate request from another party, when in fact it is not.
+
+In order to prevent this kind of attack, we need to implement a means of 
+``replay prevention''. The implementation of replay prevention in \packageName{}
+is detailed in this section.
 
 \subsection{Details}
+In order to implement ``replay prevention'' in \packageName{}, we decided to 
+append each packet with a `token' before it was being transmitted. Each token 
+should be unique and follow some predictable sequence. In this way, both parties
+are able to predict and verify valid token numbers. Once the receiving party 
+receives a packet, it marks the token number of that packet as having been 
+received. Thus, if an attacker tries to replay this same message at a later 
+time, the receiving party is able to detect the replay attack (by way of
+checking the token number) and discard the packet.
+
+We decided to use a pseudo-random number generator (PRNG) to generate packet 
+tokens. So that the tokens would follow a predictable sequence, a seeded PRNG
+was used and the seed was shared between both parties. Each party has a PRNG for
+transmitting packets (which would correspond with the other parties receiving 
+PRNG) and for receiving packets (which would correspond with the other parties 
+transmitting PRNG). Both parties maintain a set of received tokens, and this 
+set is consulted every time a packet is received, in order to determine its
+validity.
 
 \subsection{Implementation}
+Packet tokens are provided by the \verb+TokenGenerator+ interface.
 
 \subsection{Outstanding vulnerabilities}
 
