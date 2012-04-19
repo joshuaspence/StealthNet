@@ -23,8 +23,6 @@ import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 import javax.management.InvalidAttributeValueException;
 
-import org.apache.commons.codec.binary.Base64;
-
 import StealthNet.Security.Encryption;
 import StealthNet.Security.MessageAuthenticationCode;
 
@@ -249,7 +247,7 @@ public class EncryptedPacket {
     	
     	/** Packet digest. */
     	if (digest.length > 0)
-    		str += Base64.encodeBase64(digest);
+    		str += digest;
     	else
     		str += "null";
     	
