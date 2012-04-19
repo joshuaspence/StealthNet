@@ -257,16 +257,13 @@
         <jar destfile="${file.jar.server}">
         	<zipgroupfileset dir="${path.lib}" includes="*.jar" />
         	<fileset dir="${path.classes}">
-        		<!-- NOTE: Must list the files to be included in the server JAR file here!!! -->
-		        <include name="StealthNet/Server**" />
-		  	    <include name="StealthNet/ServerThread**" />
-        		
+        		<!-- NOTE: Must list the files to be included in the server JAR file here!!! -->        		
 		  	    <include name="StealthNet/Comms**" />
-        		<include name="StealthNet/CommsInterface**" />
         		<include name="StealthNet/Debug**" />
         		<include name="StealthNet/DecryptedPacket**" />
                 <include name="StealthNet/EncryptedPacket**" />
-		  	    <include name="StealthNet/Packet**" />
+        		<include name="StealthNet/Server**" />
+                <include name="StealthNet/ServerThread**" />
         		<include name="StealthNet/Security/**" />
     		</fileset>
         	
@@ -282,17 +279,14 @@
         <jar destfile="${file.jar.proxy}">
             <zipgroupfileset dir="${path.lib}" includes="*.jar" />
             <fileset dir="${path.classes}">
-                <!-- NOTE: Must list the files to be included in the proxy JAR file here!!! -->
-                <include name="StealthNet/Proxy**" />
-                <include name="StealthNet/ProxyThread**" />
-            	<include name="StealthNet/ProxyComms**" />
-                
+                <!-- NOTE: Must list the files to be included in the proxy JAR file here!!! -->                
                 <include name="StealthNet/Comms**" />
-            	<include name="StealthNet/CommsInterface**" />
                 <include name="StealthNet/Debug**" />
             	<include name="StealthNet/DecryptedPacket**" />
             	<include name="StealthNet/EncryptedPacket**" />
-                <include name="StealthNet/Packet**" />
+            	<include name="StealthNet/Proxy**" />
+            	<include name="StealthNet/ProxyComms**" />
+                <include name="StealthNet/ProxyThread**" />
                 <include name="StealthNet/Security/**" />
             </fileset>
             
@@ -312,15 +306,13 @@
             </fileset>
         	<fileset dir="${path.classes}">
         		<!-- NOTE: Must list the files to be included in the client JAR file here!!! -->
-                <include name="StealthNet/Client**" />
-        		
-        		<include name="StealthNet/Chat**" />
+                <include name="StealthNet/Chat**" />
+        		<include name="StealthNet/Client**" />
                 <include name="StealthNet/Comms**" />
-        		<include name="StealthNet/CommsInterface**" />
         		<include name="StealthNet/Debug**" />
         		<include name="StealthNet/DecryptedPacket**" />
                 <include name="StealthNet/EncryptedPacket**" />
-                <include name="StealthNet/Packet**" />
+        		<include name="StealthNet/FileTransfer**" />
         		<include name="StealthNet/Security/**" />
             </fileset>
         	

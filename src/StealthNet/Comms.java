@@ -431,11 +431,10 @@ public class Comms {
 			/** Retrieve another packet by recursion. */
     		return recvPacket();
 		}
+		/** Print debug information. */
 		if (DEBUG_DECRYPTED_PACKET)	
 			System.out.println("(decrypted) recvPacket(" + decPckt.toString() + ")");
-    	
-    	/** Print debug information. */
-		if (DEBUG_RAW_PACKET)
+		else if (DEBUG_RAW_PACKET)
 			System.out.println("(raw)       recvPacket(" + decPckt.toString() + ")");
 		if (DEBUG_DECODED_PACKET)
 			System.out.println("(decoded)   recvPacket(" + decPckt.getDecodedString() + ")");
