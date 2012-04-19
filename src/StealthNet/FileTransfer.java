@@ -138,7 +138,7 @@ public class FileTransfer extends Thread {
         try {
         	/** Setup the transfer, sending the file size to the receiver. */
         	if (DEBUG_GENERAL) System.out.println("Setting up file transfer.");
-            stealthComms.sendPacket(Packet.CMD_FTP, Integer.toString(fileLen));
+            stealthComms.sendPacket(DecryptedPacket.CMD_FTP, Integer.toString(fileLen));
             
             /** Receive server response. */
             if (DEBUG_GENERAL) System.out.println("Waiting for server response.");
@@ -152,7 +152,7 @@ public class FileTransfer extends Thread {
                 if (bufLen > 0) {
                 	/** Send a part of the file. */
                 	if (DEBUG_TRANSFER) System.out.println("Sending " + bufLen + " bytes of \"" + filename + "\".");
-                    stealthComms.sendPacket(Packet.CMD_FTP, buf, bufLen);
+                    stealthComms.sendPacket(DecryptedPacket.CMD_FTP, buf, bufLen);
                     
                     /** Wait for server response. */
                     if (DEBUG_TRANSFER) System.out.println("Waiting for server response.");
@@ -166,7 +166,7 @@ public class FileTransfer extends Thread {
             /** Close file handle. */
             fid.close();
             if (DEBUG_GENERAL) System.out.println("Sending terminating file transfer packet.");
-            stealthComms.sendPacket(Packet.CMD_FTP);
+            stealthComms.sendPacket(DecryptedPacket.CMD_FTP);
         } catch (IOException e) {
             System.err.println("Error reading from file \"" + filename + "\".");
             if (DEBUG_ERROR_TRACE) e.printStackTrace();
@@ -183,7 +183,7 @@ public class FileTransfer extends Thread {
             
             /** Acknowledge with a NULL packet. */
             if (DEBUG_GENERAL) System.out.println("Sending acknowledgement to sender.");
-            stealthComms.sendPacket(Packet.CMD_NULL);
+            stealthComms.sendPacket(DecryptedPacket.CMD_NULL);
             
             /** Set the scale on the progress bar. */
             progressBar.setMaximum(fileLen);
@@ -204,7 +204,7 @@ public class FileTransfer extends Thread {
                 
                 /** Send an acknowledgement (NULL packet). */
                 if (DEBUG_TRANSFER) System.out.println("Sending acknowledgement to sender.");
-                stealthComms.sendPacket(Packet.CMD_NULL);
+                stealthComms.sendPacket(DecryptedPacket.CMD_NULL);
                 
                 /** Write the file data to the file output stream. */
                 fid.write(buf);

@@ -128,7 +128,7 @@ public class Chat extends Thread {
             public void actionPerformed(ActionEvent e) {
                 if (stealthComms != null) {
                 	if (DEBUG_GENERAL) System.out.println("Terminating chat session.");
-                    stealthComms.sendPacket(Packet.CMD_LOGOUT);
+                    stealthComms.sendPacket(DecryptedPacket.CMD_LOGOUT);
                     stealthComms.terminateSession();
                 }
                 stealthComms = null;
@@ -157,7 +157,7 @@ public class Chat extends Thread {
         chatTextBox.append(msg + "\n");
         if (stealthComms != null) {
         	if (DEBUG_GENERAL) System.out.println("Sending chat message: \"" + msg + "\".");
-            stealthComms.sendPacket(Packet.CMD_MSG, msg);
+            stealthComms.sendPacket(DecryptedPacket.CMD_MSG, msg);
         }
         msgText.setText("");
     }
@@ -169,30 +169,30 @@ public class Chat extends Thread {
                 return;
         } catch (IOException e) {
             if (stealthComms != null) {
-                stealthComms.sendPacket(Packet.CMD_LOGOUT);
+                stealthComms.sendPacket(DecryptedPacket.CMD_LOGOUT);
                 stealthComms.terminateSession();
             }
             stealthComms = null;
             return;
         }
 
-        Packet pckt = new Packet();
+        DecryptedPacket pckt = new DecryptedPacket();
         try {
-            while ((pckt.command != Packet.CMD_LOGOUT) && (stealthComms.recvReady())) {
+            while ((pckt.command != DecryptedPacket.CMD_LOGOUT) && (stealthComms.recvReady())) {
                 pckt = stealthComms.recvPacket();
                 
                 if (pckt == null)
                 	break;
                 
                 switch (pckt.command) {                
-                    case Packet.CMD_MSG:
+                    case DecryptedPacket.CMD_MSG:
                     	/** Chat message received. */
                     	final String msg = new String(pckt.data);
                     	if (DEBUG_GENERAL) System.out.println("Received chat message: \"" + msg + "\".");
                 	    chatTextBox.append(msg + "\n");
                         break;
                         
-                    case Packet.CMD_LOGOUT:
+                    case DecryptedPacket.CMD_LOGOUT:
                     	/** Terminate chat session. */
                     	if (DEBUG_GENERAL) System.out.println("Terminating chat session.");
                         JOptionPane.showMessageDialog(chatFrame,
@@ -225,7 +225,7 @@ public class Chat extends Thread {
         chatFrame.addWindowListener(new WindowAdapter() {
             public void windowClosing(WindowEvent e) {
                 if (stealthComms != null) {
-                    stealthComms.sendPacket(Packet.CMD_LOGOUT);
+                    stealthComms.sendPacket(DecryptedPacket.CMD_LOGOUT);
                     stealthComms.terminateSession();
                 }
                 stealthComms = null;

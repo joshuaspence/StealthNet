@@ -264,6 +264,8 @@
 		  	    <include name="StealthNet/Comms**" />
         		<include name="StealthNet/CommsInterface**" />
         		<include name="StealthNet/Debug**" />
+        		<include name="StealthNet/DecryptedPacket**" />
+                <include name="StealthNet/EncryptedPacket**" />
 		  	    <include name="StealthNet/Packet**" />
         		<include name="StealthNet/Security/**" />
     		</fileset>
@@ -288,6 +290,8 @@
                 <include name="StealthNet/Comms**" />
             	<include name="StealthNet/CommsInterface**" />
                 <include name="StealthNet/Debug**" />
+            	<include name="StealthNet/DecryptedPacket**" />
+            	<include name="StealthNet/EncryptedPacket**" />
                 <include name="StealthNet/Packet**" />
                 <include name="StealthNet/Security/**" />
             </fileset>
@@ -314,6 +318,8 @@
                 <include name="StealthNet/Comms**" />
         		<include name="StealthNet/CommsInterface**" />
         		<include name="StealthNet/Debug**" />
+        		<include name="StealthNet/DecryptedPacket**" />
+                <include name="StealthNet/EncryptedPacket**" />
                 <include name="StealthNet/Packet**" />
         		<include name="StealthNet/Security/**" />
             </fileset>

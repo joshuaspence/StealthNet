@@ -311,7 +311,7 @@ public class Comms {
      * @return True if successful, otherwise false.
      */
     public boolean sendPacket(byte command, byte[] data, int dataSize) {
-        final Packet pckt = new Packet(command, data, dataSize, integrityProvider, replayPreventionTX);
+        final DecryptedPacket pckt = new DecryptedPacket(command, data, dataSize, integrityProvider, replayPreventionTX);
         return sendPacket(pckt);
     }
 
@@ -327,26 +327,23 @@ public class Comms {
      * @param pckt The packet to be sent.
      * @return True if successful, otherwise false.
      */
-    public boolean sendPacket(Packet pckt) {    	
+    public boolean sendPacket(DecryptedPacket decPckt) {    	
     	/** Print debug information. */
     	if (DEBUG_RAW_PACKET)
-    				System.out.println("(raw)       sendPacket(" + pckt.toString() + ")");
+    				System.out.println("(raw)       sendPacket(" + decPckt.toString() + ")");
     	if (DEBUG_DECODED_PACKET)
-    				System.out.println("(decoded)   sendPacket(" + pckt.getDecodedString() + ")");
+    				System.out.println("(decoded)   sendPacket(" + decPckt.getDecodedString() + ")");
     	
-    	/** Attempt to encrypt the packet. */
-    	String packetString = pckt.toString();
-    	if (confidentialityProvider != null) {
-    		try {
-				packetString = confidentialityProvider.encrypt(pckt.toString());
-			} catch (Exception e) {
-				System.err.println("Failed to encrypt packet!");
-				if (DEBUG_ERROR_TRACE) e.printStackTrace();
-				return false;
-			}
-    		if (DEBUG_ENCRYPTED_PACKET)	
-    				System.out.println("(encrypted) sendPacket(" + packetString + ")");
-    	}
+    	EncryptedPacket encPckt;
+    	try {
+    		encPckt = decPckt.encrypt(confidentialityProvider);
+		} catch (Exception e) {
+			System.err.println("Failed to encrypt packet!");
+			if (DEBUG_ERROR_TRACE) e.printStackTrace();
+			return false;
+		}
+		if (DEBUG_ENCRYPTED_PACKET)	
+				System.out.println("(encrypted) sendPacket(" + encPckt.toString() + ")");
     	
         if (dataOut == null) {
         	System.err.println("PrintWriter does not exist!");
@@ -354,7 +351,7 @@ public class Comms {
         }
         
         /** Print the packet to the output writer. */
-        dataOut.println(packetString);
+        dataOut.println(encPckt.toString());
         return true;
     }
 
@@ -370,9 +367,7 @@ public class Comms {
      * 
      * @return The packet that was received.
      */
-    public Packet recvPacket() throws IOException {
-        Packet pckt = null;
-        
+    public DecryptedPacket recvPacket() throws IOException {
         /** Read data from the input buffer. */
         String packetString = dataIn.readLine();
         
@@ -383,23 +378,10 @@ public class Comms {
         if (DEBUG_RAW_PACKET)
         			System.out.println("(raw)       recvPacket(" + packetString + ")");
         
-        /** Attempt to decrypt the packet. */
-    	if (confidentialityProvider != null) {
-    		try {
-				packetString = confidentialityProvider.decrypt(packetString);
-			} catch (Exception e) {
-				System.err.println("Failed to decrypt packet! Discarding...");
-				
-				/** Retrieve another packet by recursion. */
-	    		return recvPacket();
-			}
-    		if (DEBUG_DECRYPTED_PACKET)	
-    				System.out.println("(decrypted) recvPacket(" + packetString + ")");
-    	}
-    	
-    	/** Construct the packet. */
+        /** Construct the packet. */
+        EncryptedPacket encPckt = null;
     	try {
-    		pckt = new Packet(packetString);
+    		encPckt = new EncryptedPacket(packetString, HashedMessageAuthenticationCode.getDigestBytes());
     	} catch (Exception e) {
     		if (DEBUG_GENERAL) System.out.println("Unable to instantiate packet. Discarding...");
     		
@@ -407,25 +389,45 @@ public class Comms {
     		return recvPacket();
     	}
     	
-    	/** Print debug information. */
-        if (DEBUG_DECODED_PACKET)
-        			System.out.println("(decoded)   recvPacket(" + pckt.getDecodedString() + ")");
-    	
     	/** Check the integrity of the message. */
     	if (integrityProvider != null) {
-	    	if (!pckt.verifyMAC(integrityProvider)) {
-					System.err.println("(verified)  recvPacket - Packet failed MAC verification! Discarding...");
-				
-				/** Retrieve another packet by recursion. */
-	    		return recvPacket();
-	    	} else {
-	    		if (DEBUG_INTEGRITY) 
-    				System.out.println("(verified)  recvPacket - Packet passed MAC verification.");
-	    	}
+    		try {
+		    	if (!encPckt.verifyMAC(integrityProvider)) {
+						System.err.println("(verified)  recvPacket - Packet failed MAC verification! Discarding...");
+					
+					/** Retrieve another packet by recursion. */
+		    		return recvPacket();
+		    	} else {
+		    		if (DEBUG_INTEGRITY) 
+	    				System.out.println("(verified)  recvPacket - Packet passed MAC verification.");
+		    	}
+    		}  catch (Exception e) {
+        		if (DEBUG_GENERAL) System.out.println("Unable to verify packet. Discarding...");
+        		
+        		/** Retrieve another packet by recursion. */
+        		return recvPacket();
+        	}
     	}
         
+        /** Attempt to decrypt the packet. */
+    	DecryptedPacket decPckt = null;
+		try {
+			decPckt = encPckt.decrypt(confidentialityProvider);
+		} catch (Exception e) {
+			System.err.println("Failed to decrypt packet! Discarding...");
+			
+			/** Retrieve another packet by recursion. */
+    		return recvPacket();
+		}
+		if (DEBUG_DECRYPTED_PACKET)	
+				System.out.println("(decrypted) recvPacket(" + decPckt.toString() + ")");
+    	
+    	/** Print debug information. */
+        if (DEBUG_DECODED_PACKET)
+        			System.out.println("(decoded)   recvPacket(" + decPckt.getDecodedString() + ")");
+        
         if (replayPreventionRX != null) {
-        	if (!replayPreventionRX.isAllowed(pckt.token)) {
+        	if (!replayPreventionRX.isAllowed(decPckt.token)) {
     				System.err.println("(verified)  recvPacket - Packet failed replay prevention! Discarding...");
 				
 				/** Retrieve another packet by recursion. */
@@ -437,7 +439,7 @@ public class Comms {
         }
         
         /** Done. Return the packet. */
-        return pckt;
+        return decPckt;
     }
 
     /**
@@ -510,7 +512,7 @@ public class Comms {
     	/** Transmit our public key. */
     	String pubKey = authenticationProvider.getPublicKey().toString();
     	if (DEBUG_AUTHENTICATION) System.out.println("Sending public key to peer: " + pubKey);
-    	sendPacket(Packet.CMD_AUTHENTICATIONKEY, pubKey);
+    	sendPacket(DecryptedPacket.CMD_AUTHENTICATIONKEY, pubKey);
     	if (DEBUG_AUTHENTICATION) System.out.println("Sent public key to peer.");
     }
     
@@ -523,13 +525,13 @@ public class Comms {
     	
     	while (authenticationKey == null) {
     		try {
-	        	Packet pckt = recvPacket();
+	        	DecryptedPacket pckt = recvPacket();
 	            
 	        	if (pckt == null)
 	        		continue;
 	        	
 	            switch (pckt.command) {
-	            	case Packet.CMD_AUTHENTICATIONKEY:
+	            	case DecryptedPacket.CMD_AUTHENTICATIONKEY:
 	            		final String pubKey = new String(pckt.data);
 	                	if (DEBUG_ENCRYPTION) System.out.println("Received a public key command. Key: \"" + pubKey + "\".");
 	                	if (DEBUG_GENERAL) System.out.println("Performing key exchange.");
@@ -625,7 +627,7 @@ public class Comms {
 		
 		/** Transmit our integrity key. */
     	if (DEBUG_AUTHENTICATION) System.out.println("Sending integrity key to peer with base 64 encoding: " + integrityKeyString);
-    	sendPacket(Packet.CMD_INTEGRITYKEY, Base64.encodeBase64String(integrityKey.getEncoded()));
+    	sendPacket(DecryptedPacket.CMD_INTEGRITYKEY, Base64.encodeBase64String(integrityKey.getEncoded()));
     	if (DEBUG_AUTHENTICATION) System.out.println("Sent integrity key to peer.");
     }
     
@@ -637,32 +639,32 @@ public class Comms {
     private void waitForIntegrityKey() {
     	if (DEBUG_INTEGRITY) System.out.println("Waiting for successful integrity key exchange...");
     	
-    	Packet pckt = new Packet();
+    	DecryptedPacket pckt = new DecryptedPacket();
     	boolean done = false;
     	while (!done) {
     		try {
 	        	pckt = recvPacket();
 	            
 	        	if (pckt == null) {
-	        		pckt = new Packet();
+	        		pckt = new DecryptedPacket();
 	        		continue;
 	        	}
 	        	
 	        	switch (pckt.command) {
-	            	case Packet.CMD_INTEGRITYKEY:
+	            	case DecryptedPacket.CMD_INTEGRITYKEY:
 	            	    byte[] keyBytes = Base64.decodeBase64(pckt.data);
 	    	    		integrityKey = new SecretKeySpec(keyBytes, 0, keyBytes.length, HashedMessageAuthenticationCode.HMAC_ALGORITHM);
 	    	    		if (DEBUG_INTEGRITY) System.out.println("Received HMAC key in base 64 encoding: " + getHexValue(integrityKey.getEncoded()));
 	    	        	
 	    	        	/** Send acknowledgement. */
 	    	        	if (DEBUG_INTEGRITY) System.out.println("Sending acknowledgement of integrity key.");
-	    	        	sendPacket(Packet.CMD_NULL);
+	    	        	sendPacket(DecryptedPacket.CMD_NULL);
 	    	        	
 	    	        	/** Done! */
 	                    done = true;
 	                    break;
 	                 
-	            	case Packet.CMD_NULL:
+	            	case DecryptedPacket.CMD_NULL:
             			if (integrityKey != null)
             				done = true;
             			break;
@@ -704,7 +706,7 @@ public class Comms {
 		
 		/** Transmit our replay prevention seed. */
     	if (DEBUG_REPLAY_PREVENTION) System.out.println("Sending replay prevention seed to peer: " + rxSeed);
-    	sendPacket(Packet.CMD_TOKENSEED, rxSeed.toString());
+    	sendPacket(DecryptedPacket.CMD_TOKENSEED, rxSeed.toString());
     	if (DEBUG_REPLAY_PREVENTION) System.out.println("Sent replay prevention seed to peer.");
     }
     
@@ -714,19 +716,19 @@ public class Comms {
     private void waitForReplayPreventionSeed() {
     	if (DEBUG_REPLAY_PREVENTION) System.out.println("Waiting for successful replay prevention seed exchange...");
     	
-    	Packet pckt = new Packet();
+    	DecryptedPacket pckt = new DecryptedPacket();
     	boolean done = false;
     	while (!done) {
     		try {
 	        	pckt = recvPacket();
 	            
 	        	if (pckt == null) {
-	        		pckt = new Packet();
+	        		pckt = new DecryptedPacket();
 	        		continue;
 	        	}
 	        	
 	        	switch (pckt.command) {
-	            	case Packet.CMD_TOKENSEED:
+	            	case DecryptedPacket.CMD_TOKENSEED:
 	            		long txSeed = Long.parseLong(new String(pckt.data));
 	    	    		if (DEBUG_REPLAY_PREVENTION) System.out.println("Received replay prevention seed: " + txSeed);
 	    	        	

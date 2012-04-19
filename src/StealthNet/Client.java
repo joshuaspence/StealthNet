@@ -405,7 +405,7 @@ public class Client {
             
             /** Send the server a login command. */
             if (DEBUG_GENERAL) System.out.println("Sending the server a login packet for user \"" + userID + "\".");
-            stealthComms.sendPacket(Packet.CMD_LOGIN, userID);
+            stealthComms.sendPacket(DecryptedPacket.CMD_LOGIN, userID);
             
             /** Start periodically checking for packets. */
             stealthTimer.start();
@@ -443,7 +443,7 @@ public class Client {
             stealthTimer.stop();
             
             /** Send the server a logout command. */
-            stealthComms.sendPacket(Packet.CMD_LOGOUT);
+            stealthComms.sendPacket(DecryptedPacket.CMD_LOGOUT);
             
             /** Terminate session. */
             stealthComms.terminateSession();
@@ -486,7 +486,7 @@ public class Client {
 	        if (userMsg != null)
 	        	/** Create the secret on the server. */
 	        	if (DEBUG_GENERAL) System.out.println("Sending secret details to server. Secret name is \"" + name + "\". Secret cost is " + cost + ". Secret description is \"" + description + "\". Secret file is \"" + fileOpen.getDirectory() + fileOpen.getFile() + "\".");
-	        	stealthComms.sendPacket(Packet.CMD_CREATESECRET, userMsg);
+	        	stealthComms.sendPacket(DecryptedPacket.CMD_CREATESECRET, userMsg);
         }
     }
 
@@ -545,7 +545,7 @@ public class Client {
 		 * number for the file transfer. 
 		 */
 		if (DEBUG_GENERAL) System.out.println("Sending get secret message to server. Target client should connect on '" + iAddr + ":" + ftpSocket.getLocalPort() + "'.");
-		stealthComms.sendPacket(Packet.CMD_GETSECRET, name + "@" + iAddr);
+		stealthComms.sendPacket(DecryptedPacket.CMD_GETSECRET, name + "@" + iAddr);
 
 		/** Choose where to save the secret file. */
 		final FileDialog fileSave = new FileDialog(clientFrame, "Save As...", FileDialog.SAVE);
@@ -642,7 +642,7 @@ public class Client {
         iAddr += ":" + Integer.toString(chatSocket.getLocalPort());
         
         if (DEBUG_GENERAL) System.out.println("Sending chat message to server. Target client should connect on '" + iAddr + ":" + chatSocket.getLocalPort() + "'.");
-        stealthComms.sendPacket(Packet.CMD_CHAT, myid + "@" + iAddr);
+        stealthComms.sendPacket(DecryptedPacket.CMD_CHAT, myid + "@" + iAddr);
 
         /** Wait for user to connect and open chat window. */
         try {
@@ -711,7 +711,7 @@ public class Client {
         iAddr += ":" + Integer.toString(ftpSocket.getLocalPort());
         
         if (DEBUG_GENERAL) System.out.println("Sending FTP message to server. Target client should connect on '" + iAddr + ":" + ftpSocket.getLocalPort() + "'.");
-        stealthComms.sendPacket(Packet.CMD_FTP, myid + "@" + iAddr + "#" + fileOpen.getFile());
+        stealthComms.sendPacket(DecryptedPacket.CMD_FTP, myid + "@" + iAddr + "#" + fileOpen.getFile());
 
         /** Wait for user to connect, then start file transfer. */
         try {
@@ -751,7 +751,7 @@ public class Client {
         String iAddr, fName;
         Integer iPort;
         Comms snComms;
-        Packet pckt = new Packet();
+        DecryptedPacket pckt = new DecryptedPacket();
 
         /** No need to process packets while we are already processing packets. */
         stealthTimer.stop();
@@ -764,16 +764,16 @@ public class Client {
                 if (pckt == null)
                 	break;
                 
-                if (DEBUG_GENERAL) System.out.println("Received packet. Packet command: " + Packet.getCommandName(pckt.command) + ". Packet data: \"" + new String(pckt.data).replaceAll("\n", ";") + "\".");
+                if (DEBUG_GENERAL) System.out.println("Received packet. Packet command: " + DecryptedPacket.getCommandName(pckt.command) + ". Packet data: \"" + new String(pckt.data).replaceAll("\n", ";") + "\".");
                 
                 switch (pckt.command) {                
-                    case Packet.CMD_MSG:
+                    case DecryptedPacket.CMD_MSG:
                     	final String msg = new String(pckt.data);
                     	if (DEBUG_COMMANDS_MSG) System.out.println("Received a message command. Message: \"" + msg + "\".");
                 	    msgTextBox.append(msg + "\n");
                         break;
 
-                    case Packet.CMD_CHAT:                    	
+                    case DecryptedPacket.CMD_CHAT:                    	
                         iAddr = new String(pckt.data);
                         iAddr = iAddr.substring(iAddr.lastIndexOf("@") + 1);
                         iPort = new Integer(iAddr.substring(iAddr.lastIndexOf(":") + 1));
@@ -790,7 +790,7 @@ public class Client {
                         if (DEBUG_GENERAL) System.out.println("Started a chat session with '" + iAddr + "'.");
                         break;
 
-                    case Packet.CMD_FTP:                    	
+                    case DecryptedPacket.CMD_FTP:                    	
                         iAddr = new String(pckt.data);
                         iAddr = iAddr.substring(iAddr.lastIndexOf("@") + 1);
                         fName = iAddr.substring(iAddr.lastIndexOf("#") + 1);
@@ -814,7 +814,7 @@ public class Client {
                         }
                         break;
 
-                    case Packet.CMD_LIST:                    	
+                    case DecryptedPacket.CMD_LIST:                    	
                         String userTable = new String(pckt.data);
                         buddyListData.setRowCount(0);
                         
@@ -843,7 +843,7 @@ public class Client {
                         }
                         break;
                         
-                   	case Packet.CMD_SECRETLIST:                   		
+                   	case DecryptedPacket.CMD_SECRETLIST:                   		
                         String secretTable = new String(pckt.data);
                         secretListData.setRowCount(0);
                         
@@ -871,7 +871,7 @@ public class Client {
                         }
                         break;
 
-					case Packet.CMD_GETSECRET:						
+					case DecryptedPacket.CMD_GETSECRET:						
 						fName = new String(pckt.data);
 						iAddr = fName.substring(fName.lastIndexOf("@") + 1);
 						iPort = new Integer(iAddr.substring(iAddr.lastIndexOf(":") + 1));

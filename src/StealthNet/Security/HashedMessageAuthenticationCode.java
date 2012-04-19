@@ -20,8 +20,7 @@ import java.security.NoSuchAlgorithmException;
 
 import javax.crypto.Mac;
 import javax.crypto.SecretKey;
-
-import org.apache.commons.codec.binary.Base64;
+import javax.management.InvalidAttributeValueException;
 
 /* StealthNet.Security.HashedMessageAuthenticationCode Class Definition ******/
 
@@ -37,8 +36,20 @@ public class HashedMessageAuthenticationCode implements MessageAuthenticationCod
 	/** The Mac instance used to create digests. */
 	private final Mac mac;
 	
-	/** String constants. */
+	/** Constants. */
 	public static final String HMAC_ALGORITHM = "HmacMD5";
+	private static final int DIGEST_BYTES = 16; 
+	
+	/**
+	 * Get the expected fixed number of bytes of the digest produced by this 
+	 * MAC. We need to know this so that we don't have to encode the data 
+	 * length and digest length into the transmitted string.
+	 * 
+	 * @return The expected fixed number of bytes of the digest.
+	 */
+	public static int getDigestBytes() {
+		return DIGEST_BYTES;
+	}
 	
 	/**
 	 * Constructor
@@ -61,8 +72,10 @@ public class HashedMessageAuthenticationCode implements MessageAuthenticationCod
 	 * 
 	 * @param packetContents The message to calculate the MAC for.
 	 * @return The digest of the given message (in base-64 encoding).
+	 * 
+	 * @throws InvalidAttributeValueException 
 	 */
-	public String createMAC(String packetContents) {
+	public byte[] createMAC(String packetContents) throws InvalidAttributeValueException {
 	    return createMAC(packetContents.getBytes());
 	}
 	
@@ -71,10 +84,17 @@ public class HashedMessageAuthenticationCode implements MessageAuthenticationCod
 	 * 
 	 * @param packetContents The message to calculate the MAC for.
 	 * @return The digest of the given message (in base-64 encoding).
+	 * 
+	 * @throws InvalidAttributeValueException 
 	 */
-	private String createMAC(byte[] packetContents) {
-		byte[] digest = this.mac.doFinal(packetContents);
-		return Base64.encodeBase64String(digest);
+	public byte[] createMAC(byte[] packetContents) throws InvalidAttributeValueException {
+		final byte[] digest = this.mac.doFinal(packetContents);
+		
+		/** A sanity check. */
+		if (digest.length != DIGEST_BYTES)
+			throw new InvalidAttributeValueException("Actual digest size does not match specified digest size. Specified size: " + DIGEST_BYTES + ". Actual size: " + digest.length + ".");
+		
+		return digest;
 	}
 	
 	/**
@@ -85,8 +105,10 @@ public class HashedMessageAuthenticationCode implements MessageAuthenticationCod
 	 * 
 	 * @return True if the message matches the given MAC digest, otherwise 
 	 * false.
+	 * 
+	 * @throws InvalidAttributeValueException 
 	 */
-	public boolean verifyMAC(String packetContents, byte[] mac) {
+	public boolean verifyMAC(String packetContents, byte[] mac) throws InvalidAttributeValueException {
 		return verifyMAC(packetContents.getBytes(), mac);
 	}
 	
@@ -98,16 +120,17 @@ public class HashedMessageAuthenticationCode implements MessageAuthenticationCod
 	 * 
 	 * @return True if the message matches the given MAC digest, otherwise 
 	 * false.
+	 * 
+	 * @throws InvalidAttributeValueException 
 	 */
-	public boolean verifyMAC(byte[] packetContents, byte[] mac) {
-		final byte[] digest = this.mac.doFinal(packetContents);
-		final byte[] digest_base64 = Base64.encodeBase64String(digest).getBytes();
+	public boolean verifyMAC(byte[] packetContents, byte[] mac) throws InvalidAttributeValueException {
+		final byte[] digest = createMAC(packetContents);
 		
-		if (digest_base64.length != mac.length) {
+		if (digest.length != mac.length) {
 	        return false;
 	    } else {
 	        for (int i = 0; i < mac.length; i++)
-	            if (mac[i] != digest_base64[i])
+	            if (mac[i] != digest[i])
 	                return false;
 	    }
 		

@@ -13,6 +13,8 @@
 
 package StealthNet.Security;
 
+import javax.management.InvalidAttributeValueException;
+
 /* Import Libraries **********************************************************/
 
 /* StealthNet.Security.MessageAuthenticationCode Interface Definition ********/
@@ -36,11 +38,24 @@ public interface MessageAuthenticationCode {
 	/**
 	 * Calculates the Message Authentication Code (MAC) for a given message.
 	 * 
-	 * @param packetContents The message to calculate the Message Authentication Codes 
-	 * (MAC) for.
+	 * @param packetContents The message to calculate the Message Authentication 
+	 * Codes (MAC) for.
 	 * @return The digest of the given message (in base-64 encoding).
+	 * 
+	 * @throws InvalidAttributeValueException 
 	 */
-	public String createMAC(String packetContents);
+	public byte[] createMAC(String packetContents) throws InvalidAttributeValueException;
+	
+	/**
+	 * Calculates the Message Authentication Code (MAC) for a given message.
+	 * 
+	 * @param packetContents The message to calculate the Message Authentication 
+	 * Codes (MAC) for.
+	 * @return The digest of the given message (in base-64 encoding).
+	 * 
+	 * @throws InvalidAttributeValueException 
+	 */
+	public byte[] createMAC(byte[] packetContents) throws InvalidAttributeValueException;
 
 	
 	/**
@@ -53,8 +68,25 @@ public interface MessageAuthenticationCode {
 	 * 
 	 * @return True if the message matches the given MAC digest, otherwise 
 	 * false.
+	 * 
+	 * @throws InvalidAttributeValueException 
 	 */
-	public boolean verifyMAC(String packetContents, byte[] mac);
+	public boolean verifyMAC(String packetContents, byte[] mac) throws InvalidAttributeValueException;
+	
+	/**
+	 * Verifies a given message against a given Message Authentication Codes 
+	 * (MAC) digest.
+	 * 
+	 * @param packetContents The message to check.
+	 * @param mac The given Message Authentication Codes (MAC) digest (in 
+	 * base-64 encoding).
+	 * 
+	 * @return True if the message matches the given MAC digest, otherwise 
+	 * false.
+	 * 
+	 * @throws InvalidAttributeValueException 
+	 */
+	public boolean verifyMAC(byte[] packetContents, byte[] mac) throws InvalidAttributeValueException;
 }
 
 /******************************************************************************

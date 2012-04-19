@@ -45,7 +45,19 @@ public interface Encryption {
 	public String encrypt(String cleartext) throws UnsupportedEncodingException, IllegalBlockSizeException, BadPaddingException;
 	
 	/**
-	 * Decrypts a message.
+	 * Encrypts a message using the encryption key.
+	 * 
+	 * @param cleartext The message to encrypt.
+	 * @return The encrypted message.
+	 * 
+	 * @throws IllegalBlockSizeException
+	 * @throws BadPaddingException
+	 * @throws UnsupportedEncodingException 
+	 */
+	public String encrypt(byte[] cleartext) throws UnsupportedEncodingException, IllegalBlockSizeException, BadPaddingException;
+	
+	/**
+	 * E a message using the decryption key.
 	 * 
 	 * @param ciphertext The message to be decrypted.
 	 * @return The cleartext message.
@@ -55,6 +67,18 @@ public interface Encryption {
 	 * @throws IllegalBlockSizeException 
 	 */
 	public String decrypt(String ciphertext) throws UnsupportedEncodingException, IllegalBlockSizeException, BadPaddingException;
+	
+	/**
+	 * Decrypts a message using the decryption key.
+	 * 
+	 * @param ciphertext The message to be decrypted.
+	 * @return The cleartext message.
+	 * 
+	 * @throws UnsupportedEncodingException 
+	 * @throws BadPaddingException 
+	 * @throws IllegalBlockSizeException 
+	 */
+	public String decrypt(byte[] ciphertext) throws UnsupportedEncodingException, IllegalBlockSizeException, BadPaddingException;
 }
 
 /******************************************************************************
