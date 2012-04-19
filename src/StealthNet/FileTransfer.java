@@ -5,8 +5,7 @@
  *
  * PACKAGE:         StealthNet
  * FILENAME:        FileTransfer.java
- * AUTHORS:         Matt Barrie, Stephen Gould, Joshua Spence and 
- * 					Ahmad Al Mutawa
+ * AUTHORS:         Matt Barrie, Stephen Gould and Joshua Spence
  * DESCRIPTION:     Implementation of StealthNet Client FTP for ELEC5616
  *                  programming assignment. Debug code has been added to this 
  *                  class.

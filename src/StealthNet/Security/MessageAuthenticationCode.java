@@ -4,7 +4,7 @@
  *
  * PACKAGE:         StealthNet.Security
  * FILENAME:        MessageAuthenticationCode.java
- * AUTHORS:         Joshua Spence and Ahmad Al Mutawa
+ * AUTHORS:         Joshua Spence
  * DESCRIPTION:     An interface to provide StealthNet with Message 
  * 					Authentication Codes (MACs) for testing packet integrity.
  * VERSION:         1.0
@@ -13,9 +13,9 @@
 
 package StealthNet.Security;
 
-import javax.management.InvalidAttributeValueException;
-
 /* Import Libraries **********************************************************/
+
+import javax.management.InvalidAttributeValueException;
 
 /* StealthNet.Security.MessageAuthenticationCode Interface Definition ********/
 

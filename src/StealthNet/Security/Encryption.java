@@ -4,7 +4,7 @@
  *
  * PACKAGE:         StealthNet.Securtity
  * FILENAME:        Encryption.java
- * AUTHORS:         Joshua Spence and Ahmad Al Mutawa
+ * AUTHORS:         Joshua Spence
  * DESCRIPTION:     An interface to provide the encryption and decryption of 
  * 					packets in StealthNet.
  * VERSION:         1.0

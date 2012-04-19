@@ -4,7 +4,7 @@
  *
  * PACKAGE:         StealthNet.Security
  * FILENAME:        DiffieHellmanKeyExchange.java
- * AUTHORS:         Joshua Spence and Ahmad Al Mutawa
+ * AUTHORS:         Joshua Spence
  * DESCRIPTION:     Implementation of Diffie-Hellman key exchange for ELEC5616
  *                  programming assignment.
  * VERSION:         1.0

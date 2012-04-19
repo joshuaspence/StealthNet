@@ -4,7 +4,7 @@
  *
  * PACKAGE:         StealthNet.Security
  * FILENAME:        PRNGTokenGenerator.java
- * AUTHORS:         Joshua Spence and Ahmad Al Mutawa
+ * AUTHORS:         Joshua Spence
  * DESCRIPTION:     Implementation of a pseudo-random number generator (PRNG)
  * 					for token generation.
  * VERSION:         1.0

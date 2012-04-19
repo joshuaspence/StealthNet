@@ -4,7 +4,7 @@
  *
  * PACKAGE:         StealthNet.Security
  * FILENAME:        AESEncryption.java
- * AUTHORS:         Joshua Spence and Ahmad Al Mutawa
+ * AUTHORS:         Joshua Spence
  * DESCRIPTION:     Implementation of AES encryption for encrypting and 
  * 					decrypting StealthNet communications.
  * VERSION:         1.0

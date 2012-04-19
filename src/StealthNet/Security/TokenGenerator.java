@@ -4,7 +4,7 @@
  *
  * PACKAGE:         StealthNet.Security
  * FILENAME:        TokenGenerator.java
- * AUTHORS:         Joshua Spence and Ahmad Al Mutawa
+ * AUTHORS:         Joshua Spence
  * DESCRIPTION:     An interface to create token identifiers for StealthNet
  * 					packets to prevent replay attacks.
  * VERSION:         1.0

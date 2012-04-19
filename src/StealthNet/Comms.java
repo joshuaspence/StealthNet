@@ -4,8 +4,7 @@
  *
  * PACKAGE:         StealthNet
  * FILENAME:        Comms.java
- * AUTHORS:         Stephen Gould, Matt Barrie, Ryan Junee, Joshua Spence and
- * 					Ahmad Al Mutawa.
+ * AUTHORS:         Stephen Gould, Matt Barrie, Ryan Junee and Joshua Spence
  * DESCRIPTION:     Implementation of StealthNet Communications for ELEC5616
  *                  programming assignment.
  *                  

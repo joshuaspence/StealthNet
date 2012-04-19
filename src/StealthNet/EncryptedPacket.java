@@ -5,8 +5,7 @@
  *
  * PACKAGE:         StealthNet
  * FILENAME:        EncryptedPacket.java
- * AUTHORS:         Matt Barrie, Stephen Gould, Ryan Junee, Joshua Spence and
- * 					Ahmad Al Mutawa
+ * AUTHORS:         Matt Barrie, Stephen Gould, Ryan Junee and Joshua Spence
  * DESCRIPTION:     Implementation of a StealthNet packet. This class represents
  * 					encrypted packet contents.
  * VERSION:         2.0

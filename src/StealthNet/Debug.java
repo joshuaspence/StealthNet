@@ -4,7 +4,7 @@
  *
  * PACKAGE:         StealthNet
  * FILENAME:        Debug.java
- * AUTHORS:         Joshua Spence and Ahmad Al Mutawa
+ * AUTHORS:         Joshua Spence
  * DESCRIPTION:     Command-line debug functionality for StealthNet.
  * VERSION:         1.0
  *

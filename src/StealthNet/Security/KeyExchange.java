@@ -4,7 +4,7 @@
  *
  * PACKAGE:         StealthNet.Security
  * FILENAME:        KeyExchange.java
- * AUTHORS:         Joshua Spence and Ahmad Al Mutawa
+ * AUTHORS:         Joshua Spence
  * DESCRIPTION:     An interface for key exchange protocols to implement 
  * 					authentication in StealthNet.
  * VERSION:         1.0
