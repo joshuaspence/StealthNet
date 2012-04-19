@@ -58,6 +58,12 @@ believe that they are talking directly to each other over a private connection.
 \section{Authentication}
 
 \subsection{Introduction}
+Authentication is the process of determining whether someone or something is, in
+fact, who or what it is declared to be. In computer networks, authentication is 
+an important procedure in which clients can verify a server's identity, and 
+servers can similarly verify a client's identity. A successful authentication 
+process could prevent an attacker from masquerading as a legitimate user,
+illegitimately sending and receiving data on behalf of that user.
 
 \subsection{Details}
 The \algorithm{Diffie-Hellman key exchange} method allows two parties that have 
@@ -76,6 +82,22 @@ $generator^{a} \bmod prime$ and $generator^{b} \bmod prime$ when the prime is
 sufficiently large. Maurer has shown that breaking the 
 \algorithm{Diffie-Hellman protocol} is equivalent to computing discrete 
 logarithms under certain assumptions.
+
+\subsection{Justification}
+The \algorithm{Diffie-Hellman key exchange} method was chosen because it is one
+of the most common protocols used in networking today, such as in \verb+SSL+ 
+(Secure Socket Layer), \verb+TLS+ (Transport Layer Security) and \verb+SSH+
+(Secure SHell).
+
+\algorithm{Diffie-Hellman} has the advantage of using asymmetric cryptographic 
+keys --- also commonly referred to as ``public'' keys. Key management for an
+asymmetric cryptographic key is a lot easier than key management for a
+symmetric cryptographic key. Asymmetric encryption/decryption is many times
+slower than symmetric encryption/decryption, but this does not present any 
+great issue in the \packageName{} implementation because the 
+\algorithm{Diffie-Hellman key exchange} is used only to exchange symettric
+encryption keys. Our \algorithm{Diffie-Hellman} implementation uses 1024-bit 
+keys, which is fairly common and is adequate for the \serviceName{} system.
 
 \subsection{Implementation}
 Authentication is implemented in \packageName{} with the 
@@ -114,8 +136,16 @@ a host will use a different public-private key pair.
 \section{Encryption}
 
 \subsection{Introduction}
+Encryption is the process of transforming `plaintext' data using a cipher to 
+make it unreadable to anyone except those possessing the key. In this context,
+encryption also refers to the reverse process of ``decryption'' --- making
+encrypted data readable again. In \packageName{}, we have implemented the
+\algorithm{Advanced Encryption Standard (AES)}.
 
 \subsection{Details}
+\algorithm{AES} is based on a design principle known as a 
+`permutation-substitution network'. It has a fixed block size of 128 bits and a
+key size of either 128, 192 or 256 bits.
 
 \subsection{Implementation}
 
@@ -162,6 +192,12 @@ PRNG) and for receiving packets (which would correspond with the other parties
 transmitting PRNG). Both parties maintain a set of received tokens, and this 
 set is consulted every time a packet is received, in order to determine its
 validity.
+
+\subsection{Justification}
+The proposed method should work well, provided that the number of messages 
+transmitted is sufficiently smaller than the token number of possible values for
+the data type used to represent the token. If this is not the case, then the 
+set of consumed tokens may need to be periodically flushed.
 
 \subsection{Implementation}
 Packet tokens are provided by the \verb+TokenGenerator+ interface, which 
