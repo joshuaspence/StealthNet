@@ -4,22 +4,20 @@
  *
  * PACKAGE:         StealthNet
  * FILENAME:        Comms.java
- * AUTHORS:         Stephen Gould, Matt Barrie, Ryan Junee and Joshua Spence
+ * AUTHORS:         Stephen Gould, Matt Barrie, Ryan Junee, Joshua Spence and
+ * 					Ahmad Al Mutawa.
  * DESCRIPTION:     Implementation of StealthNet Communications for ELEC5616
  *                  programming assignment.
- *                  
- *                  This code has been written for the purposes of teaching
- *                  cryptography and computer security. It is to be used as
- *                  a demonstration only. No attempt has been made to optimise
- *                  the source code.
  *                  
  *                  Security protocols have been added to this class in an 
  *                  attempt to make StealthNet communications secure. In 
  *                  particular, Diffie-Hellman key exchange is performed to 
  *                  provide authentication. AES encryption is performed to 
- *                  ensure confidentialty. Hashed Message Authentication Codes
+ *                  ensure confidentiality. Hashed Message Authentication Codes
  *                  (HMACs) are used to verify message integrity. Finally, a 
  *                  PRNG is used to tokens in order to provide reply prevention.
+ *                  
+ *                  Debug code has also been added to this class.
  * VERSION:         2.0
  * IMPLEMENTS:      initiateSession();
  *                  acceptSession();
@@ -61,7 +59,10 @@ import StealthNet.Security.TokenGenerator;
 /* StealthNet.Comms class ****************************************************/
 
 /**
- * A class to buffered write and buffered read to and from an opened socket.
+ * A class to buffered write and buffered read to and from an opened socket. 
+ * Enables bidirectional communication between two StealthNet peers. This class,
+ * before allowing communications between the parties, secures the communication
+ * by establishing several security protocols.
  * 
  * @author Stephen Gould
  * @author Matt Barrie
@@ -70,17 +71,18 @@ import StealthNet.Security.TokenGenerator;
  */
 public class Comms {
 	/** Debug options. */
-	private static final boolean DEBUG_GENERAL            = Debug.isDebug("StealthNet.Comms.General");
-	private static final boolean DEBUG_ERROR_TRACE        = Debug.isDebug("StealthNet.Comms.ErrorTrace") || Debug.isDebug("ErrorTrace");
-	private static final boolean DEBUG_RAW_PACKET         = Debug.isDebug("StealthNet.Comms.RawOutput");
-	private static final boolean DEBUG_DECODED_PACKET     = Debug.isDebug("StealthNet.Comms.DecodedOutput");
-	private static final boolean DEBUG_ENCRYPTED_PACKET   = Debug.isDebug("StealthNet.Comms.EncryptedOutput");
-	private static final boolean DEBUG_DECRYPTED_PACKET   = Debug.isDebug("StealthNet.Comms.DecryptedOutput");
-	private static final boolean DEBUG_RECEIVE_READY      = Debug.isDebug("StealthNet.Comms.ReceiveReady");
-	private static final boolean DEBUG_AUTHENTICATION     = Debug.isDebug("StealthNet.Comms.Authentication");
-	private static final boolean DEBUG_ENCRYPTION         = Debug.isDebug("StealthNet.Comms.Encryption");
-	private static final boolean DEBUG_INTEGRITY          = Debug.isDebug("StealthNet.Comms.Integrity");
-	private static final boolean DEBUG_REPLAY_PREVENTION  = Debug.isDebug("StealthNet.Comms.ReplayPrevention");
+	private static final boolean DEBUG_GENERAL           = Debug.isDebug("StealthNet.Comms.General");
+	private static final boolean DEBUG_ERROR_TRACE       = Debug.isDebug("StealthNet.Comms.ErrorTrace") || Debug.isDebug("ErrorTrace");
+	private static final boolean DEBUG_PURE_PACKET       = Debug.isDebug("StealthNet.Comms.PureOutput");
+	private static final boolean DEBUG_DECODED_PACKET    = Debug.isDebug("StealthNet.Comms.DecodedOutput");
+	private static final boolean DEBUG_ENCRYPTED_PACKET  = Debug.isDebug("StealthNet.Comms.EncryptedOutput");
+	private static final boolean DEBUG_DECRYPTED_PACKET  = Debug.isDebug("StealthNet.Comms.DecryptedOutput");
+	private static final boolean DEBUG_RAW_PACKET        = Debug.isDebug("StealthNet.Comms.RawOutput");
+	private static final boolean DEBUG_RECEIVE_READY     = Debug.isDebug("StealthNet.Comms.ReceiveReady");
+	private static final boolean DEBUG_AUTHENTICATION    = Debug.isDebug("StealthNet.Comms.Authentication");
+	private static final boolean DEBUG_ENCRYPTION        = Debug.isDebug("StealthNet.Comms.Encryption");
+	private static final boolean DEBUG_INTEGRITY         = Debug.isDebug("StealthNet.Comms.Integrity");
+	private static final boolean DEBUG_REPLAY_PREVENTION = Debug.isDebug("StealthNet.Comms.ReplayPrevention");
 	
 	/** Defaults. */
     public static final String DEFAULT_SERVERNAME = "localhost";	/** Default host for the StealthNet server. */
@@ -204,7 +206,8 @@ public class Comms {
 
     /** 
      * Accepts a connection on the given socket. This usually occurs on the 
-     * server side.
+     * server side. Once the socket has been created, the peer waits for the
+     * other party to initiate all of the relevant security protocols.
      * 
      * @param socket The socket through which the connection is made. 
      * @return True if the initialisation succeeds. False if the initialisation 
@@ -317,23 +320,25 @@ public class Comms {
 
     /**
      * Sends a StealthNet packet by writing it to the print writer for the 
-     * socket. Before transmitting the packet, any established security 
-     * protocols are applied to the message. If any single security protocol
-     * can be applied (because it hasn't yet been initialised), then the
-     * application of that security protocol will be skipped. Beware that this 
-     * may not always be what is wanted. This should be checked at a higher 
-     * layer.
+     * socket. Before the packet is transmitted it is encrypted, if encryption
+     * has been initiated. If not, then the packet will be transmitted in its
+     * unencrypted form. Beware that this may not always be the desired effect.
      * 
-     * @param pckt The packet to be sent.
+     * @param decPckt The packet to be sent.
      * @return True if successful, otherwise false.
      */
     public boolean sendPacket(DecryptedPacket decPckt) {    	
     	/** Print debug information. */
-    	if (DEBUG_RAW_PACKET)
-    				System.out.println("(raw)       sendPacket(" + decPckt.toString() + ")");
+    	if (DEBUG_PURE_PACKET)
+			System.out.println("(pure)      sendPacket(" + decPckt.toString() + ")");
     	if (DEBUG_DECODED_PACKET)
-    				System.out.println("(decoded)   sendPacket(" + decPckt.getDecodedString() + ")");
+			System.out.println("(decoded)   sendPacket(" + decPckt.getDecodedString() + ")");
     	
+    	/** 
+    	 * Encrypt the packet. If confidentialityProvider is null, then the 
+    	 * EncryptionPacket will not actually be encrypted in any way, but 
+    	 * rather will contain the unencrypted packet contents.
+    	 */
     	EncryptedPacket encPckt;
     	try {
     		encPckt = decPckt.encrypt(confidentialityProvider);
@@ -342,8 +347,11 @@ public class Comms {
 			if (DEBUG_ERROR_TRACE) e.printStackTrace();
 			return false;
 		}
-		if (DEBUG_ENCRYPTED_PACKET)	
-				System.out.println("(encrypted) sendPacket(" + encPckt.toString() + ")");
+		if ((confidentialityProvider != null) && DEBUG_ENCRYPTED_PACKET)	
+			System.out.println("(encrypted) sendPacket(" + encPckt.getEncryptedString() + ")");
+		
+		if (DEBUG_RAW_PACKET)
+			System.out.println("(raw)       sendPacket(" + encPckt.toString() + ")");
     	
         if (dataOut == null) {
         	System.err.println("PrintWriter does not exist!");
@@ -365,6 +373,10 @@ public class Comms {
      * situation in which this function returns null is when the communications
      * have in some way been closed.
      * 
+     * Note that the string received by the buffered data reader represents an
+     * EncryptedPacket. This function will attempt to decrypt this packet (into
+     * a DecryptedPacket) before returning the packet to the user.
+     * 
      * @return The packet that was received.
      */
     public DecryptedPacket recvPacket() throws IOException {
@@ -376,14 +388,14 @@ public class Comms {
         
         /** Debug information. */
         if (DEBUG_RAW_PACKET)
-        			System.out.println("(raw)       recvPacket(" + packetString + ")");
+    			System.out.println("(raw)       recvPacket(" + packetString + ")");
         
         /** Construct the packet. */
         EncryptedPacket encPckt = null;
     	try {
-    		encPckt = new EncryptedPacket(packetString, HashedMessageAuthenticationCode.getDigestBytes());
+    		encPckt = new EncryptedPacket(packetString, HashedMessageAuthenticationCode.DIGEST_BYTES);
     	} catch (Exception e) {
-    		if (DEBUG_GENERAL) System.out.println("Unable to instantiate packet. Discarding...");
+    		if (DEBUG_GENERAL) System.err.println("Unable to instantiate packet. Discarding...");
     		
     		/** Retrieve another packet by recursion. */
     		return recvPacket();
@@ -393,7 +405,7 @@ public class Comms {
     	if (integrityProvider != null) {
     		try {
 		    	if (!encPckt.verifyMAC(integrityProvider)) {
-						System.err.println("(verified)  recvPacket - Packet failed MAC verification! Discarding...");
+					System.err.println("(verified)  recvPacket - Packet failed MAC verification! Discarding...");
 					
 					/** Retrieve another packet by recursion. */
 		    		return recvPacket();
@@ -402,7 +414,7 @@ public class Comms {
 	    				System.out.println("(verified)  recvPacket - Packet passed MAC verification.");
 		    	}
     		}  catch (Exception e) {
-        		if (DEBUG_GENERAL) System.out.println("Unable to verify packet. Discarding...");
+        		if (DEBUG_GENERAL) System.err.println("Unable to verify packet. Discarding...");
         		
         		/** Retrieve another packet by recursion. */
         		return recvPacket();
@@ -414,21 +426,24 @@ public class Comms {
 		try {
 			decPckt = encPckt.decrypt(confidentialityProvider);
 		} catch (Exception e) {
-			System.err.println("Failed to decrypt packet! Discarding...");
+			if (DEBUG_GENERAL) System.err.println("Failed to decrypt packet! Discarding...");
 			
 			/** Retrieve another packet by recursion. */
     		return recvPacket();
 		}
 		if (DEBUG_DECRYPTED_PACKET)	
-				System.out.println("(decrypted) recvPacket(" + decPckt.toString() + ")");
+			System.out.println("(decrypted) recvPacket(" + decPckt.toString() + ")");
     	
     	/** Print debug information. */
-        if (DEBUG_DECODED_PACKET)
-        			System.out.println("(decoded)   recvPacket(" + decPckt.getDecodedString() + ")");
+		if (DEBUG_RAW_PACKET)
+			System.out.println("(raw)       recvPacket(" + decPckt.toString() + ")");
+		if (DEBUG_DECODED_PACKET)
+			System.out.println("(decoded)   recvPacket(" + decPckt.getDecodedString() + ")");
         
         if (replayPreventionRX != null) {
         	if (!replayPreventionRX.isAllowed(decPckt.token)) {
-    				System.err.println("(verified)  recvPacket - Packet failed replay prevention! Discarding...");
+				if (DEBUG_GENERAL)
+					System.err.println("(verified)  recvPacket - Packet failed replay prevention! Discarding...");
 				
 				/** Retrieve another packet by recursion. */
 	    		return recvPacket();
@@ -491,7 +506,7 @@ public class Comms {
      * the peer that wishes to initiate the key exchange (ie. the peer that 
      * initiated the session).
      */
-    public void initKeyExchange() {
+    private void initKeyExchange() {
     	if (DEBUG_AUTHENTICATION) System.out.println("Initiating key exchange.");
     	
     	if (authenticationProvider != null) {
@@ -528,7 +543,7 @@ public class Comms {
 	        	DecryptedPacket pckt = recvPacket();
 	            
 	        	if (pckt == null)
-	        		continue;
+	        		break;
 	        	
 	            switch (pckt.command) {
 	            	case DecryptedPacket.CMD_AUTHENTICATIONKEY:
@@ -537,9 +552,6 @@ public class Comms {
 	                	if (DEBUG_GENERAL) System.out.println("Performing key exchange.");
 	            	    keyExchange(pubKey);
 	                    break;
-	            
-	                default:
-	                    System.err.println("Unexpected command received from server!");
 	            }
     		} catch (IOException e) {}
         }
@@ -555,7 +567,7 @@ public class Comms {
      * 
      * @param publicKey The public key that was sent to us.
      */
-    public void keyExchange(String publicKey) {
+    private void keyExchange(String publicKey) {
     	if (authenticationProvider == null) {
     		/** We haven't yet made our own private/public keys. */
     		initKeyExchange();
@@ -577,13 +589,13 @@ public class Comms {
     }
     
     /** 
-     * Enable encryption on the communications, using a hash of the shared secret
-     * key as the encryption key.
+     * Enable encryption on the communications, using a hash of the shared 
+     * secret key as the encryption and decryption keys.
      * 
      * After this function returns (unless an error occurred), encryption and 
      * decryption for this communication should be initialised.
      */
-    public void initEncryption() {
+    private void initEncryption() {
     	if (authenticationKey == null) {
     		System.err.println("Shared secret key has not yet been generated. Cannot create encryption key.");
     		System.exit(1);
@@ -598,7 +610,7 @@ public class Comms {
 			final String cryptKeyString = new String(getHexValue(confidentialityKey.getEncoded()));
 			if (DEBUG_ENCRYPTION) System.out.println("Generated AES encryption/decryption key: " + cryptKeyString);
 			
-			confidentialityProvider = new AESEncryption(confidentialityKey, confidentialityKey);
+			confidentialityProvider = new AESEncryption(confidentialityKey);
 		} catch (Exception e) {
 			System.err.println("Unable to provide encryption/decryption. Failed to generate AES encryption/decryption key or initialise ciphers.");
 			if (DEBUG_ERROR_TRACE) e.printStackTrace();
@@ -608,7 +620,7 @@ public class Comms {
     
     /** 
      * Enable Message Authentication Codes (MACs) on the communications. 
-     * Generate a key for the HMAC and transmit it to the other peer.
+     * Generates a key for the HMAC and transmits it to the other peer.
      */
     private void initIntegrityKey() {
     	if (DEBUG_INTEGRITY) System.out.println("Initiating integrity key.");
@@ -645,10 +657,8 @@ public class Comms {
     		try {
 	        	pckt = recvPacket();
 	            
-	        	if (pckt == null) {
-	        		pckt = new DecryptedPacket();
-	        		continue;
-	        	}
+	        	if (pckt == null)
+	        		break;
 	        	
 	        	switch (pckt.command) {
 	            	case DecryptedPacket.CMD_INTEGRITYKEY:
@@ -668,9 +678,6 @@ public class Comms {
             			if (integrityKey != null)
             				done = true;
             			break;
-	            
-	                default:
-	                    break;
 	            }
     		} catch (IOException e) {}
         }
@@ -687,7 +694,8 @@ public class Comms {
     }
     
     /** 
-     * TODO
+     * Initiates replay prevention. Generates a seeded pseudo-random number for
+     * token generation, and then transmits the seed to the peer.
      */
     private void initReplayPrevention() {
     	Long rxSeed = null;
@@ -711,7 +719,8 @@ public class Comms {
     }
     
     /**
-     * TODO
+     * Continuously receives (and discards unrelated) packets until the 
+     * pseudo-random number generation seed exchange has completed.
      */
     private void waitForReplayPreventionSeed() {
     	if (DEBUG_REPLAY_PREVENTION) System.out.println("Waiting for successful replay prevention seed exchange...");
@@ -722,10 +731,8 @@ public class Comms {
     		try {
 	        	pckt = recvPacket();
 	            
-	        	if (pckt == null) {
-	        		pckt = new DecryptedPacket();
-	        		continue;
-	        	}
+	        	if (pckt == null)
+	        		break;
 	        	
 	        	switch (pckt.command) {
 	            	case DecryptedPacket.CMD_TOKENSEED:
@@ -745,9 +752,6 @@ public class Comms {
 	    	    		
 	    	        	/** Done! */
 	                    done = true;
-	                    break;
-	            
-	                default:
 	                    break;
 	            }
     		} catch (IOException e) {}

@@ -4,14 +4,10 @@
  *
  * PACKAGE:         StealthNet
  * FILENAME:        Chat.java
- * AUTHORS:         Matt Barrie and Joshua Spence
+ * AUTHORS:         Matt Barrie, Joshua Spence and Ahmad Al Mutawa.
  * DESCRIPTION:     Implementation of StealthNet Client Chat for ELEC5616
- *                  programming assignment.
- *                  
- *                  This code has been written for the purposes of teaching
- *                  cryptography and computer security. It is to be used as
- *                  a demonstration only. No attempt has been made to optimise
- *                  the source code.
+ *                  programming assignment. Debug code has also been added to 
+ *                  this class.
  * VERSION:         3.0
  *
  *****************************************************************************/

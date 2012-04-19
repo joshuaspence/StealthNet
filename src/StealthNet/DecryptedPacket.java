@@ -5,9 +5,12 @@
  *
  * PACKAGE:         StealthNet
  * FILENAME:        DecryptedPacket.java
- * AUTHORS:         Matt Barrie, Stephen Gould, Ryan Junee and Joshua Spence
+ * AUTHORS:         Matt Barrie, Stephen Gould, Ryan Junee, Joshua Spence and 
+ * 					Ahmad Al Mutawa
  * DESCRIPTION:     Implementation of a StealthNet packet. This class represents
- * 					decrypted packet contents.
+ * 					decrypted packet contents. This class is more closely based
+ * 					on the original 'Packet' class than the EncryptedPacket
+ * 					class.
  * VERSION:         2.0
  *
  *****************************************************************************/
@@ -80,7 +83,7 @@ public class DecryptedPacket {
 
     /** Packet contents. */
     byte command;							/** The command being sent in the packet. */      
-    final byte data[];						/** The data being sent in the packet. */
+    final byte[] data;						/** The data being sent in the packet. */
     final Long token;						/** The pseudo-random token for this packet. */
     final MessageAuthenticationCode mac;	/** The MAC used to provide a message digest. */
 
@@ -137,7 +140,7 @@ public class DecryptedPacket {
         /** Copy the data. */
         if (d == null)
         	this.data = new byte[0];
-        else  {
+        else {
         	this.data = new byte[dLen];
         	System.arraycopy(d, 0, this.data, 0, dLen);
         }
@@ -391,7 +394,6 @@ public class DecryptedPacket {
     /**
      * Get a string representation of the packet. For debug purposes only. 
      * 
-     * @param command The byte value of the command to query the name of.
      * @return A comma-separated string containing the the value of each of the
      * packet's fields. For purely cosmetic purposes, newline characters will be
      * replaced by semicolons.
@@ -435,29 +437,10 @@ public class DecryptedPacket {
     public EncryptedPacket encrypt(Encryption e) throws UnsupportedEncodingException, IllegalBlockSizeException, BadPaddingException, InvalidAttributeValueException, IllegalArgumentException {
     	if (e != null) {
 	    	final byte[] encryptedData = e.encrypt(this.toString()).getBytes();
-	    	return new EncryptedPacket(encryptedData, encryptedData.length, HashedMessageAuthenticationCode.getDigestBytes(), this.mac);
+	    	return new EncryptedPacket(encryptedData, encryptedData.length, HashedMessageAuthenticationCode.DIGEST_BYTES, this.mac);
     	} else {
-    		return new EncryptedPacket(this.toString().getBytes(), this.toString().getBytes().length, HashedMessageAuthenticationCode.getDigestBytes(), this.mac);
+    		return new EncryptedPacket(this.toString().getBytes(), this.toString().getBytes().length, HashedMessageAuthenticationCode.DIGEST_BYTES, this.mac);
     	}
-    }
-    
-    /**
-     * Decrypt this packet.
-     * 
-     * @return The decrypted packet.
-     */
-    /**
-     * Decrypt this packet.
-     * 
-     * @param d The encryption instance to decrypt the packet. If null, then it
-     * will be assumed that the packet is not encrypted.
-     * @return The decrypted packet.
-     * @throws BadPaddingException 
-     * @throws IllegalBlockSizeException 
-     * @throws UnsupportedEncodingException 
-     */
-    public DecryptedPacket decrypt(Encryption d) throws UnsupportedEncodingException, IllegalBlockSizeException, BadPaddingException {
-    	return this;
     }
 }
 

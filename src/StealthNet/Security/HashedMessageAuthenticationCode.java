@@ -38,18 +38,13 @@ public class HashedMessageAuthenticationCode implements MessageAuthenticationCod
 	
 	/** Constants. */
 	public static final String HMAC_ALGORITHM = "HmacMD5";
-	private static final int DIGEST_BYTES = 16; 
 	
 	/**
-	 * Get the expected fixed number of bytes of the digest produced by this 
-	 * MAC. We need to know this so that we don't have to encode the data 
+	 * The expected fixed number of bytes of the digest produced by this MAC 
+	 * function. We need to know this so that we don't have to encode the data 
 	 * length and digest length into the transmitted string.
-	 * 
-	 * @return The expected fixed number of bytes of the digest.
 	 */
-	public static int getDigestBytes() {
-		return DIGEST_BYTES;
-	}
+	public static final int DIGEST_BYTES = 16; 
 	
 	/**
 	 * Constructor

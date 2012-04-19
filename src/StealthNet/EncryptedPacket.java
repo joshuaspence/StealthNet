@@ -5,7 +5,8 @@
  *
  * PACKAGE:         StealthNet
  * FILENAME:        EncryptedPacket.java
- * AUTHORS:         Matt Barrie, Stephen Gould, Ryan Junee and Joshua Spence
+ * AUTHORS:         Matt Barrie, Stephen Gould, Ryan Junee, Joshua Spence and
+ * 					Ahmad Al Mutawa
  * DESCRIPTION:     Implementation of a StealthNet packet. This class represents
  * 					encrypted packet contents.
  * VERSION:         2.0
@@ -21,6 +22,8 @@ import java.io.UnsupportedEncodingException;
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 import javax.management.InvalidAttributeValueException;
+
+import org.apache.commons.codec.binary.Base64;
 
 import StealthNet.Security.Encryption;
 import StealthNet.Security.MessageAuthenticationCode;
@@ -230,7 +233,6 @@ public class EncryptedPacket {
     /**
      * Get a string representation of the packet. For debug purposes only. 
      * 
-     * @param command The byte value of the command to query the name of.
      * @return A comma-separated string containing the the value of each of the
      * packet's fields. For purely cosmetic purposes, newline characters will be
      * replaced by semicolons.
@@ -247,28 +249,11 @@ public class EncryptedPacket {
     	
     	/** Packet digest. */
     	if (digest.length > 0)
-    		str += (new String(digest));
+    		str += Base64.encodeBase64(digest);
     	else
     		str += "null";
     	
     	return str;
-    }
-    
-    /**
-     * Encrypt this packet.
-     * 
-     * @param e The encryption instance to encrypt the packet. If null, then it
-     * will be assumed that the packet is not encrypted. An EncryptedPacket 
-     * will still be returned, but the data contained in that packet will NOT
-     * be encrypted.
-     * @return The encrypted packet.
-     * 
-     * @throws BadPaddingException 
-     * @throws IllegalBlockSizeException 
-     * @throws UnsupportedEncodingException 
-     */
-    public EncryptedPacket encrypt(Encryption e) throws UnsupportedEncodingException, IllegalBlockSizeException, BadPaddingException {
-    	return this;
     }
     
     /**
@@ -283,9 +268,9 @@ public class EncryptedPacket {
      * @throws IllegalBlockSizeException 
      * @throws UnsupportedEncodingException 
      */
-    public DecryptedPacket decrypt(Encryption e) throws UnsupportedEncodingException, IllegalBlockSizeException, BadPaddingException {
-    	if (e != null) {
-	    	final byte[] decryptedData = e.decrypt(data).getBytes();
+    public DecryptedPacket decrypt(Encryption d) throws UnsupportedEncodingException, IllegalBlockSizeException, BadPaddingException {
+    	if (d != null) {
+	    	final byte[] decryptedData = d.decrypt(data).getBytes();
 	    	return new DecryptedPacket(new String(decryptedData));
     	} else {
     		return new DecryptedPacket(new String(data));

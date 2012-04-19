@@ -6,7 +6,7 @@
  * FILENAME:        AESEncryption.java
  * AUTHORS:         Joshua Spence and Ahmad Al Mutawa
  * DESCRIPTION:     Implementation of AES encryption for encrypting and 
- * 					decrpyting StealthNet communications.
+ * 					decrypting StealthNet communications.
  * VERSION:         1.0
  *
  *****************************************************************************/
@@ -53,6 +53,42 @@ public class AESEncryption implements Encryption {
 	public static final String HASH_ALGORITHM = "MD5";
 	public static final String KEY_ALGORITHM = "AES";
 	public static final String CIPHER_ALGORITHM = "AES/CBC/PKCS5Padding";
+	
+	/**
+	 * Constructor.
+	 * 
+	 * @param key The SecretKey to be used for encryption and decryption.
+	 * 
+	 * @throws NoSuchPaddingException 
+	 * @throws NoSuchAlgorithmException 
+	 * @throws InvalidKeyException 
+	 * @throws InvalidAlgorithmParameterException 
+	 */
+	public AESEncryption(SecretKey key) throws InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidAlgorithmParameterException {
+		this.encryptionKey = key;
+        this.decryptionKey = key;
+        
+        /** 
+         * Generate the initialisation vector using a seeded random number
+         * generator, with the seed equal to the has of the encryption key. In 
+         * this way, both peers should generate the same initialisation 
+         * vectors.
+         */
+        final byte[] IV = new byte[16];
+        final Random IVGenerator = new Random(key.hashCode());
+        for (int i = 0; i < 16; i++)
+        	IV[i] = (byte) IVGenerator.nextInt();
+        this.encryptionIPS = new IvParameterSpec(IV);
+        this.decryptionIPS = new IvParameterSpec(IV);
+        
+        /** Initialise encryption cipher. */
+        encryptionCipher = Cipher.getInstance(CIPHER_ALGORITHM);
+		encryptionCipher.init(Cipher.ENCRYPT_MODE, encryptionKey, this.encryptionIPS);
+		
+		/** Initialise decryption cipher. */
+		decryptionCipher = Cipher.getInstance(CIPHER_ALGORITHM);
+		decryptionCipher.init(Cipher.DECRYPT_MODE, decryptionKey, this.decryptionIPS);
+	}
 	
 	/**
 	 * Constructor.
@@ -127,7 +163,7 @@ public class AESEncryption implements Encryption {
 	}
 	
 	/**
-	 * Decrypts a message.
+	 * Decrypts a message using the decryption key.
 	 * 
 	 * @param ciphertext The message to be decrypted.
 	 * @return The cleartext message.
@@ -141,7 +177,7 @@ public class AESEncryption implements Encryption {
 	}
 	
 	/**
-	 * Decrypts a message.
+	 * Decrypts a message using the decryption key.
 	 * 
 	 * @param ciphertext The message to be decrypted.
 	 * @return The cleartext message.
