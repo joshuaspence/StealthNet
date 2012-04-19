@@ -125,7 +125,7 @@ does not initiate key exchange but rather calls \verb+waitForKeyExchange()+
 after establishing the communications socket.
 
 When the \verb+waitForKeyExchange()+ function returns, the StealthNet 
-communications class will have had its \verb+authenitcationProvider+ and 
+communications class will have had its \verb+authenitcationProvider+ and \\
 \verb+authenticationKey+ variables set.
 
 \algorithm{Diffie-Hellman key exchange} is implemented as a feature of the
@@ -140,23 +140,100 @@ Encryption is the process of transforming `plaintext' data using a cipher to
 make it unreadable to anyone except those possessing the key. In this context,
 encryption also refers to the reverse process of ``decryption'' --- making
 encrypted data readable again. In \packageName{}, we have implemented the
-\algorithm{Advanced Encryption Standard (AES)}.
+\algorithm{Advanced Encryption Standard (AES)} with a 128-bit key length and a 
+block size of 16-bytes (128-bits).
+
+For cryptographers, a cryptographic `break' is anything faster than a brute 
+force—performing one trial decryption for each key. Thus, an attack against a 
+128-bit-key AES requiring $2^{100}$ operations (compared to $2^{128}$ possible 
+keys) would be considered a break.
 
 \subsection{Details}
-\algorithm{AES} is based on a design principle known as a 
+\algorithm{AES} is a block cipher based on a design principle known as a 
 `permutation-substitution network'. It has a fixed block size of 128 bits and a
-key size of either 128, 192 or 256 bits.
+key size of either 128, 192 or 256 bits. 
+% TO FINISH
 
 \subsection{Implementation}
+Today, AES has become the de facto standard for encryption algorithms. The 
+United States government has declared that AES with a key size of 128 bits (such
+as that implemented in our software) is sufficient to protect classified 
+information up to the \textsc{Secret} level, but not for data classified at the
+\textsc{Top Secret} level. For this reason, we believe that, given its 
+purpose, a 128-bit key size is sufficient for \serviceName{}.
+
+In our implementation, we used the \algorithm{Cipher-Block Chaining (CBC)} mode 
+of operation for our cipher. In CBC mode, each block of plaintext is 
+\verb+XOR+ed with the previous ciphertext block before being encrypted. This 
+way, each ciphertext block is dependent on all plaintext blocks processed up to 
+that point. Also, to make each message unique, an initialization vector must be 
+used in the first block. \algorithm{CBC} has the advantage over the 
+\algorithm{Electronic Code Book (ECB)} mode in that the \verb+XOR+ing process 
+hides plaintext patterns. CBC has been the most commonly used mode of operation 
+and for this reason, is sufficient for the \serviceName{} system.
+
+In our implementation, we used \algorithm{PKCS5} padding.  A block cipher 
+requires input that is an exact multiple of the block size. If the input buffer 
+is not a multiple of the block size, it must be padded to fill up the last 
+block. In general, a padding scheme is used to ensure that input plaintext is a 
+multiple of the input block size, in our case 128-bits. The padding is added 
+before encryption and removed after decryption. \algorithm{PKCS5} is one 
+algorithm to provide this padding, and is the algorithm chosen for our 
+\packageName{} implementation. This algorithm pads even if the length of data is
+already a multiple of 8 bytes; in such a case, it adds 8 extra bytes. It always 
+pads so that when decrypting, the last byte is guaranteed to be a pad byte, 
+namely, a number between 1 and 8 indicating the total number of pad bytes.
 
 % INTEGRITY
 \section{Integrity}
 
 \subsection{Introduction}
+In information security, integrity means that data cannot be modified 
+undetectably. Integrity is violated when a message is actively modified in 
+transit. In order to provide integrity, each transmitted packet is appended with
+a \algorithm{Message Authentication Code (MAC)}, which can be calculated by the
+sender and verified by the receiver. A \algorithm{MAC} is produced using by 
+applying a keyed hash function to the packet contents, using a shared secret key
+for both the sender and receiver. In this way, an attacker (without knowing the 
+key) should be unable the alter the transmitted data in such a way that the 
+modified packet matches a modified \algorithm{MAC} digest.
 
 \subsection{Details}
+\algorithm{HMAC (Hash-based Message Authentication Code)} is a specific 
+construction for calculating a \algorithm{Message Authentication Code (MAC)} 
+involving a cryptographic hash function in combination with a secret key. As 
+with any \algorithm{MAC}, it may be used to simultaneously verify both the data 
+integrity and the authenticity of a message. Any cryptographic hash function, 
+such as \algorithm{MD5} or \algorithm{SHA-1}, may be used in the calculation of 
+a \algorithm{HMAC}; and the resulting \algorithm{MAC} algorithm is termed 
+\algorithm{HMAC-MD5} or \algorithm{HMAC-SHA1} accordingly. The cryptographic 
+strength of the \algorithm{HMAC} depends upon the cryptographic strength of the 
+underlying hash function, the size of its hash output length in bits, and on the
+size and quality of the cryptographic key. In our implementation, we use 
+\algorithm{HMAC-SHA1} to provide 20-byte 
+\algorithm{Message Authentication Codes}.
+
+\subsection{Justification}
+\algorithm{SHA-1} is known to be more secure than \algorithm{MD5}, and thus it
+makes more sense to implement a \algorithm{SHA1}-based \algorithm{HMAC} 
+algorithm within \packageName{}. In fact, \algorithm{SHA-1} is the most widely 
+used of the existing \algorithm{SHA} hash functions.
 
 \subsection{Implementation}
+Our implementation of \algorithm{Message Authentication Codes} in \packageName{}
+is provided using the \verb+MessageAuthenticationCode+ interface, which provides
+prototype methods \verb+createMAC()+ and \verb+verifyMAC()+. In particular, a \\ 
+\verb+HashedMessageAuthenticationCode+ class is provided, which implements the
+\algorithm{Message Authentication Code} algorithm using a keyed \algorithm{MD5} 
+hash function. The key for the hash function is generated by the initiator of 
+the communications session (in the \verb+initiateSession()+ method), and is 
+shared with the peer that is accepting the communications session through a \\
+\verb+CMD_INTEGRITYKEY+ packet. After initialisation of the \\
+\verb+HashedMessageAuthenticationCode+ instances, each and every packet that is
+created by a peer is appended with a \algorithm{Message Authentication Code}. 
+At the receiving end of the communication, the \verb+recvPacket()+ function 
+verifies the \algorithm{Message Authentication Code} and discards the packet if
+the received packet fails verification.
 
 % REPLAY PREVENTION
 \section{Replay prevention}
@@ -216,10 +293,11 @@ The implementation of the various security measures implemented in
 cryptographic keys between parties, modifications were made to the 
 \packageName{} \verb+Packet+ class to accomodate three additional command types:
 \begin{itemize}
-\item \verb+CMD_AUTHENTICATIONKEY+: For exchanging Diffie-Hellman keys
-between the parties.
-\item \verb+CMD_INTEGRITYKEY+: For exchanging ``Hmac-MD5'' keys used 
-for Hashed Message Authentication Code (HMAC) generation and verification.
+\item \verb+CMD_AUTHENTICATIONKEY+: For exchanging \algorithm{Diffie-Hellman} 
+keys between the parties.
+\item \verb+CMD_INTEGRITYKEY+: For exchanging \algorithm{SHA-1} keys used for
+\algorithm {Hashed Message Authentication Code (HMAC)} generation and 
+verification.
 \item \verb+CMD_TOKENSEED+: A seed for a \verb+PRNGTokenGenerator+, 
 which is used to generate and test token numbers that are appended to a packet
 in order to prevent replay prevention.
@@ -227,12 +305,13 @@ in order to prevent replay prevention.
 
 These additional packet commands should not appear during normal execution of 
 \serviceName{}, but rather should only exist during execution of the
-\verb+initiateSession()+ and \verb+acceptSession()+ functions.
+\verb+initiateSession()+ and \verb+acceptSession()+ functions, and are handled 
+completely within the \verb+Comms+ class.
 
 \subsection{Packet}
 In order to share additional data between communicating parties, the 
-\serviceName{} \verb+Packet+ class was exended such that it is composed of the
-following fields:
+\serviceName{} \verb+Packet+ class was renamed to \verb+DecryptedPacket+ and 
+exended such that it is composed of the following fields:
 \begin{itemize}
 \item \verb+command+: The command type being transmitted in the 
 packet.
@@ -240,7 +319,14 @@ packet.
 \item \verb+token+: The unique token, generated by a pseudo-random
 number generator in order to allow a given message to be received only once on 
 the receiving end of the communications.
-\item \verb+digest+: The MAC digest of the packet contents, used to 
+\end{itemize}
+
+An additional class, \verb+EncryptedPacket+ was designed to store the following
+data:
+\begin{itemize}
+\item \verb+data+: The encrypted contents of the corresponding 
+\verb+DecryptedPacket+.
+\item \verb+digest+: The MAC digest of the encrypted packet contents, used to 
 verify packet integrity.
 \end{itemize}
 
@@ -248,30 +334,22 @@ verify packet integrity.
 The security measures are applied to packet data in the following order:
 \begin{enumerate}
 \item Token generation
-\item MAC digest calculation
 \item Encryption
+\item MAC digest calculation
 \end{enumerate}
 
 This ordering effectively defines the degree to which the various security 
 protocols are effective. MAC digest calculation generates a MAC digest based on
-the packet's \verb+command+, \verb+data+ and \verb+token+ fields and can, 
-consequently, be used to verify the integrity of these three fields. Both 
-token generation and MAC digest calculation occur internally to the 
-\verb+Packet+ class, at the time that the packet is instantiated.
+the encrypted packet's \verb+command+, \verb+data+ and \verb+token+ fields and 
+can, consequently, be used to verify the integrity of these three fields. All 
+security methods occur internally to the \verb+DecryptedPacket+ and 
+\verb+EncryptedPacket+ classes, either at the time that the packet is 
+instantiated or just before/after the packet is transmitted/received.
 
-Encryption is applied to all packet fields - \verb+command+, \verb+data+, 
-\verb+token+ and \verb+digest+. Whilst not strictly necessary, this ensures that
+Encryption is applied to all \verb+DecryptedPacket+ fields --- \verb+command+, 
+\verb+data+ and \verb+token+. Whilst not strictly necessary, this ensures that 
 all of these fields remain private from a potential attacker, giving the 
-attacker very little information on which to base an attack. A consequence of 
-applying encryption as the final stage is that if an attacker was to modify the
-transmitted data (let's say, for example, by reverse the packet string that is 
-transmitted over the communications channel), then when the packet string is 
-decrypted at the receiving end, it is possible for the decrypted packet to 
-contain garbage data. In fact, it may not even be possible to create a packet
-from the received packet string, as numeric fields encoded in the packet string
-may no longer be parsable to an integer. In the situation that an encrypted 
-packet is altered such that it cannot be decoded, the packet will be identified
-as corrupted and discarded silently.
+attacker very little information on which to base an attack. 
 
 \subsection{Proxy}
 In addition to the provided \serviceName{} \verb+Client+ and \verb+Server+ 
@@ -300,7 +378,22 @@ Whilst various security protocols have been implemented in \serviceName{} in
 order to provide authentication, confidentialty, integrity and replay 
 prevention; the communications application is is still by no means completely
 secure. Of particular mention, the application is still vulnerable to a 
-\algorithm{Man-in-the-Middle attack}.
+\algorithm{Man-in-the-Middle attack}. It is possible for an attacker to 
+masquerade as a \serviceName{} server such that a client creates a connection to
+the attacker instead of to the legitimate server. The client still enables all 
+of the appropriate security measures, but every single measure applied is 
+compromised because the attack knows all of the keys that were used. The 
+attacker can then make its own connection to the \emph{real} \serviceName{} 
+server, consequently establish a different set of keys used to provide the 
+various security methods.
+
+In the situation described above, both the server and client could be 
+completely unaware that the attacker is performing a man-in-the-middle attack. 
+Whenever the attacker receives a packet from one party, it is able to decrypt 
+and decode that packet to its original contents, and then re-encode the packet 
+using the other parties keys. Then the attacker is able to transmit the 
+re-encrypted packet to the receiving party, who would accept the packet as a
+legitimate packet from the sending party.
 
 % CHOSEN PLAINTEXT ATTACK
 
