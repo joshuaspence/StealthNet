@@ -883,7 +883,7 @@ public class Client {
 						
 						msgTextBox.append("[INFO] Sending out a secret.\n");
 						if (DEBUG_GENERAL) System.out.println("Starting file transfer.");
-						final FileTransfer ft = new FileTransfer(snComms,	fName, true);
+						final FileTransfer ft = new FileTransfer(snComms, fName, true);
 						ft.start();
 						break;
 
