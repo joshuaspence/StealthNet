@@ -37,14 +37,14 @@ public class HashedMessageAuthenticationCode implements MessageAuthenticationCod
 	private final Mac mac;
 	
 	/** Constants. */
-	public static final String HMAC_ALGORITHM = "HmacMD5";
+	public static final String HMAC_ALGORITHM = "HmacSHA1";
 	
 	/**
 	 * The expected fixed number of bytes of the digest produced by this MAC 
 	 * function. We need to know this so that we don't have to encode the data 
 	 * length and digest length into the transmitted string.
 	 */
-	public static final int DIGEST_BYTES = 16; 
+	public static final int DIGEST_BYTES = 20; 
 	
 	/**
 	 * Constructor
@@ -57,7 +57,7 @@ public class HashedMessageAuthenticationCode implements MessageAuthenticationCod
 	public HashedMessageAuthenticationCode(SecretKey key) throws NoSuchAlgorithmException, InvalidKeyException {
 		this.key = key;
 		
-		/** Create a MAC object using HMAC-MD5 and initialise with key. */
+		/** Create a MAC object using HMAC-SHA1 and initialise with key. */
 		this.mac = Mac.getInstance(HMAC_ALGORITHM);
 	    this.mac.init(this.key);
 	}

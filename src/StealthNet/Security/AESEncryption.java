@@ -81,13 +81,18 @@ public class AESEncryption implements Encryption {
         this.encryptionIPS = new IvParameterSpec(IV);
         this.decryptionIPS = new IvParameterSpec(IV);
         
+        
         /** Initialise encryption cipher. */
         encryptionCipher = Cipher.getInstance(CIPHER_ALGORITHM);
 		encryptionCipher.init(Cipher.ENCRYPT_MODE, encryptionKey, this.encryptionIPS);
+		//System.out.println("Encryption block size = " + encryptionCipher.getBlockSize() + " bytes");
+		//System.out.println("Encryption key length = " + (encryptionIPS.getIV().length * 8) + " bits");
 		
 		/** Initialise decryption cipher. */
 		decryptionCipher = Cipher.getInstance(CIPHER_ALGORITHM);
 		decryptionCipher.init(Cipher.DECRYPT_MODE, decryptionKey, this.decryptionIPS);
+		//System.out.println("Decryption block size = " + encryptionCipher.getBlockSize() + " bytes");
+		//System.out.println("Decryption key length = " + (encryptionIPS.getIV().length * 8) + " bits");
 	}
 	
 	/**

@@ -624,11 +624,11 @@ public class Comms {
     	if (DEBUG_INTEGRITY) System.out.println("Initiating integrity key.");
     	String integrityKeyString = null;
 		try {
-			if (DEBUG_INTEGRITY) System.out.println("Generating MD5 HMAC key.");
+			if (DEBUG_INTEGRITY) System.out.println("Generating SHA1 HMAC key.");
 			final KeyGenerator keyGen = KeyGenerator.getInstance(HashedMessageAuthenticationCode.HMAC_ALGORITHM);
 			integrityKey = keyGen.generateKey();
 			integrityKeyString = new String(getHexValue(integrityKey.getEncoded()));
-			if (DEBUG_INTEGRITY) System.out.println("Generated MD5 HMAC key: " + integrityKeyString);
+			if (DEBUG_INTEGRITY) System.out.println("Generated SHA1 HMAC key: " + integrityKeyString);
 		} catch (Exception e) {
 			System.err.println("Unable to provide integrity. Failed to initialise HMAC.");
 			if (DEBUG_ERROR_TRACE) e.printStackTrace();
