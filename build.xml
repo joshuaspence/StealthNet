@@ -340,13 +340,13 @@
 	    <javadoc sourcepath="${path.src}"
 	                destdir="${path.docs}"
 	           packagenames="*"
-    	           doctitle="${component.title}"
+    	           doctitle="StealthNet"
     	             author="true" 
-    	             bottom="${component.title}" 
+    	             bottom="StealthNet" 
     	             source="${compile.jdk-version.source}"  
     	             access="protected"
                     version="true" 
-    	        windowtitle="${component.title} (Version ${component.version})">
+    	        windowtitle="StealthNet">
 	        <classpath refid="compile.classpath" />
 	    </javadoc>
 	</target>
