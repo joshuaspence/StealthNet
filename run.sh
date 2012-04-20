@@ -103,10 +103,11 @@ DEBUG="\
 -Ddebug.StealthNet.ServerThread.Commands.GetSecret=true \
 "
 DEBUG_ARG=
+ADDITIONAL_ARG=
 
 # Get program command line options
 PN=`basename $0`
-ARGS=`getopt --name "$PN" --long debug,client,proxy,server --options d -- "$@"`
+ARGS=`getopt --name "$PN" --long debug,client,malicious-proxy,proxy,server --options d -- "$@"`
 if [ $? -ne 0 ]; then
     echo "getopt failed!" >&2
     exit 1
@@ -120,6 +121,11 @@ while [ $# -gt 0 ]; do
             
         --client)
         	JAR_FILE=StealthNet_client.jar
+        	;;
+        	
+    	--malicious-proxy)
+    		JAR_FILE=StealthNet_proxy.jar
+    		ADDITIONAL_ARG="-DStealthNet.Proxy.Malicious=true"
         	;;
         	
         --proxy)
@@ -145,17 +151,19 @@ done
 
 # Make sure client or server mode was specified
 if [ -z "$JAR_FILE" ]; then
-	echo "You must specify client (\`--client'), proxy (\`--proxy') or server (\`--server') mode." >&2
+	echo "You must specify client (\`--client'), malicious proxy (\`--malicious-proxy'), proxy (\`--proxy') or server (\`--server') mode." >&2
 	exit 1
 fi
 
-# Execute
+# Execute the relevant command
 if [ -n "$CLASSPATH" ]; then
-	echo "$JRE $DEBUG_ARG -classpath "$CLASSPATH" $JRE_FLAGS -jar $JAR_DIR/$JAR_FILE $@"
+	# Echo the command before executing it
+	echo "$JRE $DEBUG_ARG $ADDITIONAL_ARG -classpath "$CLASSPATH" $JRE_FLAGS -jar $JAR_DIR/$JAR_FILE $@"
 	echo ""
-	$JRE $DEBUG_ARG -classpath "$CLASSPATH" $JRE_FLAGS -jar $JAR_DIR/$JAR_FILE $@
+	$JRE $DEBUG_ARG $ADDITIONAL_ARG -classpath "$CLASSPATH" $JRE_FLAGS -jar $JAR_DIR/$JAR_FILE $@
 else
-	echo "$JRE $DEBUG_ARG $JRE_FLAGS -jar $JAR_DIR/$JAR_FILE $@"
+	# Echo the command before executing it
+	echo "$JRE $DEBUG_ARG $ADDITIONAL_ARG $JRE_FLAGS -jar $JAR_DIR/$JAR_FILE $@"
 	echo ""
-	$JRE $DEBUG_ARG $JRE_FLAGS -jar $JAR_DIR/$JAR_FILE $@
+	$JRE $DEBUG_ARG $ADDITIONAL_ARG $JRE_FLAGS -jar $JAR_DIR/$JAR_FILE $@
 fi

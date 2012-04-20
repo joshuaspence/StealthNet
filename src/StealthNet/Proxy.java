@@ -93,8 +93,8 @@ public class Proxy {
             System.exit(1);
         }
 
-        if (DEBUG_GENERAL) System.out.println("Proxy server is listening on port " + proxyPort + ".");
-        System.out.println("Proxy server online...");
+        if (DEBUG_GENERAL) System.out.println((ProxyThread.isMalicious ? "Malicious proxy" : "Proxy") + " is listening on port " + proxyPort + ".");
+        System.out.println((ProxyThread.isMalicious ? "Malicious proxy" : "Proxy") + " online...");
         
         /** 
          * Wait for and accept connections on the proxy server socket. Create  

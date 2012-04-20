@@ -46,13 +46,22 @@ public class ProxyThread extends Thread {
 	private static final boolean DEBUG_ERROR_TRACE = Debug.isDebug("StealthNet.ProxyThread.ErrorTrace") || Debug.isDebug("ErrorTrace");
 	
 	/** How malicious should we be? */
-	private static final boolean isMalicious = false;			/** True to enable simulated security attacks. */
-	private static final long noMaliciousPacketCount = 5;		/** Don't perform any malicious activity for the first X packets. */
-	private static final int replayProbability = 50;			/** Probability (as an integer out of 100) of a replay attack after the first X packets. */
-	private static final int corruptionProbability = 50;		/** Probability (as an integer out of 100) of a corruption attack after the first X packets. */
+	
+	/** True to enable simulated security attacks. */
+	public static final boolean isMalicious = System.getProperty("StealthNet.Proxy.Malicious", "false").equals("true");
+	
+	/** Don't perform any malicious activity for the first X packets. */
+	private static final long noMaliciousPacketCount = 5;
+	
+	/** Probability (as an integer out of 100) of a replay attack after the first X packets. */
+	private static final int replayProbability = 25;	
+	
+	/** Probability (as an integer out of 100) of a corruption attack after the first X packets. */
+	private static final int corruptionProbability = 25;
 	
 	/** Used to separate thread ID from debug output. */
-	private static final String separator = " >> ";
+	private static final String THREADID_PREFIX = "Thread ";
+	private static final String THREADID_SUFFIX = " >> ";
 	
 	/** ProxyComms classes to handle communications to/from each peer. */
 	private ProxyComms stealthCommsSource = null;
@@ -78,7 +87,7 @@ public class ProxyThread extends Thread {
 		/** Thread constructor. */
 		super("StealthNet.ProxyThread");
 
-		if (DEBUG_GENERAL) System.out.println(this.getId() + separator + "Creating a ProxyThread.");
+		if (DEBUG_GENERAL) System.out.println(THREADID_PREFIX + this.getId() + THREADID_SUFFIX + "Creating a ProxyThread.");
 		
 		/** Create a new ProxyComms instance and accept sessions. */
 		stealthCommsSource = new ProxyComms();
@@ -141,9 +150,8 @@ public class ProxyThread extends Thread {
 	 * the server will randomly simulate a security attack with some 
 	 * probability based on a pseudo-random number generator.  
 	 */
-	@SuppressWarnings("unused")
 	public void run() {
-		if (DEBUG_GENERAL) System.out.println(this.getId() + separator + "Running ProxyThread...");
+		if (DEBUG_GENERAL) System.out.println(THREADID_PREFIX + this.getId() + THREADID_SUFFIX + "Running ProxyThread...");
 
 		String packetString = new String();
 		final Random rnd = new Random();
@@ -162,7 +170,7 @@ public class ProxyThread extends Thread {
 				
 				/** Decide whether or not to corrupt a message. */
 				if (isMalicious && (pcktCounter.compareTo(BigInteger.valueOf(noMaliciousPacketCount)) > 0) && ((rnd.nextInt() % 100) < corruptionProbability)) {
-					if (DEBUG_GENERAL) System.out.println(this.getId() + separator + "Corrupting packet...");
+					if (DEBUG_GENERAL) System.out.println(THREADID_PREFIX + this.getId() + THREADID_SUFFIX + "Corrupting packet...");
 					/** Simply reverse the packet string. */
 					stealthCommsDestination.sendString(new StringBuffer(packetString).reverse().toString());
 				} else {
@@ -171,7 +179,7 @@ public class ProxyThread extends Thread {
 				
 				/** Decide whether or not to replay a message. */
 				if (isMalicious && (pcktCounter.compareTo(BigInteger.valueOf(noMaliciousPacketCount)) > 0) && (rnd.nextInt() % 100) < replayProbability) {
-					if (DEBUG_GENERAL) System.out.println(this.getId() + separator + "Replaying last packet...");
+					if (DEBUG_GENERAL) System.out.println(THREADID_PREFIX + this.getId() + THREADID_SUFFIX + "Replaying last packet...");
 					stealthCommsDestination.sendString(packetString);
 				}
 				
@@ -181,12 +189,12 @@ public class ProxyThread extends Thread {
 			 * This is a fairly "clean" exit which can, but hopefully won't 
 			 * occur.
 			 */
-			System.out.println(this.getId() + separator + "Session terminated.");
+			System.out.println(THREADID_PREFIX + this.getId() + THREADID_SUFFIX + "Session terminated.");
 		} catch (IOException e) {
-			System.out.println(this.getId() + separator + "Session terminated.");
+			System.out.println(THREADID_PREFIX + this.getId() + THREADID_SUFFIX + "Session terminated.");
 			if (DEBUG_ERROR_TRACE) e.printStackTrace();
 		} catch (Exception e) {
-			System.err.println(this.getId() + separator + "Error running proxy thread.");
+			System.err.println(THREADID_PREFIX + this.getId() + THREADID_SUFFIX + "Error running proxy thread.");
 			if (DEBUG_ERROR_TRACE) e.printStackTrace();
 		}
 
@@ -202,7 +210,7 @@ public class ProxyThread extends Thread {
 		
 		/** Kill the other thread. */
 		if ((pairedThread != null) && (!pairedThread.getShouldStop())) {
-			if (DEBUG_GENERAL) System.out.println(this.getId() + separator + "Killing paired thread " + pairedThread.getId() + ".");
+			if (DEBUG_GENERAL) System.out.println(THREADID_PREFIX + this.getId() + THREADID_SUFFIX + "Killing paired thread " + pairedThread.getId() + ".");
 			pairedThread.setShouldStop(true);
 		}
 	}
