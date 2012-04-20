@@ -31,8 +31,8 @@ source code for the \packageName{} package is vulnerable to a wide range of
 \begin{description}
 
 \item[Eavesdropping] The communications implemented in \packageName{} transmit
-messages in cleartext over sockets. This allows an attacker who has gained 
-access to data paths in the network to eavesdrop on \packageName{} 
+messages in cleartext over network sockets. This allows an attacker who has 
+gained access to data paths in the network to eavesdrop on \packageName{} 
 communications.
 
 \item[Data Modification] As a follow-on from \attackName{eavesdropping}, an 
@@ -48,7 +48,7 @@ resulting in a complete lack of communication between \serviceName{} peers.
 
 \item[Man-in-the-Middle] A \attackName{man-in-the-middle} attack occurs when 
 someone between two \serviceName{} peers is actively monitoring, capturing, and 
-controlling your communication transparently. An attacker makes independent 
+controlling the communications transparently. An attacker makes independent 
 connections with the victims and relays messages between them, making them 
 believe that they are talking directly to each other over a private connection.
 
@@ -69,9 +69,9 @@ illegitimately sending and receiving data on behalf of that user.
 The \algorithm{Diffie-Hellman key exchange} method allows two parties that have 
 no prior knowledge of each other to jointly establish a shared secret key over 
 an insecure communications channel. \algorithm{Diffie-Hellman key exchange} 
-involves combining one party's private key with the other party's public key in 
-order to generate a number. The other party does the same with its own private 
-key and the original party's public key. Through the magic of 
+involves combining one party's `private key' with the other party's `public key'
+in order to generate a number. The other party does the same with its own 
+private key and the original party's public key. Through the magic of 
 \algorithm{Diffie-Hellman}, both parties are able to generate the same shared 
 secret key.
 
@@ -92,8 +92,8 @@ of the most common protocols used in networking today, such as in \verb+SSL+
 \algorithm{Diffie-Hellman} has the advantage of using asymmetric cryptographic 
 keys --- also commonly referred to as ``public'' keys. Key management for an
 asymmetric cryptographic key is a lot easier than key management for a
-symmetric cryptographic key. Asymmetric encryption/decryption is many times
-slower than symmetric encryption/decryption, but this does not present any 
+symmetric cryptographic key. However, asymmetric encryption/decryption is many 
+times slower than symmetric encryption/decryption, but this does not present any 
 great issue in the \packageName{} implementation because the 
 \algorithm{Diffie-Hellman key exchange} is used only to exchange symettric
 encryption keys. Our \algorithm{Diffie-Hellman} implementation uses 1024-bit 
@@ -110,7 +110,7 @@ value, as well as a method to generate the shared secret. The actual
 \verb+DiffieHellmanKeyExchange+ class, which either generates or is passed a 
 large prime number and a generator in order to initialise the 
 \algorithm{Diffie-Hellman} public-private key pair. In our implementation of 
-\algorithm{Diffie-Hellman key exchange}, 1024 bit keys are used.
+\algorithm{Diffie-Hellman key exchange}, 1024-bit keys are used.
 
 \algorithm{Diffie-Hellman key exchange} is initialised in the 
 \verb+initiateSession()+ function, after a communications socket has been 
@@ -150,13 +150,13 @@ keys) would be considered a break.
 
 \subsection{Details}
 \algorithm{AES} is a block cipher based on a design principle known as a 
-`permutation-substitution network'. It has a fixed block size of 128 bits and a
-key size of either 128, 192 or 256 bits. 
+`permutation-substitution network'. It has a fixed block size of 128-bits and a
+key size of either 128-, 192- or 256-bits. 
 % TO FINISH
 
 \subsection{Implementation}
 Today, AES has become the de facto standard for encryption algorithms. The 
-United States government has declared that AES with a key size of 128 bits (such
+United States government has declared that AES with a key size of 128-bits (such
 as that implemented in our software) is sufficient to protect classified 
 information up to the \textsc{Secret} level, but not for data classified at the
 \textsc{Top Secret} level. For this reason, we believe that, given its 
@@ -396,8 +396,38 @@ re-encrypted packet to the receiving party, who would accept the packet as a
 legitimate packet from the sending party.
 
 % CHOSEN PLAINTEXT ATTACK
+\section{Chosen Plaintext Attack}
+In a \algorithm{Chosen Plaintext Attack} an attacker can choose a plaintext 
+message, encrypt it by using the current key and then study the resulting 
+ciphertext to infer further information which decreases the effectiveness of the 
+encryption scheme. In the worst case, a chosen-plaintext attack could reveal the
+scheme's private key. The strength of our \packageName{} implementation is 
+dependent on the strength of \algorithm{AES encryption}, as well as certain 
+properties of the creation of the \algorithm{AES} cipher, such as using a 
+random initialisation vector.
+
+It is possible for an attacker to attempt to brute force the encryption key, 
+trying all keys, decrypting the ciphertext and checks that it matches the 
+plaintext. This always works for every cipher, and will give you the matching 
+key. The problem with this for an attacker, is that with a key size of 128-bits 
+the key space is large enough that you need much more time than the remaining 
+lifetime of the universe to check a significant portion of all keys.
+
+There are somne known attacks on \algorithm{AES} which are faster than a brute
+force attack, however these attacks still require an insurmountable amount of 
+time to guarantee the encryption key.
 
 % CONCLUSION
 \section{Conclusion}
+In our implementation of \packageName{} we applied \algorithm{Diffie-Hellam key
+exchange} in order to provide authentication and establish and common shared 
+key. We applied \algorithm{AES} encryption with a 128-bit block size and a
+128-bit key to encrypt and decfrypt all transmitted data. We used a SHA-1 
+hashed Message Authentication Code to allow communicating parties to verify the
+integrity of the transmitted data. And finally we implented a seed pseudo-random
+number generator to define a predictable sequence of tokens numbers that the 
+receiving party can use to detect a replay attack. These various security 
+methods were implemented with a strength (to cryptanalysis) sufficient for the 
+intended communications of the \serviceName{} service.
 
 \end{document}
