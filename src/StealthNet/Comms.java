@@ -14,7 +14,8 @@
  *                  provide authentication. AES encryption is performed to 
  *                  ensure confidentiality. Hashed Message Authentication Codes
  *                  (HMACs) are used to verify message integrity. Finally, a 
- *                  PRNG is used to tokens in order to provide reply prevention.
+ *                  PRNG is used to provide nonces in order to provide reply 
+ *                  prevention.
  *                  
  *                  Debug code has also been added to this class.
  * VERSION:         2.0
@@ -52,8 +53,8 @@ import StealthNet.Security.Encryption;
 import StealthNet.Security.HashedMessageAuthenticationCode;
 import StealthNet.Security.KeyExchange;
 import StealthNet.Security.MessageAuthenticationCode;
-import StealthNet.Security.PRNGTokenGenerator;
-import StealthNet.Security.TokenGenerator;
+import StealthNet.Security.PRNGNonceGenerator;
+import StealthNet.Security.NonceGenerator;
 
 /* StealthNet.Comms class ****************************************************/
 
@@ -108,8 +109,8 @@ public class Comms {
 	private SecretKey integrityKey = null;
     
     /** Prevents replay attacks using a PRNG. */
-	private TokenGenerator replayPreventionTX = null;
-	private TokenGenerator replayPreventionRX = null;
+	private NonceGenerator replayPreventionTX = null;
+	private NonceGenerator replayPreventionRX = null;
 
     /** Output data stream for the socket. */
     private PrintWriter dataOut;            
@@ -161,7 +162,7 @@ public class Comms {
      * Initiates a communications session. This usually occurs on the client 
      * side. The peer that initiates the session is also responsible for 
      * initiating the security features (key exchange, encryption, MAC and 
-     * replay prevention token).
+     * replay prevention nonce).
      * 
      * @param socket The socket through which the connection is made. 
      * @return True if the initialisation succeeds. False if the initialisation 
@@ -365,7 +366,7 @@ public class Comms {
     /**
      * Reads a StealthNet packet from the buffered reader for the socket. Note
      * that this function should (in the normal case) not return any security
-     * related packets (CMD_AUTHENTICATIONKEY, CMD_INTEGRITYKEY, CMD_TOKENSEED).
+     * related packets (CMD_AUTHENTICATIONKEY, CMD_INTEGRITYKEY, CMD_NONCESEED).
      * 
      * If any step (such as decryption) of an incoming packet fails, then this
      * function will recursively call itself. The result is that the only 
@@ -439,7 +440,7 @@ public class Comms {
 			System.out.println("(decoded)   recvPacket(" + decPckt.getDecodedString() + ")");
         
         if (replayPreventionRX != null) {
-        	if (!replayPreventionRX.isAllowed(decPckt.token)) {
+        	if (!replayPreventionRX.isAllowed(decPckt.nonce)) {
 				if (DEBUG_GENERAL)
 					System.err.println("(verified)  recvPacket - Packet failed replay prevention! Discarding...");
 				
@@ -636,7 +637,7 @@ public class Comms {
 		}
 		
 		/** Transmit our integrity key. */
-    	if (DEBUG_AUTHENTICATION) System.out.println("Sending integrity key to peer with base 64 encoding: " + integrityKeyString);
+    	if (DEBUG_AUTHENTICATION) System.out.println("Sending integrity key to peer: " + integrityKeyString);
     	sendPacket(DecryptedPacket.CMD_INTEGRITYKEY, Base64.encodeBase64String(integrityKey.getEncoded()));
     	if (DEBUG_AUTHENTICATION) System.out.println("Sent integrity key to peer.");
     }
@@ -662,7 +663,7 @@ public class Comms {
 	            	case DecryptedPacket.CMD_INTEGRITYKEY:
 	            	    byte[] keyBytes = Base64.decodeBase64(pckt.data);
 	    	    		integrityKey = new SecretKeySpec(keyBytes, 0, keyBytes.length, HashedMessageAuthenticationCode.HMAC_ALGORITHM);
-	    	    		if (DEBUG_INTEGRITY) System.out.println("Received HMAC key in base 64 encoding: " + getHexValue(integrityKey.getEncoded()));
+	    	    		if (DEBUG_INTEGRITY) System.out.println("Received HMAC key: " + getHexValue(integrityKey.getEncoded()));
 	    	        	
 	    	        	/** Send acknowledgement. */
 	    	        	if (DEBUG_INTEGRITY) System.out.println("Sending acknowledgement of integrity key.");
@@ -693,17 +694,17 @@ public class Comms {
     
     /** 
      * Initiates replay prevention. Generates a seeded pseudo-random number for
-     * token generation, and then transmits the seed to the peer.
+     * nonce generation, and then transmits the seed to the peer.
      */
     private void initReplayPrevention() {
-    	Long rxSeed = null;
+    	byte[] rxSeed = null;
     	
     	if (DEBUG_REPLAY_PREVENTION) System.out.println("Initiating replay prevention.");
 		try {
 			if (DEBUG_REPLAY_PREVENTION) System.out.println("Generating PRNG.");
-			replayPreventionRX = new PRNGTokenGenerator();
-			rxSeed = new Long(replayPreventionRX.getSeed());
-			if (DEBUG_REPLAY_PREVENTION) System.out.println("Generated PRNG with seed: " + rxSeed);
+			replayPreventionRX = new PRNGNonceGenerator();
+			rxSeed = replayPreventionRX.getSeed();
+			if (DEBUG_REPLAY_PREVENTION) System.out.println("Generated PRNG with seed: " + getHexValue(rxSeed));
 		} catch (Exception e) {
 			System.err.println("Unable to provide replay prevention. Failed to initialise PRNG.");
 			if (DEBUG_ERROR_TRACE) e.printStackTrace();
@@ -711,8 +712,8 @@ public class Comms {
 		}
 		
 		/** Transmit our replay prevention seed. */
-    	if (DEBUG_REPLAY_PREVENTION) System.out.println("Sending replay prevention seed to peer: " + rxSeed);
-    	sendPacket(DecryptedPacket.CMD_TOKENSEED, rxSeed.toString());
+    	if (DEBUG_REPLAY_PREVENTION) System.out.println("Sending replay prevention seed to peer: " + getHexValue(rxSeed));
+    	sendPacket(DecryptedPacket.CMD_NONCESEED, rxSeed);
     	if (DEBUG_REPLAY_PREVENTION) System.out.println("Sent replay prevention seed to peer.");
     }
     
@@ -733,12 +734,12 @@ public class Comms {
 	        		break;
 	        	
 	        	switch (pckt.command) {
-	            	case DecryptedPacket.CMD_TOKENSEED:
-	            		long txSeed = Long.parseLong(new String(pckt.data));
-	    	    		if (DEBUG_REPLAY_PREVENTION) System.out.println("Received replay prevention seed: " + txSeed);
+	            	case DecryptedPacket.CMD_NONCESEED:
+	            		byte[] txSeed = pckt.data;
+	    	    		if (DEBUG_REPLAY_PREVENTION) System.out.println("Received replay prevention seed: " + getHexValue(txSeed));
 	    	        	
 	    	    		try {
-	    	    			replayPreventionTX = new PRNGTokenGenerator(txSeed);
+	    	    			replayPreventionTX = new PRNGNonceGenerator(txSeed);
 	    	    		} catch (Exception e) {
 	    	    			System.err.println("Unable to provide replay prevention. Failed to initialise PRNG.");
 	    	    			if (DEBUG_ERROR_TRACE) e.printStackTrace();
@@ -763,7 +764,7 @@ public class Comms {
      * @param array The byte array to transfer into a hexadecimal number.
      * @return The string containing the hexadecimal number.
      */    
-    private static String getHexValue(byte[] array) {
+    public static String getHexValue(byte[] array) {
 		final String hexDigitChars = "0123456789ABCDEF";
 		final StringBuffer buf = new StringBuffer(array.length * 2);
 		

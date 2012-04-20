@@ -246,7 +246,7 @@ public class EncryptedPacket {
     	
     	/** Packet digest. */
     	if (digest.length > 0)
-    		str += digest;
+    		str += Comms.getHexValue(digest);
     	else
     		str += "null";
     	
