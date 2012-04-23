@@ -41,22 +41,12 @@ public interface AsymmetricEncryption extends Encryption {
 	 * TODO
 	 * 
 	 * @param filename
+	 * 
+	 * @throws NoSuchAlgorithmException
+	 * @throws InvalidKeySpecException
+	 * @throws IOException
 	 */
 	public void savePrivateKeyToFile(String filename) throws NoSuchAlgorithmException, InvalidKeySpecException, IOException;
-	
-	/**
-	 * TODO
-	 * 
-	 * @param filename
-	 */
-	public void restorePublicKeyFromFile(String filename);
-	
-	/**
-	 * TODO
-	 * 
-	 * @param filename
-	 */
-	public void restorePrivateKeyFromFile(String filename);
 }
 
 /******************************************************************************

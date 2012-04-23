@@ -20,7 +20,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.security.InvalidKeyException;
 import java.security.KeyFactory;
@@ -78,6 +77,28 @@ public class RSAAsymmetricEncryption implements AsymmetricEncryption {
 	}
 	
 	/**
+	 * Constructor.
+	 * 
+	 * @param publicKeyFile
+	 * @param privateKeyFile
+	 * 
+	 * @throws IOException 
+	 * @throws NoSuchPaddingException 
+	 * @throws NoSuchAlgorithmException 
+	 * @throws InvalidKeyException 
+	 */
+	RSAAsymmetricEncryption(String publicKeyFile, String privateKeyFile) throws IOException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException {
+		this.publicKey = readPublicKeyFromFile(publicKeyFile);
+		this.privateKey = readPrivateKeyFromFile(privateKeyFile);
+		
+		this.encryptionCipher = Cipher.getInstance(ALGORITHM);
+		this.encryptionCipher.init(Cipher.ENCRYPT_MODE, this.publicKey);
+		
+		this.decryptionCipher = Cipher.getInstance(ALGORITHM);
+		this.decryptionCipher.init(Cipher.DECRYPT_MODE, this.privateKey);
+	}
+	
+	/**
 	 * TODO
 	 * 
 	 * @param filename
@@ -101,7 +122,7 @@ public class RSAAsymmetricEncryption implements AsymmetricEncryption {
 	 * @throws InvalidKeySpecException
 	 * @throws IOException
 	 */
-	public void savePrivateKeyToFile() throws NoSuchAlgorithmException, InvalidKeySpecException, IOException {
+	public void savePrivateKeyToFile(String filename) throws NoSuchAlgorithmException, InvalidKeySpecException, IOException {
 		final KeyFactory factory = KeyFactory.getInstance(ALGORITHM);
 		final RSAPrivateKeySpec priv = factory.getKeySpec(this.privateKey, RSAPrivateKeySpec.class);
 		writeToFile(filename, priv.getModulus(), priv.getPrivateExponent());
@@ -115,7 +136,7 @@ public class RSAAsymmetricEncryption implements AsymmetricEncryption {
 	 * @param exp
 	 * @throws IOException
 	 */
-	private void writeToFile(String fileName, BigInteger mod, BigInteger exp) throws IOException {
+	private static void writeToFile(String fileName, BigInteger mod, BigInteger exp) throws IOException {
 		final FileOutputStream fileOutputStream = new FileOutputStream(fileName);
 		final BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(fileOutputStream);
 		final ObjectOutputStream objectOutputStream = new ObjectOutputStream(bufferedOutputStream);
@@ -130,22 +151,60 @@ public class RSAAsymmetricEncryption implements AsymmetricEncryption {
 		}
 	}
 	
-	void readPublicKeyFromFile(String filename) throws IOException {
+	/**
+	 * TODO
+	 * 
+	 * @param filename
+	 * @return
+	 * @throws IOException
+	 */
+	private static PublicKey readPublicKeyFromFile(String filename) throws IOException {
 		final FileInputStream fileInputStream = new FileInputStream(filename);
 		final BufferedInputStream bufferedInputStream = new BufferedInputStream(fileInputStream);
 		final ObjectInputStream objectInputStream = new ObjectInputStream(bufferedInputStream);
+		PublicKey pubKey = null;
 		
 		try {
 		    final BigInteger mod = (BigInteger) objectInputStream.readObject();
 		    final BigInteger exp = (BigInteger) objectInputStream.readObject();
 		    final RSAPublicKeySpec keySpec = new RSAPublicKeySpec(mod, exp);
 		    final KeyFactory factory = KeyFactory.getInstance(ALGORITHM);
-		    this.publicKey = factory.generatePublic(keySpec);
+		    pubKey = factory.generatePublic(keySpec);
 		} catch (Exception e) {
 		    throw new RuntimeException("Spurious serialisation error", e);
 		} finally {
 			objectInputStream.close();
 		}
+		
+		return pubKey;
+	}
+	
+	/**
+	 * TODO
+	 * 
+	 * @param filename
+	 * @return
+	 * @throws IOException
+	 */
+	private static PrivateKey readPrivateKeyFromFile(String filename) throws IOException {
+		final FileInputStream fileInputStream = new FileInputStream(filename);
+		final BufferedInputStream bufferedInputStream = new BufferedInputStream(fileInputStream);
+		final ObjectInputStream objectInputStream = new ObjectInputStream(bufferedInputStream);
+		PrivateKey privKey = null;
+		
+		try {
+		    final BigInteger mod = (BigInteger) objectInputStream.readObject();
+		    final BigInteger exp = (BigInteger) objectInputStream.readObject();
+		    final RSAPublicKeySpec keySpec = new RSAPublicKeySpec(mod, exp);
+		    final KeyFactory factory = KeyFactory.getInstance(ALGORITHM);
+		    privKey = factory.generatePrivate(keySpec);
+		} catch (Exception e) {
+		    throw new RuntimeException("Spurious serialisation error", e);
+		} finally {
+			objectInputStream.close();
+		}
+		
+		return privKey;
 	}
 	
 	/**
