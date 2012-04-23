@@ -8,7 +8,6 @@
  * DESCRIPTION:     Implementation of StealthNet Client Chat for ELEC5616
  *                  programming assignment. Debug code has also been added to 
  *                  this class.
- * VERSION:         3.0
  *
  *****************************************************************************/
 

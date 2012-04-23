@@ -9,7 +9,6 @@
  * DESCRIPTION:     Implementation of StealthNet Client FTP for ELEC5616
  *                  programming assignment. Debug code has been added to this 
  *                  class.
- * VERSION:         2.0
  *
  *****************************************************************************/
 

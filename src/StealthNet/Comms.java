@@ -18,7 +18,6 @@
  *                  prevention.
  *                  
  *                  Debug code has also been added to this class.
- * VERSION:         2.0
  * IMPLEMENTS:      initiateSession();
  *                  acceptSession();
  *                  terminateSession();
@@ -87,6 +86,8 @@ public class Comms {
 	/** Defaults. */
     public static final String DEFAULT_SERVERNAME = "localhost";	/** Default host for the StealthNet server. */
     public static final int DEFAULT_SERVERPORT = 5616;				/** Default port for the StealthNet server. */
+    public static final String DEFAULT_BANKNAME = "localhost";		/** Default host for the StealthNet bank. */
+    public static final int DEFAULT_BANKPORT = 5617;				/** Default port for the StealthNet bank. */
     
     /** Current values. */
     private final String servername;	/** This host - defaults to DFEAULT_SERVERNAME */
@@ -577,7 +578,7 @@ public class Comms {
 			if (DEBUG_AUTHENTICATION) System.out.println("Generating the Diffie-Hellman shared secret key.");
 			authenticationKey = authenticationProvider.getSharedSecret(new BigInteger(publicKey));
 			if (DEBUG_AUTHENTICATION) {
-				final String sskey = new String(getHexValue(authenticationKey.getEncoded()));
+				final String sskey = new String(Utility.getHexValue(authenticationKey.getEncoded()));
 				System.out.println("Generated Diffie-Hellman shared secret key: " + sskey);
 			}
 		} catch (Exception e) {
@@ -606,7 +607,7 @@ public class Comms {
 			final MessageDigest mdb = MessageDigest.getInstance(AESEncryption.HASH_ALGORITHM);
 			
 			confidentialityKey = new SecretKeySpec(mdb.digest(authenticationKey.getEncoded()), AESEncryption.KEY_ALGORITHM);
-			final String cryptKeyString = new String(getHexValue(confidentialityKey.getEncoded()));
+			final String cryptKeyString = new String(Utility.getHexValue(confidentialityKey.getEncoded()));
 			if (DEBUG_ENCRYPTION) System.out.println("Generated AES encryption/decryption key: " + cryptKeyString);
 			
 			confidentialityProvider = new AESEncryption(confidentialityKey);
@@ -628,7 +629,7 @@ public class Comms {
 			if (DEBUG_INTEGRITY) System.out.println("Generating SHA1 HMAC key.");
 			final KeyGenerator keyGen = KeyGenerator.getInstance(HashedMessageAuthenticationCode.HMAC_ALGORITHM);
 			integrityKey = keyGen.generateKey();
-			integrityKeyString = new String(getHexValue(integrityKey.getEncoded()));
+			integrityKeyString = new String(Utility.getHexValue(integrityKey.getEncoded()));
 			if (DEBUG_INTEGRITY) System.out.println("Generated SHA1 HMAC key: " + integrityKeyString);
 		} catch (Exception e) {
 			System.err.println("Unable to provide integrity. Failed to initialise HMAC.");
@@ -663,7 +664,7 @@ public class Comms {
 	            	case DecryptedPacket.CMD_INTEGRITYKEY:
 	            	    byte[] keyBytes = Base64.decodeBase64(pckt.data);
 	    	    		integrityKey = new SecretKeySpec(keyBytes, 0, keyBytes.length, HashedMessageAuthenticationCode.HMAC_ALGORITHM);
-	    	    		if (DEBUG_INTEGRITY) System.out.println("Received HMAC key: " + getHexValue(integrityKey.getEncoded()));
+	    	    		if (DEBUG_INTEGRITY) System.out.println("Received HMAC key: " + Utility.getHexValue(integrityKey.getEncoded()));
 	    	        	
 	    	        	/** Send acknowledgement. */
 	    	        	if (DEBUG_INTEGRITY) System.out.println("Sending acknowledgement of integrity key.");
@@ -683,7 +684,7 @@ public class Comms {
     	
     	/** Done. Enable integrity provision. */
     	try {
-    		if (DEBUG_INTEGRITY) System.out.println("Initiating hashed MAC provider with key: " + getHexValue(integrityKey.getEncoded()));
+    		if (DEBUG_INTEGRITY) System.out.println("Initiating hashed MAC provider with key: " + Utility.getHexValue(integrityKey.getEncoded()));
 			integrityProvider = new HashedMessageAuthenticationCode(integrityKey);
 		} catch (Exception e) {
 			System.err.println("Failed to initiate integrity provider.");			
@@ -704,7 +705,7 @@ public class Comms {
 			if (DEBUG_REPLAY_PREVENTION) System.out.println("Generating PRNG.");
 			replayPreventionRX = new PRNGNonceGenerator();
 			rxSeed = replayPreventionRX.getSeed();
-			if (DEBUG_REPLAY_PREVENTION) System.out.println("Generated PRNG with seed: " + getHexValue(rxSeed));
+			if (DEBUG_REPLAY_PREVENTION) System.out.println("Generated PRNG with seed: " + Utility.getHexValue(rxSeed));
 		} catch (Exception e) {
 			System.err.println("Unable to provide replay prevention. Failed to initialise PRNG.");
 			if (DEBUG_ERROR_TRACE) e.printStackTrace();
@@ -712,7 +713,7 @@ public class Comms {
 		}
 		
 		/** Transmit our replay prevention seed. */
-    	if (DEBUG_REPLAY_PREVENTION) System.out.println("Sending replay prevention seed to peer: " + getHexValue(rxSeed));
+    	if (DEBUG_REPLAY_PREVENTION) System.out.println("Sending replay prevention seed to peer: " + Utility.getHexValue(rxSeed));
     	sendPacket(DecryptedPacket.CMD_NONCESEED, rxSeed);
     	if (DEBUG_REPLAY_PREVENTION) System.out.println("Sent replay prevention seed to peer.");
     }
@@ -736,7 +737,7 @@ public class Comms {
 	        	switch (pckt.command) {
 	            	case DecryptedPacket.CMD_NONCESEED:
 	            		byte[] txSeed = pckt.data;
-	    	    		if (DEBUG_REPLAY_PREVENTION) System.out.println("Received replay prevention seed: " + getHexValue(txSeed));
+	    	    		if (DEBUG_REPLAY_PREVENTION) System.out.println("Received replay prevention seed: " + Utility.getHexValue(txSeed));
 	    	        	
 	    	    		try {
 	    	    			replayPreventionTX = new PRNGNonceGenerator(txSeed);
@@ -756,27 +757,6 @@ public class Comms {
     		} catch (IOException e) {}
         }
     }
-    
-    /**
-     * Function to assist with printing cryptographic keys by returning byte 
-     * arrays as a hexadecimal number.
-     * 
-     * @param array The byte array to transfer into a hexadecimal number.
-     * @return The string containing the hexadecimal number.
-     */    
-    public static String getHexValue(byte[] array) {
-		final String hexDigitChars = "0123456789ABCDEF";
-		final StringBuffer buf = new StringBuffer(array.length * 2);
-		
-		for (int cx = 0; cx < array.length; cx++) {
-			final int hn = ((int) (array[cx]) & 0x00FF) / 16;
-			final int ln = ((int) (array[cx]) & 0x000F);
-			buf.append(hexDigitChars.charAt(hn));
-			buf.append(hexDigitChars.charAt(ln));
-		}
-		
-		return buf.toString();
-	}
 }
 
 /******************************************************************************

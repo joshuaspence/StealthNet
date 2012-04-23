@@ -10,7 +10,6 @@
  * 					decrypted packet contents. This class is more closely based
  * 					on the original 'Packet' class than the EncryptedPacket
  * 					class.
- * VERSION:         2.0
  *
  *****************************************************************************/
 
@@ -72,9 +71,6 @@ public class DecryptedPacket {
     public static final byte CMD_INTEGRITYKEY = 0x0B;
     public static final byte CMD_NONCESEED = 0x0C;
     
-    /** Hexadecimal characters. */
-    private static final char[] HEXTABLE = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
-
     /** Packet contents. */
     byte command;							/** The command being sent in the packet. */      
     final byte[] data;						/** The data being sent in the packet. */
@@ -173,25 +169,25 @@ public class DecryptedPacket {
         	int current = 0;
         	
         	/** Command (1 byte). */
-            this.command = (byte) (16 * singleHexToInt(str.charAt(current++)) + singleHexToInt(str.charAt(current++)));
+            this.command = (byte) (16 * Utility.singleHexToInt(str.charAt(current++)) + Utility.singleHexToInt(str.charAt(current++)));
             
             /** Data length (4 bytes). */
-            int dataLen = hexToInt(str.substring(current, current + 8));
+            int dataLen = Utility.hexToInt(str.substring(current, current + 8));
         	current += 8;
             
             /** Data (dataLen bytes). */
             this.data = new byte[dataLen];
             for (int i = 0; i < data.length; i++)
-            	this.data[i] = (byte) (16 * singleHexToInt(str.charAt(current++)) + singleHexToInt(str.charAt(current++)));
+            	this.data[i] = (byte) (16 * Utility.singleHexToInt(str.charAt(current++)) + Utility.singleHexToInt(str.charAt(current++)));
             
             /** Nonce length (4 bytes). */
-            int nonceLen = hexToInt(str.substring(current, current + 8));
+            int nonceLen = Utility.hexToInt(str.substring(current, current + 8));
         	current += 8;
             
             /** Nonce (nonceLen bytes). */
             this.nonce = new byte[nonceLen];
             for (int i = 0; i < nonce.length; i++)
-            	this.nonce[i] = (byte) (16 * singleHexToInt(str.charAt(current++)) + singleHexToInt(str.charAt(current++)));
+            	this.nonce[i] = (byte) (16 * Utility.singleHexToInt(str.charAt(current++)) + Utility.singleHexToInt(str.charAt(current++)));
     		
     		/** No MAC is available. */
     		this.mac = null;
@@ -214,79 +210,36 @@ public class DecryptedPacket {
         highHalfByte = (command >= 0) ? command : (256 + command);
         lowHalfByte = highHalfByte & 0xF;
         highHalfByte /= 16;
-        str += HEXTABLE[highHalfByte];
-        str += HEXTABLE[lowHalfByte];
+        str += Utility.HEXTABLE[highHalfByte];
+        str += Utility.HEXTABLE[lowHalfByte];
         
         /** Data length (4 bytes). */
-        str += intToHex(data.length);
+        str += Utility.intToHex(data.length);
         
         /** Data (data.length/2 bytes). */
         for (int i = 0; i < data.length; i++) {
         	highHalfByte = (data[i] >= 0) ? data[i] : 256 + data[i];
         	lowHalfByte = highHalfByte & 0xF;
             highHalfByte /= 16;
-            str += HEXTABLE[highHalfByte];
-            str += HEXTABLE[lowHalfByte];
+            str += Utility.HEXTABLE[highHalfByte];
+            str += Utility.HEXTABLE[lowHalfByte];
         }
         
         /** Nonce length (4 bytes). */
-        str += intToHex(nonce.length);
+        str += Utility.intToHex(nonce.length);
         
         /** Nonce (nonce.length/2 bytes). */
         for (int i = 0; i < nonce.length; i++) {
         	highHalfByte = (nonce[i] >= 0) ? nonce[i] : 256 + nonce[i];
         	lowHalfByte = highHalfByte & 0xF;
             highHalfByte /= 16;
-            str += HEXTABLE[highHalfByte];
-            str += HEXTABLE[lowHalfByte];
+            str += Utility.HEXTABLE[highHalfByte];
+            str += Utility.HEXTABLE[lowHalfByte];
         }
         
         /** Done. */
         return str;
     }
-
-    /** 
-     * A utility function to convert a single hexadecimal character to a decimal
-     * integer.
-     * 
-     * @param hex The hexadecimal character to convert to an integer.
-     * @return The integer value of the hexadecimal character.
-     */
-    private static int singleHexToInt(char hex) {
-             if ((hex >= '0') && (hex <= '9')) return (hex - '0');
-        else if ((hex >= 'A') && (hex <= 'F')) return (hex - 'A' + 10);
-        else if ((hex >= 'a') && (hex <= 'f')) return (hex - 'a' + 10);
-        else return 0;
-    }
-    
-	/**
-     * Convert a hexadecimal string to an integer.
-     * 
-     * @param hex The string to convert.
-     * @return An integer representing the hexadecimal string.
-     * @throws NumberFormatException
-     */
-	private static int hexToInt(String hex) throws NumberFormatException {
-    	return Integer.parseInt(hex, 16);
-	}
-	
-	/**
-     * Convert an integer to a hexadecimal string. The length of the hexadecimal 
-     * string will be equal to the length that would be required to encode
-     * Integer.MAX_VALUE as a hexadecimal string.
-     * 
-     * @param value The integer to convert.
-     * @return The hexadecimal string representing the integer.
-     */
-	private static String intToHex(int value) {
-		String result = Integer.toHexString(value);
-		
-		/** Pad the result to use the full 4 bytes of an integer. */
-		while (result.length() < 8)
-			result = "0" + result;
-		
-		return result;
-	}
     
     /**
      * Get the name of a command from its byte value. For debug purposes only.
@@ -350,7 +303,7 @@ public class DecryptedPacket {
     	
     	/** Packet nonce. */
     	if (nonce != null && nonce.length > 0)
-    		str += Comms.getHexValue(nonce);
+    		str += Utility.getHexValue(nonce);
     	else
     		str += "null";
     	

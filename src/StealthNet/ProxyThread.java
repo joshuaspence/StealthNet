@@ -7,7 +7,6 @@
  * AUTHORS:         Joshua Spence
  * DESCRIPTION:     The thread to be spawned for each StealthNet proxy 
  * 					connection.
- * VERSION:         1.0
  *
  *****************************************************************************/
 

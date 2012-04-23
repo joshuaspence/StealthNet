@@ -7,7 +7,6 @@
  * AUTHORS:         Joshua Spence
  * DESCRIPTION:     Implementation of StealthNet Communications for a StealthNet
  * 					proxy.
- * VERSION:         1.0
  * IMPLEMENTS:      initiateSession();
  *                  acceptSession();
  *                  terminateSession();
@@ -48,7 +47,7 @@ public class ProxyComms {
 	
 	/** Defaults. */
 	public static final String DEFAULT_PROXYNAME = "localhost";		/** Default host for the StealthNet proxy. */
-    public static final int DEFAULT_PROXYPORT = 5617;				/** Default port for the StealthNet proxy. */
+    public static final int DEFAULT_PROXYPORT = 5618;				/** Default port for the StealthNet proxy. */
     
     /** Current values. */
     private final String servername;	/** This host - defaults to DFEAULT_SERVERNAME */

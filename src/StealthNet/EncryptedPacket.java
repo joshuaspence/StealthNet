@@ -8,7 +8,6 @@
  * AUTHORS:         Matt Barrie, Stephen Gould, Ryan Junee and Joshua Spence
  * DESCRIPTION:     Implementation of a StealthNet packet. This class represents
  * 					encrypted packet contents.
- * VERSION:         2.0
  *
  *****************************************************************************/
 
@@ -50,9 +49,6 @@ import StealthNet.Security.MessageAuthenticationCode;
  * @author Joshua Spence
  */
 public class EncryptedPacket {
-    /** Hexadecimal characters. */
-    private static final char[] HEXTABLE = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
-
     /** Packet contents. */
     final byte data[];		/** The (encrypted) data being sent in the packet. */
     final byte digest[];	/** The MAC digest of the packet data (in base64 encoding). */
@@ -150,12 +146,12 @@ public class EncryptedPacket {
             /** Data (dataLen bytes). */
             this.data = new byte[dataLen];
             for (int i = 0; i < data.length; i++)
-            	this.data[i] = (byte) (16 * singleHexToInt(str.charAt(current++)) + singleHexToInt(str.charAt(current++)));
+            	this.data[i] = (byte) (16 * Utility.singleHexToInt(str.charAt(current++)) + Utility.singleHexToInt(str.charAt(current++)));
             
             /** Digest (digestBytes bytes). */
             this.digest = new byte[digestBytes];
             for (int i = 0; i < digest.length; i++)
-            	this.digest[i] = (byte) (16 * singleHexToInt(str.charAt(current++)) + singleHexToInt(str.charAt(current++)));
+            	this.digest[i] = (byte) (16 * Utility.singleHexToInt(str.charAt(current++)) + Utility.singleHexToInt(str.charAt(current++)));
         }
     }
 
@@ -176,8 +172,8 @@ public class EncryptedPacket {
         	highHalfByte = (data[i] >= 0) ? data[i] : (256 + data[i]);
         	lowHalfByte = highHalfByte & 0xF;
             highHalfByte /= 16;
-            str += HEXTABLE[highHalfByte];
-            str += HEXTABLE[lowHalfByte];
+            str += Utility.HEXTABLE[highHalfByte];
+            str += Utility.HEXTABLE[lowHalfByte];
         }
         
         /** Digest (digest.length bytes). */
@@ -185,8 +181,8 @@ public class EncryptedPacket {
         	highHalfByte = (digest[i] >= 0) ? digest[i] : (256 + digest[i]);
         	lowHalfByte = highHalfByte & 0xF;
             highHalfByte /= 16;
-            str += HEXTABLE[highHalfByte];
-            str += HEXTABLE[lowHalfByte];
+            str += Utility.HEXTABLE[highHalfByte];
+            str += Utility.HEXTABLE[lowHalfByte];
         }
 
         return str;
@@ -212,20 +208,6 @@ public class EncryptedPacket {
     	else
     		return mac.verifyMAC(data, digest);
     }
-
-    /** 
-     * A utility function to convert a single hexadecimal character to a decimal
-     * integer.
-     * 
-     * @param hex The hexadecimal character to convert to an integer.
-     * @return The integer value of the hexadecimal character.
-     */
-    private static int singleHexToInt(char hex) {
-             if ((hex >= '0') && (hex <= '9')) return (hex - '0');
-        else if ((hex >= 'A') && (hex <= 'F')) return (hex - 'A' + 10);
-        else if ((hex >= 'a') && (hex <= 'f')) return (hex - 'a' + 10);
-        else return 0;
-    }
     
     /**
      * Get a string representation of the packet. For debug purposes only. 
@@ -246,7 +228,7 @@ public class EncryptedPacket {
     	
     	/** Packet digest. */
     	if (digest.length > 0)
-    		str += Comms.getHexValue(digest);
+    		str += Utility.getHexValue(digest);
     	else
     		str += "null";
     	

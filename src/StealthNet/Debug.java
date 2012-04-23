@@ -6,7 +6,6 @@
  * FILENAME:        Debug.java
  * AUTHORS:         Joshua Spence
  * DESCRIPTION:     Command-line debug functionality for StealthNet.
- * VERSION:         1.0
  *
  *****************************************************************************/
 
