@@ -129,7 +129,7 @@ public class Client {
     /** Field to show the remaining number of credits. */
 	JTextField creditsBox;
 	
-	/** Give them 100 credits for demonstration purposes. */
+	/** Credits. */
     private int credits = 100;
 
     /** Secret data. */
