@@ -7,7 +7,6 @@
  * AUTHORS:         Joshua Spence
  * DESCRIPTION:     An interface to provide StealthNet with Message 
  * 					Authentication Codes (MACs) for testing packet integrity.
- * VERSION:         1.0
  *
  *****************************************************************************/
 

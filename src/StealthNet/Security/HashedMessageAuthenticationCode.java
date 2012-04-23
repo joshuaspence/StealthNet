@@ -7,7 +7,6 @@
  * AUTHORS:         Joshua Spence
  * DESCRIPTION:     Implementation of a Hashed Message Authentication Code 
  * 					(HMAC) for StealthNet communications.
- * VERSION:         1.0
  *
  *****************************************************************************/
 

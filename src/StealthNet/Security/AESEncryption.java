@@ -7,7 +7,6 @@
  * AUTHORS:         Joshua Spence
  * DESCRIPTION:     Implementation of AES encryption for encrypting and 
  * 					decrypting StealthNet communications.
- * VERSION:         1.0
  *
  *****************************************************************************/
 

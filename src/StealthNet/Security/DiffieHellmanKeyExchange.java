@@ -7,7 +7,6 @@
  * AUTHORS:         Joshua Spence
  * DESCRIPTION:     Implementation of Diffie-Hellman key exchange for ELEC5616
  *                  programming assignment.
- * VERSION:         1.0
  *
  *****************************************************************************/
 

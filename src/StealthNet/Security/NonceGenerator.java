@@ -7,7 +7,6 @@
  * AUTHORS:         Joshua Spence
  * DESCRIPTION:     An interface to create nonce identifiers for StealthNet
  * 					packets to prevent replay attacks.
- * VERSION:         1.0
  *
  *****************************************************************************/
 

@@ -7,7 +7,6 @@
  * AUTHORS:         Joshua Spence
  * DESCRIPTION:     Implementation of a pseudo-random number generator (PRNG)
  * 					for nonce generation.
- * VERSION:         1.0
  *
  *****************************************************************************/
 

@@ -7,7 +7,6 @@
  * AUTHORS:         Joshua Spence
  * DESCRIPTION:     An interface to provide the encryption and decryption of 
  * 					packets in StealthNet.
- * VERSION:         1.0
  *
  *****************************************************************************/
 
@@ -57,7 +56,7 @@ public interface Encryption {
 	public String encrypt(byte[] cleartext) throws UnsupportedEncodingException, IllegalBlockSizeException, BadPaddingException;
 	
 	/**
-	 * E a message using the decryption key.
+	 * Decrypts a message using the decryption key.
 	 * 
 	 * @param ciphertext The message to be decrypted.
 	 * @return The cleartext message.
