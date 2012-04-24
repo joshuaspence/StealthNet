@@ -18,9 +18,11 @@ import java.io.BufferedOutputStream;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.math.BigInteger;
+import java.net.URL;
 import java.security.InvalidKeyException;
 import java.security.KeyFactory;
 import java.security.KeyPair;
@@ -61,13 +63,36 @@ public class RSAAsymmetricEncryption implements AsymmetricEncryption {
 	 * @throws InvalidKeyException 
 	 * @throws NoSuchPaddingException 
 	 */
-	RSAAsymmetricEncryption() throws NoSuchAlgorithmException, InvalidKeyException, NoSuchPaddingException {
+	public RSAAsymmetricEncryption() throws NoSuchAlgorithmException, InvalidKeyException, NoSuchPaddingException {
 		final KeyPairGenerator kpg = KeyPairGenerator.getInstance(ALGORITHM);
 		kpg.initialize(NUM_BITS);
 		
 		final KeyPair kp = kpg.genKeyPair();
 		this.publicKey = kp.getPublic();
 		this.privateKey = kp.getPrivate();
+		
+		this.encryptionCipher = Cipher.getInstance(ALGORITHM);
+		this.encryptionCipher.init(Cipher.ENCRYPT_MODE, this.publicKey);
+		
+		this.decryptionCipher = Cipher.getInstance(ALGORITHM);
+		this.decryptionCipher.init(Cipher.DECRYPT_MODE, this.privateKey);
+	}
+	
+	/**
+	 * Constructor.
+	 * 
+	 * @param publicKeyFileName
+	 * @param privateKeyFileName
+	 * 
+	 * @throws IOException 
+	 * @throws NoSuchPaddingException 
+	 * @throws NoSuchAlgorithmException 
+	 * @throws InvalidKeyException 
+	 * @throws InvalidKeySpecException 
+	 */
+	public RSAAsymmetricEncryption(String publicKeyFileName, String privateKeyFileName) throws IOException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidKeySpecException {
+		this.publicKey = readPublicKeyFromFile(publicKeyFileName);
+		this.privateKey = readPrivateKeyFromFile(privateKeyFileName);
 		
 		this.encryptionCipher = Cipher.getInstance(ALGORITHM);
 		this.encryptionCipher.init(Cipher.ENCRYPT_MODE, this.publicKey);
@@ -86,8 +111,9 @@ public class RSAAsymmetricEncryption implements AsymmetricEncryption {
 	 * @throws NoSuchPaddingException 
 	 * @throws NoSuchAlgorithmException 
 	 * @throws InvalidKeyException 
+	 * @throws InvalidKeySpecException 
 	 */
-	RSAAsymmetricEncryption(String publicKeyFile, String privateKeyFile) throws IOException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException {
+	public RSAAsymmetricEncryption(URL publicKeyFile, URL privateKeyFile) throws IOException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidKeySpecException {
 		this.publicKey = readPublicKeyFromFile(publicKeyFile);
 		this.privateKey = readPrivateKeyFromFile(privateKeyFile);
 		
@@ -157,24 +183,61 @@ public class RSAAsymmetricEncryption implements AsymmetricEncryption {
 	 * @param filename
 	 * @return
 	 * @throws IOException
+	 * @throws NoSuchAlgorithmException 
+	 * @throws InvalidKeySpecException 
 	 */
-	private static PublicKey readPublicKeyFromFile(String filename) throws IOException {
+	private static PublicKey readPublicKeyFromFile(String filename) throws IOException, NoSuchAlgorithmException, InvalidKeySpecException {
 		final FileInputStream fileInputStream = new FileInputStream(filename);
 		final BufferedInputStream bufferedInputStream = new BufferedInputStream(fileInputStream);
 		final ObjectInputStream objectInputStream = new ObjectInputStream(bufferedInputStream);
 		PublicKey pubKey = null;
 		
+		BigInteger mod, exp;
 		try {
-		    final BigInteger mod = (BigInteger) objectInputStream.readObject();
-		    final BigInteger exp = (BigInteger) objectInputStream.readObject();
-		    final RSAPublicKeySpec keySpec = new RSAPublicKeySpec(mod, exp);
-		    final KeyFactory factory = KeyFactory.getInstance(ALGORITHM);
-		    pubKey = factory.generatePublic(keySpec);
+		    mod = (BigInteger) objectInputStream.readObject();
+		    exp = (BigInteger) objectInputStream.readObject();
+		    
 		} catch (Exception e) {
 		    throw new RuntimeException("Spurious serialisation error", e);
 		} finally {
 			objectInputStream.close();
 		}
+		
+		final RSAPublicKeySpec keySpec = new RSAPublicKeySpec(mod, exp);
+	    final KeyFactory factory = KeyFactory.getInstance(ALGORITHM);
+	    pubKey = factory.generatePublic(keySpec);
+	    
+		return pubKey;
+	}
+	
+	/**
+	 * TODO
+	 * 
+	 * @param file
+	 * @return
+	 * @throws IOException
+	 * @throws NoSuchAlgorithmException 
+	 * @throws InvalidKeySpecException 
+	 */
+	private static PublicKey readPublicKeyFromFile(URL file) throws IOException, NoSuchAlgorithmException, InvalidKeySpecException {
+		final InputStream urlInputStream = file.openStream();
+		final BufferedInputStream bufferedInputStream = new BufferedInputStream(urlInputStream);
+		final ObjectInputStream objectInputStream = new ObjectInputStream(bufferedInputStream);
+		PublicKey pubKey = null;
+		
+		BigInteger mod, exp;
+		try {
+		    mod = (BigInteger) objectInputStream.readObject();
+		    exp = (BigInteger) objectInputStream.readObject();
+		} catch (Exception e) {
+		    throw new RuntimeException("Spurious serialisation error", e);
+		} finally {
+			objectInputStream.close();
+		}
+		
+		final RSAPublicKeySpec keySpec = new RSAPublicKeySpec(mod, exp);
+	    final KeyFactory factory = KeyFactory.getInstance(ALGORITHM);
+	    pubKey = factory.generatePublic(keySpec);
 		
 		return pubKey;
 	}
@@ -185,25 +248,62 @@ public class RSAAsymmetricEncryption implements AsymmetricEncryption {
 	 * @param filename
 	 * @return
 	 * @throws IOException
+	 * @throws NoSuchAlgorithmException 
+	 * @throws InvalidKeySpecException 
 	 */
-	private static PrivateKey readPrivateKeyFromFile(String filename) throws IOException {
+	private static PrivateKey readPrivateKeyFromFile(String filename) throws IOException, NoSuchAlgorithmException, InvalidKeySpecException {
 		final FileInputStream fileInputStream = new FileInputStream(filename);
 		final BufferedInputStream bufferedInputStream = new BufferedInputStream(fileInputStream);
 		final ObjectInputStream objectInputStream = new ObjectInputStream(bufferedInputStream);
 		PrivateKey privKey = null;
 		
+		BigInteger mod, exp;
 		try {
-		    final BigInteger mod = (BigInteger) objectInputStream.readObject();
-		    final BigInteger exp = (BigInteger) objectInputStream.readObject();
-		    final RSAPublicKeySpec keySpec = new RSAPublicKeySpec(mod, exp);
-		    final KeyFactory factory = KeyFactory.getInstance(ALGORITHM);
-		    privKey = factory.generatePrivate(keySpec);
+		    mod = (BigInteger) objectInputStream.readObject();
+		    exp = (BigInteger) objectInputStream.readObject();
 		} catch (Exception e) {
 		    throw new RuntimeException("Spurious serialisation error", e);
 		} finally {
 			objectInputStream.close();
 		}
 		
+		final RSAPrivateKeySpec keySpec = new RSAPrivateKeySpec(mod, exp);
+	    final KeyFactory factory = KeyFactory.getInstance(ALGORITHM);
+	    privKey = factory.generatePrivate(keySpec);
+		
+		return privKey;
+	}
+	
+	/**
+	 * TODO
+	 * 
+	 * @param file
+	 * @return
+	 * @throws IOException
+	 * @throws NoSuchAlgorithmException 
+	 * @throws InvalidKeySpecException 
+	 */
+	private static PrivateKey readPrivateKeyFromFile(URL file) throws IOException, NoSuchAlgorithmException, InvalidKeySpecException {
+		final InputStream urlInputStream = file.openStream();
+		final BufferedInputStream bufferedInputStream = new BufferedInputStream(urlInputStream);
+		final ObjectInputStream objectInputStream = new ObjectInputStream(bufferedInputStream);
+		PrivateKey privKey = null;
+		
+		BigInteger mod, exp;
+		try {
+		    mod = (BigInteger) objectInputStream.readObject();
+		    exp = (BigInteger) objectInputStream.readObject();
+		    
+		} catch (Exception e) {
+		    throw new RuntimeException("Spurious serialisation error", e);
+		} finally {
+			objectInputStream.close();
+		}
+		
+		final RSAPrivateKeySpec keySpec = new RSAPrivateKeySpec(mod, exp);
+	    final KeyFactory factory = KeyFactory.getInstance(ALGORITHM);
+	    privKey = factory.generatePrivate(keySpec);
+	    
 		return privKey;
 	}
 	
@@ -257,6 +357,24 @@ public class RSAAsymmetricEncryption implements AsymmetricEncryption {
 	 */
 	public String decrypt(byte[] ciphertext) throws IllegalBlockSizeException, BadPaddingException {
 		return new String(decryptionCipher.doFinal(ciphertext));
+	}
+	
+	/**
+	 * TODO
+	 * 
+	 * @return
+	 */
+	public PublicKey getPublicKey() {
+		return publicKey;
+	}
+	
+	/**
+	 * TODO
+	 * 
+	 * @return
+	 */
+	public PrivateKey getPrivateKey() {
+		return privateKey;
 	}
 }
 

@@ -89,6 +89,9 @@
     	<property name="path.build"           value="build" />
     	<property name="path.docs"            value="docs" />
         <property name="path.img"             value="img" />
+		<property name="path.keys"            value="keys" />
+		<property name="path.keys.server"     value="${path.keys}/server" />
+		<property name="path.keys.bank"       value="${path.keys}/bank" />
 		<property name="path.latex"           value="latex" />
 		<property name="path.latex.output"    value="${path.latex}/output" />
         <property name="path.lib"             value="lib" />
@@ -103,6 +106,9 @@
         	    <echo>Build path:             ${path.build}</echo>
         		<echo>Docs path:              ${path.docs}</echo>
         	    <echo>Image path:             ${path.img}</echo>
+				<echo>Keys path:              ${path.keys}</echo>
+				<echo>Server keys path:       ${path.keys.server}</echo>
+				<echo>Bank keys path:         ${path.keys.bank}</echo>
         		<echo>Library path:           ${path.lib}</echo>
         		<echo>Source path:            ${path.src}</echo>
         		<echo>Class output path:      ${path.classes}</echo>
@@ -112,47 +118,58 @@
 		</if>
 		
 	    <!-- Initialise file names -->
-    	<property name="file.jar"                 value="${path.jar}/${ant.project.name}.jar" />
-		<property name="file.jar.server"          value="${path.jar}/${ant.project.name}_server.jar" />
-    	<property name="file.jar.client"          value="${path.jar}/${ant.project.name}_client.jar" />
+		<property name="file.jar.bank"            value="${path.jar}/${ant.project.name}_bank.jar" />
+		<property name="file.jar.client"          value="${path.jar}/${ant.project.name}_client.jar" />
 		<property name="file.jar.proxy"           value="${path.jar}/${ant.project.name}_proxy.jar" />
+		<property name="file.jar.server"          value="${path.jar}/${ant.project.name}_server.jar" />
     	<property name="file.tar.gz"              value="${ant.project.name}.tar.gz" />
     	<property name="file.tar.gz.md5"          value="${ant.project.name}.tar.gz.md5" />
 		<property name="file.latex.output"        value="${path.latex.output}/StealthNet.pdf" />
 		<basename property="root.latex.output"    file="${file.latex.output}" />
 		<property name="file.runscript"           value="run.sh" />
+		<property name="file.keys.bank.public"    value="${path.keys.bank}/public.key" />
+        <property name="file.keys.bank.private"   value="${path.keys.bank}/private.key" />
+		<property name="file.keys.server.public"  value="${path.keys.server}/public.key" />
+		<property name="file.keys.server.private" value="${path.keys.server}/private.key" />
 	
 		<!-- VERBOSE: Output file properties. -->
 		<if>
             <equals arg1="${global.verbose}" arg2="true" />
             <then>
-                <echo>Main JAR file:          ${file.jar}</echo>
-                <echo>Server JAR file:        ${file.jar.server}</echo>	
-        		<echo>Client JAR file:        ${file.jar.client}</echo>
+            	<echo>Bank JAR file:          ${file.jar.bank}</echo>
+            	<echo>Client JAR file:        ${file.jar.client}</echo>
             	<echo>Proxy JAR file:         ${file.jar.proxy}</echo>
+        		<echo>Server JAR file:        ${file.jar.server}</echo>
+            	<echo />
         		<echo>GZIPed TAR file:        ${file.tar.gz}</echo>
             	<echo>TAR MD5 hash file:      ${file.tar.gz.md5}</echo>
+            	<echo />
         	    <echo>Latex output file:      ${file.latex.output}</echo>
             	<echo>Run script:             ${file.runscript}</echo>
+            	<echo />
+            	<echo>Bank public key:        ${file.keys.bank.public}</echo>
+            	<echo>Bank private key:       ${file.keys.bank.private}</echo>
+            	<echo>Server public key:      ${file.keys.server.public}</echo>
+                <echo>Server private key:     ${file.keys.server.private}</echo>
             	<echo />
     	    </then>
 		</if>
 		
 	    <!-- Initialise class properties -->
+		<property name="class.bank"    value="StealthNet.Bank" />       <!-- Main class for the bank JAR file -->
         <property name="class.client"  value="StealthNet.Client" />     <!-- Main class for the client JAR file -->
     	<property name="class.server"  value="StealthNet.Server" />     <!-- Main class for the server JAR file -->
 		<property name="class.proxy"   value="StealthNet.Proxy" />      <!-- Main class for the proxy JAR file -->
-    	<property name="class.main"    value="${class.client}" />       <!-- Main class for the main JAR file -->
     	<property name="class.package" value="StealthNet" />            <!-- Package name -->
 	
 		<!-- VERBOSE: Output class properties -->
 		<if>
             <equals arg1="${global.verbose}" arg2="true" />
             <then>
+            	<echo>Bank main class:        ${class.bank}</echo>
         	    <echo>Client main class:      ${class.client}</echo>
-            	<echo>Server main class:      ${class.server}</echo>
             	<echo>Proxy main class:       ${class.proxy}</echo>
-            	<echo>Main class:             ${class.main}</echo>
+            	<echo>Server main class:      ${class.server}</echo>
         		<echo>Package name:           ${class.package}</echo>
             	<echo />
 			</then>
@@ -238,72 +255,50 @@
 	        <format property="TODAY" pattern="dd/MM/yy HH:mm:ss" />
 	    </tstamp>
     	
-    	<!-- Main JAR file -->
-        <jar destfile="${file.jar}" basedir="${path.classes}">
+    	<!-- Bank JAR file -->
+        <jar destfile="${file.jar.bank}">
             <zipgroupfileset dir="${path.lib}" includes="*.jar" />
+            
             <fileset dir=".">
-                  <include name="${path.img}/*" />
+            	<!-- RSA keys -->
+            	<include name="${file.keys.bank.public}" />
+                <include name="${file.keys.bank.private}" />
             </fileset>
             
-            <manifest>
-                <attribute name="Built-By"   value="${user.name}" />
-                <attribute name="Built-Date" value="${TODAY}" />
-                <attribute name="Main-Class" value="${class.main}" />
-                <attribute name="Class-Path" value="${compile.classpath}" />
-            </manifest>
-        </jar>
-    	
-    	<!-- Server JAR file -->
-        <jar destfile="${file.jar.server}">
-        	<zipgroupfileset dir="${path.lib}" includes="*.jar" />
-        	<fileset dir="${path.classes}">
-        		<!-- NOTE: Must list the files to be included in the server JAR file here!!! -->        		
-		  	    <include name="StealthNet/Comms**" />
-        		<include name="StealthNet/Debug**" />
-        		<include name="StealthNet/DecryptedPacket**" />
-                <include name="StealthNet/EncryptedPacket**" />
-        		<include name="StealthNet/Server**" />
-                <include name="StealthNet/ServerThread**" />
-        		<include name="StealthNet/Security/**" />
-    		</fileset>
-        	
-        	<manifest>
-        		<attribute name="Built-By"   value="${user.name}" />
-        		<attribute name="Built-Date" value="${TODAY}" />
-                <attribute name="Main-Class" value="${class.server}" />
-        		<attribute name="Class-Path" value="${compile.classpath}" />
-        	</manifest>
-    	</jar>
-    	
-    	<!-- Proxy JAR file -->
-        <jar destfile="${file.jar.proxy}">
-            <zipgroupfileset dir="${path.lib}" includes="*.jar" />
+            <!-- Class files -->
             <fileset dir="${path.classes}">
-                <!-- NOTE: Must list the files to be included in the proxy JAR file here!!! -->                
+                <!-- NOTE: Must list the files to be included in the server JAR file here!!! -->
+            	<include name="StealthNet/Bank**" />
+                <include name="StealthNet/BankThread**" />
                 <include name="StealthNet/Comms**" />
                 <include name="StealthNet/Debug**" />
-            	<include name="StealthNet/DecryptedPacket**" />
-            	<include name="StealthNet/EncryptedPacket**" />
-            	<include name="StealthNet/Proxy**" />
-            	<include name="StealthNet/ProxyComms**" />
-                <include name="StealthNet/ProxyThread**" />
+                <include name="StealthNet/DecryptedPacket**" />
+                <include name="StealthNet/EncryptedPacket**" />
+                <include name="StealthNet/Utility**" />
                 <include name="StealthNet/Security/**" />
             </fileset>
             
             <manifest>
                 <attribute name="Built-By"   value="${user.name}" />
                 <attribute name="Built-Date" value="${TODAY}" />
-                <attribute name="Main-Class" value="${class.proxy}" />
-                <attribute name="Class-Path" value="${compile.classpath}" />
+                <attribute name="Main-Class" value="${class.bank}" />
             </manifest>
         </jar>
     	
     	<!-- Client JAR file -->
         <jar destfile="${file.jar.client}">
             <zipgroupfileset dir="${path.lib}" includes="*.jar" />
+        	
             <fileset dir=".">
-                  <include name="${path.img}/*" />
+            	<!-- Images -->
+                <include name="${path.img}/*" />
+            	
+            	<!-- RSA keys -->
+                <include name="${file.keys.bank.public}" />
+            	<include name="${file.keys.server.public}" />
             </fileset>
+        	
+        	<!-- Class files -->
         	<fileset dir="${path.classes}">
         		<!-- NOTE: Must list the files to be included in the client JAR file here!!! -->
                 <include name="StealthNet/Chat**" />
@@ -313,6 +308,7 @@
         		<include name="StealthNet/DecryptedPacket**" />
                 <include name="StealthNet/EncryptedPacket**" />
         		<include name="StealthNet/FileTransfer**" />
+        		<include name="StealthNet/Utility**" />
         		<include name="StealthNet/Security/**" />
             </fileset>
         	
@@ -320,15 +316,69 @@
                 <attribute name="Built-By"   value="${user.name}"/>
                 <attribute name="Built-Date" value="${TODAY}"/>
                 <attribute name="Main-Class" value="${class.client}"/>
-                <attribute name="Class-Path" value="${compile.classpath}"/>
+            </manifest>
+        </jar>
+    	
+    	<!-- Proxy JAR file -->
+        <jar destfile="${file.jar.proxy}">
+            <zipgroupfileset dir="${path.lib}" includes="*.jar" />
+            
+            <!-- Class files -->
+            <fileset dir="${path.classes}">
+                <!-- NOTE: Must list the files to be included in the proxy JAR file here!!! -->                
+                <include name="StealthNet/Comms**" />
+                <include name="StealthNet/Debug**" />
+                <include name="StealthNet/DecryptedPacket**" />
+                <include name="StealthNet/EncryptedPacket**" />
+                <include name="StealthNet/Proxy**" />
+                <include name="StealthNet/ProxyComms**" />
+                <include name="StealthNet/ProxyThread**" />
+                <include name="StealthNet/Utility**" />
+                <include name="StealthNet/Security/**" />
+            </fileset>
+            
+            <manifest>
+                <attribute name="Built-By"   value="${user.name}" />
+                <attribute name="Built-Date" value="${TODAY}" />
+                <attribute name="Main-Class" value="${class.proxy}" />
+            </manifest>
+        </jar>
+    	
+    	<!-- Server JAR file -->
+        <jar destfile="${file.jar.server}">
+            <zipgroupfileset dir="${path.lib}" includes="*.jar" />
+            
+            <fileset dir=".">
+            	<!-- RSA keys -->
+            	<include name="${file.keys.server.public}" />
+                <include name="${file.keys.server.private}" />
+            </fileset>
+            
+            <!-- Class files -->
+            <fileset dir="${path.classes}">
+                <!-- NOTE: Must list the files to be included in the server JAR file here!!! -->                
+                <include name="StealthNet/Comms**" />
+                <include name="StealthNet/Debug**" />
+                <include name="StealthNet/DecryptedPacket**" />
+                <include name="StealthNet/EncryptedPacket**" />
+                <include name="StealthNet/Server**" />
+                <include name="StealthNet/ServerThread**" />
+                <include name="StealthNet/Utility**" />
+                <include name="StealthNet/Security/**" />
+            </fileset>
+            
+            <manifest>
+                <attribute name="Built-By"   value="${user.name}" />
+                <attribute name="Built-Date" value="${TODAY}" />
+                <attribute name="Main-Class" value="${class.server}" />
             </manifest>
         </jar>
     	
     	<!-- Set the JARs to be executable -->
-    	<chmod file="${file.jar}" perm="ugo+x"/>
-    	<chmod file="${file.jar.server}" perm="ugo+x"/>
+    	<chmod file="${file.jar.bank}" perm="ugo+x"/>
 		<chmod file="${file.jar.client}" perm="ugo+x"/>
     	<chmod file="${file.jar.proxy}" perm="ugo+x"/>
+		<chmod file="${file.jar.server}" perm="ugo+x"/>
     </target>
 	
 	<!-- Javadoc target -->

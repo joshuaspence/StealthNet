@@ -14,6 +14,8 @@ package StealthNet.Security;
 
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.security.spec.InvalidKeySpecException;
 
 /* Import Libraries **********************************************************/
@@ -47,6 +49,20 @@ public interface AsymmetricEncryption extends Encryption {
 	 * @throws IOException
 	 */
 	public void savePrivateKeyToFile(String filename) throws NoSuchAlgorithmException, InvalidKeySpecException, IOException;
+	
+	/**
+	 * TODO
+	 * 
+	 * @return
+	 */
+	public PublicKey getPublicKey();
+	
+	/**
+	 * TODO
+	 * 
+	 * @return
+	 */
+	public PrivateKey getPrivateKey();
 }
 
 /******************************************************************************

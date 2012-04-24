@@ -37,6 +37,19 @@ fi
 DEBUG="\
 -Ddebug.StealthNet=false \
 \
+-Ddebug.StealthNet.Bank=false \
+-Ddebug.StealthNet.Bank.General=true \
+-Ddebug.StealthNet.Bank.ErrorTrace=true \
+-Ddebug.StealthNet.Bank.AsymmetricEncryption=true \
+\
+-Ddebug.StealthNet.BankThread=false \
+-Ddebug.StealthNet.BankThread.General=true \
+-Ddebug.StealthNet.BankThread.ErrorTrace=true \
+-Ddebug.StealthNet.BankThread.Commands=false \
+-Ddebug.StealthNet.BankThread.Commands.Null=true \
+-Ddebug.StealthNet.BankThread.Commands.Login=true \
+-Ddebug.StealthNet.BankThread.Commands.Logout=true \
+\
 -Ddebug.StealthNet.Chat=false \
 -Ddebug.StealthNet.Chat.General=true \
 -Ddebug.StealthNet.Chat.ErrorTrace=true \
@@ -88,6 +101,7 @@ DEBUG="\
 -Ddebug.StealthNet.Server=false \
 -Ddebug.StealthNet.Server.General=true \
 -Ddebug.StealthNet.Server.ErrorTrace=true \
+-Ddebug.StealthNet.Server.AsymmetricEncryption=true \
 \
 -Ddebug.StealthNet.ServerThread=false \
 -Ddebug.StealthNet.ServerThread.General=true \
@@ -107,7 +121,7 @@ ADDITIONAL_ARG=
 
 # Get program command line options
 PN=`basename $0`
-ARGS=`getopt --name "$PN" --long debug,client,malicious-proxy,proxy,server --options d -- "$@"`
+ARGS=`getopt --name "$PN" --long bank,debug,client,malicious-proxy,proxy,server --options d -- "$@"`
 if [ $? -ne 0 ]; then
     echo "getopt failed!" >&2
     exit 1
@@ -118,7 +132,11 @@ while [ $# -gt 0 ]; do
         -d | --debug)
             DEBUG_ARG=$DEBUG
             ;;
-            
+        
+        --bank)
+        	JAR_FILE=StealthNet_bank.jar
+        	;;
+        	       	
         --client)
         	JAR_FILE=StealthNet_client.jar
         	;;
@@ -151,14 +169,14 @@ done
 
 # Make sure client or server mode was specified
 if [ -z "$JAR_FILE" ]; then
-	echo "You must specify client (\`--client'), malicious proxy (\`--malicious-proxy'), proxy (\`--proxy') or server (\`--server') mode." >&2
+	echo "You must specify bank (\`--bank'), client (\`--client'), malicious proxy (\`--malicious-proxy'), proxy (\`--proxy') or server (\`--server') mode." >&2
 	exit 1
 fi
 
 # Execute the relevant command
 if [ -n "$CLASSPATH" ]; then
 	# Echo the command before executing it
-	echo "$JRE $DEBUG_ARG $ADDITIONAL_ARG -classpath "$CLASSPATH" $JRE_FLAGS -jar $JAR_DIR/$JAR_FILE $@"
+	echo "$JRE $DEBUG_ARG $ADDITIONAL_ARG -classpath \"$CLASSPATH\" $JRE_FLAGS -jar $JAR_DIR/$JAR_FILE $@"
 	echo ""
 	$JRE $DEBUG_ARG $ADDITIONAL_ARG -classpath "$CLASSPATH" $JRE_FLAGS -jar $JAR_DIR/$JAR_FILE $@
 else

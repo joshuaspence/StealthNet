@@ -18,6 +18,9 @@ package StealthNet;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.URL;
+
+import StealthNet.Security.RSAAsymmetricEncryption;
 
 /* StealthNet.Server Class Definition ****************************************/
 
@@ -38,8 +41,13 @@ import java.net.Socket;
  */
 public class Server {
 	/** Debug options. */
-	private static final boolean DEBUG_GENERAL     = Debug.isDebug("StealthNet.Server.General");
-	private static final boolean DEBUG_ERROR_TRACE = Debug.isDebug("StealthNet.Server.ErrorTrace") || Debug.isDebug("ErrorTrace");
+	private static final boolean DEBUG_GENERAL               = Debug.isDebug("StealthNet.Server.General");
+	private static final boolean DEBUG_ERROR_TRACE           = Debug.isDebug("StealthNet.Server.ErrorTrace") || Debug.isDebug("ErrorTrace");
+	private static final boolean DEBUG_ASYMMETRIC_ENCRYPTION = Debug.isDebug("StealthNet.Server.AsymmetricEncryption");
+	
+	/** Constants. */
+	private static final String PUBLIC_KEY_FILE = "keys/server/public.key";
+	private static final String PRIVATE_KEY_FILE = "keys/server/private.key";
 	
 	/** 
 	 * The main Server function.
@@ -48,6 +56,34 @@ public class Server {
 	 * @throws IOException
 	 */
     public static void main(String[] args) throws IOException {
+    	final URL publicKeyFile = Server.class.getClassLoader().getResource(PUBLIC_KEY_FILE);
+    	final URL privateKeyFile = Server.class.getClassLoader().getResource(PRIVATE_KEY_FILE);
+    	
+    	RSAAsymmetricEncryption asymmetricEncryptionProvider = null;
+    	try {
+    		if ((publicKeyFile == null) || (privateKeyFile == null)) {
+    			/** Create new public/private keys. */
+        		asymmetricEncryptionProvider = new RSAAsymmetricEncryption();
+        		if (DEBUG_ASYMMETRIC_ENCRYPTION) System.out.println("Created new public/private keys.");
+        		asymmetricEncryptionProvider.savePublicKeyToFile(PUBLIC_KEY_FILE);
+        		asymmetricEncryptionProvider.savePrivateKeyToFile(PRIVATE_KEY_FILE);
+        	} else {
+        		/** Read public/private keys from file. */
+	    		asymmetricEncryptionProvider = new RSAAsymmetricEncryption(publicKeyFile, privateKeyFile);
+				if (DEBUG_ASYMMETRIC_ENCRYPTION) System.out.println("Read public/private keys from file.");
+        	}
+		} catch (Exception e) {
+			System.err.println(e.getMessage());
+			if (DEBUG_ERROR_TRACE) e.printStackTrace();
+			System.exit(1);
+		}
+    	
+    	/** Debug information. */
+    	final String publicKeyString = new String(Utility.getHexValue(asymmetricEncryptionProvider.getPublicKey().getEncoded()));
+    	final String privateKeyString = new String(Utility.getHexValue(asymmetricEncryptionProvider.getPrivateKey().getEncoded()));
+    	if (DEBUG_ASYMMETRIC_ENCRYPTION) System.out.println("Public key: " + publicKeyString);
+		if (DEBUG_ASYMMETRIC_ENCRYPTION) System.out.println("Private key: " + privateKeyString);
+    	
     	/** Port that the server is listening on. */
     	int port = Comms.DEFAULT_SERVERPORT;
     	
@@ -85,7 +121,7 @@ public class Server {
          */
         while (true) {
         	final Socket conn = svrSocket.accept();
-        	final ServerThread thread = new ServerThread(conn);
+        	final ServerThread thread = new ServerThread(conn, asymmetricEncryptionProvider);
         	thread.start();
             
             if (DEBUG_GENERAL)
