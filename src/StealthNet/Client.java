@@ -34,6 +34,7 @@ import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.security.PublicKey;
 import java.util.Hashtable;
 import javax.swing.AbstractButton;
 import javax.swing.BorderFactory;
@@ -97,9 +98,9 @@ public class Client {
 	private static final boolean DEBUG_ASYMMETRIC_ENCRYPTION = Debug.isDebug("StealthNet.Client.AsymmetricEncryption");
 	
 	/** StealthNet server options. */
-	private final String server_hostname;
-	private final int server_port;
-	private static final String SERVER_PUBLIC_KEY_FILE = "keys/server/public.key";	
+	private final String serverHostname;
+	private final int serverPort;
+	private static final String SERVER_PUBLIC_KEY_FILE = "keys/server/public.key";
 	
 	/** The main frame for this client. */
     private static JFrame clientFrame;
@@ -114,7 +115,7 @@ public class Client {
     private Comms stealthComms = null;
     
     /** Public-private keys to identify this client. */
-    private final AsymmetricEncryption publicPrivateKeys;
+    private final AsymmetricEncryption serverAsymmetricEncryptionProvider;
     
     /** A timer to periodically process incoming packets. */
     private final Timer stealthTimer;
@@ -148,20 +149,28 @@ public class Client {
 	static private Hashtable<String, SecretData> secretDescriptions = new Hashtable<String, SecretData>();
     
     /** Constructor. */
-    public Client() {
+    public Client() {    	
     	/** Create a timer to process packets every 100ms. */
     	this.stealthTimer = new Timer(100, new ActionListener() {
             public void actionPerformed(ActionEvent e) { processPackets(); }
         });
         
-        this.server_hostname = ProxyComms.DEFAULT_PROXYNAME;
-        this.server_port = ProxyComms.DEFAULT_PROXYPORT;
+        this.serverHostname = ProxyComms.DEFAULT_PROXYNAME;
+        this.serverPort = ProxyComms.DEFAULT_PROXYPORT;
         
         /** Set up asymmetric encryption. */
+        PublicKey serverPublicKey = null;
         RSAAsymmetricEncryption tmp = null;
+        try {
+        	serverPublicKey = RSAAsymmetricEncryption.readPublicKeyFromFile(SERVER_PUBLIC_KEY_FILE);
+        } catch (Exception e) {
+        	System.err.println("Unable to determine server public key.");
+			if (DEBUG_ERROR_TRACE) e.printStackTrace();
+			System.exit(1);
+        }
     	try {
     		/** Create new public/private keys. */
-    		tmp = new RSAAsymmetricEncryption();
+    		tmp = new RSAAsymmetricEncryption(serverPublicKey);
     		
     		if (DEBUG_ASYMMETRIC_ENCRYPTION) {
     			System.out.println("Created new public/private keys.");
@@ -176,8 +185,9 @@ public class Client {
 			if (DEBUG_ERROR_TRACE) e.printStackTrace();
 			System.exit(1);
 		} finally {
-			this.publicPrivateKeys = tmp;
+			this.serverAsymmetricEncryptionProvider = tmp;
 		}
+    	System.out.println("1");
     }
 
     /** 
@@ -186,20 +196,28 @@ public class Client {
 	 * @param s The hostname of the StealthNet server.
 	 * @param p The port that the StealthNet server is listening on.
 	 */
-    public Client(String s, int p)  {    	
+    public Client(String s, int p) {    	
     	/** Create a timer to process packets every 100ms. */
         this.stealthTimer = new Timer(100, new ActionListener() {
             public void actionPerformed(ActionEvent e) { processPackets(); }
         });
         
-        this.server_hostname = s;
-        this.server_port = p;
+        this.serverHostname = s;
+        this.serverPort = p;
         
         /** Set up asymmetric encryption. */
+        PublicKey serverPublicKey = null;
         RSAAsymmetricEncryption tmp = null;
+        try {
+        	serverPublicKey = RSAAsymmetricEncryption.readPublicKeyFromFile(SERVER_PUBLIC_KEY_FILE);
+        } catch (Exception e) {
+        	System.err.println("Unable to determine server public key.");
+			if (DEBUG_ERROR_TRACE) e.printStackTrace();
+			System.exit(1);
+        }
     	try {
     		/** Create new public/private keys. */
-    		tmp = new RSAAsymmetricEncryption();
+    		tmp = new RSAAsymmetricEncryption(serverPublicKey);
     		
     		if (DEBUG_ASYMMETRIC_ENCRYPTION) {
     			System.out.println("Created new public/private keys.");
@@ -214,8 +232,9 @@ public class Client {
 			if (DEBUG_ERROR_TRACE) e.printStackTrace();
 			System.exit(1);
 		} finally {
-			this.publicPrivateKeys = tmp;
+			this.serverAsymmetricEncryptionProvider = tmp;
 		}
+    	System.out.println("2");
     }
     
     /**
@@ -444,9 +463,9 @@ public class Client {
             	return;
             
             /** Initiate a connection with the StealthNet server. */
-            if (DEBUG_GENERAL) System.out.println("Initiating a connection with StealthNet server '" + server_hostname + "' on port " + server_port + ".");
-            stealthComms = new Comms();
-            stealthComms.initiateSession(new Socket(server_hostname, server_port));
+            if (DEBUG_GENERAL) System.out.println("Initiating a connection with StealthNet server '" + serverHostname + "' on port " + serverPort + ".");
+            stealthComms = new Comms(serverAsymmetricEncryptionProvider);
+            stealthComms.initiateSession(new Socket(serverHostname, serverPort));
             
             /** Send the server a login command. */
             if (DEBUG_GENERAL) System.out.println("Sending the server a login packet for user \"" + userID + "\".");
@@ -455,13 +474,13 @@ public class Client {
             /** Start periodically checking for packets. */
             stealthTimer.start();
         } catch (UnknownHostException e) {
-        	System.err.println("Unknown host for StealthNet server: \"" + server_hostname + "\".");
-            msgTextBox.append("[*ERR*] Unknown host: '" + server_hostname + "'.\n");
+        	System.err.println("Unknown host for StealthNet server: \"" + serverHostname + "\".");
+            msgTextBox.append("[*ERR*] Unknown host: '" + serverHostname + "'.\n");
             if (DEBUG_ERROR_TRACE) e.printStackTrace();
             return;
         } catch (IOException e) {
-        	System.err.println("Could not connect to StealthNet server on port " + server_port + ".");
-            msgTextBox.append("[*ERR*] Could not connect to host on port " + server_port + ".\n");
+        	System.err.println("Could not connect to StealthNet server on port " + serverPort + ".");
+            msgTextBox.append("[*ERR*] Could not connect to host on port " + serverPort + ".\n");
             if (DEBUG_ERROR_TRACE) e.printStackTrace();
             return;
         }

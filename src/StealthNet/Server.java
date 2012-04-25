@@ -63,13 +63,13 @@ public class Server {
     	try {
     		if ((publicKeyFile == null) || (privateKeyFile == null)) {
     			/** Create new public/private keys. */
-        		asymmetricEncryptionProvider = new RSAAsymmetricEncryption();
+        		asymmetricEncryptionProvider = new RSAAsymmetricEncryption(null);
         		if (DEBUG_ASYMMETRIC_ENCRYPTION) System.out.println("Created new public/private keys.");
         		asymmetricEncryptionProvider.savePublicKeyToFile(PUBLIC_KEY_FILE);
         		asymmetricEncryptionProvider.savePrivateKeyToFile(PRIVATE_KEY_FILE);
         	} else {
         		/** Read public/private keys from file. */
-	    		asymmetricEncryptionProvider = new RSAAsymmetricEncryption(publicKeyFile, privateKeyFile);
+	    		asymmetricEncryptionProvider = new RSAAsymmetricEncryption(publicKeyFile, privateKeyFile, null);
 				if (DEBUG_ASYMMETRIC_ENCRYPTION) System.out.println("Read public/private keys from file.");
         	}
 		} catch (Exception e) {

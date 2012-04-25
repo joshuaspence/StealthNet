@@ -71,18 +71,19 @@ import StealthNet.Security.NonceGenerator;
  */
 public class Comms {
 	/** Debug options. */
-	private static final boolean DEBUG_GENERAL           = Debug.isDebug("StealthNet.Comms.General");
-	private static final boolean DEBUG_ERROR_TRACE       = Debug.isDebug("StealthNet.Comms.ErrorTrace") || Debug.isDebug("ErrorTrace");
-	private static final boolean DEBUG_PURE_PACKET       = Debug.isDebug("StealthNet.Comms.PureOutput");
-	private static final boolean DEBUG_DECODED_PACKET    = Debug.isDebug("StealthNet.Comms.DecodedOutput");
-	private static final boolean DEBUG_ENCRYPTED_PACKET  = Debug.isDebug("StealthNet.Comms.EncryptedOutput");
-	private static final boolean DEBUG_DECRYPTED_PACKET  = Debug.isDebug("StealthNet.Comms.DecryptedOutput");
-	private static final boolean DEBUG_RAW_PACKET        = Debug.isDebug("StealthNet.Comms.RawOutput");
-	private static final boolean DEBUG_RECEIVE_READY     = Debug.isDebug("StealthNet.Comms.ReceiveReady");
-	private static final boolean DEBUG_AUTHENTICATION    = Debug.isDebug("StealthNet.Comms.Authentication");
-	private static final boolean DEBUG_ENCRYPTION        = Debug.isDebug("StealthNet.Comms.Encryption");
-	private static final boolean DEBUG_INTEGRITY         = Debug.isDebug("StealthNet.Comms.Integrity");
-	private static final boolean DEBUG_REPLAY_PREVENTION = Debug.isDebug("StealthNet.Comms.ReplayPrevention");
+	private static final boolean DEBUG_GENERAL               = Debug.isDebug("StealthNet.Comms.General");
+	private static final boolean DEBUG_ERROR_TRACE           = Debug.isDebug("StealthNet.Comms.ErrorTrace") || Debug.isDebug("ErrorTrace");
+	private static final boolean DEBUG_PURE_PACKET           = Debug.isDebug("StealthNet.Comms.PureOutput");
+	private static final boolean DEBUG_DECODED_PACKET        = Debug.isDebug("StealthNet.Comms.DecodedOutput");
+	private static final boolean DEBUG_ENCRYPTED_PACKET      = Debug.isDebug("StealthNet.Comms.EncryptedOutput");
+	private static final boolean DEBUG_DECRYPTED_PACKET      = Debug.isDebug("StealthNet.Comms.DecryptedOutput");
+	private static final boolean DEBUG_RAW_PACKET            = Debug.isDebug("StealthNet.Comms.RawOutput");
+	private static final boolean DEBUG_RECEIVE_READY         = Debug.isDebug("StealthNet.Comms.ReceiveReady");
+	private static final boolean DEBUG_AUTHENTICATION        = Debug.isDebug("StealthNet.Comms.Authentication");
+	private static final boolean DEBUG_ENCRYPTION            = Debug.isDebug("StealthNet.Comms.Encryption");
+	private static final boolean DEBUG_INTEGRITY             = Debug.isDebug("StealthNet.Comms.Integrity");
+	private static final boolean DEBUG_REPLAY_PREVENTION     = Debug.isDebug("StealthNet.Comms.ReplayPrevention");
+	private static final boolean DEBUG_ASYMMETRIC_ENCRYPTION = Debug.isDebug("StealthNet.Comms.AsymmetricEncryption");
 	
 	/** Defaults. */
     public static final String DEFAULT_SERVERNAME = "localhost";	/** Default host for the StealthNet server. */
@@ -97,7 +98,10 @@ public class Comms {
     /** Opened socket through which the communication is to be made. */
     private Socket commsSocket;
     
-    /** Provides asymmetric encryption. */
+    /** 
+     * Provides asymmetric encryption. Asymmetric encryption will be used until 
+     * it is no longer required to provide secure communications.
+     */
     private final AsymmetricEncryption asymmetricEncryptionProvider;
     
     /** Provides authentication for the communication. */
@@ -151,6 +155,9 @@ public class Comms {
         this.port = DEFAULT_SERVERPORT;
         
         this.asymmetricEncryptionProvider = aep;
+        if (this.asymmetricEncryptionProvider != null && this.asymmetricEncryptionProvider.getPeerPublicKey() != null)
+        	if (DEBUG_ASYMMETRIC_ENCRYPTION) System.out.println("Asymmetric encryption enabled using public key: " + new String(Utility.getHexValue(asymmetricEncryptionProvider.getPeerPublicKey().getEncoded())));
+        this.confidentialityProvider = this.asymmetricEncryptionProvider;
         
         if (DEBUG_GENERAL) System.out.println("Creating Comms to " + this.servername + " on port " + this.port + ".");
     }
@@ -190,6 +197,8 @@ public class Comms {
         this.port = p;
         
         this.asymmetricEncryptionProvider = aep;
+        if (DEBUG_ASYMMETRIC_ENCRYPTION) System.out.println("Asymmetric encryption enabled using public key: " + new String(Utility.getHexValue(asymmetricEncryptionProvider.getPeerPublicKey().getEncoded())));
+        this.confidentialityProvider = this.asymmetricEncryptionProvider;
         
         if (DEBUG_GENERAL) System.out.println("Creating Comms to " + this.servername + " on port " + this.port + ".");
     }

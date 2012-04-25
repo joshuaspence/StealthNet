@@ -23,15 +23,17 @@ import java.security.spec.InvalidKeySpecException;
 /* StealthNet.Security.AsymmetricEncryption Interface Definition *************/
 
 /**
- * TODO
+ * An interface to provide public-private key (asymmetric) encryption.
  *
  * @author Joshua Spence
  */
 public interface AsymmetricEncryption extends Encryption {
 	/**
-	 * TODO
+	 * Save the public key to a file so that it can be retrieved at a later 
+	 * time.
 	 * 
-	 * @param filename
+	 * @param filename The path of the file to which the public key should be 
+	 * saved.
 	 * 
 	 * @throws NoSuchAlgorithmException
 	 * @throws InvalidKeySpecException
@@ -40,9 +42,11 @@ public interface AsymmetricEncryption extends Encryption {
 	public void savePublicKeyToFile(String filename) throws NoSuchAlgorithmException, InvalidKeySpecException, IOException;
 	
 	/**
-	 * TODO
+	 * Save the private key to a file so that it can be retrieved at a later 
+	 * time.
 	 * 
-	 * @param filename
+	 * @param filename The path of the file to which the public key should be 
+	 * saved.
 	 * 
 	 * @throws NoSuchAlgorithmException
 	 * @throws InvalidKeySpecException
@@ -51,16 +55,23 @@ public interface AsymmetricEncryption extends Encryption {
 	public void savePrivateKeyToFile(String filename) throws NoSuchAlgorithmException, InvalidKeySpecException, IOException;
 	
 	/**
-	 * TODO
+	 * Get our public key.
 	 * 
-	 * @return TODO
+	 * @return Our public key.
 	 */
 	public PublicKey getPublicKey();
 	
 	/**
-	 * TODO
+	 * Get the peer's public key.
 	 * 
-	 * @return TODO
+	 * @return The peer's public key.
+	 */
+	public PublicKey getPeerPublicKey();
+	
+	/**
+	 * Get our private key.
+	 * 
+	 * @return Our private key.
 	 */
 	public PrivateKey getPrivateKey();
 }

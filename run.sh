@@ -79,6 +79,7 @@ DEBUG="\
 -Ddebug.StealthNet.Comms.Encryption=true \
 -Ddebug.StealthNet.Comms.Integrity=true \
 -Ddebug.StealthNet.Comms.ReplayPrevention=true \
+-Ddebug.StealthNet.Comms.AsymmetricEncryption=true \
 \
 -Ddebug.StealthNet.FileTransfer=false \
 -Ddebug.StealthNet.FileTransfer.General=true \
