@@ -53,14 +53,14 @@ public interface AsymmetricEncryption extends Encryption {
 	/**
 	 * TODO
 	 * 
-	 * @return
+	 * @return TODO
 	 */
 	public PublicKey getPublicKey();
 	
 	/**
 	 * TODO
 	 * 
-	 * @return
+	 * @return TODO
 	 */
 	public PrivateKey getPrivateKey();
 }

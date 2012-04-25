@@ -47,6 +47,7 @@ import javax.crypto.spec.SecretKeySpec;
 import org.apache.commons.codec.binary.Base64;
 
 import StealthNet.Security.AESEncryption;
+import StealthNet.Security.AsymmetricEncryption;
 import StealthNet.Security.DiffieHellmanKeyExchange;
 import StealthNet.Security.Encryption;
 import StealthNet.Security.HashedMessageAuthenticationCode;
@@ -96,6 +97,9 @@ public class Comms {
     /** Opened socket through which the communication is to be made. */
     private Socket commsSocket;
     
+    /** Provides asymmetric encryption. */
+    private final AsymmetricEncryption asymmetricEncryptionProvider;
+    
     /** Provides authentication for the communication. */
 	private final static int KEY_EXCHANGE_NUM_BITS = 1024;
     private KeyExchange authenticationProvider = null;
@@ -119,7 +123,7 @@ public class Comms {
     /** Input data stream for the socket. */
     private BufferedReader dataIn;
     
-    /** Constructor. */
+    /** Constructor without asymmetric encryption. */
     public Comms() {
     	this.commsSocket = null;
     	this.dataIn = null;
@@ -127,6 +131,26 @@ public class Comms {
         
         this.servername = DEFAULT_SERVERNAME;
         this.port = DEFAULT_SERVERPORT;
+        
+        this.asymmetricEncryptionProvider = null;
+        
+        if (DEBUG_GENERAL) System.out.println("Creating Comms to " + this.servername + " on port " + this.port + ".");
+    }
+    
+    /** 
+     * Constructor with asymmetric encryption. 
+     *
+     * @param aep To provide asymmetric encryption and public-private keys.
+     */
+    public Comms(AsymmetricEncryption aep) {
+    	this.commsSocket = null;
+    	this.dataIn = null;
+    	this.dataOut = null;
+        
+        this.servername = DEFAULT_SERVERNAME;
+        this.port = DEFAULT_SERVERPORT;
+        
+        this.asymmetricEncryptionProvider = aep;
         
         if (DEBUG_GENERAL) System.out.println("Creating Comms to " + this.servername + " on port " + this.port + ".");
     }
@@ -144,6 +168,28 @@ public class Comms {
         
         this.servername = s;
         this.port = p;
+        
+        this.asymmetricEncryptionProvider = null;
+        
+        if (DEBUG_GENERAL) System.out.println("Creating Comms to " + this.servername + " on port " + this.port + ".");
+    }
+    
+    /** 
+     * Constructor. 
+     * 
+     * @param s The servername of the StealthNet server.
+     * @param p The port number for the StealthNet server.
+     * @param aep To provide asymmetric encryption and public-private keys.
+     */
+    public Comms(String s, int p, AsymmetricEncryption aep) {    	
+    	this.commsSocket = null;
+        this.dataIn = null;
+        this.dataOut = null;
+        
+        this.servername = s;
+        this.port = p;
+        
+        this.asymmetricEncryptionProvider = aep;
         
         if (DEBUG_GENERAL) System.out.println("Creating Comms to " + this.servername + " on port " + this.port + ".");
     }

@@ -362,7 +362,7 @@ public class RSAAsymmetricEncryption implements AsymmetricEncryption {
 	/**
 	 * TODO
 	 * 
-	 * @return
+	 * @return TODO
 	 */
 	public PublicKey getPublicKey() {
 		return publicKey;
@@ -371,7 +371,7 @@ public class RSAAsymmetricEncryption implements AsymmetricEncryption {
 	/**
 	 * TODO
 	 * 
-	 * @return
+	 * @return TODO
 	 */
 	public PrivateKey getPrivateKey() {
 		return privateKey;

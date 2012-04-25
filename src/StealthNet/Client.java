@@ -56,6 +56,9 @@ import javax.swing.Timer;
 import javax.swing.UIManager;
 import javax.swing.JOptionPane;
 
+import StealthNet.Security.AsymmetricEncryption;
+import StealthNet.Security.RSAAsymmetricEncryption;
+
 /* StealthNet.Client Class Definition ****************************************/
 
 /** 
@@ -83,20 +86,20 @@ import javax.swing.JOptionPane;
  */
 public class Client {
 	/** Debug options. */
-	private static final boolean DEBUG_GENERAL             = Debug.isDebug("StealthNet.Client.General");
-	private static final boolean DEBUG_ERROR_TRACE         = Debug.isDebug("StealthNet.Client.ErrorTrace") || Debug.isDebug("ErrorTrace");
-	private static final boolean DEBUG_COMMANDS_MSG        = Debug.isDebug("StealthNet.Client.Commands.Msg");
-	private static final boolean DEBUG_COMMANDS_CHAT       = Debug.isDebug("StealthNet.Client.Commands.Chat");
-	private static final boolean DEBUG_COMMANDS_FTP        = Debug.isDebug("StealthNet.Client.Commands.FTP");
-	private static final boolean DEBUG_COMMANDS_LIST       = Debug.isDebug("StealthNet.Client.Commands.List");
-	private static final boolean DEBUG_COMMANDS_SECRETLIST = Debug.isDebug("StealthNet.Client.Commands.SecretList");
-	private static final boolean DEBUG_COMMANDS_GETSECRET  = Debug.isDebug("StealthNet.Client.Commands.GetSecret");
+	private static final boolean DEBUG_GENERAL               = Debug.isDebug("StealthNet.Client.General");
+	private static final boolean DEBUG_ERROR_TRACE           = Debug.isDebug("StealthNet.Client.ErrorTrace") || Debug.isDebug("ErrorTrace");
+	private static final boolean DEBUG_COMMANDS_MSG          = Debug.isDebug("StealthNet.Client.Commands.Msg");
+	private static final boolean DEBUG_COMMANDS_CHAT         = Debug.isDebug("StealthNet.Client.Commands.Chat");
+	private static final boolean DEBUG_COMMANDS_FTP          = Debug.isDebug("StealthNet.Client.Commands.FTP");
+	private static final boolean DEBUG_COMMANDS_LIST         = Debug.isDebug("StealthNet.Client.Commands.List");
+	private static final boolean DEBUG_COMMANDS_SECRETLIST   = Debug.isDebug("StealthNet.Client.Commands.SecretList");
+	private static final boolean DEBUG_COMMANDS_GETSECRET    = Debug.isDebug("StealthNet.Client.Commands.GetSecret");
+	private static final boolean DEBUG_ASYMMETRIC_ENCRYPTION = Debug.isDebug("StealthNet.Client.AsymmetricEncryption");
 	
-	/** StealthNet server (defaults to ProxyComms.DEFAULT_PROXYNAME). */
+	/** StealthNet server options. */
 	private final String server_hostname;
-	
-	/** StealthNet port (defaults to ProxyComms.DEFAULT_PROXYPORT). */
 	private final int server_port;
+	private static final String SERVER_PUBLIC_KEY_FILE = "keys/server/public.key";	
 	
 	/** The main frame for this client. */
     private static JFrame clientFrame;
@@ -109,6 +112,9 @@ public class Client {
     
     /** Used for communications with the StealthNet server. */
     private Comms stealthComms = null;
+    
+    /** Public-private keys to identify this client. */
+    private final AsymmetricEncryption publicPrivateKeys;
     
     /** A timer to periodically process incoming packets. */
     private final Timer stealthTimer;
@@ -150,6 +156,28 @@ public class Client {
         
         this.server_hostname = ProxyComms.DEFAULT_PROXYNAME;
         this.server_port = ProxyComms.DEFAULT_PROXYPORT;
+        
+        /** Set up asymmetric encryption. */
+        RSAAsymmetricEncryption tmp = null;
+    	try {
+    		/** Create new public/private keys. */
+    		tmp = new RSAAsymmetricEncryption();
+    		
+    		if (DEBUG_ASYMMETRIC_ENCRYPTION) {
+    			System.out.println("Created new public/private keys.");
+    		
+				final String publicKeyString = new String(Utility.getHexValue(tmp.getPublicKey().getEncoded()));
+		    	final String privateKeyString = new String(Utility.getHexValue(tmp.getPrivateKey().getEncoded()));
+		    	System.out.println("Public key: " + publicKeyString);
+				System.out.println("Private key: " + privateKeyString);
+    		}
+		} catch (Exception e) {
+			System.err.println(e.getMessage());
+			if (DEBUG_ERROR_TRACE) e.printStackTrace();
+			System.exit(1);
+		} finally {
+			this.publicPrivateKeys = tmp;
+		}
     }
 
     /** 
@@ -166,6 +194,28 @@ public class Client {
         
         this.server_hostname = s;
         this.server_port = p;
+        
+        /** Set up asymmetric encryption. */
+        RSAAsymmetricEncryption tmp = null;
+    	try {
+    		/** Create new public/private keys. */
+    		tmp = new RSAAsymmetricEncryption();
+    		
+    		if (DEBUG_ASYMMETRIC_ENCRYPTION) {
+    			System.out.println("Created new public/private keys.");
+    		
+				final String publicKeyString = new String(Utility.getHexValue(tmp.getPublicKey().getEncoded()));
+		    	final String privateKeyString = new String(Utility.getHexValue(tmp.getPrivateKey().getEncoded()));
+		    	System.out.println("Public key: " + publicKeyString);
+				System.out.println("Private key: " + privateKeyString);
+    		}
+		} catch (Exception e) {
+			System.err.println(e.getMessage());
+			if (DEBUG_ERROR_TRACE) e.printStackTrace();
+			System.exit(1);
+		} finally {
+			this.publicPrivateKeys = tmp;
+		}
     }
     
     /**

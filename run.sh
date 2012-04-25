@@ -64,6 +64,7 @@ DEBUG="\
 -Ddebug.StealthNet.Client.Commands.List=true \
 -Ddebug.StealthNet.Client.Commands.SecretList=true \
 -Ddebug.StealthNet.Client.Commands.GetSecret=true \
+-Ddebug.StealthNet.Client.AsymmetricEncryption=true \
 \
 -Ddebug.StealthNet.Comms=false \
 -Ddebug.StealthNet.Comms.General=true \
