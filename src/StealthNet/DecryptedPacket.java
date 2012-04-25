@@ -70,6 +70,7 @@ public class DecryptedPacket {
     public static final byte CMD_AUTHENTICATIONKEY = 0x0A;
     public static final byte CMD_INTEGRITYKEY = 0x0B;
     public static final byte CMD_NONCESEED = 0x0C;
+    public static final byte CMD_PUBLICKEY = 0x0D;
     
     /** Packet contents. */
     byte command;							/** The command being sent in the packet. */      
@@ -249,32 +250,34 @@ public class DecryptedPacket {
      */
     public static String getCommandName(byte command) {
     	switch (command) {
-    		case DecryptedPacket.CMD_NULL:
+    		case CMD_NULL:
 				return "CMD_NULL";
-    		case DecryptedPacket.CMD_LOGIN:
+    		case CMD_LOGIN:
     			return "CMD_LOGIN";
-    		case DecryptedPacket.CMD_LOGOUT:
+    		case CMD_LOGOUT:
     			return "CMD_LOGOUT";
-    		case DecryptedPacket.CMD_MSG:
+    		case CMD_MSG:
 				return "CMD_MSG";
-    		case DecryptedPacket.CMD_CHAT:
+    		case CMD_CHAT:
     			return "CMD_CHAT";
-    		case DecryptedPacket.CMD_FTP:
+    		case CMD_FTP:
     			return "CMD_FTP";
-    		case DecryptedPacket.CMD_LIST:
+    		case CMD_LIST:
     			return "CMD_LIST";
-    		case DecryptedPacket.CMD_CREATESECRET:
+    		case CMD_CREATESECRET:
     			return "CMD_CREATESECRET";
-    		case DecryptedPacket.CMD_SECRETLIST:
+    		case CMD_SECRETLIST:
 				return "CMD_SECRETLIST";
-    		case DecryptedPacket.CMD_GETSECRET:
+    		case CMD_GETSECRET:
     			return "CMD_GETSECRET";
-    		case DecryptedPacket.CMD_AUTHENTICATIONKEY:
+    		case CMD_AUTHENTICATIONKEY:
 				return "CMD_AUTHENTICATIONKEY";
-    		case DecryptedPacket.CMD_INTEGRITYKEY:
+    		case CMD_INTEGRITYKEY:
 				return "CMD_INTEGRITYKEY";
-    		case DecryptedPacket.CMD_NONCESEED:
+    		case CMD_NONCESEED:
     			return "CMD_NONCESEED";
+    		case CMD_PUBLICKEY:
+    			return "CMD_PUBLICKEY";
 			default:
 				return "UNKNOWN";
     	}

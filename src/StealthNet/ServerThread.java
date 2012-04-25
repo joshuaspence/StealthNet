@@ -99,12 +99,12 @@ public class ServerThread extends Thread {
 
 		if (DEBUG_GENERAL) System.out.println(THREADID_PREFIX + this.getId() + THREADID_SUFFIX + "Creating a ServerThread.");
 		
-		/** Create a new StealthNet.Comms instance and accept sessions. */
-		this.stealthComms = new Comms();
-		this.stealthComms.acceptSession(socket);
-		
 		/** No asymmetric encryption. */
 		this.asymmetricEncryptionProvider = null;
+		
+		/** Create a new StealthNet.Comms instance and accept sessions. */
+		this.stealthComms = new Comms(this.asymmetricEncryptionProvider);
+		this.stealthComms.acceptSession(socket);
 	}
 	
 	/**
@@ -118,11 +118,11 @@ public class ServerThread extends Thread {
 
 		if (DEBUG_GENERAL) System.out.println(THREADID_PREFIX + this.getId() + THREADID_SUFFIX + "Creating a ServerThread.");
 		
-		/** Create a new StealthNet.Comms instance and accept sessions. */
-		this.stealthComms = new Comms();
-		this.stealthComms.acceptSession(socket);
-		
 		this.asymmetricEncryptionProvider = aep;
+		
+		/** Create a new StealthNet.Comms instance and accept sessions. */
+		this.stealthComms = new Comms(this.asymmetricEncryptionProvider);
+		this.stealthComms.acceptSession(socket);
 	}
 
 	/**

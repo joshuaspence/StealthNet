@@ -13,10 +13,13 @@
 package StealthNet.Security;
 
 import java.io.IOException;
+import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.spec.InvalidKeySpecException;
+
+import javax.crypto.NoSuchPaddingException;
 
 /* Import Libraries **********************************************************/
 
@@ -67,6 +70,17 @@ public interface AsymmetricEncryption extends Encryption {
 	 * @return The peer's public key.
 	 */
 	public PublicKey getPeerPublicKey();
+	
+	/**
+	 * Set the peer's public key.
+	 * 
+	 * @param peer The peer's public key.
+	 * 
+	 * @throws NoSuchPaddingException 
+	 * @throws NoSuchAlgorithmException 
+	 * @throws InvalidKeyException 
+	 */
+	public void setPeerPublicKey(PublicKey peer) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException;
 	
 	/**
 	 * Get our private key.

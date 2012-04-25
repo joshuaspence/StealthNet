@@ -45,20 +45,23 @@ import javax.crypto.NoSuchPaddingException;
  * A class to provide RSA asymmetric encryption. Encryption will be performed 
  * using the peers public key. Decryption will be performed using our private 
  * key.
+ * 
+ * The size of the public/private keys must be larger than the maximum message
+ * that needs to be encrypted with the keys.
  *
  * @author Joshua Spence
  */
 public class RSAAsymmetricEncryption implements AsymmetricEncryption {
 	private final PrivateKey privateKey;
 	private final PublicKey publicKey;
-	private final PublicKey peerPublicKey;
+	private PublicKey peerPublicKey;
 	
-	private final Cipher encryptionCipher;
+	private Cipher encryptionCipher;
 	private final Cipher decryptionCipher;
 	
-	private static final String ALGORITHM = "RSA";
+	public static final String ALGORITHM = "RSA";
 	private static final String CIPHER_ALGORITHM = "RSA/ECB/PKCS1Padding";
-	private static final int NUM_BITS = 2048;
+	private static final int NUM_BITS = 8192;
 	
 	/**
 	 * Constructor to generate a new public/private key pair.
@@ -77,7 +80,6 @@ public class RSAAsymmetricEncryption implements AsymmetricEncryption {
 		final KeyPair kp = kpg.genKeyPair();
 		this.publicKey = kp.getPublic();
 		this.privateKey = kp.getPrivate();
-		
 		this.peerPublicKey = peer;
 		
 		if (this.peerPublicKey != null) {
@@ -396,7 +398,9 @@ public class RSAAsymmetricEncryption implements AsymmetricEncryption {
 	public String encrypt(byte[] cleartext) throws IllegalBlockSizeException, BadPaddingException, IllegalStateException {
 		if (encryptionCipher == null)
 			throw new IllegalStateException("Cannot perform encryption without a peer public key.");
-			
+		
+		System.out.println(cleartext.length + " bytes");
+		
 		return new String(encryptionCipher.doFinal(cleartext));
 	}
 	
@@ -442,6 +446,26 @@ public class RSAAsymmetricEncryption implements AsymmetricEncryption {
 	 */
 	public PublicKey getPeerPublicKey() {
 		return peerPublicKey;
+	}
+	
+	/**
+	 * Set the peer's public key.
+	 * 
+	 * @param peer The peer's public key.
+	 * 
+	 * @throws NoSuchPaddingException 
+	 * @throws NoSuchAlgorithmException 
+	 * @throws InvalidKeyException 
+	 */
+	public void setPeerPublicKey(PublicKey peer) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException {
+		this.peerPublicKey = peer;
+		
+		if (this.peerPublicKey != null) {
+			this.encryptionCipher = Cipher.getInstance(CIPHER_ALGORITHM);
+			this.encryptionCipher.init(Cipher.ENCRYPT_MODE, this.peerPublicKey);
+		} else {
+			this.encryptionCipher = null;
+		}
 	}
 	
 	/**

@@ -20,6 +20,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URL;
 
+import StealthNet.Security.AsymmetricEncryption;
 import StealthNet.Security.RSAAsymmetricEncryption;
 
 /* StealthNet.Server Class Definition ****************************************/
@@ -59,7 +60,7 @@ public class Server {
     	final URL publicKeyFile = Server.class.getClassLoader().getResource(PUBLIC_KEY_FILE);
     	final URL privateKeyFile = Server.class.getClassLoader().getResource(PRIVATE_KEY_FILE);
     	
-    	RSAAsymmetricEncryption asymmetricEncryptionProvider = null;
+    	AsymmetricEncryption asymmetricEncryptionProvider = null;
     	try {
     		if ((publicKeyFile == null) || (privateKeyFile == null)) {
     			/** Create new public/private keys. */

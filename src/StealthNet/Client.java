@@ -33,6 +33,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.URL;
 import java.net.UnknownHostException;
 import java.security.PublicKey;
 import java.util.Hashtable;
@@ -159,10 +160,11 @@ public class Client {
         this.serverPort = ProxyComms.DEFAULT_PROXYPORT;
         
         /** Set up asymmetric encryption. */
+        final URL serverPublicKeyFile = Client.class.getClassLoader().getResource(SERVER_PUBLIC_KEY_FILE);
         PublicKey serverPublicKey = null;
         RSAAsymmetricEncryption tmp = null;
         try {
-        	serverPublicKey = RSAAsymmetricEncryption.readPublicKeyFromFile(SERVER_PUBLIC_KEY_FILE);
+        	serverPublicKey = RSAAsymmetricEncryption.readPublicKeyFromFile(serverPublicKeyFile);
         } catch (Exception e) {
         	System.err.println("Unable to determine server public key.");
 			if (DEBUG_ERROR_TRACE) e.printStackTrace();
@@ -170,15 +172,16 @@ public class Client {
         }
     	try {
     		/** Create new public/private keys. */
+    		if (DEBUG_ASYMMETRIC_ENCRYPTION) System.out.println("Creating new public/private keys.");
     		tmp = new RSAAsymmetricEncryption(serverPublicKey);
     		
     		if (DEBUG_ASYMMETRIC_ENCRYPTION) {
-    			System.out.println("Created new public/private keys.");
+    			if (DEBUG_ASYMMETRIC_ENCRYPTION) System.out.println("Created new public/private keys.");
     		
 				final String publicKeyString = new String(Utility.getHexValue(tmp.getPublicKey().getEncoded()));
 		    	final String privateKeyString = new String(Utility.getHexValue(tmp.getPrivateKey().getEncoded()));
-		    	System.out.println("Public key: " + publicKeyString);
-				System.out.println("Private key: " + privateKeyString);
+		    	if (DEBUG_ASYMMETRIC_ENCRYPTION) System.out.println("Public key: " + publicKeyString);
+		    	if (DEBUG_ASYMMETRIC_ENCRYPTION) System.out.println("Private key: " + privateKeyString);
     		}
 		} catch (Exception e) {
 			System.err.println(e.getMessage());
@@ -206,10 +209,11 @@ public class Client {
         this.serverPort = p;
         
         /** Set up asymmetric encryption. */
+        final URL serverPublicKeyFile = Client.class.getClassLoader().getResource(SERVER_PUBLIC_KEY_FILE);
         PublicKey serverPublicKey = null;
         RSAAsymmetricEncryption tmp = null;
         try {
-        	serverPublicKey = RSAAsymmetricEncryption.readPublicKeyFromFile(SERVER_PUBLIC_KEY_FILE);
+        	serverPublicKey = RSAAsymmetricEncryption.readPublicKeyFromFile(serverPublicKeyFile);
         } catch (Exception e) {
         	System.err.println("Unable to determine server public key.");
 			if (DEBUG_ERROR_TRACE) e.printStackTrace();
@@ -217,15 +221,16 @@ public class Client {
         }
     	try {
     		/** Create new public/private keys. */
+    		if (DEBUG_ASYMMETRIC_ENCRYPTION) System.out.println("Creating new public/private keys.");
     		tmp = new RSAAsymmetricEncryption(serverPublicKey);
     		
     		if (DEBUG_ASYMMETRIC_ENCRYPTION) {
-    			System.out.println("Created new public/private keys.");
+    			if (DEBUG_ASYMMETRIC_ENCRYPTION) System.out.println("Created new public/private keys.");
     		
 				final String publicKeyString = new String(Utility.getHexValue(tmp.getPublicKey().getEncoded()));
 		    	final String privateKeyString = new String(Utility.getHexValue(tmp.getPrivateKey().getEncoded()));
-		    	System.out.println("Public key: " + publicKeyString);
-				System.out.println("Private key: " + privateKeyString);
+		    	if (DEBUG_ASYMMETRIC_ENCRYPTION) System.out.println("Public key: " + publicKeyString);
+		    	if (DEBUG_ASYMMETRIC_ENCRYPTION) System.out.println("Private key: " + privateKeyString);
     		}
 		} catch (Exception e) {
 			System.err.println(e.getMessage());
