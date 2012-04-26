@@ -102,8 +102,12 @@ public class ServerThread extends Thread {
 		/** No asymmetric encryption. */
 		this.asymmetricEncryptionProvider = null;
 		
-		/** Create a new StealthNet.Comms instance and accept sessions. */
-		this.stealthComms = new Comms(this.asymmetricEncryptionProvider);
+		/** 
+		 * Create a new StealthNet.Comms instance and accept sessions. Note that
+		 * the client already has our public key and can hence encrypt messages 
+		 * destined for us. 
+		 */
+		this.stealthComms = new Comms(this.asymmetricEncryptionProvider, true);
 		this.stealthComms.acceptSession(socket);
 	}
 	
@@ -121,7 +125,7 @@ public class ServerThread extends Thread {
 		this.asymmetricEncryptionProvider = aep;
 		
 		/** Create a new StealthNet.Comms instance and accept sessions. */
-		this.stealthComms = new Comms(this.asymmetricEncryptionProvider);
+		this.stealthComms = new Comms(this.asymmetricEncryptionProvider, true);
 		this.stealthComms.acceptSession(socket);
 	}
 

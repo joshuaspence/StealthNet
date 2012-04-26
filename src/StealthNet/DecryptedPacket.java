@@ -52,7 +52,7 @@ import StealthNet.Security.NonceGenerator;
  */
 public class DecryptedPacket {
 	/** Commands. */
-    public static final byte CMD_NULL = 0x00;
+    public static final byte CMD_NULL = 0x00;				/** used for acknowledgement */
     public static final byte CMD_LOGIN = 0x01;
     public static final byte CMD_LOGOUT = 0x02;
     public static final byte CMD_MSG = 0x03;
@@ -67,10 +67,10 @@ public class DecryptedPacket {
      * Security-specific commands - these should never be returned to a client 
      * or server, but rather should always be handled within the Comms class. 
      */
-    public static final byte CMD_AUTHENTICATIONKEY = 0x0A;
-    public static final byte CMD_INTEGRITYKEY = 0x0B;
-    public static final byte CMD_NONCESEED = 0x0C;
-    public static final byte CMD_PUBLICKEY = 0x0D;
+    public static final byte CMD_AUTHENTICATIONKEY = 0x0A;	/** common key for Diffie-Hellman key exchange */
+    public static final byte CMD_INTEGRITYKEY = 0x0B;		/** key for MAC generator */
+    public static final byte CMD_NONCESEED = 0x0C;			/** seed for nonce generator */
+    public static final byte CMD_PUBLICKEY = 0x0D;			/** asymmetric public key */
     
     /** Packet contents. */
     byte command;							/** The command being sent in the packet. */      

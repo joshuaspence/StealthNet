@@ -85,7 +85,7 @@ public class Utility {
 		String result = Integer.toHexString(value);
 		
 		/** Pad the result to use the full 4 bytes of an integer. */
-		while (result.length() < 8)
+		while (result.length() < 2 * (Integer.SIZE / Byte.SIZE))
 			result = "0" + result;
 		
 		return result;

@@ -107,7 +107,7 @@ public class Comms {
      * symmetric encryption can be used.
      */
     private final AsymmetricEncryption asymmetricEncryptionProvider;
-    private boolean peerHasPublicKey = false;
+    private boolean peerHasPublicKey = false; /** if our peer doesn't have our public key, then don't attempt to decrypt packets */
     
     /** Provides authentication for the communication. */
 	private final static int KEY_EXCHANGE_NUM_BITS = 1024;
@@ -163,6 +163,29 @@ public class Comms {
         if (this.asymmetricEncryptionProvider != null && this.asymmetricEncryptionProvider.getPeerPublicKey() != null)
         	if (DEBUG_ASYMMETRIC_ENCRYPTION) System.out.println("Asymmetric encryption enabled using public key: " + new String(Utility.getHexValue(asymmetricEncryptionProvider.getPeerPublicKey().getEncoded())));
         this.confidentialityProvider = this.asymmetricEncryptionProvider;
+        
+        if (DEBUG_GENERAL) System.out.println("Creating Comms to " + this.serverName + " on port " + this.port + ".");
+    }
+    
+    /** 
+     * Constructor with asymmetric encryption. 
+     *
+     * @param aep To provide asymmetric encryption and public-private keys.
+     * @param peerHasPublicKey True if the peer already has our public key.
+     */
+    public Comms(AsymmetricEncryption aep, boolean peerHasPublicKey) {
+    	this.commsSocket = null;
+    	this.dataIn = null;
+    	this.dataOut = null;
+        
+        this.serverName = DEFAULT_SERVERNAME;
+        this.port = DEFAULT_SERVERPORT;
+        
+        this.asymmetricEncryptionProvider = aep;
+        if (this.asymmetricEncryptionProvider != null && this.asymmetricEncryptionProvider.getPeerPublicKey() != null)
+        	if (DEBUG_ASYMMETRIC_ENCRYPTION) System.out.println("Asymmetric encryption enabled using public key: " + new String(Utility.getHexValue(asymmetricEncryptionProvider.getPeerPublicKey().getEncoded())));
+        this.confidentialityProvider = this.asymmetricEncryptionProvider;
+        this.peerHasPublicKey = peerHasPublicKey;
         
         if (DEBUG_GENERAL) System.out.println("Creating Comms to " + this.serverName + " on port " + this.port + ".");
     }
@@ -496,6 +519,7 @@ public class Comms {
     		encPckt = new EncryptedPacket(packetString, HashedMessageAuthenticationCode.DIGEST_BYTES);
     	} catch (Exception e) {
     		if (DEBUG_GENERAL) System.err.println("Unable to instantiate packet. Discarding...");
+    		if (DEBUG_ERROR_TRACE) e.printStackTrace();
     		
     		/** Retrieve another packet by recursion. */
     		return recvPacket();
@@ -515,6 +539,7 @@ public class Comms {
 		    	}
     		}  catch (Exception e) {
         		if (DEBUG_GENERAL) System.err.println("Unable to verify packet. Discarding...");
+        		if (DEBUG_ERROR_TRACE) e.printStackTrace();
         		
         		/** Retrieve another packet by recursion. */
         		return recvPacket();
@@ -529,12 +554,16 @@ public class Comms {
          */
     	DecryptedPacket decPckt = null;
 		try {
-			if ((confidentialityProvider != null) && (confidentialityProvider instanceof AsymmetricEncryption) && !peerHasPublicKey)
+			if ((confidentialityProvider != null) && (confidentialityProvider instanceof AsymmetricEncryption) && !peerHasPublicKey) {
+				System.out.println("1");
 				decPckt = encPckt.decrypt(null);
-			else
+			} else {
+				System.out.println("2");
 				decPckt = encPckt.decrypt(confidentialityProvider);
+			}
 		} catch (Exception e) {
 			if (DEBUG_GENERAL) System.err.println("Failed to decrypt packet! Discarding...");
+			if (DEBUG_ERROR_TRACE) e.printStackTrace();
 			
 			/** Retrieve another packet by recursion. */
     		return recvPacket();
@@ -616,11 +645,12 @@ public class Comms {
     private void sendPublicKey() {
     	if (DEBUG_ASYMMETRIC_ENCRYPTION) System.out.println("Sending the peer our public key.");
     	
-    	/** Transmit our public key. */
     	final byte[] pubKeyBytes = asymmetricEncryptionProvider.getPublicKey().getEncoded();
     	final String pubKeyString = new String(Utility.getHexValue(pubKeyBytes));
     	if (DEBUG_ASYMMETRIC_ENCRYPTION) System.out.println("Sending public key to peer: " + pubKeyString);
-    	sendPacket(DecryptedPacket.CMD_PUBLICKEY, Base64.encodeBase64String(pubKeyBytes));
+    	final String pubKey = Base64.encodeBase64String(pubKeyBytes);
+    	
+    	sendPacket(DecryptedPacket.CMD_PUBLICKEY, pubKey);
     	if (DEBUG_ASYMMETRIC_ENCRYPTION) System.out.println("Sent public key to peer.");
     	
     	/** Wait for acknowledgement. */
@@ -638,7 +668,7 @@ public class Comms {
             			break;
 	            }
     		} catch (IOException e) {}
-        }
+    	}
     }
     
     /** 
@@ -657,24 +687,31 @@ public class Comms {
 	        	
 	            switch (pckt.command) {
 	            	case DecryptedPacket.CMD_PUBLICKEY:
-	            		/** Set the peer's public key. */
-	            		final byte[] pubKeyBytes = Base64.decodeBase64(pckt.data);
-	            		final String pubKeyString = new String(Utility.getHexValue(pubKeyBytes));
-	            		if (DEBUG_ASYMMETRIC_ENCRYPTION) System.out.println("Received an asymmetric public key. Key: \"" + pubKeyString + "\".");
-	            		
-	            		final KeyFactory factory = KeyFactory.getInstance(RSAAsymmetricEncryption.ALGORITHM);
-	            		final X509EncodedKeySpec keySpec = new X509EncodedKeySpec(pubKeyBytes);
-	            		final PublicKey pubKey = factory.generatePublic(keySpec);
-	            		
+	            		final byte[] peerPubKeyBytes = Base64.decodeBase64(pckt.data);
+	                	final String peerPubKeyString = new String(Utility.getHexValue(peerPubKeyBytes));
+	                	if (DEBUG_ASYMMETRIC_ENCRYPTION) System.out.println("Received peer public key: " + peerPubKeyString);
+	                	
 	            		/** Send acknowledgement. */
 	            		sendPacket(DecryptedPacket.CMD_NULL);
 	            		
 	            		/** Enable asymmetric encryption. */
-	            		asymmetricEncryptionProvider.setPeerPublicKey(pubKey);
+	                	try {
+	            	    	final KeyFactory factory = KeyFactory.getInstance(RSAAsymmetricEncryption.ALGORITHM);
+	            			final X509EncodedKeySpec keySpec = new X509EncodedKeySpec(peerPubKeyBytes);
+	            			final PublicKey pubKey = factory.generatePublic(keySpec);
+	            			if (DEBUG_ASYMMETRIC_ENCRYPTION) System.out.println("Enabling asymmetric encryption.");
+	            			asymmetricEncryptionProvider.setPeerPublicKey(pubKey);
+	            			if (DEBUG_ASYMMETRIC_ENCRYPTION) System.out.println("Asymmetric encryption enabled.");
+	                	} catch (Exception e) {
+	                		System.err.println("Asymmetric encryption failed.");			
+	            			if (DEBUG_ERROR_TRACE) e.printStackTrace();
+	            			System.exit(1);
+	                	}
+	        			
 	                    break;
 	            }
     		} catch (Exception e) {}
-        }
+    	}
     }
     
     /** 

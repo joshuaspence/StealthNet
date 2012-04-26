@@ -33,11 +33,15 @@ import java.security.PublicKey;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.RSAPrivateKeySpec;
 import java.security.spec.RSAPublicKeySpec;
+import java.util.LinkedList;
+import java.util.Queue;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
+
+import org.apache.commons.codec.binary.Base64;
 
 /* StealthNet.Security.AsymmetricEncryption Interface Definition *************/
 
@@ -60,8 +64,11 @@ public class RSAAsymmetricEncryption implements AsymmetricEncryption {
 	private final Cipher decryptionCipher;
 	
 	public static final String ALGORITHM = "RSA";
-	private static final String CIPHER_ALGORITHM = "RSA/ECB/PKCS1Padding";
-	private static final int NUM_BITS = 8192;
+	public static final String CIPHER_ALGORITHM = "RSA/ECB/PKCS1Padding";
+	public static final int NUM_BITS = 2048;
+	
+	private static final int MAX_CLEARTEXT = (NUM_BITS / Byte.SIZE) - 11;
+	private static final int MAX_CIPHERTEXT = 256;
 	
 	/**
 	 * Constructor to generate a new public/private key pair.
@@ -372,7 +379,9 @@ public class RSAAsymmetricEncryption implements AsymmetricEncryption {
 	}
 	
 	/**
-	 * Encrypts a message using the peer public key.
+	 * Encrypts a message using the peer public key. If the cleartext is longer
+	 * than the maximum allowable cleartext (MAX_CLEARTEXT), then the cleartext 
+	 * will be encrypted in chunks of length MAX_CLEARTEXT.
 	 * 
 	 * @param cleartext The message to be encrypted.
 	 * @return The ciphertext message.
@@ -386,7 +395,9 @@ public class RSAAsymmetricEncryption implements AsymmetricEncryption {
 	}
 	
 	/**
-	 * Encrypts a message using the peer public key.
+	 * Encrypts a message using the peer public key. If the cleartext is longer
+	 * than the maximum allowable cleartext (MAX_CLEARTEXT), then the cleartext
+	 * will be encrypted in chunks of length MAX_CLEARTEXT.
 	 * 
 	 * @param cleartext The message to be encrypted.
 	 * @return The ciphertext message.
@@ -399,9 +410,42 @@ public class RSAAsymmetricEncryption implements AsymmetricEncryption {
 		if (encryptionCipher == null)
 			throw new IllegalStateException("Cannot perform encryption without a peer public key.");
 		
-		System.out.println(cleartext.length + " bytes");
+		/** 
+		 * Split the cleartext up into chunks and encrypt each chunk separately.
+		 */
+    	final Queue<byte[]> chunks = new LinkedList<byte[]>();
+    	int startIndex = 0;
+    	int totalLength = 0;
+    	final int chunkCount = (int) Math.ceil((double) cleartext.length / (double) MAX_CLEARTEXT);
+    	for (int i = 0; i < chunkCount; i++) {
+    		byte[] chunk;
+    		if (startIndex + MAX_CLEARTEXT > cleartext.length)
+    			chunk = new byte[cleartext.length - startIndex];
+    		else
+    			chunk = new byte[MAX_CLEARTEXT];
+    		
+    		System.arraycopy(cleartext, startIndex, chunk, 0, chunk.length);
+    		startIndex += chunk.length;
+
+    		/** Encrypt this chunk. */
+    		final byte[] encryptedChunk = encryptionCipher.doFinal(chunk);
+    		chunks.add(encryptedChunk);
+    		totalLength += encryptedChunk.length;
+    		
+    		System.out.println("chunk=" + encryptedChunk.length);
+    	}
+    	
+    	/** Combine the encrypted chunks. */
+    	int currentIndex = 0;
+    	final byte[] combinedChunks = new byte[totalLength];
+    	while (chunks.size() > 0) {
+    		final byte[] chunk = chunks.remove();
+    		System.arraycopy(chunk, 0, combinedChunks, currentIndex, chunk.length);
+    		currentIndex += chunk.length;
+        }
 		
-		return new String(encryptionCipher.doFinal(cleartext));
+        final byte[] encodedValue = Base64.encodeBase64(combinedChunks);
+        return new String(encodedValue);
 	}
 	
 	/**
@@ -427,7 +471,42 @@ public class RSAAsymmetricEncryption implements AsymmetricEncryption {
 	 * @throws IllegalBlockSizeException 
 	 */
 	public String decrypt(byte[] ciphertext) throws IllegalBlockSizeException, BadPaddingException {
-		return new String(decryptionCipher.doFinal(ciphertext));
+		final byte[] decodedValue = Base64.decodeBase64(ciphertext);
+		
+		/** 
+		 * Split the cleartext up into chunks and encrypt each chunk separately.
+		 */
+    	final Queue<byte[]> chunks = new LinkedList<byte[]>();
+    	int startIndex = 0;
+    	int totalLength = 0;
+    	final int chunkCount = (int) Math.ceil((double) decodedValue.length / (double) MAX_CIPHERTEXT);
+    	for (int i = 0; i < chunkCount; i++) {
+    		byte[] chunk;
+    		if (startIndex + MAX_CIPHERTEXT > decodedValue.length)
+    			chunk = new byte[decodedValue.length - startIndex];
+    		else
+    			chunk = new byte[MAX_CIPHERTEXT];
+    		
+    		System.arraycopy(decodedValue, startIndex, chunk, 0, chunk.length);
+    		startIndex += chunk.length;
+
+    		/** Encrypt this chunk. */
+    		final byte[] decryptedChunk = decryptionCipher.doFinal(chunk);
+    		chunks.add(decryptedChunk);
+    		totalLength += decryptedChunk.length;
+    		System.out.println("3");
+    	}
+    	
+    	/** Combine the decrypted chunks. */
+    	int currentIndex = 0;
+    	final byte[] combinedChunks = new byte[totalLength];
+    	while (chunks.size() > 0) {
+    		final byte[] chunk = chunks.remove();
+    		System.arraycopy(chunk, 0, combinedChunks, currentIndex, chunk.length);
+    		currentIndex += chunk.length;
+        }
+    	
+        return new String(combinedChunks);
 	}
 	
 	/**
