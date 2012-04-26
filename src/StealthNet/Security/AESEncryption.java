@@ -37,16 +37,11 @@ import org.apache.commons.codec.binary.Base64;
  * @author Joshua Spence
  */
 public class AESEncryption implements Encryption {
-	/** Encryption key and cipher. */
-	private final SecretKey encryptionKey;
+	/** Keys and ciphers. */
+	private final SecretKey key;
+	private final IvParameterSpec ips;
 	private final Cipher encryptionCipher;
-	
-	/** Decryption key and cipher. */
-	private final SecretKey decryptionKey;
 	private final Cipher decryptionCipher;
-	
-	private final IvParameterSpec encryptionIPS;
-	private final IvParameterSpec decryptionIPS;
 	
 	/** String constants. */
 	public static final String HASH_ALGORITHM = "MD5";
@@ -64,8 +59,7 @@ public class AESEncryption implements Encryption {
 	 * @throws InvalidAlgorithmParameterException 
 	 */
 	public AESEncryption(SecretKey key) throws InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidAlgorithmParameterException {
-		this.encryptionKey = key;
-        this.decryptionKey = key;
+		this.key = key;
         
         /** 
          * Generate the initialisation vector using a seeded random number
@@ -77,62 +71,19 @@ public class AESEncryption implements Encryption {
         final Random IVGenerator = new Random(key.hashCode());
         for (int i = 0; i < 16; i++)
         	IV[i] = (byte) IVGenerator.nextInt();
-        this.encryptionIPS = new IvParameterSpec(IV);
-        this.decryptionIPS = new IvParameterSpec(IV);
+        this.ips = new IvParameterSpec(IV);
         
         /** Initialise encryption cipher. */
         encryptionCipher = Cipher.getInstance(CIPHER_ALGORITHM);
-		encryptionCipher.init(Cipher.ENCRYPT_MODE, encryptionKey, this.encryptionIPS);
+		encryptionCipher.init(Cipher.ENCRYPT_MODE, key, this.ips);
 		//System.out.println("Encryption block size = " + encryptionCipher.getBlockSize() + " bytes");
 		//System.out.println("Encryption key length = " + (encryptionIPS.getIV().length * 8) + " bits");
 		
 		/** Initialise decryption cipher. */
 		decryptionCipher = Cipher.getInstance(CIPHER_ALGORITHM);
-		decryptionCipher.init(Cipher.DECRYPT_MODE, decryptionKey, this.decryptionIPS);
+		decryptionCipher.init(Cipher.DECRYPT_MODE, key, this.ips);
 		//System.out.println("Decryption block size = " + encryptionCipher.getBlockSize() + " bytes");
 		//System.out.println("Decryption key length = " + (encryptionIPS.getIV().length * 8) + " bits");
-	}
-	
-	/**
-	 * Constructor.
-	 * 
-	 * @param encryptKey The SecretKey to be used for encryption.
-	 * @param decryptKey The SecretKey to be used for decryption.
-	 * 
-	 * @throws NoSuchPaddingException 
-	 * @throws NoSuchAlgorithmException 
-	 * @throws InvalidKeyException 
-	 * @throws InvalidAlgorithmParameterException 
-	 */
-	public AESEncryption(SecretKey encryptKey, SecretKey decryptKey) throws InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidAlgorithmParameterException {
-		this.encryptionKey = encryptKey;
-        this.decryptionKey = decryptKey;
-        
-        /** 
-         * Generate the initialisation vector using a seeded random number
-         * generator, with the seed equal to the hash of the encryption key. In 
-         * this way, both peers should generate the same initialisation 
-         * vectors.
-         */
-        final byte[] encryptionIV = new byte[16];
-        final Random encryptionIVGenerator = new Random(encryptKey.hashCode());
-        for (int i = 0; i < 16; i++)
-        	encryptionIV[i] = (byte) encryptionIVGenerator.nextInt();
-        this.encryptionIPS = new IvParameterSpec(encryptionIV);
-        
-        final byte[] decryptionIV = new byte[16];
-        final Random decryptionIVGenerator = new Random(decryptKey.hashCode());
-        for (int i = 0; i < 16; i++)
-        	decryptionIV[i] = (byte) decryptionIVGenerator.nextInt();
-        this.decryptionIPS = new IvParameterSpec(encryptionIV);
-        
-        /** Initialise encryption cipher. */
-        encryptionCipher = Cipher.getInstance(CIPHER_ALGORITHM);
-		encryptionCipher.init(Cipher.ENCRYPT_MODE, encryptionKey, this.encryptionIPS);
-		
-		/** Initialise decryption cipher. */
-		decryptionCipher = Cipher.getInstance(CIPHER_ALGORITHM);
-		decryptionCipher.init(Cipher.DECRYPT_MODE, decryptionKey, this.decryptionIPS);
 	}
 	
 	/**
