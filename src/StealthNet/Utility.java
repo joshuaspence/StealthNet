@@ -11,6 +11,21 @@
 
 package StealthNet;
 
+import java.io.File;
+import java.io.IOException;
+import java.net.URL;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.security.PublicKey;
+import java.security.spec.InvalidKeySpecException;
+
+import javax.crypto.NoSuchPaddingException;
+
+import StealthNet.Security.AsymmetricEncryption;
+import StealthNet.Security.InvalidPasswordException;
+import StealthNet.Security.RSAAsymmetricEncryption;
+
 /* Import Libraries **********************************************************/
 
 /* StealthNet.Utility Class Definition ***************************************/
@@ -102,6 +117,92 @@ public class Utility {
 	 */
 	public static double logBase2(double x) {
 		return (Math.log(x) / Math.log(2));
+	}
+	
+	/**
+	 * Retrieve public keys. The keys will first try to be retrieved from the 
+	 * JAR and then from the file system. Otherwise no key will be returned.
+	 * 
+	 * @param publicKeyPath The path to the public key file.
+	 * @return The requested public key, or null if it cannot be found.
+	 */
+	public static PublicKey getPublicKey(String publicKeyPath) {
+		final URL publicKeyJAR = Utility.class.getClassLoader().getResource(publicKeyPath);
+    	final boolean publicKeyFileExists = new File(publicKeyPath).exists();
+    	
+    	/** 
+    	 * Try to read keys from the JAR file first. If that doesn't work, then
+    	 * try to read keys from the file system. If that doesn't work, return 
+    	 * null.
+    	 */
+    	try {
+    		if (publicKeyJAR != null) {
+    			/** Read public key from JAR. */
+	    		return RSAAsymmetricEncryption.readPublicKeyFromFile(publicKeyJAR);
+    		} else if (publicKeyFileExists) {
+    			/** Read public keys from file system. */
+	    		return RSAAsymmetricEncryption.readPublicKeyFromFile(publicKeyPath);
+    		} else {
+    			return null;
+    		}
+		} catch (Exception e) {
+			System.err.println(e.getMessage());
+			return null;
+		}
+	}
+	
+	/**
+	 * Retrieve public-private keys. The keys will first try to be retrieved 
+	 * from the JAR and then from the file system. Finally, new public-private 
+	 * keys will be created.
+	 * 
+	 * @param publicKeyPath The path to the public key file.
+	 * @param privateKeyPath The path to the private key file.
+	 * @param privateKeyPassword The password to decrypt the private key file.
+	 * @return An AsymmetricEncryption provider for the keys.
+	 * 
+	 * @throws IOException 
+	 * @throws NoSuchPaddingException 
+	 * @throws InvalidKeySpecException 
+	 * @throws NoSuchAlgorithmException 
+	 * @throws InvalidKeyException 
+	 * @throws InvalidAlgorithmParameterException 
+	 * @throws InvalidPasswordException 
+	 */
+	public static AsymmetricEncryption getPublicPrivateKeys(String publicKeyPath, String privateKeyPath, String privateKeyPassword) throws InvalidKeyException, NoSuchAlgorithmException, InvalidKeySpecException, NoSuchPaddingException, IOException, InvalidAlgorithmParameterException, InvalidPasswordException {
+		final URL publicKeyJAR = Utility.class.getClassLoader().getResource(publicKeyPath);
+    	final URL privateKeyJAR = Utility.class.getClassLoader().getResource(privateKeyPath);
+    	final File publicKeyFile = new File(publicKeyPath);
+    	final File privateKeyFile = new File(privateKeyPath);
+    	final boolean publicKeyFileExists = publicKeyFile.exists();
+    	final boolean privateKeyFileExists = privateKeyFile.exists();
+    	
+    	/** 
+    	 * Try to read keys from the JAR file first. If that doesn't work, then
+    	 * try to read keys from the file system. If that doesn't work, then 
+    	 * create new keys.
+    	 */
+		if (((publicKeyJAR == null) || (privateKeyJAR == null)) && (!publicKeyFileExists || !privateKeyFileExists)) {
+			/** Create the parent directories if they don't already exist. */
+	    	new File(publicKeyFile.getParent()).mkdirs();
+	    	new File(privateKeyFile.getParent()).mkdirs();
+	    	
+			/** Create new public/private keys. */
+			AsymmetricEncryption aep = new RSAAsymmetricEncryption(null);
+    		aep.savePublicKeyToFile(publicKeyPath);
+    		aep.savePrivateKeyToFile(privateKeyPath, privateKeyPassword);
+    		return aep;
+    	} else {
+    		if ((publicKeyJAR != null) && (privateKeyJAR != null)) {
+    			/** Read public/private keys from JAR. */
+	    		return new RSAAsymmetricEncryption(publicKeyJAR, privateKeyJAR, privateKeyPassword, null);
+    		} else if (publicKeyFileExists && privateKeyFileExists) {
+    			/** Read public/private keys from file system. */
+	    		return new RSAAsymmetricEncryption(publicKeyPath, privateKeyPath, privateKeyPassword, null);
+    		} else {
+    			return null;
+    		}
+    	}
 	}
 }
 

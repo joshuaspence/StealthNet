@@ -12,7 +12,10 @@
 
 package StealthNet.Security;
 
+/* Import Libraries **********************************************************/
+
 import java.io.IOException;
+import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
@@ -20,8 +23,6 @@ import java.security.PublicKey;
 import java.security.spec.InvalidKeySpecException;
 
 import javax.crypto.NoSuchPaddingException;
-
-/* Import Libraries **********************************************************/
 
 /* StealthNet.Security.AsymmetricEncryption Interface Definition *************/
 
@@ -39,11 +40,13 @@ public interface AsymmetricEncryption extends Encryption {
 	 * @param filename The path of the file to which the public key should be 
 	 * saved.
 	 * 
-	 * @throws NoSuchAlgorithmException
-	 * @throws InvalidKeySpecException
-	 * @throws IOException
+	 * @throws IOException 
+	 * @throws NoSuchPaddingException 
+	 * @throws NoSuchAlgorithmException 
+	 * @throws InvalidKeyException 
+	 * @throws InvalidKeySpecException 
 	 */
-	public void savePublicKeyToFile(String filename) throws NoSuchAlgorithmException, InvalidKeySpecException, IOException;
+	public void savePublicKeyToFile(String filename) throws NoSuchAlgorithmException, InvalidKeySpecException, IOException, InvalidKeyException, NoSuchPaddingException;
 	
 	/**
 	 * Save the private key to a file so that it can be retrieved at a later 
@@ -51,12 +54,16 @@ public interface AsymmetricEncryption extends Encryption {
 	 * 
 	 * @param filename The path of the file to which the public key should be 
 	 * saved.
+	 * @param password The password to encrypt the file.
 	 * 
 	 * @throws NoSuchAlgorithmException
 	 * @throws InvalidKeySpecException
 	 * @throws IOException
+	 * @throws NoSuchPaddingException 
+	 * @throws InvalidKeyException 
+	 * @throws InvalidAlgorithmParameterException 
 	 */
-	public void savePrivateKeyToFile(String filename) throws NoSuchAlgorithmException, InvalidKeySpecException, IOException;
+	public void savePrivateKeyToFile(String filename, String password) throws NoSuchAlgorithmException, InvalidKeySpecException, IOException, InvalidKeyException, NoSuchPaddingException, InvalidAlgorithmParameterException;
 	
 	/**
 	 * Get our public key.

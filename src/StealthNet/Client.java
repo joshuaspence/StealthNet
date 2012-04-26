@@ -33,7 +33,6 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.URL;
 import java.net.UnknownHostException;
 import java.security.KeyFactory;
 import java.security.PublicKey;
@@ -63,6 +62,7 @@ import javax.swing.JOptionPane;
 import org.apache.commons.codec.binary.Base64;
 
 import StealthNet.Security.AsymmetricEncryption;
+import StealthNet.Security.InvalidPasswordException;
 import StealthNet.Security.RSAAsymmetricEncryption;
 
 /* StealthNet.Client Class Definition ****************************************/
@@ -120,7 +120,7 @@ public class Client {
     private Comms stealthComms = null;
     
     /** Public-private keys to identify this client. */
-    private final AsymmetricEncryption asymmetricEncryptionProvider;
+    private AsymmetricEncryption asymmetricEncryptionProvider;
     
     /** A timer to periodically process incoming packets. */
     private final Timer stealthTimer;
@@ -169,40 +169,6 @@ public class Client {
         
         this.serverHostname = Comms.DEFAULT_SERVERNAME;
         this.serverPort = Comms.DEFAULT_SERVERPORT;
-        
-        /** 
-         * Set up asymmetric encryption. Get server public key from JAR file.
-         */
-        PublicKey serverPublicKey = null;
-        AsymmetricEncryption tmp = null;
-        try {
-        	final URL serverPublicKeyFile = Client.class.getClassLoader().getResource(SERVER_PUBLIC_KEY_FILE);
-        	serverPublicKey = RSAAsymmetricEncryption.readPublicKeyFromFile(serverPublicKeyFile);
-        } catch (Exception e) {
-        	System.err.println("Unable to determine server public key.");
-			if (DEBUG_ERROR_TRACE) e.printStackTrace();
-			System.exit(1);
-        }
-    	try {
-    		/** Create new public/private keys. */
-    		if (DEBUG_ASYMMETRIC_ENCRYPTION) System.out.println("Creating new public/private keys.");
-    		tmp = new RSAAsymmetricEncryption(serverPublicKey);
-    		
-    		if (DEBUG_ASYMMETRIC_ENCRYPTION) {
-    			System.out.println("Created new public/private keys.");
-    		
-				final String publicKeyString = new String(Utility.getHexValue(tmp.getPublicKey().getEncoded()));
-		    	final String privateKeyString = new String(Utility.getHexValue(tmp.getPrivateKey().getEncoded()));
-		    	System.out.println("Public key: " + publicKeyString);
-		    	System.out.println("Private key: " + privateKeyString);
-    		}
-		} catch (Exception e) {
-			System.err.println("Unable to provide asymmetric encryption.");
-			if (DEBUG_ERROR_TRACE) e.printStackTrace();
-			System.exit(1);
-		} finally {
-			this.asymmetricEncryptionProvider = tmp;
-		}
     }
 
     /** 
@@ -219,38 +185,6 @@ public class Client {
         
         this.serverHostname = s;
         this.serverPort = p;
-        
-        /** Set up asymmetric encryption. */
-        PublicKey serverPublicKey = null;
-        AsymmetricEncryption tmp = null;
-        try {
-        	final URL serverPublicKeyFile = Client.class.getClassLoader().getResource(SERVER_PUBLIC_KEY_FILE);
-        	serverPublicKey = RSAAsymmetricEncryption.readPublicKeyFromFile(serverPublicKeyFile);
-        } catch (Exception e) {
-        	System.err.println("Unable to determine server public key.");
-			if (DEBUG_ERROR_TRACE) e.printStackTrace();
-			System.exit(1);
-        }
-    	try {
-    		/** Create new public/private keys. */
-    		if (DEBUG_ASYMMETRIC_ENCRYPTION) System.out.println("Creating new public/private keys.");
-    		tmp = new RSAAsymmetricEncryption(serverPublicKey);
-    		
-    		if (DEBUG_ASYMMETRIC_ENCRYPTION) {
-    			System.out.println("Created new public/private keys.");
-    		
-				final String publicKeyString = new String(Utility.getHexValue(tmp.getPublicKey().getEncoded()));
-		    	final String privateKeyString = new String(Utility.getHexValue(tmp.getPrivateKey().getEncoded()));
-		    	System.out.println("Public key: " + publicKeyString);
-		    	System.out.println("Private key: " + privateKeyString);
-    		}
-		} catch (Exception e) {
-			System.err.println("Unable to provide asymmetric encryption.");
-			if (DEBUG_ERROR_TRACE) e.printStackTrace();
-			System.exit(1);
-		} finally {
-			this.asymmetricEncryptionProvider = tmp;
-		}
     }
     
     /**
@@ -482,6 +416,43 @@ public class Client {
             userID = JOptionPane.showInputDialog("Login:", userID);
             if (userID == null) 
             	return;
+            
+            do {
+	            /** Get the password for the private key. */
+	            String password = null;
+	            password = JOptionPane.showInputDialog("Password:", password);
+	            if (password == null) 
+	            	return;
+	            
+	            /** 
+	             * Set up asymmetric encryption. Get server public key from JAR file.
+	             */
+	            PublicKey serverPublicKey = Utility.getPublicKey(SERVER_PUBLIC_KEY_FILE);
+	            if (serverPublicKey == null) {
+	            	System.err.println("Unable to determine server public key.");
+	    			System.exit(1);
+	            }
+	            
+	            final String publicKeyPath  = "keys/clients/" + userID + "/public.key";
+	            final String privateKeyPath = "keys/clients/" + userID + "/private.key";
+	            try {
+	            	asymmetricEncryptionProvider = Utility.getPublicPrivateKeys(publicKeyPath, privateKeyPath, password);
+	            } catch (InvalidPasswordException e) {
+	            	JOptionPane.showMessageDialog(null, "The password you entered was incorrect.", "Invalid password", JOptionPane.ERROR_MESSAGE);
+	            	continue;
+	            } catch (Exception e) {
+	            	System.err.println(e.getMessage());
+	            	if (DEBUG_ERROR_TRACE) e.printStackTrace();
+	            	System.exit(1);
+	            }
+            } while (asymmetricEncryptionProvider == null);
+           	
+    		if (DEBUG_ASYMMETRIC_ENCRYPTION) {
+				final String publicKeyString = new String(Utility.getHexValue(asymmetricEncryptionProvider.getPublicKey().getEncoded()));
+		    	final String privateKeyString = new String(Utility.getHexValue(asymmetricEncryptionProvider.getPrivateKey().getEncoded()));
+		    	System.out.println("Public key: " + publicKeyString);
+		    	System.out.println("Private key: " + privateKeyString);
+    		}
             
             /** Initiate a connection with the StealthNet server. */
             /** TODO: Probably want a timeout on this. */

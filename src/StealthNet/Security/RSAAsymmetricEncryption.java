@@ -21,8 +21,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.StreamCorruptedException;
 import java.math.BigInteger;
 import java.net.URL;
+import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.KeyFactory;
 import java.security.KeyPair;
@@ -30,6 +32,7 @@ import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.SecureRandom;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.RSAPrivateKeySpec;
 import java.security.spec.RSAPublicKeySpec;
@@ -38,8 +41,14 @@ import java.util.Queue;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
+import javax.crypto.CipherInputStream;
+import javax.crypto.CipherOutputStream;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
+import javax.crypto.SecretKey;
+import javax.crypto.SecretKeyFactory;
+import javax.crypto.spec.PBEKeySpec;
+import javax.crypto.spec.PBEParameterSpec;
 
 import org.apache.commons.codec.binary.Base64;
 
@@ -63,6 +72,11 @@ public class RSAAsymmetricEncryption implements AsymmetricEncryption {
 	public static final String ALGORITHM = "RSA";
 	public static final String CIPHER_ALGORITHM = "RSA/ECB/PKCS1Padding";
 	public static final int NUM_BITS = 2048;
+	
+	private static final String PASSWORD_SECURERANDOM_ALGORITHM = "SHA1PRNG";
+	private static final int PASSWORD_SALT_BYTES = 8;
+	private static final int PASSWORD_ITERATIONS = 1000;
+	private static final String PASSWORD_KEYFACTORY_ALGORITHM = "PBEWithMD5AndDES";
 	
 	private static final int MAX_CLEARTEXT = (NUM_BITS / Byte.SIZE) - 11;
 	private static final int MAX_CIPHERTEXT = 256;
@@ -103,6 +117,7 @@ public class RSAAsymmetricEncryption implements AsymmetricEncryption {
 	 * @param publicKeyFileName The path to the file containing our public key.
 	 * @param privateKeyFileName The path to the file containing our private 
 	 * key.
+	 * @param password The password to decrypt the private key file.
 	 * @param peer The public key of the the peer of the communications, used 
 	 * for encryption. If null, then encryption will be unavailable.
 	 * 
@@ -111,10 +126,12 @@ public class RSAAsymmetricEncryption implements AsymmetricEncryption {
 	 * @throws NoSuchAlgorithmException 
 	 * @throws InvalidKeyException 
 	 * @throws InvalidKeySpecException 
+	 * @throws InvalidAlgorithmParameterException 
+	 * @throws InvalidPasswordException 
 	 */
-	public RSAAsymmetricEncryption(String publicKeyFileName, String privateKeyFileName, PublicKey peer) throws IOException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidKeySpecException {
+	public RSAAsymmetricEncryption(String publicKeyFileName, String privateKeyFileName, String password, PublicKey peer) throws IOException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidKeySpecException, InvalidAlgorithmParameterException, InvalidPasswordException {
 		this.publicKey = readPublicKeyFromFile(publicKeyFileName);
-		this.privateKey = readPrivateKeyFromFile(privateKeyFileName);
+		this.privateKey = readPrivateKeyFromFile(privateKeyFileName, password);
 		this.peerPublicKey = peer;
 		
 		if (this.peerPublicKey != null) {
@@ -133,6 +150,7 @@ public class RSAAsymmetricEncryption implements AsymmetricEncryption {
 	 * 
 	 * @param publicKeyFile The file containing our public key.
 	 * @param privateKeyFile The file containing our private key. 
+	 * @param password The password to decrypt the private key file.
 	 * @param peer The public key of the the peer of the communications, used 
 	 * for encryption. If null, then encryption will be unavailable.
 	 * 
@@ -141,10 +159,12 @@ public class RSAAsymmetricEncryption implements AsymmetricEncryption {
 	 * @throws NoSuchAlgorithmException 
 	 * @throws InvalidKeyException 
 	 * @throws InvalidKeySpecException 
+	 * @throws InvalidAlgorithmParameterException 
+	 * @throws InvalidPasswordException 
 	 */
-	public RSAAsymmetricEncryption(URL publicKeyFile, URL privateKeyFile, PublicKey peer) throws IOException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidKeySpecException {
+	public RSAAsymmetricEncryption(URL publicKeyFile, URL privateKeyFile, String password, PublicKey peer) throws IOException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidKeySpecException, InvalidAlgorithmParameterException, InvalidPasswordException {
 		this.publicKey = readPublicKeyFromFile(publicKeyFile);
-		this.privateKey = readPrivateKeyFromFile(privateKeyFile);
+		this.privateKey = readPrivateKeyFromFile(privateKeyFile, password);
 		this.peerPublicKey = peer;
 		
 		if (this.peerPublicKey != null) {
@@ -229,8 +249,10 @@ public class RSAAsymmetricEncryption implements AsymmetricEncryption {
 	 * @throws NoSuchAlgorithmException
 	 * @throws InvalidKeySpecException
 	 * @throws IOException
+	 * @throws NoSuchPaddingException 
+	 * @throws InvalidKeyException 
 	 */
-	public void savePublicKeyToFile(String filename) throws NoSuchAlgorithmException, InvalidKeySpecException, IOException {
+	public void savePublicKeyToFile(String filename) throws NoSuchAlgorithmException, InvalidKeySpecException, IOException, InvalidKeyException, NoSuchPaddingException {
 		final KeyFactory factory = KeyFactory.getInstance(ALGORITHM);
 		final RSAPublicKeySpec pub = factory.getKeySpec(this.publicKey, RSAPublicKeySpec.class);
 		writeToFile(filename, pub.getModulus(), pub.getPublicExponent());
@@ -242,15 +264,19 @@ public class RSAAsymmetricEncryption implements AsymmetricEncryption {
 	 * 
 	 * @param filename The path of the file to which the public key should be 
 	 * saved.
+	 * @param password The password to encrypt the file.
 	 * 
 	 * @throws NoSuchAlgorithmException
 	 * @throws InvalidKeySpecException
 	 * @throws IOException
+	 * @throws NoSuchPaddingException 
+	 * @throws InvalidKeyException 
+	 * @throws InvalidAlgorithmParameterException 
 	 */
-	public void savePrivateKeyToFile(String filename) throws NoSuchAlgorithmException, InvalidKeySpecException, IOException {
+	public void savePrivateKeyToFile(String filename, String password) throws NoSuchAlgorithmException, InvalidKeySpecException, IOException, InvalidKeyException, NoSuchPaddingException, InvalidAlgorithmParameterException {
 		final KeyFactory factory = KeyFactory.getInstance(ALGORITHM);
 		final RSAPrivateKeySpec priv = factory.getKeySpec(this.privateKey, RSAPrivateKeySpec.class);
-		writeToFile(filename, priv.getModulus(), priv.getPrivateExponent());
+		writeToFile(filename, priv.getModulus(), priv.getPrivateExponent(), password);
 	}
 	
 	/**
@@ -259,14 +285,69 @@ public class RSAAsymmetricEncryption implements AsymmetricEncryption {
 	 * @param filename The path of the file to write to.
 	 * @param mod The modulus of the key.
 	 * @param exp The exponent of the key.
+	 * @param password A password to encrypt the file.
 	 * 
 	 * @throws IOException
+	 * @throws NoSuchAlgorithmException 
+	 * @throws NoSuchPaddingException 
+	 * @throws InvalidKeySpecException 
+	 * @throws InvalidKeyException 
 	 */
-	private static void writeToFile(String filename, BigInteger mod, BigInteger exp) throws IOException {
+	private static void writeToFile(String filename, BigInteger mod, BigInteger exp) throws IOException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeySpecException, InvalidKeyException {
 		final FileOutputStream fileOutputStream = new FileOutputStream(filename);
 		final BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(fileOutputStream);
 		final ObjectOutputStream objectOutputStream = new ObjectOutputStream(bufferedOutputStream);
-  
+		
+		try {
+			objectOutputStream.writeObject(mod);
+			objectOutputStream.writeObject(exp);
+		} catch (Exception e) {
+			throw new IOException("Unexpected error", e);
+		} finally {
+			objectOutputStream.close();
+		}
+	}
+	
+	/**
+	 * A utility function to write the modulus and exponent of a key to a file
+	 * encrypted with a password.
+	 * 
+	 * @param filename The path of the file to write to.
+	 * @param mod The modulus of the key.
+	 * @param exp The exponent of the key.
+	 * @param password A password to encrypt the file.
+	 * 
+	 * @throws IOException
+	 * @throws NoSuchAlgorithmException 
+	 * @throws NoSuchPaddingException 
+	 * @throws InvalidKeySpecException 
+	 * @throws InvalidKeyException 
+	 * @throws InvalidAlgorithmParameterException 
+	 */
+	private static void writeToFile(String filename, BigInteger mod, BigInteger exp, String password) throws IOException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeySpecException, InvalidKeyException, InvalidAlgorithmParameterException {
+		final FileOutputStream fileOutputStream = new FileOutputStream(filename);
+		final BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(fileOutputStream);
+		
+		/** Generate a random salt. */
+		final SecureRandom rand = SecureRandom.getInstance(PASSWORD_SECURERANDOM_ALGORITHM);
+		byte[] salt = new byte[PASSWORD_SALT_BYTES];
+		rand.nextBytes(salt);
+		
+		/** Setup encryption. */
+		final PBEParameterSpec params = new PBEParameterSpec(salt, PASSWORD_ITERATIONS);
+		final PBEKeySpec keySpec = new PBEKeySpec(password.toCharArray());
+		final SecretKeyFactory factory = SecretKeyFactory.getInstance(PASSWORD_KEYFACTORY_ALGORITHM);
+		final SecretKey key = factory.generateSecret(keySpec);
+		final Cipher cipher = Cipher.getInstance(PASSWORD_KEYFACTORY_ALGORITHM);
+		cipher.init(Cipher.ENCRYPT_MODE, key, params);
+		final CipherOutputStream cipherOutputStream = new CipherOutputStream(bufferedOutputStream, cipher);
+		
+		/** Write the salt to the file. */
+		for (int i = 0; i < PASSWORD_SALT_BYTES; i++)
+			bufferedOutputStream.write(salt[i]);
+		
+		final ObjectOutputStream objectOutputStream = new ObjectOutputStream(cipherOutputStream);
+		
 		try {
 			objectOutputStream.writeObject(mod);
 			objectOutputStream.writeObject(exp);
@@ -345,16 +426,40 @@ public class RSAAsymmetricEncryption implements AsymmetricEncryption {
 	 * Read the private key from a file.
 	 * 
 	 * @param filename The path to the file containing the private key.
+	 * @param password The password to decrypt the private key file.
 	 * @return The private key contained within the file.
 	 * 
 	 * @throws IOException
 	 * @throws NoSuchAlgorithmException 
 	 * @throws InvalidKeySpecException 
+	 * @throws NoSuchPaddingException 
+	 * @throws InvalidKeyException 
+	 * @throws InvalidAlgorithmParameterException 
+	 * @throws InvalidPasswordException 
 	 */
-	private static PrivateKey readPrivateKeyFromFile(String filename) throws IOException, NoSuchAlgorithmException, InvalidKeySpecException {
+	private static PrivateKey readPrivateKeyFromFile(String filename, String password) throws IOException, NoSuchAlgorithmException, InvalidKeySpecException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException, InvalidPasswordException {
 		final FileInputStream fileInputStream = new FileInputStream(filename);
 		final BufferedInputStream bufferedInputStream = new BufferedInputStream(fileInputStream);
-		final ObjectInputStream objectInputStream = new ObjectInputStream(bufferedInputStream);
+		
+		/** Read the salt from the file. */
+		byte[] salt = new byte[PASSWORD_SALT_BYTES];
+		bufferedInputStream.read(salt);
+		
+		/** Setup decryption. */
+		final PBEParameterSpec params = new PBEParameterSpec(salt, PASSWORD_ITERATIONS);
+		final PBEKeySpec keySpec = new PBEKeySpec(password.toCharArray());
+		final SecretKeyFactory factory = SecretKeyFactory.getInstance(PASSWORD_KEYFACTORY_ALGORITHM);
+		final SecretKey key = factory.generateSecret(keySpec);
+		final Cipher cipher = Cipher.getInstance(PASSWORD_KEYFACTORY_ALGORITHM);
+		cipher.init(Cipher.DECRYPT_MODE, key, params);
+		final CipherInputStream cipherInputStream = new CipherInputStream(bufferedInputStream, cipher);
+		
+		ObjectInputStream objectInputStream = null;
+		try {
+			objectInputStream = new ObjectInputStream(cipherInputStream);
+		} catch (StreamCorruptedException e) {
+			throw new InvalidPasswordException("Invalid password to decrypt private key.");
+		}
 		
 		BigInteger mod, exp;
 		try {
@@ -366,9 +471,9 @@ public class RSAAsymmetricEncryption implements AsymmetricEncryption {
 			objectInputStream.close();
 		}
 		
-		final RSAPrivateKeySpec keySpec = new RSAPrivateKeySpec(mod, exp);
-	    final KeyFactory factory = KeyFactory.getInstance(ALGORITHM);
-	    final PrivateKey privKey = factory.generatePrivate(keySpec);
+		final RSAPrivateKeySpec rsaKeySpec = new RSAPrivateKeySpec(mod, exp);
+	    final KeyFactory privKeyfactory = KeyFactory.getInstance(ALGORITHM);
+	    final PrivateKey privKey = privKeyfactory.generatePrivate(rsaKeySpec);
 		
 		return privKey;
 	}
@@ -377,32 +482,55 @@ public class RSAAsymmetricEncryption implements AsymmetricEncryption {
 	 * Read the private key from a file.
 	 * 
 	 * @param file The file containing the private key.
+	 * @param password The password to decrypt the file.
 	 * @return The private key contained within the file.
 	 * 
 	 * @throws IOException
 	 * @throws NoSuchAlgorithmException 
 	 * @throws InvalidKeySpecException 
+	 * @throws NoSuchPaddingException 
+	 * @throws InvalidKeyException 
+	 * @throws InvalidAlgorithmParameterException 
+	 * @throws InvalidPasswordException 
 	 */
-	private static PrivateKey readPrivateKeyFromFile(URL file) throws IOException, NoSuchAlgorithmException, InvalidKeySpecException {
+	private static PrivateKey readPrivateKeyFromFile(URL file, String password) throws IOException, NoSuchAlgorithmException, InvalidKeySpecException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException, InvalidPasswordException {
 		final InputStream urlInputStream = file.openStream();
 		final BufferedInputStream bufferedInputStream = new BufferedInputStream(urlInputStream);
-		final ObjectInputStream objectInputStream = new ObjectInputStream(bufferedInputStream);
+		
+		/** Read the salt from the file. */
+		byte[] salt = new byte[PASSWORD_SALT_BYTES];
+		bufferedInputStream.read(salt);
+		
+		/** Setup decryption. */
+		final PBEParameterSpec params = new PBEParameterSpec(salt, PASSWORD_ITERATIONS);
+		final PBEKeySpec keySpec = new PBEKeySpec(password.toCharArray());
+		final SecretKeyFactory factory = SecretKeyFactory.getInstance(PASSWORD_KEYFACTORY_ALGORITHM);
+		final SecretKey key = factory.generateSecret(keySpec);
+		final Cipher cipher = Cipher.getInstance(PASSWORD_KEYFACTORY_ALGORITHM);
+		cipher.init(Cipher.DECRYPT_MODE, key, params);
+		final CipherInputStream cipherInputStream = new CipherInputStream(bufferedInputStream, cipher);
+		
+		ObjectInputStream objectInputStream = null;
+		try {
+			objectInputStream = new ObjectInputStream(cipherInputStream);
+		} catch (StreamCorruptedException e) {
+			throw new InvalidPasswordException("Invalid password to decrypt private key.");
+		}
 		
 		BigInteger mod, exp;
 		try {
 		    mod = (BigInteger) objectInputStream.readObject();
 		    exp = (BigInteger) objectInputStream.readObject();
-		    
 		} catch (Exception e) {
 		    throw new RuntimeException("Spurious serialisation error", e);
 		} finally {
 			objectInputStream.close();
 		}
 		
-		final RSAPrivateKeySpec keySpec = new RSAPrivateKeySpec(mod, exp);
-	    final KeyFactory factory = KeyFactory.getInstance(ALGORITHM);
-	    final PrivateKey privKey = factory.generatePrivate(keySpec);
-	    
+		final RSAPrivateKeySpec rsaKeySpec = new RSAPrivateKeySpec(mod, exp);
+	    final KeyFactory privKeyfactory = KeyFactory.getInstance(ALGORITHM);
+	    final PrivateKey privKey = privKeyfactory.generatePrivate(rsaKeySpec);
+		
 		return privKey;
 	}
 	

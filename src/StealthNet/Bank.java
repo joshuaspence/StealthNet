@@ -17,9 +17,8 @@ package StealthNet;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.URL;
 
-import StealthNet.Security.RSAAsymmetricEncryption;
+import StealthNet.Security.AsymmetricEncryption;
 
 /* StealthNet.Bank Class Definition ******************************************/
 
@@ -37,6 +36,7 @@ public class Bank {
 	/** Constants. */
 	private static final String PUBLIC_KEY_FILE = "keys/bank/public.key";
 	private static final String PRIVATE_KEY_FILE = "keys/bank/private.key";
+	private static final String PRIVATE_KEY_FILE_PASSWORD = "bank";
 	
 	/** 
 	 * The main Bank function.
@@ -44,28 +44,24 @@ public class Bank {
 	 * @param args The command line arguments.
 	 * @throws IOException
 	 */
-    public static void main(String[] args) throws IOException {
-    	final URL publicKeyFile = Bank.class.getClassLoader().getResource(PUBLIC_KEY_FILE);
-    	final URL privateKeyFile = Bank.class.getClassLoader().getResource(PRIVATE_KEY_FILE);
-    	
-    	RSAAsymmetricEncryption asymmetricEncryptionProvider = null;
+    public static void main(String[] args) throws IOException {    	
+    	/** 
+    	 * Try to read keys from the JAR file first. If that doesn't work, then
+    	 * try to read keys from the file system. If that doesn't work, then 
+    	 * create new keys.
+    	 */
+    	AsymmetricEncryption asymmetricEncryptionProvider = null;
     	try {
-    		if ((publicKeyFile == null) || (privateKeyFile == null)) {
-    			/** Create new public/private keys. */
-        		asymmetricEncryptionProvider = new RSAAsymmetricEncryption(null);
-        		if (DEBUG_ASYMMETRIC_ENCRYPTION) System.out.println("Created new public/private keys.");
-        		asymmetricEncryptionProvider.savePublicKeyToFile(PUBLIC_KEY_FILE);
-        		asymmetricEncryptionProvider.savePrivateKeyToFile(PRIVATE_KEY_FILE);
-        	} else {
-        		/** Read public/private keys from file. */
-	    		asymmetricEncryptionProvider = new RSAAsymmetricEncryption(publicKeyFile, privateKeyFile, null);
-				if (DEBUG_ASYMMETRIC_ENCRYPTION) System.out.println("Read public/private keys from file.");
-        	}
-		} catch (Exception e) {
-			System.err.println(e.getMessage());
-			if (DEBUG_ERROR_TRACE) e.printStackTrace();
-			System.exit(1);
-		}
+    		asymmetricEncryptionProvider = Utility.getPublicPrivateKeys(PUBLIC_KEY_FILE, PRIVATE_KEY_FILE, PRIVATE_KEY_FILE_PASSWORD);
+    	} catch (Exception e) {
+    		System.err.println("Unable to retrieve/generate public/private keys.");
+    		if (DEBUG_ERROR_TRACE) e.printStackTrace();
+    		System.exit(1);
+    	}
+    	if (asymmetricEncryptionProvider == null) {
+    		System.err.println("Unable to retrieve/generate public/private keys.");
+    		System.exit(1);
+    	}
     	
     	/** Debug information. */
     	final String publicKeyString = new String(Utility.getHexValue(asymmetricEncryptionProvider.getPublicKey().getEncoded()));
