@@ -15,10 +15,11 @@ package StealthNet.Security;
 /* Import Libraries **********************************************************/
 
 import java.io.UnsupportedEncodingException;
+import java.nio.ByteBuffer;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
-import java.util.Random;
+import java.security.SecureRandom;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
@@ -68,20 +69,22 @@ public class AESEncryption implements Encryption {
          * vectors.
          */
         final byte[] IV = new byte[16];
-        final Random IVGenerator = new Random(key.hashCode());
+        final byte[] salt = ByteBuffer.allocate(Integer.SIZE / Byte.SIZE).putInt(key.hashCode()).array();
+        final SecureRandom IVGenerator = new SecureRandom(salt);
+        
         for (int i = 0; i < 16; i++)
         	IV[i] = (byte) IVGenerator.nextInt();
         this.ips = new IvParameterSpec(IV);
         
         /** Initialise encryption cipher. */
         encryptionCipher = Cipher.getInstance(CIPHER_ALGORITHM);
-		encryptionCipher.init(Cipher.ENCRYPT_MODE, key, this.ips);
+		encryptionCipher.init(Cipher.ENCRYPT_MODE, this.key, this.ips);
 		//System.out.println("Encryption block size = " + encryptionCipher.getBlockSize() + " bytes");
 		//System.out.println("Encryption key length = " + (encryptionIPS.getIV().length * 8) + " bits");
 		
 		/** Initialise decryption cipher. */
 		decryptionCipher = Cipher.getInstance(CIPHER_ALGORITHM);
-		decryptionCipher.init(Cipher.DECRYPT_MODE, key, this.ips);
+		decryptionCipher.init(Cipher.DECRYPT_MODE, this.key, this.ips);
 		//System.out.println("Decryption block size = " + encryptionCipher.getBlockSize() + " bytes");
 		//System.out.println("Decryption key length = " + (encryptionIPS.getIV().length * 8) + " bits");
 	}
