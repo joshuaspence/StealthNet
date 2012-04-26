@@ -35,7 +35,9 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URL;
 import java.net.UnknownHostException;
+import java.security.KeyFactory;
 import java.security.PublicKey;
+import java.security.spec.X509EncodedKeySpec;
 import java.util.Hashtable;
 import javax.swing.AbstractButton;
 import javax.swing.BorderFactory;
@@ -57,6 +59,8 @@ import javax.swing.table.DefaultTableModel;
 import javax.swing.Timer;
 import javax.swing.UIManager;
 import javax.swing.JOptionPane;
+
+import org.apache.commons.codec.binary.Base64;
 
 import StealthNet.Security.AsymmetricEncryption;
 import StealthNet.Security.RSAAsymmetricEncryption;
@@ -116,7 +120,7 @@ public class Client {
     private Comms stealthComms = null;
     
     /** Public-private keys to identify this client. */
-    private final AsymmetricEncryption serverAsymmetricEncryptionProvider;
+    private final AsymmetricEncryption asymmetricEncryptionProvider;
     
     /** A timer to periodically process incoming packets. */
     private final Timer stealthTimer;
@@ -188,9 +192,8 @@ public class Client {
 			if (DEBUG_ERROR_TRACE) e.printStackTrace();
 			System.exit(1);
 		} finally {
-			this.serverAsymmetricEncryptionProvider = tmp;
+			this.asymmetricEncryptionProvider = tmp;
 		}
-    	System.out.println("1");
     }
 
     /** 
@@ -237,9 +240,8 @@ public class Client {
 			if (DEBUG_ERROR_TRACE) e.printStackTrace();
 			System.exit(1);
 		} finally {
-			this.serverAsymmetricEncryptionProvider = tmp;
+			this.asymmetricEncryptionProvider = tmp;
 		}
-    	System.out.println("2");
     }
     
     /**
@@ -258,6 +260,7 @@ public class Client {
         };
         buddyListData.addColumn("User ID");
         buddyListData.addColumn("Online");
+        buddyListData.addColumn("Public key");
         buddyTable = new JTable(buddyListData);
         buddyTable.setPreferredScrollableViewportSize(new Dimension(200, 100));
         buddyTable.getColumnModel().getColumn(0).setPreferredWidth(180);
@@ -451,7 +454,12 @@ public class Client {
         return pane;
     }
 
-    /** Login to StealthNet. */
+    /** 
+     * Login to StealthNet. This will establish comms to the StealthNet server. 
+     * The communications will be encrypted using the server's public key. This 
+     * means that if another party is masquerading as the server, then (without 
+     * the server's private key) they are unable to decrypt the packets.
+     */
     private synchronized void login() {
     	if (DEBUG_GENERAL) System.out.println("Logging in to StealthNet.");
     	
@@ -469,7 +477,7 @@ public class Client {
             
             /** Initiate a connection with the StealthNet server. */
             if (DEBUG_GENERAL) System.out.println("Initiating a connection with StealthNet server '" + serverHostname + "' on port " + serverPort + ".");
-            stealthComms = new Comms(serverAsymmetricEncryptionProvider);
+            stealthComms = new Comms(asymmetricEncryptionProvider);
             stealthComms.initiateSession(new Socket(serverHostname, serverPort));
             
             /** Send the server a login command. */
@@ -681,6 +689,7 @@ public class Client {
         
 		/** Get the ID of the target user. */ 
         final String myid = (String) buddyTable.getValueAt(row, 0);
+        final String peerPubKeyString = (String) buddyTable.getValueAt(row, 2);
         		
         /** Set up socket on a free port for the chat session. */
         ServerSocket chatSocket = null;
@@ -713,13 +722,25 @@ public class Client {
         if (DEBUG_GENERAL) System.out.println("Sending chat message to server. Target client should connect on '" + iAddr + ":" + chatSocket.getLocalPort() + "'.");
         stealthComms.sendPacket(DecryptedPacket.CMD_CHAT, myid + "@" + iAddr);
 
+        /** Get the peer's public key. */
+        PublicKey peerPubKey = null;
+        try {
+	    	final KeyFactory factory = KeyFactory.getInstance(RSAAsymmetricEncryption.ALGORITHM);
+			final X509EncodedKeySpec keySpec = new X509EncodedKeySpec(Base64.decodeBase64(peerPubKeyString));
+			peerPubKey = factory.generatePublic(keySpec);
+    	} catch (Exception e) {
+    		System.err.println("Asymmetric encryption failed.");			
+			if (DEBUG_ERROR_TRACE) e.printStackTrace();
+			System.exit(1);
+    	}
+        
         /** Wait for user to connect and open chat window. */
         try {
         	if (DEBUG_GENERAL) System.out.println("Waiting for target client to connect.");
         	
         	/** Set 2 second timeout on socket. */
             chatSocket.setSoTimeout(2000);
-            final Comms snComms = new Comms();
+            final Comms snComms = new Comms(new RSAAsymmetricEncryption(asymmetricEncryptionProvider, peerPubKey));
             final Socket conn = chatSocket.accept();
             snComms.acceptSession(conn);
             
@@ -817,9 +838,10 @@ public class Client {
             return;
         }
 
-        String iAddr, fName;
-        Integer iPort;
-        Comms snComms;
+        String iAddr, fName = null;
+        Integer iPort = null;
+        Comms snComms = null;
+        PublicKey peer = null;
         DecryptedPacket pckt = new DecryptedPacket();
 
         /** No need to process packets while we are already processing packets. */
@@ -843,14 +865,27 @@ public class Client {
                         break;
 
                     case DecryptedPacket.CMD_CHAT:                    	
-                        iAddr = new String(pckt.data);
-                        iAddr = iAddr.substring(iAddr.lastIndexOf("@") + 1);
-                        iPort = new Integer(iAddr.substring(iAddr.lastIndexOf(":") + 1));
-                        iAddr = iAddr.substring(0, iAddr.lastIndexOf(":"));
+                        final String chatData = new String(pckt.data);
+                        final String[] chatFields = chatData.split("@");
+                        
+                        final String[] addressDetails = chatFields[1].split(":");
+                        iAddr = addressDetails[0];
+                        iPort = new Integer(addressDetails[1]);
+                        
+                        final byte[] peerPublicKeyBytes = chatFields[2].getBytes();
+                        try {
+	            	    	final KeyFactory factory = KeyFactory.getInstance(RSAAsymmetricEncryption.ALGORITHM);
+	            			final X509EncodedKeySpec keySpec = new X509EncodedKeySpec(peerPublicKeyBytes);
+	            			peer = factory.generatePublic(keySpec);
+	                	} catch (Exception e) {
+	                		System.err.println("Asymmetric encryption failed. Unable to get peer public key.");			
+	            			if (DEBUG_ERROR_TRACE) e.printStackTrace();
+	            			continue;
+	                	}
                         
                         if (DEBUG_COMMANDS_CHAT) System.out.println("Received a chat command. Target host: '" + iAddr + ":" + iPort + "'.");
                         
-                        snComms = new Comms();
+                        snComms = new Comms(new RSAAsymmetricEncryption(asymmetricEncryptionProvider, peer));
                         snComms.initiateSession(new Socket(iAddr, iPort.intValue()));
                         if (DEBUG_GENERAL) System.out.println("Opened a communications session with '" + iAddr + "'.");
                         
@@ -901,12 +936,13 @@ public class Client {
                                 userTable = "";
                             }
                             
-                            indx = row.lastIndexOf(",");
+                            String[] listFields = row.split(",");
                             
-                            if (indx > 0) {
+                            if (listFields.length >= 3) {
                                 buddyListData.addRow(new Object[] {
-                                    row.substring(0, indx).trim(),
-                                    row.substring(indx + 1).trim()
+                                	listFields[0].trim(),
+                                	listFields[1].trim(),
+                                	listFields[2].trim()
                                 	});
                             }
                         }

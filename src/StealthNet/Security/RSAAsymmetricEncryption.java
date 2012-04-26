@@ -192,6 +192,36 @@ public class RSAAsymmetricEncryption implements AsymmetricEncryption {
 	}
 	
 	/**
+	 * Constructor to use the supplied public/private key pair.
+	 * 
+	 * @param publicKey Our public key.
+	 * @param privateKey Our private key. 
+	 * @param peer The public key of the the peer of the communications, used 
+	 * for encryption. If null, then encryption will be unavailable.
+	 * 
+	 * @throws IOException 
+	 * @throws NoSuchPaddingException 
+	 * @throws NoSuchAlgorithmException 
+	 * @throws InvalidKeyException 
+	 * @throws InvalidKeySpecException 
+	 */
+	public RSAAsymmetricEncryption(AsymmetricEncryption ae, PublicKey peer) throws IOException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidKeySpecException {
+		this.publicKey = ae.getPublicKey();
+		this.privateKey = ae.getPrivateKey();
+		this.peerPublicKey = peer;
+		
+		if (this.peerPublicKey != null) {
+			this.encryptionCipher = Cipher.getInstance(CIPHER_ALGORITHM);
+			this.encryptionCipher.init(Cipher.ENCRYPT_MODE, this.publicKey);
+		} else {
+			this.encryptionCipher = null;
+		}
+		
+		this.decryptionCipher = Cipher.getInstance(CIPHER_ALGORITHM);
+		this.decryptionCipher.init(Cipher.DECRYPT_MODE, this.privateKey);
+	}
+	
+	/**
 	 * Save the public key to a file so that it can be retrieved at a later 
 	 * time.
 	 * 

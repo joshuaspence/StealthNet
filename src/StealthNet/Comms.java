@@ -968,6 +968,17 @@ public class Comms {
     		} catch (IOException e) {}
         }
     }
+    
+    /**
+     * Get the public key of the peer that we are communicating with.
+     * @return The public key of our peer.
+     */
+    public PublicKey getPeerPublicKey() {
+    	if (asymmetricEncryptionProvider == null)
+    		return null;
+    	else
+    		return asymmetricEncryptionProvider.getPeerPublicKey();
+    }
 }
 
 /******************************************************************************

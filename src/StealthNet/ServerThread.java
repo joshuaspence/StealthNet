@@ -17,9 +17,12 @@ package StealthNet;
 
 import java.io.IOException;
 import java.net.Socket;
+import java.security.PublicKey;
 import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.StringTokenizer;
+
+import org.apache.commons.codec.binary.Base64;
 
 import StealthNet.Security.AsymmetricEncryption;
 
@@ -61,6 +64,7 @@ public class ServerThread extends Thread {
 	 */
 	private class UserData {
 		ServerThread userThread = null;
+		PublicKey publicKey = null;
 	}
 
 	/** Used to store client secret data. */
@@ -157,6 +161,7 @@ public class ServerThread extends Thread {
 			/** Create new user data for the specified user. */
 			userInfo = new UserData();
 			userInfo.userThread = this;
+			userInfo.publicKey = stealthComms.getPeerPublicKey();
 			userList.put(id, userInfo);
 			
 			if (DEBUG_GENERAL) System.out.println(THREADID_PREFIX + this.getId() + THREADID_SUFFIX + "Added user \"" + id + "\" to the user list.");
@@ -230,11 +235,17 @@ public class ServerThread extends Thread {
 			final String userKey = i.nextElement();
 			final UserData userInfo = userList.get(userKey);
 
-			userTable += userKey + ", ";
+			userTable += userKey;
+			userTable += ", ";
 			if ((userInfo != null) && (userInfo.userThread != null))
 				userTable += "true";
 			else
 				userTable += "false";
+			userTable += ", ";
+			if ((userInfo != null) && (userInfo.publicKey != null))
+				userTable += new String(Base64.encodeBase64String(userInfo.publicKey.getEncoded()));
+			else
+				userTable += "null";
 			userTable += "\n";
 		}
 
@@ -482,7 +493,7 @@ public class ServerThread extends Thread {
 							stealthComms.sendPacket(msg_type, msg);
 						} else {
 							msg_type = DecryptedPacket.CMD_CHAT;
-							msg = userID + "@" + iAddr;
+							msg = userID + "@" + iAddr + "@" + new String(Base64.encodeBase64(stealthComms.getPeerPublicKey().getEncoded()));
 							
 							if (DEBUG_COMMANDS_CHAT) System.out.println(THREADID_PREFIX + this.getId() + THREADID_SUFFIX + "Sending chat message \"" + msg + "\" to user \"" + userKey + "\".");
 							userInfo.userThread.stealthComms.sendPacket(msg_type, msg);
