@@ -241,12 +241,12 @@ public class ServerThread extends Thread {
 			final UserData userInfo = userList.get(userKey);
 
 			userTable += userKey;
-			userTable += "; ";
+			userTable += ";";
 			if ((userInfo != null) && (userInfo.userThread != null))
 				userTable += "true";
 			else
 				userTable += "false";
-			userTable += "; ";
+			userTable += ";";
 			if ((userInfo != null) && (userInfo.publicKey != null))
 				userTable += new String(Base64.encodeBase64String(userInfo.publicKey.getEncoded()));
 			userTable += "\n";
@@ -346,12 +346,10 @@ public class ServerThread extends Thread {
 	 * contained in the packet data is sent to the destined user.
 	 * 
 	 * If the packet contains the chat command, then a chat session is started
-	 * between the specified users. First, however, the public key of the peer
-	 * that initiated the chat session is appended to the packet.
+	 * between the specified users.
 	 * 
 	 * If the packet contains the FTP command, then a file transfer session is
-	 * started between the specified users. First, however, the public key of 
-	 * the peer that initiated the FTP transfer is appended to the packet.
+	 * started between the specified users.
 	 * 
 	 * If the packet contains the create secret command, then we create secret
 	 * data from the StealthNet.Packet data, and retransmit the list of secrets
@@ -481,9 +479,13 @@ public class ServerThread extends Thread {
 							break;
 						}
 						
-						userKey = new String(pckt.data);
-						iAddr = userKey.substring(userKey.lastIndexOf("@") + 1);
-						userKey = userKey.substring(0, userKey.length() - iAddr.length() - 1);
+						/** 
+                    	 * NOTE: Data will be of the form 
+                    	 * "user@host:port".
+                    	 */
+						final String chatData = new String(pckt.data);
+						iAddr = chatData.split("@")[1];
+						userKey = chatData.split("@")[0];
 						userInfo = userList.get(userKey);
 						
 						if ((userInfo == null) || (userInfo.userThread == null)) {
@@ -502,9 +504,6 @@ public class ServerThread extends Thread {
 							msg_type = DecryptedPacket.CMD_CHAT;
 							msg = userID + "@" + iAddr;
 							
-							/** Append the peer's public key to the packet. */
-							msg += ";" + new String(Base64.encodeBase64(stealthComms.getPeerPublicKey().getEncoded()));
-							
 							if (DEBUG_COMMANDS_CHAT) System.out.println(THREADID_PREFIX + this.getId() + THREADID_SUFFIX + "Sending chat message \"" + msg + "\" to user \"" + userKey + "\".");
 							userInfo.userThread.stealthComms.sendPacket(msg_type, msg);
 						}
@@ -522,9 +521,13 @@ public class ServerThread extends Thread {
 							break;
 						}
 						
-						userKey = new String(pckt.data);
-						iAddr = userKey.substring(userKey.lastIndexOf("@") + 1);
-						userKey = userKey.substring(0, userKey.length() - iAddr.length() - 1);
+						/** 
+                    	 * NOTE: Data will be of the form 
+                    	 * "user@host:port".
+                    	 */
+						final String ftpData = new String(pckt.data);
+						iAddr = ftpData.split("@")[1];
+						userKey = ftpData.split("@")[0];
 						userInfo = userList.get(userKey);
 						
 						if ((userInfo == null) || (userInfo.userThread == null)) {
@@ -542,9 +545,6 @@ public class ServerThread extends Thread {
 						} else {
 							msg_type = DecryptedPacket.CMD_FTP;
 							msg = userID + "@" + iAddr;
-							
-							/** Append the peer's public key to the packet. */
-							msg += ";" + new String(Base64.encodeBase64(stealthComms.getPeerPublicKey().getEncoded()));
 							
 							if (DEBUG_COMMANDS_FTP) System.out.println(THREADID_PREFIX + this.getId() + THREADID_SUFFIX + "Sending file transfer message \"" + msg + "\" to user \"" + userKey + "\".");
 							userInfo.userThread.stealthComms.sendPacket(msg_type, msg);

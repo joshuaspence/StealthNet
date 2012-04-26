@@ -179,7 +179,10 @@ public class Chat extends Thread {
                 if (pckt == null)
                 	break;
                 
-                switch (pckt.command) {                
+                switch (pckt.command) {             
+	                /***********************************************************
+					 * Message command
+					 **********************************************************/
                     case DecryptedPacket.CMD_MSG:
                     	/** Chat message received. */
                     	final String msg = new String(pckt.data);
@@ -187,6 +190,9 @@ public class Chat extends Thread {
                 	    chatTextBox.append(msg + "\n");
                         break;
                         
+                    /***********************************************************
+					 * Logout command
+					 **********************************************************/
                     case DecryptedPacket.CMD_LOGOUT:
                     	/** Terminate chat session. */
                     	if (DEBUG_GENERAL) System.out.println("Terminating chat session.");

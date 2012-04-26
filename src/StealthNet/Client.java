@@ -132,6 +132,13 @@ public class Client {
     private JTable buddyTable = null;
     private DefaultTableModel buddyListData = null;
     
+    /** User list. */
+    private class UserData {
+		boolean online = false;
+		PublicKey publicKey = null;
+	}
+	private static final Hashtable<String, UserData> userList = new Hashtable<String, UserData>();
+    
     /** Secret list. */
     private DefaultTableModel secretListData = null;
     
@@ -163,11 +170,13 @@ public class Client {
         this.serverHostname = Comms.DEFAULT_SERVERNAME;
         this.serverPort = Comms.DEFAULT_SERVERPORT;
         
-        /** Set up asymmetric encryption. */
-        final URL serverPublicKeyFile = Client.class.getClassLoader().getResource(SERVER_PUBLIC_KEY_FILE);
+        /** 
+         * Set up asymmetric encryption. Get server public key from JAR file.
+         */
         PublicKey serverPublicKey = null;
-        RSAAsymmetricEncryption tmp = null;
+        AsymmetricEncryption tmp = null;
         try {
+        	final URL serverPublicKeyFile = Client.class.getClassLoader().getResource(SERVER_PUBLIC_KEY_FILE);
         	serverPublicKey = RSAAsymmetricEncryption.readPublicKeyFromFile(serverPublicKeyFile);
         } catch (Exception e) {
         	System.err.println("Unable to determine server public key.");
@@ -180,15 +189,15 @@ public class Client {
     		tmp = new RSAAsymmetricEncryption(serverPublicKey);
     		
     		if (DEBUG_ASYMMETRIC_ENCRYPTION) {
-    			if (DEBUG_ASYMMETRIC_ENCRYPTION) System.out.println("Created new public/private keys.");
+    			System.out.println("Created new public/private keys.");
     		
 				final String publicKeyString = new String(Utility.getHexValue(tmp.getPublicKey().getEncoded()));
 		    	final String privateKeyString = new String(Utility.getHexValue(tmp.getPrivateKey().getEncoded()));
-		    	if (DEBUG_ASYMMETRIC_ENCRYPTION) System.out.println("Public key: " + publicKeyString);
-		    	if (DEBUG_ASYMMETRIC_ENCRYPTION) System.out.println("Private key: " + privateKeyString);
+		    	System.out.println("Public key: " + publicKeyString);
+		    	System.out.println("Private key: " + privateKeyString);
     		}
 		} catch (Exception e) {
-			System.err.println(e.getMessage());
+			System.err.println("Unable to provide asymmetric encryption.");
 			if (DEBUG_ERROR_TRACE) e.printStackTrace();
 			System.exit(1);
 		} finally {
@@ -212,10 +221,10 @@ public class Client {
         this.serverPort = p;
         
         /** Set up asymmetric encryption. */
-        final URL serverPublicKeyFile = Client.class.getClassLoader().getResource(SERVER_PUBLIC_KEY_FILE);
         PublicKey serverPublicKey = null;
-        RSAAsymmetricEncryption tmp = null;
+        AsymmetricEncryption tmp = null;
         try {
+        	final URL serverPublicKeyFile = Client.class.getClassLoader().getResource(SERVER_PUBLIC_KEY_FILE);
         	serverPublicKey = RSAAsymmetricEncryption.readPublicKeyFromFile(serverPublicKeyFile);
         } catch (Exception e) {
         	System.err.println("Unable to determine server public key.");
@@ -228,15 +237,15 @@ public class Client {
     		tmp = new RSAAsymmetricEncryption(serverPublicKey);
     		
     		if (DEBUG_ASYMMETRIC_ENCRYPTION) {
-    			if (DEBUG_ASYMMETRIC_ENCRYPTION) System.out.println("Created new public/private keys.");
+    			System.out.println("Created new public/private keys.");
     		
 				final String publicKeyString = new String(Utility.getHexValue(tmp.getPublicKey().getEncoded()));
 		    	final String privateKeyString = new String(Utility.getHexValue(tmp.getPrivateKey().getEncoded()));
-		    	if (DEBUG_ASYMMETRIC_ENCRYPTION) System.out.println("Public key: " + publicKeyString);
-		    	if (DEBUG_ASYMMETRIC_ENCRYPTION) System.out.println("Private key: " + privateKeyString);
+		    	System.out.println("Public key: " + publicKeyString);
+		    	System.out.println("Private key: " + privateKeyString);
     		}
 		} catch (Exception e) {
-			System.err.println(e.getMessage());
+			System.err.println("Unable to provide asymmetric encryption.");
 			if (DEBUG_ERROR_TRACE) e.printStackTrace();
 			System.exit(1);
 		} finally {
@@ -260,7 +269,6 @@ public class Client {
         };
         buddyListData.addColumn("User ID");
         buddyListData.addColumn("Online");
-        buddyListData.addColumn("Public key");
         buddyTable = new JTable(buddyListData);
         buddyTable.setPreferredScrollableViewportSize(new Dimension(200, 100));
         buddyTable.getColumnModel().getColumn(0).setPreferredWidth(180);
@@ -476,6 +484,7 @@ public class Client {
             	return;
             
             /** Initiate a connection with the StealthNet server. */
+            /** TODO: Probably want a timeout on this. */
             if (DEBUG_GENERAL) System.out.println("Initiating a connection with StealthNet server '" + serverHostname + "' on port " + serverPort + ".");
             stealthComms = new Comms(asymmetricEncryptionProvider);
             stealthComms.initiateSession(new Socket(serverHostname, serverPort));
@@ -533,6 +542,7 @@ public class Client {
             /** Hide user and secret list. */
             buddyListData.setRowCount(0);
             secretListData.setRowCount(0);
+            userList.clear();
             
             msgTextBox.append("Disconnected.\n");
             if (DEBUG_GENERAL) System.out.println("Disconnected.");
@@ -688,12 +698,11 @@ public class Client {
 			return;
         
 		/** Get the ID of the target user. */ 
-        final String myid = (String) buddyTable.getValueAt(row, 0);
-        final String peerPubKeyString = (String) buddyTable.getValueAt(row, 2);
+        final String myid = buddyTable.getValueAt(row, 0).toString().trim();
+        final PublicKey peer = userList.get(myid).publicKey;
         		
         /** Set up socket on a free port for the chat session. */
         ServerSocket chatSocket = null;
-
         try {
             chatSocket = new ServerSocket(0);
         } catch (IOException e) {
@@ -721,18 +730,6 @@ public class Client {
         
         if (DEBUG_GENERAL) System.out.println("Sending chat message to server. Target client should connect on '" + iAddr + ":" + chatSocket.getLocalPort() + "'.");
         stealthComms.sendPacket(DecryptedPacket.CMD_CHAT, myid + "@" + iAddr);
-
-        /** Get the peer's public key. */
-        PublicKey peerPubKey = null;
-        try {
-	    	final KeyFactory factory = KeyFactory.getInstance(RSAAsymmetricEncryption.ALGORITHM);
-			final X509EncodedKeySpec keySpec = new X509EncodedKeySpec(Base64.decodeBase64(peerPubKeyString));
-			peerPubKey = factory.generatePublic(keySpec);
-    	} catch (Exception e) {
-    		System.err.println("Asymmetric encryption failed.");			
-			if (DEBUG_ERROR_TRACE) e.printStackTrace();
-			System.exit(1);
-    	}
         
         /** Wait for user to connect and open chat window. */
         try {
@@ -740,7 +737,13 @@ public class Client {
         	
         	/** Set 2 second timeout on socket. */
             chatSocket.setSoTimeout(2000);
-            final Comms snComms = new Comms(new RSAAsymmetricEncryption(asymmetricEncryptionProvider, peerPubKey), true);
+            
+            /**
+             * Create communications to the peer. Note that the peer will have 
+             * our public key, and hence can encrypt the communications using 
+             * asymmetric encryption immediately.
+             */
+            final Comms snComms = new Comms(new RSAAsymmetricEncryption(asymmetricEncryptionProvider, peer), true);
             final Socket conn = chatSocket.accept();
             snComms.acceptSession(conn);
             
@@ -766,6 +769,7 @@ public class Client {
 		
 		/** Get the user ID. */
 		final String myid = (String) buddyTable.getValueAt(row, 0);
+		final PublicKey peer = userList.get(myid).publicKey;
 
 		/** Select the file to send. */
         final FileDialog fileOpen = new FileDialog(clientFrame, "Open...", FileDialog.LOAD);
@@ -801,7 +805,7 @@ public class Client {
         iAddr += ":" + Integer.toString(ftpSocket.getLocalPort());
         
         if (DEBUG_GENERAL) System.out.println("Sending FTP message to server. Target client should connect on '" + iAddr + ":" + ftpSocket.getLocalPort() + "'.");
-        stealthComms.sendPacket(DecryptedPacket.CMD_FTP, myid + "@" + iAddr + "#" + fileOpen.getFile());
+        stealthComms.sendPacket(DecryptedPacket.CMD_FTP,  myid + "@" + iAddr + "#" + fileOpen.getFile());
 
         /** Wait for user to connect, then start file transfer. */
         try {
@@ -809,7 +813,13 @@ public class Client {
         	
         	/** Set 2 second timeout on socket. */
             ftpSocket.setSoTimeout(2000);
-            final Comms snComms = new Comms();
+            
+            /**
+             * Create communications to the peer. Note that the peer will have 
+             * our public key, and hence can encrypt the communications using 
+             * asymmetric encryption immediately.
+             */
+            final Comms snComms = new Comms(new RSAAsymmetricEncryption(asymmetricEncryptionProvider, peer), true);
             final Socket conn = ftpSocket.accept();
             snComms.acceptSession(conn);
             
@@ -838,7 +848,7 @@ public class Client {
             return;
         }
 
-        String iAddr, fName = null;
+        String iAddr, fName, sourceUser = null;
         Integer iPort = null;
         Comms snComms = null;
         PublicKey peer = null;
@@ -857,54 +867,77 @@ public class Client {
                 
                 if (DEBUG_GENERAL) System.out.println("Received packet. Packet command: " + DecryptedPacket.getCommandName(pckt.command) + ". Packet data: \"" + new String(pckt.data).replaceAll("\n", ";") + "\".");
                 
-                switch (pckt.command) {                
+                switch (pckt.command) {
+	                /***********************************************************
+					 * Message command
+					 **********************************************************/
                     case DecryptedPacket.CMD_MSG:
                     	final String msg = new String(pckt.data);
                     	if (DEBUG_COMMANDS_MSG) System.out.println("Received a message command. Message: \"" + msg + "\".");
                 	    msgTextBox.append(msg + "\n");
                         break;
 
-                    case DecryptedPacket.CMD_CHAT:                    	
+                    /***********************************************************
+					 * Chat command
+					 **********************************************************/
+                    case DecryptedPacket.CMD_CHAT:
+                    	/** 
+                    	 * NOTE: Data will be of the form 
+                    	 * "user@host:port".
+                    	 */
                         final String chatData = new String(pckt.data);
-                        final String[] chatFields = chatData.split("@");
                         
-                        final String[] addressDetails = chatFields[1].split(":");
-                        iAddr = addressDetails[0];
-                        iPort = new Integer(addressDetails[1]);
+                        iAddr =             chatData.split("@")[1].split(":")[0];
+                        iPort = new Integer(chatData.split("@")[1].split(":")[1]);
                         
-                        final byte[] peerPublicKeyBytes = Base64.decodeBase64(chatFields[2].getBytes());
-                        try {
-	            	    	final KeyFactory factory = KeyFactory.getInstance(RSAAsymmetricEncryption.ALGORITHM);
-	            			final X509EncodedKeySpec keySpec = new X509EncodedKeySpec(peerPublicKeyBytes);
-	            			peer = factory.generatePublic(keySpec);
-	                	} catch (Exception e) {
-	                		System.err.println("Asymmetric encryption failed. Unable to get peer public key.");			
-	            			if (DEBUG_ERROR_TRACE) e.printStackTrace();
-	            			continue;
-	                	}
+                        /** Get the peer public key. */
+                        sourceUser =        chatData.split("@")[0];
+                        peer = userList.get(sourceUser).publicKey;
                         
                         if (DEBUG_COMMANDS_CHAT) System.out.println("Received a chat command. Target host: '" + iAddr + ":" + iPort + "'.");
                         
+                        /**
+                         * Create communications to the peer. Note that the peer
+                         * will have our public key, and hence can encrypt the 
+                         * communications using asymmetric encryption 
+                         * immediately.
+                         */
                         snComms = new Comms(new RSAAsymmetricEncryption(asymmetricEncryptionProvider, peer), true);
                         snComms.initiateSession(new Socket(iAddr, iPort.intValue()));
                         if (DEBUG_GENERAL) System.out.println("Opened a communications session with '" + iAddr + "'.");
                         
                         
-                        new Chat(userID, snComms).start();
+                        final Chat chat = new Chat(userID, snComms);
+                        chat.start();
                         if (DEBUG_GENERAL) System.out.println("Started a chat session with '" + iAddr + "'.");
                         break;
 
-                    case DecryptedPacket.CMD_FTP:                    	
-                        iAddr = new String(pckt.data);
-                        iAddr = iAddr.substring(iAddr.lastIndexOf("@") + 1);
-                        fName = iAddr.substring(iAddr.lastIndexOf("#") + 1);
-                        iAddr = iAddr.substring(0, iAddr.lastIndexOf("#"));
-                        iPort = new Integer(iAddr.substring(iAddr.lastIndexOf(":") + 1));
-                        iAddr = iAddr.substring(0, iAddr.lastIndexOf(":"));
+                    /***********************************************************
+					 * FTP command
+					 **********************************************************/
+                    case DecryptedPacket.CMD_FTP:  
+                    	/** 
+                    	 * NOTE: Data will be of the form 
+                    	 * "user@host:port#filename".
+                    	 */
+                        final String ftpData = new String(pckt.data);
+                        fName =             ftpData.split("@")[1].split("#")[1];
+                        iAddr =             ftpData.split("@")[1].split("#")[0].split(":")[0];
+                        iPort = new Integer(ftpData.split("@")[1].split("#")[0].split(":")[1]);
+                        
+                        /** Get the peer public key. */
+                        sourceUser =        ftpData.split("@")[0];
+                        peer = userList.get(sourceUser).publicKey;
                         
                         if (DEBUG_COMMANDS_FTP) System.out.println("Received a file transfer command. Target host: '" + iAddr + ":" + iPort + "'.");
 
-                        snComms = new Comms();
+                        /**
+                         * Create communications to the peer. Note that the peer
+                         * will have our public key, and hence can encrypt the 
+                         * communications using asymmetric encryption 
+                         * immediately.
+                         */
+                        snComms = new Comms(new RSAAsymmetricEncryption(asymmetricEncryptionProvider, peer), true);
                         snComms.initiateSession(new Socket(iAddr, iPort.intValue()));
                         if (DEBUG_GENERAL) System.out.println("Opened a communications session with '" + iAddr + "'.");
                         
@@ -918,14 +951,18 @@ public class Client {
                         }
                         break;
 
+                    /***********************************************************
+					 * List command
+					 **********************************************************/
                     case DecryptedPacket.CMD_LIST:                    	
                         String userTable = new String(pckt.data);
                         buddyListData.setRowCount(0);
                         
                         if (DEBUG_COMMANDS_LIST) System.out.println("Received a user list: \"" + userTable.replaceAll("\n", "; ") + "\".");
                         
+                        userList.clear();
                         while (userTable.length() > 0) {
-                            int indx = userTable.indexOf("\n");
+                            final int indx = userTable.indexOf("\n");
                             String row;
                             
                             if (indx > 0) {
@@ -936,18 +973,32 @@ public class Client {
                                 userTable = "";
                             }
                             
-                            String[] listFields = row.split(",");
-                            
-                            if (listFields.length >= 3) {
-                                buddyListData.addRow(new Object[] {
-                                	listFields[0].trim(),
-                                	listFields[1].trim(),
-                                	listFields[2].trim()
-                                	});
+                            /** Add the user to the user list. */
+                            final String userID = row.split(";")[0].trim();
+                            final UserData userData = new UserData();
+                            userData.online = (row.split(";")[1].trim().compareTo("true") == 0);
+                            try {
+                            	final KeyFactory factory = KeyFactory.getInstance(RSAAsymmetricEncryption.ALGORITHM);
+                            	final X509EncodedKeySpec keySpec = new X509EncodedKeySpec(Base64.decodeBase64(row.split(";")[2].trim()));
+                            	userData.publicKey = factory.generatePublic(keySpec);
+                            } catch (Exception e) {
+                            	System.err.println("Failed to parse public key.");			
+                            	if (DEBUG_ERROR_TRACE) e.printStackTrace();
+                            	continue;
                             }
+                            userList.put(userID, userData);
+                            
+                            /** Add the user to the GUI list. */
+                            buddyListData.addRow(new Object[] {
+                            	userID,
+                            	(userData.online ? "true" : "false")
+                            	});
                         }
                         break;
                         
+                    /***********************************************************
+					 * Secret List command
+					 **********************************************************/
                    	case DecryptedPacket.CMD_SECRETLIST:                   		
                         String secretTable = new String(pckt.data);
                         secretListData.setRowCount(0);
@@ -976,7 +1027,11 @@ public class Client {
                         }
                         break;
 
-					case DecryptedPacket.CMD_GETSECRET:						
+                    /***********************************************************
+					 * Get Secret command
+					 **********************************************************/
+					case DecryptedPacket.CMD_GETSECRET:
+						/** TODO: fix*/
 						fName = new String(pckt.data);
 						iAddr = fName.substring(fName.lastIndexOf("@") + 1);
 						iPort = new Integer(iAddr.substring(iAddr.lastIndexOf(":") + 1));
@@ -995,6 +1050,9 @@ public class Client {
 						ft.start();
 						break;
 
+					/***********************************************************
+					 * Unknown command
+					 **********************************************************/
                     default:
                         System.err.println("Unrecognised command received from server.");
                }
@@ -1047,7 +1105,7 @@ public class Client {
         Client app = null;
         try {
         	app = new Client(hostname, port);
-        } catch(Exception e) {
+        } catch (Exception e) {
         	System.out.println("Unable to create StealthNet client.");
         	if (DEBUG_ERROR_TRACE) e.printStackTrace();
         	System.exit(1);
