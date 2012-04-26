@@ -26,6 +26,8 @@ package StealthNet;
 public class Utility {
 	/** Hexadecimal characters. */
     public static final char[] HEXTABLE = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
+    
+    /** Number of hexadecimal characters required to represent a single byte. */
     public static final int HEX_PER_BYTE = Byte.SIZE / (int) logBase2(HEXTABLE.length);
     
 	/**

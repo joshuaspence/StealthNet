@@ -26,7 +26,8 @@ import javax.crypto.NoSuchPaddingException;
 /* StealthNet.Security.AsymmetricEncryption Interface Definition *************/
 
 /**
- * An interface to provide public-private key (asymmetric) encryption.
+ * An interface to provide public-private key (asymmetric) encryption. Messages 
+ * are encrypted with the peer's public key and decrypted with our private key.
  *
  * @author Joshua Spence
  */
@@ -65,14 +66,14 @@ public interface AsymmetricEncryption extends Encryption {
 	public PublicKey getPublicKey();
 	
 	/**
-	 * Get the peer's public key.
+	 * Get the peer's public key. The peer's public key is used for encryption.
 	 * 
 	 * @return The peer's public key.
 	 */
 	public PublicKey getPeerPublicKey();
 	
 	/**
-	 * Set the peer's public key.
+	 * Set the peer's public key. The peer's public key is used for encryption.
 	 * 
 	 * @param peer The peer's public key.
 	 * 
@@ -83,7 +84,7 @@ public interface AsymmetricEncryption extends Encryption {
 	public void setPeerPublicKey(PublicKey peer) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException;
 	
 	/**
-	 * Get our private key.
+	 * Get our private key. Our private key is used for decryption.
 	 * 
 	 * @return Our private key.
 	 */

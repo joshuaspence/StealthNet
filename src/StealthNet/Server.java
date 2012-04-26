@@ -121,14 +121,17 @@ public class Server {
          * thread for each connection.
          */
         while (true) {
-        	final Socket conn = svrSocket.accept();
-        	final ServerThread thread = new ServerThread(conn, asymmetricEncryptionProvider);
-        	thread.start();
-            
-            if (DEBUG_GENERAL)
-            	System.out.println("Server accepted connection from " + conn.getInetAddress() + " on port " + conn.getPort() + ".");
-            else
-            	System.out.println("Server accepted connection...");
+        	try {
+	        	final Socket conn = svrSocket.accept();
+	        	final AsymmetricEncryption ae = new RSAAsymmetricEncryption(asymmetricEncryptionProvider, null);
+	        	final ServerThread thread = new ServerThread(conn, ae);
+	        	thread.start();
+	            
+	            if (DEBUG_GENERAL)
+	            	System.out.println("Server accepted connection from " + conn.getInetAddress() + " on port " + conn.getPort() + ".");
+	            else
+	            	System.out.println("Server accepted connection...");
+        	} catch (Exception e) {}
         }
     }
 }

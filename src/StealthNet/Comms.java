@@ -96,7 +96,7 @@ public class Comms {
     public static final int DEFAULT_BANKPORT = 5617;				/** Default port for the StealthNet bank. */
     
     /** Current values. */
-    private final String serverName;	/** This host - defaults to DFEAULT_SERVERNAME */
+    private final String serverName;	/** This host - defaults to DEFAULT_SERVERNAME */
     private final int port;				/** This port - defaults to DEFAULT_SERVERPORT. */
 
     /** Opened socket through which the communication is to be made. */
@@ -272,7 +272,7 @@ public class Comms {
         if (DEBUG_ASYMMETRIC_ENCRYPTION) System.out.println("Asymmetric encryption enabled.");
         
         /** Send the peer our public key for asymmetric encryption. */	
-        sendPublicKey();
+        if (!peerHasPublicKey) sendPublicKey();
         
         /** Perform key exchange (Diffie-Hellman key exchange). */
         initKeyExchange();
@@ -333,7 +333,7 @@ public class Comms {
          * Wait for the peer to send their public key so that we can encrypt 
          * outgoing communications.
          */
-        recvPublicKey();
+        if (asymmetricEncryptionProvider.getPeerPublicKey() == null) recvPublicKey();
         
         /** 
          * Wait for key exchange (Diffie-Hellman key exchange) to occur. This 

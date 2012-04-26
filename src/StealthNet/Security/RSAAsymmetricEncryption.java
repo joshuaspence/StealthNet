@@ -47,11 +47,8 @@ import org.apache.commons.codec.binary.Base64;
 
 /**
  * A class to provide RSA asymmetric encryption. Encryption will be performed 
- * using the peers public key. Decryption will be performed using our private 
+ * using the peer's public key. Decryption will be performed using our private 
  * key.
- * 
- * The size of the public/private keys must be larger than the maximum message
- * that needs to be encrypted with the keys.
  *
  * @author Joshua Spence
  */
@@ -122,7 +119,7 @@ public class RSAAsymmetricEncryption implements AsymmetricEncryption {
 		
 		if (this.peerPublicKey != null) {
 			this.encryptionCipher = Cipher.getInstance(CIPHER_ALGORITHM);
-			this.encryptionCipher.init(Cipher.ENCRYPT_MODE, this.publicKey);
+			this.encryptionCipher.init(Cipher.ENCRYPT_MODE, this.peerPublicKey);
 		} else {
 			this.encryptionCipher = null;
 		}
@@ -152,7 +149,7 @@ public class RSAAsymmetricEncryption implements AsymmetricEncryption {
 		
 		if (this.peerPublicKey != null) {
 			this.encryptionCipher = Cipher.getInstance(CIPHER_ALGORITHM);
-			this.encryptionCipher.init(Cipher.ENCRYPT_MODE, this.publicKey);
+			this.encryptionCipher.init(Cipher.ENCRYPT_MODE, this.peerPublicKey);
 		} else {
 			this.encryptionCipher = null;
 		}
@@ -182,7 +179,7 @@ public class RSAAsymmetricEncryption implements AsymmetricEncryption {
 		
 		if (this.peerPublicKey != null) {
 			this.encryptionCipher = Cipher.getInstance(CIPHER_ALGORITHM);
-			this.encryptionCipher.init(Cipher.ENCRYPT_MODE, this.publicKey);
+			this.encryptionCipher.init(Cipher.ENCRYPT_MODE, this.peerPublicKey);
 		} else {
 			this.encryptionCipher = null;
 		}
@@ -192,10 +189,11 @@ public class RSAAsymmetricEncryption implements AsymmetricEncryption {
 	}
 	
 	/**
-	 * Constructor to use the supplied public/private key pair.
+	 * Constructor to use the supplied asymmetric encryption provider. The 
+	 * supplied asymmetric encryption provider will be cloned except that the 
+	 * specified peer public key will be used,
 	 * 
-	 * @param publicKey Our public key.
-	 * @param privateKey Our private key. 
+	 * @param ae An AsymmetricEncryption instance.
 	 * @param peer The public key of the the peer of the communications, used 
 	 * for encryption. If null, then encryption will be unavailable.
 	 * 
@@ -212,7 +210,7 @@ public class RSAAsymmetricEncryption implements AsymmetricEncryption {
 		
 		if (this.peerPublicKey != null) {
 			this.encryptionCipher = Cipher.getInstance(CIPHER_ALGORITHM);
-			this.encryptionCipher.init(Cipher.ENCRYPT_MODE, this.publicKey);
+			this.encryptionCipher.init(Cipher.ENCRYPT_MODE, this.peerPublicKey);
 		} else {
 			this.encryptionCipher = null;
 		}
@@ -457,7 +455,7 @@ public class RSAAsymmetricEncryption implements AsymmetricEncryption {
     		System.arraycopy(cleartext, startIndex, chunk, 0, chunk.length);
     		startIndex += chunk.length;
 
-    		/** Encrypt this chunk. */
+    		/** Encrypt this chunk and add it to the queue. */
     		final byte[] encryptedChunk = encryptionCipher.doFinal(chunk);
     		chunks.add(encryptedChunk);
     		totalLength += encryptedChunk.length;
@@ -472,6 +470,7 @@ public class RSAAsymmetricEncryption implements AsymmetricEncryption {
     		currentIndex += chunk.length;
         }
 		
+    	/** Encode the combined encrypted chunks. */
         final byte[] encodedValue = Base64.encodeBase64(combinedChunks);
         return new String(encodedValue);
 	}
@@ -499,10 +498,11 @@ public class RSAAsymmetricEncryption implements AsymmetricEncryption {
 	 * @throws IllegalBlockSizeException 
 	 */
 	public String decrypt(byte[] ciphertext) throws IllegalBlockSizeException, BadPaddingException {
+		/** Decode the combined encrypted chunks. */
 		final byte[] decodedValue = Base64.decodeBase64(ciphertext);
 		
 		/** 
-		 * Split the cleartext up into chunks and encrypt each chunk separately.
+		 * Split the ciphertext up into chunks and decrypt each chunk separately.
 		 */
     	final Queue<byte[]> chunks = new LinkedList<byte[]>();
     	int startIndex = 0;
@@ -518,7 +518,7 @@ public class RSAAsymmetricEncryption implements AsymmetricEncryption {
     		System.arraycopy(decodedValue, startIndex, chunk, 0, chunk.length);
     		startIndex += chunk.length;
 
-    		/** Encrypt this chunk. */
+    		/** Encrypt this chunk and add it to the queue. */
     		final byte[] decryptedChunk = decryptionCipher.doFinal(chunk);
     		chunks.add(decryptedChunk);
     		totalLength += decryptedChunk.length;
@@ -546,7 +546,7 @@ public class RSAAsymmetricEncryption implements AsymmetricEncryption {
 	}
 	
 	/**
-	 * Get the peer's public key.
+	 * Get the peer's public key. The peer's public key is used for encryption.
 	 * 
 	 * @return The peer's public key.
 	 */
@@ -555,7 +555,7 @@ public class RSAAsymmetricEncryption implements AsymmetricEncryption {
 	}
 	
 	/**
-	 * Set the peer's public key.
+	 * Set the peer's public key. The peer's public key is used for encryption.
 	 * 
 	 * @param peer The peer's public key.
 	 * 
@@ -575,7 +575,7 @@ public class RSAAsymmetricEncryption implements AsymmetricEncryption {
 	}
 	
 	/**
-	 * Get our private key.
+	 * Get our private key. Our private key is used for decryption.
 	 * 
 	 * @return Our private key.
 	 */

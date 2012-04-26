@@ -493,7 +493,10 @@ public class ServerThread extends Thread {
 							stealthComms.sendPacket(msg_type, msg);
 						} else {
 							msg_type = DecryptedPacket.CMD_CHAT;
-							msg = userID + "@" + iAddr + "@" + new String(Base64.encodeBase64(stealthComms.getPeerPublicKey().getEncoded()));
+							msg = userID + "@" + iAddr;
+							
+							/** Append the peer's public key to the packet. */
+							msg += "@" + new String(Base64.encodeBase64(stealthComms.getPeerPublicKey().getEncoded()));
 							
 							if (DEBUG_COMMANDS_CHAT) System.out.println(THREADID_PREFIX + this.getId() + THREADID_SUFFIX + "Sending chat message \"" + msg + "\" to user \"" + userKey + "\".");
 							userInfo.userThread.stealthComms.sendPacket(msg_type, msg);
@@ -532,6 +535,12 @@ public class ServerThread extends Thread {
 						} else {
 							msg_type = DecryptedPacket.CMD_FTP;
 							msg = userID + "@" + iAddr;
+							
+							/** Append the peer's public key to the packet. */
+							msg += "@" + new String(Base64.encodeBase64(stealthComms.getPeerPublicKey().getEncoded()));
+							
+							if (DEBUG_COMMANDS_CHAT) System.out.println(THREADID_PREFIX + this.getId() + THREADID_SUFFIX + "Sending chat message \"" + msg + "\" to user \"" + userKey + "\".");
+							userInfo.userThread.stealthComms.sendPacket(msg_type, msg);
 							
 							if (DEBUG_COMMANDS_FTP) System.out.println(THREADID_PREFIX + this.getId() + THREADID_SUFFIX + "Sending file transfer message \"" + msg + "\" to user \"" + userKey + "\".");
 							userInfo.userThread.stealthComms.sendPacket(msg_type, msg);

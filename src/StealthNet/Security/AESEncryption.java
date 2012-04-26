@@ -56,7 +56,7 @@ public class AESEncryption implements Encryption {
 	/**
 	 * Constructor.
 	 * 
-	 * @param key The SecretKey to be used for encryption and decryption.
+	 * @param key The SecretKey to be used for both encryption and decryption.
 	 * 
 	 * @throws NoSuchPaddingException 
 	 * @throws NoSuchAlgorithmException 
@@ -69,7 +69,7 @@ public class AESEncryption implements Encryption {
         
         /** 
          * Generate the initialisation vector using a seeded random number
-         * generator, with the seed equal to the has of the encryption key. In 
+         * generator, with the seed equal to the hash of the encryption key. In 
          * this way, both peers should generate the same initialisation 
          * vectors.
          */
@@ -79,7 +79,6 @@ public class AESEncryption implements Encryption {
         	IV[i] = (byte) IVGenerator.nextInt();
         this.encryptionIPS = new IvParameterSpec(IV);
         this.decryptionIPS = new IvParameterSpec(IV);
-        
         
         /** Initialise encryption cipher. */
         encryptionCipher = Cipher.getInstance(CIPHER_ALGORITHM);
@@ -111,7 +110,7 @@ public class AESEncryption implements Encryption {
         
         /** 
          * Generate the initialisation vector using a seeded random number
-         * generator, with the seed equal to the has of the encryption key. In 
+         * generator, with the seed equal to the hash of the encryption key. In 
          * this way, both peers should generate the same initialisation 
          * vectors.
          */
@@ -137,7 +136,8 @@ public class AESEncryption implements Encryption {
 	}
 	
 	/**
-	 * Encrypts a message using the encryption key.
+	 * Encrypts a message using the encryption key. Performs the opposite of the
+	 * decrypt(String) function.
 	 * 
 	 * @param cleartext The message to encrypt.
 	 * @return The encrypted message.
@@ -151,7 +151,8 @@ public class AESEncryption implements Encryption {
 	}
 	
 	/**
-	 * Encrypts a message using the encryption key.
+	 * Encrypts a message using the encryption key. Performs the opposite of the
+	 * decrypt(byte[]) function.
 	 * 
 	 * @param cleartext The message to encrypt.
 	 * @return The encrypted message.
@@ -167,7 +168,8 @@ public class AESEncryption implements Encryption {
 	}
 	
 	/**
-	 * Decrypts a message using the decryption key.
+	 * Decrypts a message using the decryption key. Performs the opposite of the
+	 * encrypt(String) function.
 	 * 
 	 * @param ciphertext The message to be decrypted.
 	 * @return The cleartext message.
@@ -181,7 +183,8 @@ public class AESEncryption implements Encryption {
 	}
 	
 	/**
-	 * Decrypts a message using the decryption key.
+	 * Decrypts a message using the decryption key. Performs the opposite of the
+	 * encrypt(byte[]) function.
 	 * 
 	 * @param ciphertext The message to be decrypted.
 	 * @return The cleartext message.

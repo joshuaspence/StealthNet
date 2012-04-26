@@ -160,8 +160,8 @@ public class Client {
             public void actionPerformed(ActionEvent e) { processPackets(); }
         });
         
-        this.serverHostname = ProxyComms.DEFAULT_PROXYNAME;
-        this.serverPort = ProxyComms.DEFAULT_PROXYPORT;
+        this.serverHostname = Comms.DEFAULT_SERVERNAME;
+        this.serverPort = Comms.DEFAULT_SERVERPORT;
         
         /** Set up asymmetric encryption. */
         final URL serverPublicKeyFile = Client.class.getClassLoader().getResource(SERVER_PUBLIC_KEY_FILE);
@@ -740,7 +740,7 @@ public class Client {
         	
         	/** Set 2 second timeout on socket. */
             chatSocket.setSoTimeout(2000);
-            final Comms snComms = new Comms(new RSAAsymmetricEncryption(asymmetricEncryptionProvider, peerPubKey));
+            final Comms snComms = new Comms(new RSAAsymmetricEncryption(asymmetricEncryptionProvider, peerPubKey), true);
             final Socket conn = chatSocket.accept();
             snComms.acceptSession(conn);
             
@@ -872,7 +872,7 @@ public class Client {
                         iAddr = addressDetails[0];
                         iPort = new Integer(addressDetails[1]);
                         
-                        final byte[] peerPublicKeyBytes = chatFields[2].getBytes();
+                        final byte[] peerPublicKeyBytes = Base64.decodeBase64(chatFields[2].getBytes());
                         try {
 	            	    	final KeyFactory factory = KeyFactory.getInstance(RSAAsymmetricEncryption.ALGORITHM);
 	            			final X509EncodedKeySpec keySpec = new X509EncodedKeySpec(peerPublicKeyBytes);
@@ -885,7 +885,7 @@ public class Client {
                         
                         if (DEBUG_COMMANDS_CHAT) System.out.println("Received a chat command. Target host: '" + iAddr + ":" + iPort + "'.");
                         
-                        snComms = new Comms(new RSAAsymmetricEncryption(asymmetricEncryptionProvider, peer));
+                        snComms = new Comms(new RSAAsymmetricEncryption(asymmetricEncryptionProvider, peer), true);
                         snComms.initiateSession(new Socket(iAddr, iPort.intValue()));
                         if (DEBUG_GENERAL) System.out.println("Opened a communications session with '" + iAddr + "'.");
                         
