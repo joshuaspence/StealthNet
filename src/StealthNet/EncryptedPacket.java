@@ -141,7 +141,7 @@ public class EncryptedPacket {
         	int current = 0;
         	
         	/** Data length. */
-        	int dataLen = (str.length() / 2) - digestBytes;
+        	int dataLen = (str.length() / Utility.HEX_PER_BYTE) - digestBytes;
             
             /** Data (dataLen bytes). */
             this.data = new byte[dataLen];
@@ -171,7 +171,7 @@ public class EncryptedPacket {
         for (int i = 0; i < data.length; i++) {
         	highHalfByte = (data[i] >= 0) ? data[i] : (256 + data[i]);
         	lowHalfByte = highHalfByte & 0xF;
-            highHalfByte /= 16;
+            highHalfByte /= Utility.HEXTABLE.length;
             str += Utility.HEXTABLE[highHalfByte];
             str += Utility.HEXTABLE[lowHalfByte];
         }
@@ -180,7 +180,7 @@ public class EncryptedPacket {
         for (int i = 0; i < digest.length; i++) {
         	highHalfByte = (digest[i] >= 0) ? digest[i] : (256 + digest[i]);
         	lowHalfByte = highHalfByte & 0xF;
-            highHalfByte /= 16;
+            highHalfByte /= Utility.HEXTABLE.length;
             str += Utility.HEXTABLE[highHalfByte];
             str += Utility.HEXTABLE[lowHalfByte];
         }

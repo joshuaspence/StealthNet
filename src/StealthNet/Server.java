@@ -118,7 +118,8 @@ public class Server {
         
         /** 
          * Wait for and accept connections on the server socket. Create a new 
-         * thread for each connection.
+         * thread for each connection. For each connection, create a new 
+         * AsymmetricEncryption instance for asymmetric encryption.
          */
         while (true) {
         	try {

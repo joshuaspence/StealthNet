@@ -173,8 +173,8 @@ public class DecryptedPacket {
             this.command = (byte) (16 * Utility.singleHexToInt(str.charAt(current++)) + Utility.singleHexToInt(str.charAt(current++)));
             
             /** Data length (4 bytes). */
-            int dataLen = Utility.hexToInt(str.substring(current, current + 8));
-        	current += 8;
+            int dataLen = Utility.hexToInt(str.substring(current, current + (4 * Utility.HEX_PER_BYTE)));
+        	current += (4 * Utility.HEX_PER_BYTE);
             
             /** Data (dataLen bytes). */
             this.data = new byte[dataLen];
@@ -182,8 +182,8 @@ public class DecryptedPacket {
             	this.data[i] = (byte) (16 * Utility.singleHexToInt(str.charAt(current++)) + Utility.singleHexToInt(str.charAt(current++)));
             
             /** Nonce length (4 bytes). */
-            int nonceLen = Utility.hexToInt(str.substring(current, current + 8));
-        	current += 8;
+            int nonceLen = Utility.hexToInt(str.substring(current, current + (4 * Utility.HEX_PER_BYTE)));
+        	current += (4 * Utility.HEX_PER_BYTE);
             
             /** Nonce (nonceLen bytes). */
             this.nonce = new byte[nonceLen];
@@ -210,7 +210,7 @@ public class DecryptedPacket {
         /** Command (1 byte).  */
         highHalfByte = (command >= 0) ? command : (256 + command);
         lowHalfByte = highHalfByte & 0xF;
-        highHalfByte /= 16;
+        highHalfByte /= Utility.HEXTABLE.length;
         str += Utility.HEXTABLE[highHalfByte];
         str += Utility.HEXTABLE[lowHalfByte];
         
@@ -221,7 +221,7 @@ public class DecryptedPacket {
         for (int i = 0; i < data.length; i++) {
         	highHalfByte = (data[i] >= 0) ? data[i] : 256 + data[i];
         	lowHalfByte = highHalfByte & 0xF;
-            highHalfByte /= 16;
+            highHalfByte /= Utility.HEXTABLE.length;
             str += Utility.HEXTABLE[highHalfByte];
             str += Utility.HEXTABLE[lowHalfByte];
         }
@@ -233,7 +233,7 @@ public class DecryptedPacket {
         for (int i = 0; i < nonce.length; i++) {
         	highHalfByte = (nonce[i] >= 0) ? nonce[i] : 256 + nonce[i];
         	lowHalfByte = highHalfByte & 0xF;
-            highHalfByte /= 16;
+            highHalfByte /= Utility.HEXTABLE.length;
             str += Utility.HEXTABLE[highHalfByte];
             str += Utility.HEXTABLE[lowHalfByte];
         }
@@ -316,8 +316,8 @@ public class DecryptedPacket {
     /**
      * Encrypt this packet.
      * 
-     * @param e The encryption instance to encrypt the packet. If null, then it
-     * will be assumed that the packet is not encrypted.
+     * @param e The encryption instance to encrypt the packet. If null, then the
+     * packet will not be encrypted.
      * @return The encrypted packet.
      * 
      * @throws BadPaddingException 

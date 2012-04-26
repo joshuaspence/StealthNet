@@ -109,7 +109,7 @@ public class ServerThread extends Thread {
 		/** 
 		 * Create a new StealthNet.Comms instance and accept sessions. Note that
 		 * the client already has our public key and can hence encrypt messages 
-		 * destined for us. 
+		 * destined for us.
 		 */
 		this.stealthComms = new Comms(this.asymmetricEncryptionProvider, true);
 		this.stealthComms.acceptSession(socket);
@@ -128,7 +128,11 @@ public class ServerThread extends Thread {
 		
 		this.asymmetricEncryptionProvider = aep;
 		
-		/** Create a new StealthNet.Comms instance and accept sessions. */
+		/** 
+		 * Create a new StealthNet.Comms instance and accept sessions. Note that
+		 * the client already has our public key and can hence encrypt messages 
+		 * destined for us.
+		 */
 		this.stealthComms = new Comms(this.asymmetricEncryptionProvider, true);
 		this.stealthComms.acceptSession(socket);
 	}
@@ -225,7 +229,8 @@ public class ServerThread extends Thread {
 	 * Convert the user list to a String. Used to distribute the user list in a 
 	 * packet.
 	 * 
-	 * @return A String representing the user list.
+	 * @return A String representing the user list. The output string is of the 
+	 * form "user; loggedOn; publicKey\n..."
 	 */
 	private synchronized String userListAsString() {
 		String userTable = "";
@@ -236,16 +241,14 @@ public class ServerThread extends Thread {
 			final UserData userInfo = userList.get(userKey);
 
 			userTable += userKey;
-			userTable += ", ";
+			userTable += "; ";
 			if ((userInfo != null) && (userInfo.userThread != null))
 				userTable += "true";
 			else
 				userTable += "false";
-			userTable += ", ";
+			userTable += "; ";
 			if ((userInfo != null) && (userInfo.publicKey != null))
 				userTable += new String(Base64.encodeBase64String(userInfo.publicKey.getEncoded()));
-			else
-				userTable += "null";
 			userTable += "\n";
 		}
 
@@ -256,7 +259,8 @@ public class ServerThread extends Thread {
 	 * Convert the secret list to a String. Used to distribute the secret list 
 	 * in a packet.
 	 * 
-	 * @return A String representing the secret list.
+	 * @return A String representing the secret list. The output string is of  
+	 * the form "secretKey; cost; description; filename\n..."
 	 */
 	private synchronized String secretListAsString() {
 		String secretTable = "";
@@ -266,7 +270,8 @@ public class ServerThread extends Thread {
 			final String secretKey = i.nextElement();
 			final SecretData secretInfo = secretList.get(secretKey);
 			
-			secretTable += secretKey + ";";
+			secretTable += secretKey;
+			secretTable += ";";
 			if (secretInfo != null) {
 				secretTable += secretInfo.cost + ";";
 				secretTable += secretInfo.description + ";";
@@ -294,7 +299,7 @@ public class ServerThread extends Thread {
 				if (userInfo.userThread.stealthComms == null) {
 					userInfo.userThread = null;
 				} else {
-					/** Send this user the user list in a StealthNet.Packet. */
+					/** Send this user the user list in a packet. */
 					if (DEBUG_GENERAL) System.out.println(THREADID_PREFIX + this.getId() + THREADID_SUFFIX + "Sending the user list to user \"" + userKey + "\".");
 					userInfo.userThread.stealthComms.sendPacket(DecryptedPacket.CMD_LIST, userTable);
 				}
@@ -318,7 +323,7 @@ public class ServerThread extends Thread {
 				if (userInfo.userThread.stealthComms == null) {
 					userInfo.userThread = null;
 				} else {
-					/** Send this user the secret list in a StealthNet.Packet. */
+					/** Send this user the secret list in a packet. */
 					if (DEBUG_GENERAL) System.out.println(THREADID_PREFIX + this.getId() + THREADID_SUFFIX + "Sending the secret list to user \"" + userKey + "\".");
 					userInfo.userThread.stealthComms.sendPacket(DecryptedPacket.CMD_SECRETLIST, secretTable);
 				}
@@ -341,10 +346,12 @@ public class ServerThread extends Thread {
 	 * contained in the packet data is sent to the destined user.
 	 * 
 	 * If the packet contains the chat command, then a chat session is started
-	 * between the specified users.
+	 * between the specified users. First, however, the public key of the peer
+	 * that initiated the chat session is appended to the packet.
 	 * 
 	 * If the packet contains the FTP command, then a file transfer session is
-	 * started between the specified users.
+	 * started between the specified users. First, however, the public key of 
+	 * the peer that initiated the FTP transfer is appended to the packet.
 	 * 
 	 * If the packet contains the create secret command, then we create secret
 	 * data from the StealthNet.Packet data, and retransmit the list of secrets
@@ -362,8 +369,8 @@ public class ServerThread extends Thread {
 				if (pckt == null)
 					break;
 				
-				String userKey, iAddr, msg;
-		        UserData userInfo;
+				String userKey, iAddr, msg = null;
+		        UserData userInfo = null;
 				byte msg_type;
 				
 				if (DEBUG_GENERAL) {
@@ -496,7 +503,7 @@ public class ServerThread extends Thread {
 							msg = userID + "@" + iAddr;
 							
 							/** Append the peer's public key to the packet. */
-							msg += "@" + new String(Base64.encodeBase64(stealthComms.getPeerPublicKey().getEncoded()));
+							msg += ";" + new String(Base64.encodeBase64(stealthComms.getPeerPublicKey().getEncoded()));
 							
 							if (DEBUG_COMMANDS_CHAT) System.out.println(THREADID_PREFIX + this.getId() + THREADID_SUFFIX + "Sending chat message \"" + msg + "\" to user \"" + userKey + "\".");
 							userInfo.userThread.stealthComms.sendPacket(msg_type, msg);
@@ -537,10 +544,7 @@ public class ServerThread extends Thread {
 							msg = userID + "@" + iAddr;
 							
 							/** Append the peer's public key to the packet. */
-							msg += "@" + new String(Base64.encodeBase64(stealthComms.getPeerPublicKey().getEncoded()));
-							
-							if (DEBUG_COMMANDS_CHAT) System.out.println(THREADID_PREFIX + this.getId() + THREADID_SUFFIX + "Sending chat message \"" + msg + "\" to user \"" + userKey + "\".");
-							userInfo.userThread.stealthComms.sendPacket(msg_type, msg);
+							msg += ";" + new String(Base64.encodeBase64(stealthComms.getPeerPublicKey().getEncoded()));
 							
 							if (DEBUG_COMMANDS_FTP) System.out.println(THREADID_PREFIX + this.getId() + THREADID_SUFFIX + "Sending file transfer message \"" + msg + "\" to user \"" + userKey + "\".");
 							userInfo.userThread.stealthComms.sendPacket(msg_type, msg);
