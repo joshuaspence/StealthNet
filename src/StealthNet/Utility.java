@@ -26,6 +26,7 @@ package StealthNet;
 public class Utility {
 	/** Hexadecimal characters. */
     public static final char[] HEXTABLE = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
+    public static final int HEX_PER_BYTE = Byte.SIZE / (int) logBase2(HEXTABLE.length);
     
 	/**
      * Function to assist with printing cryptographic keys by returning byte 
@@ -36,10 +37,10 @@ public class Utility {
      */    
     public static String getHexValue(byte[] array) {
 		final String hexDigitChars = "0123456789ABCDEF";
-		final StringBuffer buf = new StringBuffer(array.length * 2);
+		final StringBuffer buf = new StringBuffer(array.length * HEX_PER_BYTE);
 		
 		for (int cx = 0; cx < array.length; cx++) {
-			final int hn = ((int) (array[cx]) & 0x00FF) / 16;
+			final int hn = ((int) (array[cx]) & 0x00FF) / HEXTABLE.length;
 			final int ln = ((int) (array[cx]) & 0x000F);
 			buf.append(hexDigitChars.charAt(hn));
 			buf.append(hexDigitChars.charAt(ln));
@@ -70,7 +71,7 @@ public class Utility {
      * @throws NumberFormatException
      */
 	public static int hexToInt(String hex) throws NumberFormatException {
-    	return Integer.parseInt(hex, 16);
+    	return Integer.parseInt(hex, HEXTABLE.length);
 	}
 	
 	/**
@@ -85,10 +86,20 @@ public class Utility {
 		String result = Integer.toHexString(value);
 		
 		/** Pad the result to use the full 4 bytes of an integer. */
-		while (result.length() < 2 * (Integer.SIZE / Byte.SIZE))
+		while (result.length() < HEX_PER_BYTE * (Integer.SIZE / Byte.SIZE))
 			result = "0" + result;
 		
 		return result;
+	}
+	
+	/**
+	 * Find the logarithm of a number in base 2.
+	 * 
+	 * @param x The number to find the logarithm of.
+	 * @return The base-2 logarithm.
+	 */
+	public static double logBase2(double x) {
+		return (Math.log(x) / Math.log(2));
 	}
 }
 

@@ -164,8 +164,8 @@ public class RSAAsymmetricEncryption implements AsymmetricEncryption {
 	/**
 	 * Constructor to use the supplied public/private key pair.
 	 * 
-	 * @param publicKeyFile Our public key.
-	 * @param privateKeyFile Our private key. 
+	 * @param publicKey Our public key.
+	 * @param privateKey Our private key. 
 	 * @param peer The public key of the the peer of the communications, used 
 	 * for encryption. If null, then encryption will be unavailable.
 	 * 
@@ -431,8 +431,6 @@ public class RSAAsymmetricEncryption implements AsymmetricEncryption {
     		final byte[] encryptedChunk = encryptionCipher.doFinal(chunk);
     		chunks.add(encryptedChunk);
     		totalLength += encryptedChunk.length;
-    		
-    		System.out.println("chunk=" + encryptedChunk.length);
     	}
     	
     	/** Combine the encrypted chunks. */
@@ -494,7 +492,6 @@ public class RSAAsymmetricEncryption implements AsymmetricEncryption {
     		final byte[] decryptedChunk = decryptionCipher.doFinal(chunk);
     		chunks.add(decryptedChunk);
     		totalLength += decryptedChunk.length;
-    		System.out.println("3");
     	}
     	
     	/** Combine the decrypted chunks. */
