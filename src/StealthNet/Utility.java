@@ -182,7 +182,7 @@ public class Utility {
     	 * try to read keys from the file system. If that doesn't work, then 
     	 * create new keys.
     	 */
-		if (((publicKeyJAR == null) || (privateKeyJAR == null)) && (!publicKeyFileExists || !privateKeyFileExists)) {
+		if ((publicKeyJAR == null || privateKeyJAR == null) && (!publicKeyFileExists || !privateKeyFileExists)) {
 			/** Create the parent directories if they don't already exist. */
 	    	new File(publicKeyFile.getParent()).mkdirs();
 	    	new File(privateKeyFile.getParent()).mkdirs();
@@ -193,7 +193,7 @@ public class Utility {
     		aep.savePrivateKeyToFile(privateKeyPath, privateKeyPassword);
     		return aep;
     	} else {
-    		if ((publicKeyJAR != null) && (privateKeyJAR != null)) {
+    		if (publicKeyJAR != null && privateKeyJAR != null) {
     			/** Read public/private keys from JAR. */
 	    		return new RSAAsymmetricEncryption(publicKeyJAR, privateKeyJAR, privateKeyPassword, null);
     		} else if (publicKeyFileExists && privateKeyFileExists) {

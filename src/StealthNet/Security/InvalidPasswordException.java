@@ -24,11 +24,15 @@ package StealthNet.Security;
 public class InvalidPasswordException extends Exception {
 	private static final long serialVersionUID = 1L;
 
+	/** 
+	 * Constructor
+	 * @param msg A message describing the exception.
+	 */
 	public InvalidPasswordException(String msg) {
 		super(msg);
 	}
 }
 
 /******************************************************************************
- * END OF FILE:     AsymmetricEncryption.java
+ * END OF FILE:     InvalidPasswordException.java
  *****************************************************************************/

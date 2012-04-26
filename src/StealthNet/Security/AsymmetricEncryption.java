@@ -29,13 +29,16 @@ import javax.crypto.NoSuchPaddingException;
 /**
  * An interface to provide public-private key (asymmetric) encryption. Messages 
  * are encrypted with the peer's public key and decrypted with our private key.
+ * 
+ * Asymmetric encryption is slow and should only be used until it is possible to
+ * securely use symmetric encryption.
  *
  * @author Joshua Spence
  */
 public interface AsymmetricEncryption extends Encryption {
 	/**
 	 * Save the public key to a file so that it can be retrieved at a later 
-	 * time.
+	 * time. The public key will not be password protected in any way.
 	 * 
 	 * @param filename The path of the file to which the public key should be 
 	 * saved.
@@ -50,7 +53,7 @@ public interface AsymmetricEncryption extends Encryption {
 	
 	/**
 	 * Save the private key to a file so that it can be retrieved at a later 
-	 * time.
+	 * time. The private key file will be password protected.
 	 * 
 	 * @param filename The path of the file to which the public key should be 
 	 * saved.

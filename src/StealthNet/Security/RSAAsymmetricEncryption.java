@@ -62,24 +62,30 @@ import org.apache.commons.codec.binary.Base64;
  * @author Joshua Spence
  */
 public class RSAAsymmetricEncryption implements AsymmetricEncryption {
+	/** Keys. */
 	private final PrivateKey privateKey;
 	private final PublicKey publicKey;
 	private PublicKey peerPublicKey;
 	
+	/** Ciphers. */
 	private Cipher encryptionCipher;
 	private final Cipher decryptionCipher;
 	
+	/** Constants describing the algorithm. */
 	public static final String ALGORITHM = "RSA";
 	public static final String CIPHER_ALGORITHM = "RSA/ECB/PKCS1Padding";
 	public static final int NUM_BITS = 2048;
+	private static final int MAX_CLEARTEXT = (NUM_BITS / Byte.SIZE) - 11;
+	private static final int MAX_CIPHERTEXT = 256;
 	
+	/** 
+	 * Constants describing the algorithm for handling passwords (used to 
+	 * encrypt the private key file).
+	 */
 	private static final String PASSWORD_SECURERANDOM_ALGORITHM = "SHA1PRNG";
 	private static final int PASSWORD_SALT_BYTES = 8;
 	private static final int PASSWORD_ITERATIONS = 1000;
 	private static final String PASSWORD_KEYFACTORY_ALGORITHM = "PBEWithMD5AndDES";
-	
-	private static final int MAX_CLEARTEXT = (NUM_BITS / Byte.SIZE) - 11;
-	private static final int MAX_CIPHERTEXT = 256;
 	
 	/**
 	 * Constructor to generate a new public/private key pair.
@@ -95,18 +101,15 @@ public class RSAAsymmetricEncryption implements AsymmetricEncryption {
 		final KeyPairGenerator kpg = KeyPairGenerator.getInstance(ALGORITHM);
 		kpg.initialize(NUM_BITS);
 		
+		/** Establish the keys. */
 		final KeyPair kp = kpg.genKeyPair();
 		this.publicKey = kp.getPublic();
 		this.privateKey = kp.getPrivate();
-		this.peerPublicKey = peer;
 		
-		if (this.peerPublicKey != null) {
-			this.encryptionCipher = Cipher.getInstance(CIPHER_ALGORITHM);
-			this.encryptionCipher.init(Cipher.ENCRYPT_MODE, this.peerPublicKey);
-		} else {
-			this.encryptionCipher = null;
-		}
+		/** Initialise the encryption cipher. */
+		setPeerPublicKey(peer);
 		
+		/** Initialise the decryption cipher. */
 		this.decryptionCipher = Cipher.getInstance(CIPHER_ALGORITHM);
 		this.decryptionCipher.init(Cipher.DECRYPT_MODE, this.privateKey);
 	}
@@ -130,17 +133,14 @@ public class RSAAsymmetricEncryption implements AsymmetricEncryption {
 	 * @throws InvalidPasswordException 
 	 */
 	public RSAAsymmetricEncryption(String publicKeyFileName, String privateKeyFileName, String password, PublicKey peer) throws IOException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidKeySpecException, InvalidAlgorithmParameterException, InvalidPasswordException {
+		/** Establish the keys. */
 		this.publicKey = readPublicKeyFromFile(publicKeyFileName);
 		this.privateKey = readPrivateKeyFromFile(privateKeyFileName, password);
-		this.peerPublicKey = peer;
 		
-		if (this.peerPublicKey != null) {
-			this.encryptionCipher = Cipher.getInstance(CIPHER_ALGORITHM);
-			this.encryptionCipher.init(Cipher.ENCRYPT_MODE, this.peerPublicKey);
-		} else {
-			this.encryptionCipher = null;
-		}
+		/** Initialise the encryption cipher. */
+		setPeerPublicKey(peer);
 		
+		/** Initialise the decryption cipher. */
 		this.decryptionCipher = Cipher.getInstance(CIPHER_ALGORITHM);
 		this.decryptionCipher.init(Cipher.DECRYPT_MODE, this.privateKey);
 	}
@@ -163,17 +163,14 @@ public class RSAAsymmetricEncryption implements AsymmetricEncryption {
 	 * @throws InvalidPasswordException 
 	 */
 	public RSAAsymmetricEncryption(URL publicKeyFile, URL privateKeyFile, String password, PublicKey peer) throws IOException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidKeySpecException, InvalidAlgorithmParameterException, InvalidPasswordException {
+		/** Establish the keys. */
 		this.publicKey = readPublicKeyFromFile(publicKeyFile);
 		this.privateKey = readPrivateKeyFromFile(privateKeyFile, password);
-		this.peerPublicKey = peer;
 		
-		if (this.peerPublicKey != null) {
-			this.encryptionCipher = Cipher.getInstance(CIPHER_ALGORITHM);
-			this.encryptionCipher.init(Cipher.ENCRYPT_MODE, this.peerPublicKey);
-		} else {
-			this.encryptionCipher = null;
-		}
+		/** Initialise the encryption cipher. */
+		setPeerPublicKey(peer);
 		
+		/** Initialise the decryption cipher. */
 		this.decryptionCipher = Cipher.getInstance(CIPHER_ALGORITHM);
 		this.decryptionCipher.init(Cipher.DECRYPT_MODE, this.privateKey);
 	}
@@ -193,17 +190,14 @@ public class RSAAsymmetricEncryption implements AsymmetricEncryption {
 	 * @throws InvalidKeySpecException 
 	 */
 	public RSAAsymmetricEncryption(PublicKey publicKey, PrivateKey privateKey, PublicKey peer) throws IOException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidKeySpecException {
+		/** Establish the keys. */
 		this.publicKey = publicKey;
 		this.privateKey = privateKey;
-		this.peerPublicKey = peer;
 		
-		if (this.peerPublicKey != null) {
-			this.encryptionCipher = Cipher.getInstance(CIPHER_ALGORITHM);
-			this.encryptionCipher.init(Cipher.ENCRYPT_MODE, this.peerPublicKey);
-		} else {
-			this.encryptionCipher = null;
-		}
+		/** Initialise the encryption cipher. */
+		setPeerPublicKey(peer);
 		
+		/** Initialise the decryption cipher. */
 		this.decryptionCipher = Cipher.getInstance(CIPHER_ALGORITHM);
 		this.decryptionCipher.init(Cipher.DECRYPT_MODE, this.privateKey);
 	}
@@ -211,7 +205,7 @@ public class RSAAsymmetricEncryption implements AsymmetricEncryption {
 	/**
 	 * Constructor to use the supplied asymmetric encryption provider. The 
 	 * supplied asymmetric encryption provider will be cloned except that the 
-	 * specified peer public key will be used,
+	 * specified peer public key will be used.
 	 * 
 	 * @param ae An AsymmetricEncryption instance.
 	 * @param peer The public key of the the peer of the communications, used 
@@ -224,24 +218,21 @@ public class RSAAsymmetricEncryption implements AsymmetricEncryption {
 	 * @throws InvalidKeySpecException 
 	 */
 	public RSAAsymmetricEncryption(AsymmetricEncryption ae, PublicKey peer) throws IOException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidKeySpecException {
+		/** Establish the keys. */
 		this.publicKey = ae.getPublicKey();
 		this.privateKey = ae.getPrivateKey();
-		this.peerPublicKey = peer;
 		
-		if (this.peerPublicKey != null) {
-			this.encryptionCipher = Cipher.getInstance(CIPHER_ALGORITHM);
-			this.encryptionCipher.init(Cipher.ENCRYPT_MODE, this.peerPublicKey);
-		} else {
-			this.encryptionCipher = null;
-		}
+		/** Initialise the encryption cipher. */
+		setPeerPublicKey(peer);
 		
+		/** Initialise the decryption cipher. */
 		this.decryptionCipher = Cipher.getInstance(CIPHER_ALGORITHM);
 		this.decryptionCipher.init(Cipher.DECRYPT_MODE, this.privateKey);
 	}
 	
 	/**
 	 * Save the public key to a file so that it can be retrieved at a later 
-	 * time.
+	 * time. The public key file will not be encrypted in any way.
 	 * 
 	 * @param filename The path of the file to which the public key should be 
 	 * saved.
@@ -254,13 +245,14 @@ public class RSAAsymmetricEncryption implements AsymmetricEncryption {
 	 */
 	public void savePublicKeyToFile(String filename) throws NoSuchAlgorithmException, InvalidKeySpecException, IOException, InvalidKeyException, NoSuchPaddingException {
 		final KeyFactory factory = KeyFactory.getInstance(ALGORITHM);
-		final RSAPublicKeySpec pub = factory.getKeySpec(this.publicKey, RSAPublicKeySpec.class);
-		writeToFile(filename, pub.getModulus(), pub.getPublicExponent());
+		final RSAPublicKeySpec keySpec = factory.getKeySpec(this.publicKey, RSAPublicKeySpec.class);
+		writeToFile(filename, keySpec.getModulus(), keySpec.getPublicExponent());
 	}
 	
 	/**
 	 * Save the private key to a file so that it can be retrieved at a later 
-	 * time.
+	 * time. The private key file will be encrypted using a user-supplied 
+	 * password.
 	 * 
 	 * @param filename The path of the file to which the public key should be 
 	 * saved.
@@ -275,12 +267,13 @@ public class RSAAsymmetricEncryption implements AsymmetricEncryption {
 	 */
 	public void savePrivateKeyToFile(String filename, String password) throws NoSuchAlgorithmException, InvalidKeySpecException, IOException, InvalidKeyException, NoSuchPaddingException, InvalidAlgorithmParameterException {
 		final KeyFactory factory = KeyFactory.getInstance(ALGORITHM);
-		final RSAPrivateKeySpec priv = factory.getKeySpec(this.privateKey, RSAPrivateKeySpec.class);
-		writeToFile(filename, priv.getModulus(), priv.getPrivateExponent(), password);
+		final RSAPrivateKeySpec keySpec = factory.getKeySpec(this.privateKey, RSAPrivateKeySpec.class);
+		writeToFile(filename, keySpec.getModulus(), keySpec.getPrivateExponent(), password);
 	}
 	
 	/**
-	 * A utility function to write the modulus and exponent of a key to a file.
+	 * A utility function to write the modulus and exponent of a key to a file. 
+	 * The data will be written to the file without any encryption.
 	 * 
 	 * @param filename The path of the file to write to.
 	 * @param mod The modulus of the key.
@@ -333,18 +326,19 @@ public class RSAAsymmetricEncryption implements AsymmetricEncryption {
 		byte[] salt = new byte[PASSWORD_SALT_BYTES];
 		rand.nextBytes(salt);
 		
+		/** Write the salt to the file. */
+		for (int i = 0; i < PASSWORD_SALT_BYTES; i++)
+			bufferedOutputStream.write(salt[i]);
+		
 		/** Setup encryption. */
 		final PBEParameterSpec params = new PBEParameterSpec(salt, PASSWORD_ITERATIONS);
 		final PBEKeySpec keySpec = new PBEKeySpec(password.toCharArray());
 		final SecretKeyFactory factory = SecretKeyFactory.getInstance(PASSWORD_KEYFACTORY_ALGORITHM);
 		final SecretKey key = factory.generateSecret(keySpec);
+		
 		final Cipher cipher = Cipher.getInstance(PASSWORD_KEYFACTORY_ALGORITHM);
 		cipher.init(Cipher.ENCRYPT_MODE, key, params);
 		final CipherOutputStream cipherOutputStream = new CipherOutputStream(bufferedOutputStream, cipher);
-		
-		/** Write the salt to the file. */
-		for (int i = 0; i < PASSWORD_SALT_BYTES; i++)
-			bufferedOutputStream.write(salt[i]);
 		
 		final ObjectOutputStream objectOutputStream = new ObjectOutputStream(cipherOutputStream);
 		
@@ -373,7 +367,7 @@ public class RSAAsymmetricEncryption implements AsymmetricEncryption {
 		final BufferedInputStream bufferedInputStream = new BufferedInputStream(fileInputStream);
 		final ObjectInputStream objectInputStream = new ObjectInputStream(bufferedInputStream);
 		
-		BigInteger mod, exp;
+		BigInteger mod, exp = null;
 		try {
 		    mod = (BigInteger) objectInputStream.readObject();
 		    exp = (BigInteger) objectInputStream.readObject();
@@ -384,8 +378,8 @@ public class RSAAsymmetricEncryption implements AsymmetricEncryption {
 		}
 		
 		final RSAPublicKeySpec keySpec = new RSAPublicKeySpec(mod, exp);
-	    final KeyFactory factory = KeyFactory.getInstance(ALGORITHM);
-	    final PublicKey pubKey = factory.generatePublic(keySpec);
+	    final KeyFactory keyFactory = KeyFactory.getInstance(ALGORITHM);
+	    final PublicKey pubKey = keyFactory.generatePublic(keySpec);
 	    
 		return pubKey;
 	}
@@ -405,7 +399,7 @@ public class RSAAsymmetricEncryption implements AsymmetricEncryption {
 		final BufferedInputStream bufferedInputStream = new BufferedInputStream(urlInputStream);
 		final ObjectInputStream objectInputStream = new ObjectInputStream(bufferedInputStream);
 		
-		BigInteger mod, exp;
+		BigInteger mod, exp = null;
 		try {
 		    mod = (BigInteger) objectInputStream.readObject();
 		    exp = (BigInteger) objectInputStream.readObject();
@@ -416,14 +410,14 @@ public class RSAAsymmetricEncryption implements AsymmetricEncryption {
 		}
 		
 		final RSAPublicKeySpec keySpec = new RSAPublicKeySpec(mod, exp);
-	    final KeyFactory factory = KeyFactory.getInstance(ALGORITHM);
-	    final PublicKey pubKey = factory.generatePublic(keySpec);
+	    final KeyFactory keyFactory = KeyFactory.getInstance(ALGORITHM);
+	    final PublicKey pubKey = keyFactory.generatePublic(keySpec);
 		
 		return pubKey;
 	}
 	
 	/**
-	 * Read the private key from a file.
+	 * Read the private key from a password-encrypted file.
 	 * 
 	 * @param filename The path to the file containing the private key.
 	 * @param password The password to decrypt the private key file.
@@ -450,10 +444,15 @@ public class RSAAsymmetricEncryption implements AsymmetricEncryption {
 		final PBEKeySpec keySpec = new PBEKeySpec(password.toCharArray());
 		final SecretKeyFactory factory = SecretKeyFactory.getInstance(PASSWORD_KEYFACTORY_ALGORITHM);
 		final SecretKey key = factory.generateSecret(keySpec);
+		
 		final Cipher cipher = Cipher.getInstance(PASSWORD_KEYFACTORY_ALGORITHM);
 		cipher.init(Cipher.DECRYPT_MODE, key, params);
 		final CipherInputStream cipherInputStream = new CipherInputStream(bufferedInputStream, cipher);
 		
+		/** 
+		 * If a StreamCorruptedException is thrown, then it is likely that the 
+		 * incorrect password was used to decrypt the private key.
+		 */
 		ObjectInputStream objectInputStream = null;
 		try {
 			objectInputStream = new ObjectInputStream(cipherInputStream);
@@ -461,7 +460,7 @@ public class RSAAsymmetricEncryption implements AsymmetricEncryption {
 			throw new InvalidPasswordException("Invalid password to decrypt private key.");
 		}
 		
-		BigInteger mod, exp;
+		BigInteger mod, exp = null;
 		try {
 		    mod = (BigInteger) objectInputStream.readObject();
 		    exp = (BigInteger) objectInputStream.readObject();
@@ -472,14 +471,14 @@ public class RSAAsymmetricEncryption implements AsymmetricEncryption {
 		}
 		
 		final RSAPrivateKeySpec rsaKeySpec = new RSAPrivateKeySpec(mod, exp);
-	    final KeyFactory privKeyfactory = KeyFactory.getInstance(ALGORITHM);
-	    final PrivateKey privKey = privKeyfactory.generatePrivate(rsaKeySpec);
+	    final KeyFactory rsaKeyFactory = KeyFactory.getInstance(ALGORITHM);
+	    final PrivateKey privKey = rsaKeyFactory.generatePrivate(rsaKeySpec);
 		
 		return privKey;
 	}
 	
 	/**
-	 * Read the private key from a file.
+	 * Read the private key from a password-encrypted file.
 	 * 
 	 * @param file The file containing the private key.
 	 * @param password The password to decrypt the file.
@@ -506,10 +505,15 @@ public class RSAAsymmetricEncryption implements AsymmetricEncryption {
 		final PBEKeySpec keySpec = new PBEKeySpec(password.toCharArray());
 		final SecretKeyFactory factory = SecretKeyFactory.getInstance(PASSWORD_KEYFACTORY_ALGORITHM);
 		final SecretKey key = factory.generateSecret(keySpec);
+		
 		final Cipher cipher = Cipher.getInstance(PASSWORD_KEYFACTORY_ALGORITHM);
 		cipher.init(Cipher.DECRYPT_MODE, key, params);
 		final CipherInputStream cipherInputStream = new CipherInputStream(bufferedInputStream, cipher);
 		
+		/** 
+		 * If a StreamCorruptedException is thrown, then it is likely that the 
+		 * incorrect password was used to decrypt the private key.
+		 */
 		ObjectInputStream objectInputStream = null;
 		try {
 			objectInputStream = new ObjectInputStream(cipherInputStream);
@@ -517,7 +521,7 @@ public class RSAAsymmetricEncryption implements AsymmetricEncryption {
 			throw new InvalidPasswordException("Invalid password to decrypt private key.");
 		}
 		
-		BigInteger mod, exp;
+		BigInteger mod, exp = null;
 		try {
 		    mod = (BigInteger) objectInputStream.readObject();
 		    exp = (BigInteger) objectInputStream.readObject();
@@ -528,8 +532,8 @@ public class RSAAsymmetricEncryption implements AsymmetricEncryption {
 		}
 		
 		final RSAPrivateKeySpec rsaKeySpec = new RSAPrivateKeySpec(mod, exp);
-	    final KeyFactory privKeyfactory = KeyFactory.getInstance(ALGORITHM);
-	    final PrivateKey privKey = privKeyfactory.generatePrivate(rsaKeySpec);
+	    final KeyFactory rsaKeyfactory = KeyFactory.getInstance(ALGORITHM);
+	    final PrivateKey privKey = rsaKeyfactory.generatePrivate(rsaKeySpec);
 		
 		return privKey;
 	}
@@ -574,12 +578,14 @@ public class RSAAsymmetricEncryption implements AsymmetricEncryption {
     	int totalLength = 0;
     	final int chunkCount = (int) Math.ceil((double) cleartext.length / (double) MAX_CLEARTEXT);
     	for (int i = 0; i < chunkCount; i++) {
+    		/** Get the size of the chunk. */
     		byte[] chunk;
     		if (startIndex + MAX_CLEARTEXT > cleartext.length)
     			chunk = new byte[cleartext.length - startIndex];
     		else
     			chunk = new byte[MAX_CLEARTEXT];
     		
+    		/** Copy the unencrypted chunk. */
     		System.arraycopy(cleartext, startIndex, chunk, 0, chunk.length);
     		startIndex += chunk.length;
 
@@ -637,16 +643,18 @@ public class RSAAsymmetricEncryption implements AsymmetricEncryption {
     	int totalLength = 0;
     	final int chunkCount = (int) Math.ceil((double) decodedValue.length / (double) MAX_CIPHERTEXT);
     	for (int i = 0; i < chunkCount; i++) {
+    		/** Get the size of the chunk. */
     		byte[] chunk;
     		if (startIndex + MAX_CIPHERTEXT > decodedValue.length)
     			chunk = new byte[decodedValue.length - startIndex];
     		else
     			chunk = new byte[MAX_CIPHERTEXT];
     		
+    		/** Copy the encrypted chunk. */
     		System.arraycopy(decodedValue, startIndex, chunk, 0, chunk.length);
     		startIndex += chunk.length;
 
-    		/** Encrypt this chunk and add it to the queue. */
+    		/** Decrypt this chunk and add it to the queue. */
     		final byte[] decryptedChunk = decryptionCipher.doFinal(chunk);
     		chunks.add(decryptedChunk);
     		totalLength += decryptedChunk.length;
