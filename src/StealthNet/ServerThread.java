@@ -632,6 +632,12 @@ public class ServerThread extends Thread {
 								if (DEBUG_COMMANDS_GETSECRET) System.out.println(THREADID_PREFIX + this.getId() + THREADID_SUFFIX + "Returning error message \"" + msg + "\".");
 								stealthComms.sendPacket(msg_type, msg);
 							} else {
+								/** Wait for the signed purchase. */
+								
+								/** Get the bank to verify the signed purchase. */
+								
+								/** Send an acknowledgement. */
+								
 								final String fName = secretInfo.dirname + secretInfo.filename;
 								msg_type = DecryptedPacket.CMD_GETSECRET;
 								msg = fName + "@" + iAddr;

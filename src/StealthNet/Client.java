@@ -464,6 +464,11 @@ public class Client {
             if (DEBUG_GENERAL) System.out.println("Sending the server a login packet for user \"" + userID + "\".");
             stealthComms.sendPacket(DecryptedPacket.CMD_LOGIN, userID);
             
+            /** Create our hash chain. */
+            /* new Stack<Hashes> */
+            /* Create a random string for the starting coin. */
+            /* Hash that coin 100 times, adding each hash to the stack. */
+            
             /** Start periodically checking for packets. */
             stealthTimer.start();
         } catch (UnknownHostException e) {
@@ -597,6 +602,17 @@ public class Client {
 			iAddr = "localhost";
 		}
 		iAddr += ":" + Integer.toString(ftpSocket.getLocalPort());
+		
+		/** Get the bank to sign the purchase. */
+		
+		/** 
+		 * If the bank refuses to sign the purchase, regenerate our hash chain 
+		 * because there was possibly a collision.
+		 */
+		
+		/** Give the server the signed purchase. */
+		
+		/** Wait to server to verify. */
 		
 		/** 
 		 * Send the server the name of the secret and the IP address and port 

@@ -48,7 +48,7 @@ public class Server {
 	/** Constants. */
 	private static final String PUBLIC_KEY_FILE = "keys/server/public.key";
 	private static final String PRIVATE_KEY_FILE = "keys/server/private.key";
-	private static final String PRIVATE_KEY_FILE_PASSWORD = "ab";
+	private static final String PRIVATE_KEY_FILE_PASSWORD = "server";
 	
 	/** 
 	 * The main Server function.
