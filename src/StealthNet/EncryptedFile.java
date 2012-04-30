@@ -47,19 +47,21 @@ import StealthNet.Security.PasswordEncryption;
 /* StealthNet.EncryptedFile Class Definition *********************************/
 
 /**
- * TODO
+ * A class to read and write encrypted files. The encrypted files are protected 
+ * with a password.
+ * 
  * @author Joshua Spence
  */
 public class EncryptedFile {
 	/** Debug options. */
-	private static final boolean DEBUG_FILE_IO     = Debug.isDebug("StealthNet.EncryptedFile.FileIO");
+	private static final boolean DEBUG_FILE_IO = Debug.isDebug("StealthNet.EncryptedFile.FileIO");
 	
 	/** File contents. */
-	private byte[] salt;				/** The salt to use for decryption of the file. */
-	private byte[] passwordHash;		/** A hash of the password for password verification. */
-	private byte[] data;				/** The data contained in the file. */
-	private byte[] digest;				/** The MAC used to provide a message digest. */
-	private boolean corrupt = false;	/** If the file cannot be properly parsed, then this will be true. */
+	private byte[] salt;					/** The salt to use for decryption of the file. */
+	private byte[] passwordHash;			/** A hash of the password for password verification. */
+	private byte[] data;					/** The data contained in the file. */
+	private byte[] digest;					/** The MAC used to provide a message digest. */
+	private boolean corrupt = false;		/** If the file cannot be properly parsed, then this will be true. */
     
     private String filename;				/** The name of the file. */
     private final String password;			/** The password to attempt to encrypt/decrypt the file. */
@@ -67,7 +69,10 @@ public class EncryptedFile {
     private MessageAuthenticationCode mac;	/** The class to use to generate a MAC. */
     
     /** 
-     * TODO
+     * Constructor to read an existing encrypted file.
+     * 
+     * @param file The encrypted file to read.
+     * @param password The password to use to decrypt the file.
      * 
      * @throws IOException 
      * @throws NoSuchPaddingException 
@@ -126,7 +131,11 @@ public class EncryptedFile {
     }
     
     /** 
-     * TODO
+     * Constructor to read an existing encrypted file.
+     * 
+     * @param file The encrypted file to read.
+     * @param password The password to use to decrypt the file.
+     * 
      * @throws IOException 
      * @throws NoSuchPaddingException 
      * @throws InvalidAlgorithmParameterException 
@@ -184,7 +193,11 @@ public class EncryptedFile {
     }
     
     /** 
-     * TODO
+     * Constructor to create a new encrypted file.
+     * 
+     * @param decryptedData The unencrypted data to be written to the encrypted
+     * file.
+     * @param password The password to use to encrypt the file.
      * 
      * @throws IOException 
      * @throws NoSuchAlgorithmException 
@@ -207,7 +220,7 @@ public class EncryptedFile {
     	
     	/** Generate the message digest. */
     	this.digest = new byte[HashedMessageAuthenticationCode.DIGEST_BYTES];
-    	this.digest = mac.createMAC(data);
+    	this.digest = mac.createMAC(getDigestableData());
     	
     	/** Generate the password hash. */
     	final MessageDigest mdb = MessageDigest.getInstance(AESEncryption.HASH_ALGORITHM);
@@ -215,9 +228,9 @@ public class EncryptedFile {
     }
     
     /**
-     * TODO
+     * Write the encrypted file to the filesystem.
      * 
-     * @param output
+     * @param output The file to write the encrypted data to.
      * 
      * @throws IOException
      */
@@ -257,7 +270,7 @@ public class EncryptedFile {
     /**
      * Decrypt this file.
      * 
-     * TODO
+     * @return The decrypted contents of the file.
      * 
      * @throws BadPaddingException 
      * @throws IllegalBlockSizeException 
@@ -278,7 +291,7 @@ public class EncryptedFile {
     		throw new EncryptedFileException("Invalid password to decrypt file.");
     	
     	/** Check the digest. */
-    	if (!mac.verifyMAC(data, digest))
+    	if (!mac.verifyMAC(getDigestableData(), digest))
     		throw new EncryptedFileException("Corrupted file.");
     	
     	if (encryption != null) {
@@ -286,6 +299,22 @@ public class EncryptedFile {
     	} else {
     		return data;
     	}
+    }
+    
+    /**
+     * Combine the salt, password hash and data arrays in order to create a MAC 
+     * digest.
+     * 
+     * @return A combined array containing the salt, password hash and data.
+     */
+    private byte[] getDigestableData() {
+    	final byte[] combined = new byte[salt.length + passwordHash.length + data.length];
+
+    	System.arraycopy(salt,         0, combined, 0,                                 salt.length);
+    	System.arraycopy(passwordHash, 0, combined, salt.length,                       passwordHash.length);
+    	System.arraycopy(data,         0, combined, salt.length + passwordHash.length, data.length);
+    	
+    	return combined;
     }
 }
 
