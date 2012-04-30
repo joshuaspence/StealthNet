@@ -3,10 +3,10 @@
  * Computer and Network Security, The University of Sydney
  *
  * PACKAGE:         StealthNet.Security
- * FILENAME:        InvalidPasswordException.java
+ * FILENAME:        EncrpytedFileException.java
  * AUTHORS:         Joshua Spence
- * DESCRIPTION:     An exception to be thrown when the wrong password is used 
- * 					for decryption.
+ * DESCRIPTION:     An exception to be thrown when an error occurs whilst 
+ * 					decrypting an encrypted file.
  *
  *****************************************************************************/
 
@@ -14,14 +14,14 @@ package StealthNet.Security;
 
 /* Import Libraries **********************************************************/
 
-/* StealthNet.Security.InvalidPasswordException Class Definition *************/
+/* StealthNet.Security.EncrpytedFileException Class Definition ****(**********/
 
 /**
  * An exception to be thrown when the wrong password is used for decryption.
  * 
  * @author Joshua Spence
  */
-public class InvalidPasswordException extends Exception {
+public class EncryptedFileException extends Exception {
 	private static final long serialVersionUID = 1L;
 
 	/** 
@@ -29,11 +29,11 @@ public class InvalidPasswordException extends Exception {
 	 * 
 	 * @param msg A message describing the exception.
 	 */
-	public InvalidPasswordException(String msg) {
+	public EncryptedFileException(String msg) {
 		super(msg);
 	}
 }
 
 /******************************************************************************
- * END OF FILE:     InvalidPasswordException.java
+ * END OF FILE:     EncrpytedFileException.java
  *****************************************************************************/

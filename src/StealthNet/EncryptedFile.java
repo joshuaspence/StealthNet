@@ -36,10 +36,11 @@ import java.util.Arrays;
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
+import javax.management.InvalidAttributeValueException;
 
 import StealthNet.Security.AESEncryption;
+import StealthNet.Security.EncryptedFileException;
 import StealthNet.Security.HashedMessageAuthenticationCode;
-import StealthNet.Security.InvalidPasswordException;
 import StealthNet.Security.MessageAuthenticationCode;
 import StealthNet.Security.PasswordEncryption;
 
@@ -54,15 +55,16 @@ public class EncryptedFile {
 	private static final boolean DEBUG_FILE_IO     = Debug.isDebug("StealthNet.EncryptedFile.FileIO");
 	
 	/** File contents. */
-	private byte[] salt;						/** The salt to use for decryption of the file. */
-	private byte[] passwordHash;				/** A hash of the password for password verification. */
-	private byte[] data;						/** The data contained in the file. */
-	private byte[] digest;						/** The MAC used to provide a message digest. */
+	private byte[] salt;				/** The salt to use for decryption of the file. */
+	private byte[] passwordHash;		/** A hash of the password for password verification. */
+	private byte[] data;				/** The data contained in the file. */
+	private byte[] digest;				/** The MAC used to provide a message digest. */
+	private boolean corrupt = false;	/** If the file cannot be properly parsed, then this will be true. */
     
-    private String filename;					/** The name of the file. */
-    private final String password;				/** The password to attempt to encrypt/decrypt the file. */
-    private final PasswordEncryption encryption; /** The class to use to encrypt/decrypt the file. */
-    //private final MessageAuthenticationCode mac;
+    private String filename;				/** The name of the file. */
+    private final String password;			/** The password to attempt to encrypt/decrypt the file. */
+    private PasswordEncryption encryption;	/** The class to use to encrypt/decrypt the file. */
+    private MessageAuthenticationCode mac;	/** The class to use to generate a MAC. */
     
     /** 
      * TODO
@@ -80,35 +82,47 @@ public class EncryptedFile {
     	final BufferedInputStream bufferedInputStream = new BufferedInputStream(fileInputStream);
     	final DataInputStream dataInputStream = new DataInputStream(bufferedInputStream);
     	
-    	/** Read the salt. */
-    	final int saltBytes = dataInputStream.readInt();
-    	this.salt = new byte[saltBytes];
-    	dataInputStream.read(this.salt);
-    	
-    	/** Read the password hash. */
-    	final int hashBytes = dataInputStream.readInt();
-    	this.passwordHash = new byte[hashBytes];
-    	dataInputStream.read(this.passwordHash);
-    	
-    	/** Read the data. */
-    	final int dataBytes = dataInputStream.readInt();
-    	this.data = new byte[dataBytes];
-    	dataInputStream.read(this.data);
-    	
-    	/** Read the digest. */
-    	final int digestBytes = dataInputStream.readInt();
-    	this.digest = new byte[digestBytes];
-    	dataInputStream.read(this.digest);
-    	
     	this.filename = file.getName();
     	this.password = password;
-    	this.encryption = new PasswordEncryption(this.salt, this.password);
-    	//this.mac = new HashedMessageAuthenticationCode(this.encryption.getSecretKey());
     	
-    	/** Clean up. */
-    	dataInputStream.close();
-    	bufferedInputStream.close();
-    	fileInputStream.close();
+    	try {
+    		/** Read the salt. */
+	    	final int saltBytes = dataInputStream.readInt();
+	    	this.salt = new byte[saltBytes];
+	    	dataInputStream.read(this.salt);
+	    	
+	    	/** Read the password hash. */
+	    	final int hashBytes = dataInputStream.readInt();
+	    	this.passwordHash = new byte[hashBytes];
+	    	dataInputStream.read(this.passwordHash);
+	    	
+	    	/** Read the data. */
+	    	final int dataBytes = dataInputStream.readInt();
+	    	this.data = new byte[dataBytes];
+	    	dataInputStream.read(this.data);
+	    	
+	    	/** Read the digest. */
+	    	final int digestBytes = dataInputStream.readInt();
+	    	this.digest = new byte[digestBytes];
+	    	dataInputStream.read(this.digest);
+	    	
+	    	/** Setup encryption and MAC generation. */
+	    	this.encryption = new PasswordEncryption(this.salt, this.password);
+	    	this.mac = new HashedMessageAuthenticationCode(this.encryption.getSecretKey());
+    	} catch (Exception e) {
+    		this.corrupt = true;
+    		this.salt = null;
+    		this.passwordHash = null;
+    		this.data = null;
+    		this.digest = null;
+    		this.encryption = null;
+    		this.mac = null;
+    	} finally {
+	    	/** Clean up. */
+	    	dataInputStream.close();
+	    	bufferedInputStream.close();
+	    	fileInputStream.close();
+    	}
     }
     
     /** 
@@ -126,34 +140,47 @@ public class EncryptedFile {
     	final BufferedInputStream bufferedInputStream = new BufferedInputStream(inputStream);
     	final DataInputStream dataInputStream = new DataInputStream(bufferedInputStream);
     	
-    	/** Read the salt. */
-    	final int saltBytes = dataInputStream.readInt();
-    	this.salt = new byte[saltBytes];
-    	dataInputStream.read(this.salt);
-    	
-    	/** Read the password hash. */
-    	final int hashBytes = dataInputStream.readInt();
-    	this.passwordHash = new byte[hashBytes];
-    	dataInputStream.read(this.passwordHash);
-    	
-    	/** Read the data. */
-    	final int dataBytes = dataInputStream.readInt();
-    	this.data = new byte[dataBytes];
-    	dataInputStream.read(this.data);
-    	
-    	/** Read the digest. */
-    	final int digestBytes = dataInputStream.readInt();
-    	this.digest = new byte[digestBytes];
-    	dataInputStream.read(this.digest);
-    	
     	this.filename = file.getFile();
     	this.password = password;
-    	this.encryption = new PasswordEncryption(this.salt, this.password);
-    	//this.mac = new HashedMessageAuthenticationCode(this.encryption.getSecretKey());
     	
-    	/** Clean up. */
-    	dataInputStream.close();
-    	inputStream.close();
+    	try {
+    		/** Read the salt. */
+	    	final int saltBytes = dataInputStream.readInt();
+	    	this.salt = new byte[saltBytes];
+	    	dataInputStream.read(this.salt);
+	    	
+	    	/** Read the password hash. */
+	    	final int hashBytes = dataInputStream.readInt();
+	    	this.passwordHash = new byte[hashBytes];
+	    	dataInputStream.read(this.passwordHash);
+	    	
+	    	/** Read the data. */
+	    	final int dataBytes = dataInputStream.readInt();
+	    	this.data = new byte[dataBytes];
+	    	dataInputStream.read(this.data);
+	    	
+	    	/** Read the digest. */
+	    	final int digestBytes = dataInputStream.readInt();
+	    	this.digest = new byte[digestBytes];
+	    	dataInputStream.read(this.digest);
+	    	
+	    	/** Setup encryption and MAC generation. */
+	    	this.encryption = new PasswordEncryption(this.salt, this.password);
+	    	this.mac = new HashedMessageAuthenticationCode(this.encryption.getSecretKey());
+    	} catch (Exception e) {
+    		this.corrupt = true;
+    		this.salt = null;
+    		this.passwordHash = null;
+    		this.data = null;
+    		this.digest = null;
+    		this.encryption = null;
+    		this.mac = null;
+    	} finally {
+	    	/** Clean up. */
+	    	dataInputStream.close();
+	    	bufferedInputStream.close();
+	    	inputStream.close();
+    	}
     }
     
     /** 
@@ -167,20 +194,20 @@ public class EncryptedFile {
      * @throws InvalidAlgorithmParameterException 
      * @throws InvalidKeySpecException 
      * @throws InvalidKeyException 
+     * @throws InvalidAttributeValueException 
      */
-    public EncryptedFile(byte[] decryptedData, String password) throws IOException, NoSuchAlgorithmException, IllegalBlockSizeException, BadPaddingException, InvalidKeyException, InvalidKeySpecException, InvalidAlgorithmParameterException, NoSuchPaddingException {
+    public EncryptedFile(byte[] decryptedData, String password) throws IOException, NoSuchAlgorithmException, IllegalBlockSizeException, BadPaddingException, InvalidKeyException, InvalidKeySpecException, InvalidAlgorithmParameterException, NoSuchPaddingException, InvalidAttributeValueException {
     	this.filename = null;
     	this.password = password;
     	this.encryption = new PasswordEncryption(this.password);
-    	//this.mac = new HashedMessageAuthenticationCode(this.encryption.getSecretKey());
+    	this.mac = new HashedMessageAuthenticationCode(this.encryption.getSecretKey());
     	
     	this.salt = this.encryption.getSalt();
     	this.data = this.encryption.encrypt(decryptedData);
     	
     	/** Generate the message digest. */
-    	//this.digest = new byte[HashedMessageAuthenticationCode.DIGEST_BYTES];
-    	this.digest = new byte[0];
-    	//this.digest = mac.createMAC(data);
+    	this.digest = new byte[HashedMessageAuthenticationCode.DIGEST_BYTES];
+    	this.digest = mac.createMAC(data);
     	
     	/** Generate the password hash. */
     	final MessageDigest mdb = MessageDigest.getInstance(AESEncryption.HASH_ALGORITHM);
@@ -236,21 +263,23 @@ public class EncryptedFile {
      * @throws IllegalBlockSizeException 
      * @throws UnsupportedEncodingException 
      * @throws NoSuchAlgorithmException 
-     * @throws InvalidPasswordException 
+     * @throws InvalidAttributeValueException 
      */
-    public byte[] decrypt() throws UnsupportedEncodingException, IllegalBlockSizeException, BadPaddingException, NoSuchAlgorithmException, InvalidPasswordException {
+    public byte[] decrypt() throws UnsupportedEncodingException, IllegalBlockSizeException, BadPaddingException, NoSuchAlgorithmException, EncryptedFileException, InvalidAttributeValueException {
     	if (DEBUG_FILE_IO) System.out.println("Decrypting '" + filename + "' with password: " + password);
+    	
+    	if (corrupt)
+    		throw new EncryptedFileException("Corrupted file.");
     	
     	/** Check the password. */
     	final MessageDigest mdb = MessageDigest.getInstance(AESEncryption.HASH_ALGORITHM);
     	final byte[] ourPasswordHash = mdb.digest(password.getBytes());
     	if (!Arrays.equals(passwordHash, ourPasswordHash))
-    		throw new InvalidPasswordException("Invalid password to decrypt file.");
+    		throw new EncryptedFileException("Invalid password to decrypt file.");
     	
     	/** Check the digest. */
-    	//if (!mac.verifyMAC(data, digest)) {
-    		
-    	//}
+    	if (!mac.verifyMAC(data, digest))
+    		throw new EncryptedFileException("Corrupted file.");
     	
     	if (encryption != null) {
 	    	return encryption.decrypt(data);

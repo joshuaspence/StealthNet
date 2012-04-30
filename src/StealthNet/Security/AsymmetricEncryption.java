@@ -26,6 +26,7 @@ import java.security.spec.InvalidKeySpecException;
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
+import javax.management.InvalidAttributeValueException;
 
 /* StealthNet.Security.AsymmetricEncryption Interface Definition *************/
 
@@ -55,8 +56,9 @@ public interface AsymmetricEncryption extends Encryption {
 	 * @throws BadPaddingException 
 	 * @throws IllegalBlockSizeException 
 	 * @throws NoSuchProviderException 
+	 * @throws InvalidAttributeValueException 
 	 */
-	public void savePublicKeyToFile(String filename) throws NoSuchAlgorithmException, InvalidKeySpecException, IOException, InvalidKeyException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException, InvalidAlgorithmParameterException, NoSuchProviderException;
+	public void savePublicKeyToFile(String filename) throws NoSuchAlgorithmException, InvalidKeySpecException, IOException, InvalidKeyException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException, InvalidAlgorithmParameterException, NoSuchProviderException, InvalidAttributeValueException;
 	
 	/**
 	 * Save the private key to a file so that it can be retrieved at a later 
@@ -75,8 +77,9 @@ public interface AsymmetricEncryption extends Encryption {
 	 * @throws BadPaddingException 
 	 * @throws IllegalBlockSizeException 
 	 * @throws NoSuchProviderException 
+	 * @throws InvalidAttributeValueException 
 	 */
-	public void savePrivateKeyToFile(String filename, String password) throws NoSuchAlgorithmException, InvalidKeySpecException, IOException, InvalidKeyException, NoSuchPaddingException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException, NoSuchProviderException;
+	public void savePrivateKeyToFile(String filename, String password) throws NoSuchAlgorithmException, InvalidKeySpecException, IOException, InvalidKeyException, NoSuchPaddingException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException, NoSuchProviderException, InvalidAttributeValueException;
 	
 	/**
 	 * Get our public key.

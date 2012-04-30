@@ -62,7 +62,7 @@ import javax.swing.JOptionPane;
 import org.apache.commons.codec.binary.Base64;
 
 import StealthNet.Security.AsymmetricEncryption;
-import StealthNet.Security.InvalidPasswordException;
+import StealthNet.Security.EncryptedFileException;
 import StealthNet.Security.RSAAsymmetricEncryption;
 
 /* StealthNet.Client Class Definition ****************************************/
@@ -429,7 +429,7 @@ public class Client {
 	            
 	            try {
 	            	asymmetricEncryptionProvider = Utility.getPublicPrivateKeys(publicKeyPath, privateKeyPath, password);
-	            } catch (InvalidPasswordException e) {
+	            } catch (EncryptedFileException e) {
 	            	JOptionPane.showMessageDialog(null, "The password you entered was incorrect.", "Invalid password", JOptionPane.ERROR_MESSAGE);
 	            	continue;
 	            } catch (Exception e) {

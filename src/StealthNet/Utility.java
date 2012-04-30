@@ -24,9 +24,10 @@ import java.security.spec.InvalidKeySpecException;
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
+import javax.management.InvalidAttributeValueException;
 
 import StealthNet.Security.AsymmetricEncryption;
-import StealthNet.Security.InvalidPasswordException;
+import StealthNet.Security.EncryptedFileException;
 import StealthNet.Security.RSAAsymmetricEncryption;
 
 /* Import Libraries **********************************************************/
@@ -169,12 +170,13 @@ public class Utility {
 	 * @throws NoSuchAlgorithmException 
 	 * @throws InvalidKeyException 
 	 * @throws InvalidAlgorithmParameterException 
-	 * @throws InvalidPasswordException 
+	 * @throws EncryptedFileException 
 	 * @throws BadPaddingException 
 	 * @throws IllegalBlockSizeException 
 	 * @throws NoSuchProviderException 
+	 * @throws InvalidAttributeValueException 
 	 */
-	public static AsymmetricEncryption getPublicPrivateKeys(String publicKeyPath, String privateKeyPath, String privateKeyPassword) throws InvalidKeyException, NoSuchAlgorithmException, InvalidKeySpecException, NoSuchPaddingException, IOException, InvalidAlgorithmParameterException, InvalidPasswordException, IllegalBlockSizeException, BadPaddingException, NoSuchProviderException {
+	public static AsymmetricEncryption getPublicPrivateKeys(String publicKeyPath, String privateKeyPath, String privateKeyPassword) throws InvalidKeyException, NoSuchAlgorithmException, InvalidKeySpecException, NoSuchPaddingException, IOException, InvalidAlgorithmParameterException, EncryptedFileException, IllegalBlockSizeException, BadPaddingException, NoSuchProviderException, InvalidAttributeValueException {
 		final URL publicKeyJAR = Utility.class.getClassLoader().getResource(publicKeyPath);
     	final URL privateKeyJAR = Utility.class.getClassLoader().getResource(privateKeyPath);
     	final File publicKeyFile = new File(publicKeyPath);
