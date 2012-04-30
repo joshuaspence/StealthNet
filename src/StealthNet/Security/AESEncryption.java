@@ -15,11 +15,10 @@ package StealthNet.Security;
 /* Import Libraries **********************************************************/
 
 import java.io.UnsupportedEncodingException;
-import java.nio.ByteBuffer;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
+import java.util.Random;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
@@ -29,6 +28,8 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 
 import org.apache.commons.codec.binary.Base64;
+
+import StealthNet.Utility;
 
 /* StealthNet.Security.AESEncryption Class Definition ************************/
 
@@ -68,14 +69,19 @@ public class AESEncryption implements Encryption {
          * generator, with the seed equal to the hash of the encryption key. In 
          * this way, both peers should generate the same initialisation 
          * vectors.
+         * 
+         * NOTE: IVGenerator must be of class `Random' and not `SecureRandom'. 
+         * Otherwise the peers will generate different initialisation vectors, 
+         * despite having the same seed to the random number generator.
          */
         final byte[] iv = new byte[SALT_BYTES];
-        final byte[] salt = ByteBuffer.allocate(Integer.SIZE / Byte.SIZE).putInt(key.hashCode()).array();
-        final SecureRandom IVGenerator = new SecureRandom(salt);
+        final long salt = key.hashCode();
+        final Random IVGenerator = new Random(salt);
         
         for (int i = 0; i < 16; i++)
         	iv[i] = (byte) IVGenerator.nextInt();
         this.ips = new IvParameterSpec(iv);
+        System.out.println("iv= " + Utility.getHexValue(iv));
         
         /** Initialise encryption cipher. */
         this.encryptionCipher = Cipher.getInstance(CIPHER_ALGORITHM);

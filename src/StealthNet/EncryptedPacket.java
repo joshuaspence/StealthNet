@@ -141,7 +141,7 @@ public class EncryptedPacket {
         	int current = 0;
         	
         	/** Data length. */
-        	int dataLen = (str.length() / Utility.HEX_PER_BYTE) - digestBytes;
+        	final int dataLen = (str.length() / Utility.HEX_PER_BYTE) - digestBytes;
             
             /** Data (dataLen bytes). */
             this.data = new byte[dataLen];

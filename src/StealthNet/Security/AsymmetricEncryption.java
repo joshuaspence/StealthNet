@@ -18,6 +18,7 @@ import java.io.IOException;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.spec.InvalidKeySpecException;
@@ -53,8 +54,9 @@ public interface AsymmetricEncryption extends Encryption {
 	 * @throws InvalidAlgorithmParameterException 
 	 * @throws BadPaddingException 
 	 * @throws IllegalBlockSizeException 
+	 * @throws NoSuchProviderException 
 	 */
-	public void savePublicKeyToFile(String filename) throws NoSuchAlgorithmException, InvalidKeySpecException, IOException, InvalidKeyException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException, InvalidAlgorithmParameterException;
+	public void savePublicKeyToFile(String filename) throws NoSuchAlgorithmException, InvalidKeySpecException, IOException, InvalidKeyException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException, InvalidAlgorithmParameterException, NoSuchProviderException;
 	
 	/**
 	 * Save the private key to a file so that it can be retrieved at a later 
@@ -72,8 +74,9 @@ public interface AsymmetricEncryption extends Encryption {
 	 * @throws InvalidAlgorithmParameterException 
 	 * @throws BadPaddingException 
 	 * @throws IllegalBlockSizeException 
+	 * @throws NoSuchProviderException 
 	 */
-	public void savePrivateKeyToFile(String filename, String password) throws NoSuchAlgorithmException, InvalidKeySpecException, IOException, InvalidKeyException, NoSuchPaddingException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException;
+	public void savePrivateKeyToFile(String filename, String password) throws NoSuchAlgorithmException, InvalidKeySpecException, IOException, InvalidKeyException, NoSuchPaddingException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException, NoSuchProviderException;
 	
 	/**
 	 * Get our public key.
@@ -97,8 +100,9 @@ public interface AsymmetricEncryption extends Encryption {
 	 * @throws NoSuchPaddingException 
 	 * @throws NoSuchAlgorithmException 
 	 * @throws InvalidKeyException 
+	 * @throws NoSuchProviderException 
 	 */
-	public void setPeerPublicKey(PublicKey peer) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException;
+	public void setPeerPublicKey(PublicKey peer) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, NoSuchProviderException;
 	
 	/**
 	 * Get our private key. Our private key is used for decryption.

@@ -424,15 +424,6 @@ public class Client {
 	            if (password == null) 
 	            	return;
 	            
-	            /** 
-	             * Set up asymmetric encryption. Get server public key from JAR file.
-	             */
-	            PublicKey serverPublicKey = Utility.getPublicKey(SERVER_PUBLIC_KEY_FILE);
-	            if (serverPublicKey == null) {
-	            	System.err.println("Unable to determine server public key.");
-	    			System.exit(1);
-	            }
-	            
 	            final String publicKeyPath  = "keys/clients/" + userID + "/public.key";
 	            final String privateKeyPath = "keys/clients/" + userID + "/private.key";
 	            try {
@@ -453,7 +444,24 @@ public class Client {
 		    	System.out.println("Public key: " + publicKeyString);
 		    	System.out.println("Private key: " + privateKeyString);
     		}
-            
+    		
+    		/** 
+             * Set up asymmetric encryption. Get server public key from JAR file.
+             */
+    		try {
+	            PublicKey serverPublicKey = Utility.getPublicKey(SERVER_PUBLIC_KEY_FILE);
+	            if (serverPublicKey == null) {
+	            	System.err.println("Unable to determine server public key.");
+	    			System.exit(1);
+	            }
+	    		
+	    		asymmetricEncryptionProvider.setPeerPublicKey(serverPublicKey);
+    		} catch (Exception e) {
+    			System.err.println("Unable to set peer public key.");
+    			if (DEBUG_ERROR_TRACE) e.printStackTrace();
+    			System.exit(1);
+    		}
+    		
             /** Initiate a connection with the StealthNet server. */
             /** TODO: Probably want a timeout on this. */
             if (DEBUG_GENERAL) System.out.println("Initiating a connection with StealthNet server '" + serverHostname + "' on port " + serverPort + ".");
@@ -1060,10 +1068,10 @@ public class Client {
      */
     public static void main(String[] args) {
     	/** Hostname of the proxy. */
-    	String hostname = ProxyComms.DEFAULT_PROXYNAME;
+    	String hostname = Comms.DEFAULT_SERVERNAME;
     	
     	/** Port that the proxy is listening on. */
-    	int port = ProxyComms.DEFAULT_PROXYPORT;
+    	int port = Comms.DEFAULT_SERVERPORT;
     	
     	/** Check if a host and port was specified at the command line. */
     	if (args.length > 0) {

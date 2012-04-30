@@ -198,6 +198,14 @@ public class PasswordEncryption implements Encryption {
 	public byte[] getSalt() {
 		return this.salt;
 	}
+	
+	/**
+	 * TODO
+	 * @return
+	 */
+	public SecretKey getSecretKey() {
+		return this.key;
+	}
 }
 
 /******************************************************************************

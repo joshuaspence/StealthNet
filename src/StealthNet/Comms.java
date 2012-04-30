@@ -687,7 +687,7 @@ public class Comms {
 	            	case DecryptedPacket.CMD_PUBLICKEY:
 	            		final byte[] peerPubKeyBytes = Base64.decodeBase64(pckt.data);
 	                	final String peerPubKeyString = new String(Utility.getHexValue(peerPubKeyBytes));
-	                	if (DEBUG_ASYMMETRIC_ENCRYPTION) System.out.println("Received peer public key: " + peerPubKeyString);
+	            		if (DEBUG_ASYMMETRIC_ENCRYPTION) System.out.println("Received peer public key: " + peerPubKeyString);
 	                	
 	            		/** Send acknowledgement. */
 	            		sendPacket(DecryptedPacket.CMD_NULL);

@@ -32,6 +32,7 @@ import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.spec.InvalidKeySpecException;
@@ -70,8 +71,8 @@ public class RSAAsymmetricEncryption implements AsymmetricEncryption {
 	private final Cipher decryptionCipher;
 	
 	/** Constants describing the algorithm. */
-	public static final String ALGORITHM = "RSA";
-	public static final String CIPHER_ALGORITHM = "RSA/ECB/PKCS1Padding";
+	public static final String CIPHER_ALGORITHM = "RSA";
+	public static final String ALGORITHM = CIPHER_ALGORITHM;
 	public static final int NUM_BITS = 2048;
 	private static final int MAX_CLEARTEXT = (NUM_BITS / Byte.SIZE) - 11;
 	private static final int MAX_CIPHERTEXT = 256;
@@ -85,8 +86,9 @@ public class RSAAsymmetricEncryption implements AsymmetricEncryption {
 	 * @throws NoSuchAlgorithmException
 	 * @throws InvalidKeyException 
 	 * @throws NoSuchPaddingException 
+	 * @throws NoSuchProviderException 
 	 */
-	public RSAAsymmetricEncryption(PublicKey peer) throws NoSuchAlgorithmException, InvalidKeyException, NoSuchPaddingException {
+	public RSAAsymmetricEncryption(PublicKey peer) throws NoSuchAlgorithmException, InvalidKeyException, NoSuchPaddingException, NoSuchProviderException {		
 		/** Initialise the key generator. */
 		final KeyPairGenerator kpg = KeyPairGenerator.getInstance(ALGORITHM);
 		kpg.initialize(NUM_BITS);
@@ -123,8 +125,9 @@ public class RSAAsymmetricEncryption implements AsymmetricEncryption {
 	 * @throws InvalidPasswordException 
 	 * @throws BadPaddingException 
 	 * @throws IllegalBlockSizeException 
+	 * @throws NoSuchProviderException 
 	 */
-	public RSAAsymmetricEncryption(String publicKeyFileName, String privateKeyFileName, String password, PublicKey peer) throws IOException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidKeySpecException, InvalidAlgorithmParameterException, InvalidPasswordException, IllegalBlockSizeException, BadPaddingException {
+	public RSAAsymmetricEncryption(String publicKeyFileName, String privateKeyFileName, String password, PublicKey peer) throws IOException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidKeySpecException, InvalidAlgorithmParameterException, InvalidPasswordException, IllegalBlockSizeException, BadPaddingException, NoSuchProviderException {
 		/** Establish the keys. */
 		this.publicKey = readPublicKeyFromFile(publicKeyFileName);
 		this.privateKey = readPrivateKeyFromFile(privateKeyFileName, password);
@@ -155,8 +158,9 @@ public class RSAAsymmetricEncryption implements AsymmetricEncryption {
 	 * @throws InvalidPasswordException 
 	 * @throws BadPaddingException 
 	 * @throws IllegalBlockSizeException 
+	 * @throws NoSuchProviderException 
 	 */
-	public RSAAsymmetricEncryption(URL publicKeyFile, URL privateKeyFile, String password, PublicKey peer) throws IOException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidKeySpecException, InvalidAlgorithmParameterException, InvalidPasswordException, IllegalBlockSizeException, BadPaddingException {
+	public RSAAsymmetricEncryption(URL publicKeyFile, URL privateKeyFile, String password, PublicKey peer) throws IOException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidKeySpecException, InvalidAlgorithmParameterException, InvalidPasswordException, IllegalBlockSizeException, BadPaddingException, NoSuchProviderException {
 		/** Establish the keys. */
 		this.publicKey = readPublicKeyFromFile(publicKeyFile);
 		this.privateKey = readPrivateKeyFromFile(privateKeyFile, password);
@@ -182,8 +186,9 @@ public class RSAAsymmetricEncryption implements AsymmetricEncryption {
 	 * @throws NoSuchAlgorithmException 
 	 * @throws InvalidKeyException 
 	 * @throws InvalidKeySpecException 
+	 * @throws NoSuchProviderException 
 	 */
-	public RSAAsymmetricEncryption(PublicKey publicKey, PrivateKey privateKey, PublicKey peer) throws IOException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidKeySpecException {
+	public RSAAsymmetricEncryption(PublicKey publicKey, PrivateKey privateKey, PublicKey peer) throws IOException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidKeySpecException, NoSuchProviderException {
 		/** Establish the keys. */
 		this.publicKey = publicKey;
 		this.privateKey = privateKey;
@@ -210,8 +215,9 @@ public class RSAAsymmetricEncryption implements AsymmetricEncryption {
 	 * @throws NoSuchAlgorithmException 
 	 * @throws InvalidKeyException 
 	 * @throws InvalidKeySpecException 
+	 * @throws NoSuchProviderException 
 	 */
-	public RSAAsymmetricEncryption(AsymmetricEncryption ae, PublicKey peer) throws IOException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidKeySpecException {
+	public RSAAsymmetricEncryption(AsymmetricEncryption ae, PublicKey peer) throws IOException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidKeySpecException, NoSuchProviderException {
 		/** Establish the keys. */
 		this.publicKey = ae.getPublicKey();
 		this.privateKey = ae.getPrivateKey();
@@ -264,14 +270,17 @@ public class RSAAsymmetricEncryption implements AsymmetricEncryption {
     	final Queue<byte[]> chunks = new LinkedList<byte[]>();
     	int startIndex = 0;
     	int totalLength = 0;
-    	final int chunkCount = (int) Math.ceil((double) cleartext.length / (double) MAX_CLEARTEXT);
+    	
+    	final int chunkSize = MAX_CLEARTEXT;
+    	final int chunkCount = (int) Math.ceil((double) cleartext.length / (double) chunkSize);
+    	
     	for (int i = 0; i < chunkCount; i++) {
     		/** Get the size of the chunk. */
     		byte[] chunk;
-    		if (startIndex + MAX_CLEARTEXT > cleartext.length)
+    		if (startIndex + chunkSize > cleartext.length)
     			chunk = new byte[cleartext.length - startIndex];
     		else
-    			chunk = new byte[MAX_CLEARTEXT];
+    			chunk = new byte[chunkSize];
     		
     		/** Copy the unencrypted chunk. */
     		System.arraycopy(cleartext, startIndex, chunk, 0, chunk.length);
@@ -279,6 +288,7 @@ public class RSAAsymmetricEncryption implements AsymmetricEncryption {
 
     		/** Encrypt this chunk and add it to the queue. */
     		final byte[] encryptedChunk = encryptionCipher.doFinal(chunk);
+    		System.out.println(chunkSize + " => " + encryptedChunk.length);
     		chunks.add(encryptedChunk);
     		totalLength += encryptedChunk.length;
     	}
@@ -331,20 +341,24 @@ public class RSAAsymmetricEncryption implements AsymmetricEncryption {
     	final Queue<byte[]> chunks = new LinkedList<byte[]>();
     	int startIndex = 0;
     	int totalLength = 0;
-    	final int chunkCount = (int) Math.ceil((double) decodedValue.length / (double) MAX_CIPHERTEXT);
+    	
+    	final int chunkSize = MAX_CIPHERTEXT;
+    	final int chunkCount = (int) Math.ceil((double) decodedValue.length / (double) chunkSize);
+    	
     	for (int i = 0; i < chunkCount; i++) {
     		/** Get the size of the chunk. */
     		byte[] chunk;
-    		if (startIndex + MAX_CIPHERTEXT > decodedValue.length)
+    		if (startIndex + chunkSize > decodedValue.length)
     			chunk = new byte[decodedValue.length - startIndex];
     		else
-    			chunk = new byte[MAX_CIPHERTEXT];
+    			chunk = new byte[chunkSize];
     		
     		/** Copy the encrypted chunk. */
     		System.arraycopy(decodedValue, startIndex, chunk, 0, chunk.length);
     		startIndex += chunk.length;
 
     		/** Decrypt this chunk and add it to the queue. */
+    		System.out.println(i + ", " + chunk.length);
     		final byte[] decryptedChunk = decryptionCipher.doFinal(chunk);
     		chunks.add(decryptedChunk);
     		totalLength += decryptedChunk.length;
@@ -388,8 +402,9 @@ public class RSAAsymmetricEncryption implements AsymmetricEncryption {
 	 * @throws NoSuchPaddingException 
 	 * @throws NoSuchAlgorithmException 
 	 * @throws InvalidKeyException 
+	 * @throws NoSuchProviderException 
 	 */
-	public void setPeerPublicKey(PublicKey peer) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException {
+	public void setPeerPublicKey(PublicKey peer) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, NoSuchProviderException {
 		this.peerPublicKey = peer;
 		
 		if (this.peerPublicKey != null) {
@@ -424,8 +439,9 @@ public class RSAAsymmetricEncryption implements AsymmetricEncryption {
 	 * @throws InvalidAlgorithmParameterException 
 	 * @throws BadPaddingException 
 	 * @throws IllegalBlockSizeException 
+	 * @throws NoSuchProviderException 
 	 */
-	public void savePublicKeyToFile(String filename) throws NoSuchAlgorithmException, InvalidKeySpecException, IOException, InvalidKeyException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException, InvalidAlgorithmParameterException {
+	public void savePublicKeyToFile(String filename) throws NoSuchAlgorithmException, InvalidKeySpecException, IOException, InvalidKeyException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException, InvalidAlgorithmParameterException, NoSuchProviderException {
 		final KeyFactory factory = KeyFactory.getInstance(ALGORITHM);
 		final RSAPublicKeySpec keySpec = factory.getKeySpec(this.publicKey, RSAPublicKeySpec.class);
 		writeToFile(filename, keySpec.getModulus(), keySpec.getPublicExponent(), null);
@@ -448,8 +464,9 @@ public class RSAAsymmetricEncryption implements AsymmetricEncryption {
 	 * @throws InvalidAlgorithmParameterException 
 	 * @throws BadPaddingException 
 	 * @throws IllegalBlockSizeException 
+	 * @throws NoSuchProviderException 
 	 */
-	public void savePrivateKeyToFile(String filename, String password) throws NoSuchAlgorithmException, InvalidKeySpecException, IOException, InvalidKeyException, NoSuchPaddingException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException {
+	public void savePrivateKeyToFile(String filename, String password) throws NoSuchAlgorithmException, InvalidKeySpecException, IOException, InvalidKeyException, NoSuchPaddingException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException, NoSuchProviderException {
 		final KeyFactory factory = KeyFactory.getInstance(ALGORITHM);
 		final RSAPrivateKeySpec keySpec = factory.getKeySpec(this.privateKey, RSAPrivateKeySpec.class);
 		writeToFile(filename, keySpec.getModulus(), keySpec.getPrivateExponent(), password);
@@ -529,8 +546,9 @@ public class RSAAsymmetricEncryption implements AsymmetricEncryption {
 	 * @throws IOException
 	 * @throws NoSuchAlgorithmException 
 	 * @throws InvalidKeySpecException 
+	 * @throws NoSuchProviderException 
 	 */
-	public static PublicKey readPublicKeyFromFile(String filename) throws IOException, NoSuchAlgorithmException, InvalidKeySpecException {
+	public static PublicKey readPublicKeyFromFile(String filename) throws IOException, NoSuchAlgorithmException, InvalidKeySpecException, NoSuchProviderException {
 		return readPublicKeyFromFile(new FileInputStream(filename));
 	}
 	
@@ -543,8 +561,9 @@ public class RSAAsymmetricEncryption implements AsymmetricEncryption {
 	 * @throws IOException
 	 * @throws NoSuchAlgorithmException 
 	 * @throws InvalidKeySpecException 
+	 * @throws NoSuchProviderException 
 	 */
-	public static PublicKey readPublicKeyFromFile(URL file) throws IOException, NoSuchAlgorithmException, InvalidKeySpecException {
+	public static PublicKey readPublicKeyFromFile(URL file) throws IOException, NoSuchAlgorithmException, InvalidKeySpecException, NoSuchProviderException {
 		return readPublicKeyFromFile(file.openStream());
 	}
 	
@@ -558,8 +577,9 @@ public class RSAAsymmetricEncryption implements AsymmetricEncryption {
 	 * @throws IOException
 	 * @throws NoSuchAlgorithmException 
 	 * @throws InvalidKeySpecException 
+	 * @throws NoSuchProviderException 
 	 */
-	public static PublicKey readPublicKeyFromFile(InputStream inputStream) throws IOException, NoSuchAlgorithmException, InvalidKeySpecException {
+	public static PublicKey readPublicKeyFromFile(InputStream inputStream) throws IOException, NoSuchAlgorithmException, InvalidKeySpecException, NoSuchProviderException {
 		final BufferedInputStream bufferedInputStream = new BufferedInputStream(inputStream);
 		final DataInputStream dataInputStream = new DataInputStream(bufferedInputStream);
 		
@@ -585,7 +605,7 @@ public class RSAAsymmetricEncryption implements AsymmetricEncryption {
 		
 		/** Recreate the public key. */
 		final RSAPublicKeySpec keySpec = new RSAPublicKeySpec(mod, exp);
-	    final KeyFactory keyFactory = KeyFactory.getInstance(ALGORITHM);
+		final KeyFactory keyFactory = KeyFactory.getInstance(ALGORITHM);
 	    final PublicKey pubKey = keyFactory.generatePublic(keySpec);
 		
 		return pubKey;
@@ -607,8 +627,9 @@ public class RSAAsymmetricEncryption implements AsymmetricEncryption {
 	 * @throws InvalidPasswordException 
 	 * @throws BadPaddingException 
 	 * @throws IllegalBlockSizeException 
+	 * @throws NoSuchProviderException 
 	 */
-	private static PrivateKey readPrivateKeyFromFile(String filename, String password) throws IOException, NoSuchAlgorithmException, InvalidKeySpecException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException, InvalidPasswordException, IllegalBlockSizeException, BadPaddingException {
+	private static PrivateKey readPrivateKeyFromFile(String filename, String password) throws IOException, NoSuchAlgorithmException, InvalidKeySpecException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException, InvalidPasswordException, IllegalBlockSizeException, BadPaddingException, NoSuchProviderException {
 		return readPrivateKeyFromFile(new EncryptedFile(new File(filename), password));
 	}
 	
@@ -628,8 +649,9 @@ public class RSAAsymmetricEncryption implements AsymmetricEncryption {
 	 * @throws InvalidPasswordException 
 	 * @throws BadPaddingException 
 	 * @throws IllegalBlockSizeException 
+	 * @throws NoSuchProviderException 
 	 */
-	private static PrivateKey readPrivateKeyFromFile(URL file, String password) throws IOException, NoSuchAlgorithmException, InvalidKeySpecException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException, InvalidPasswordException, IllegalBlockSizeException, BadPaddingException {
+	private static PrivateKey readPrivateKeyFromFile(URL file, String password) throws IOException, NoSuchAlgorithmException, InvalidKeySpecException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException, InvalidPasswordException, IllegalBlockSizeException, BadPaddingException, NoSuchProviderException {
 		return readPrivateKeyFromFile(new EncryptedFile(file, password));
 	}
 	
@@ -648,8 +670,9 @@ public class RSAAsymmetricEncryption implements AsymmetricEncryption {
 	 * @throws InvalidPasswordException 
 	 * @throws BadPaddingException 
 	 * @throws IllegalBlockSizeException 
+	 * @throws NoSuchProviderException 
 	 */
-	private static PrivateKey readPrivateKeyFromFile(EncryptedFile file) throws IOException, NoSuchAlgorithmException, InvalidKeySpecException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException, InvalidPasswordException, IllegalBlockSizeException, BadPaddingException {
+	private static PrivateKey readPrivateKeyFromFile(EncryptedFile file) throws IOException, NoSuchAlgorithmException, InvalidKeySpecException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException, InvalidPasswordException, IllegalBlockSizeException, BadPaddingException, NoSuchProviderException {
 		final byte[] decryptedData = file.decrypt();
 		final ByteArrayInputStream inputStream = new ByteArrayInputStream(decryptedData);
 		final BufferedInputStream bufferedInputStream = new BufferedInputStream(inputStream);
@@ -678,7 +701,7 @@ public class RSAAsymmetricEncryption implements AsymmetricEncryption {
 		
 		/** Recreate the private key. */
 		final RSAPrivateKeySpec rsaKeySpec = new RSAPrivateKeySpec(mod, exp);
-	    final KeyFactory rsaKeyFactory = KeyFactory.getInstance(ALGORITHM);
+		final KeyFactory rsaKeyFactory = KeyFactory.getInstance(ALGORITHM);
 	    final PrivateKey privKey = rsaKeyFactory.generatePrivate(rsaKeySpec);
 		
 		return privKey;

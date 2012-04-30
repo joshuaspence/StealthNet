@@ -75,7 +75,7 @@ public class DecryptedPacket {
     /** Packet contents. */
     byte command;							/** The command being sent in the packet. */      
     final byte[] data;						/** The data being sent in the packet. */
-    final byte[] nonce;						/** The pseudo-random nonce for this packet. */
+    final byte[] nonce;					/** The pseudo-random nonce for this packet. */
     final MessageAuthenticationCode mac;	/** The MAC used to provide a message digest. */
 
     /** Null constructor with no digest and no nonce. */
@@ -173,7 +173,7 @@ public class DecryptedPacket {
             this.command = (byte) (16 * Utility.singleHexToInt(str.charAt(current++)) + Utility.singleHexToInt(str.charAt(current++)));
             
             /** Data length (4 bytes). */
-            int dataLen = Utility.hexToInt(str.substring(current, current + (4 * Utility.HEX_PER_BYTE)));
+            final int dataLen = Utility.hexToInt(str.substring(current, current + (4 * Utility.HEX_PER_BYTE)));
         	current += (4 * Utility.HEX_PER_BYTE);
             
             /** Data (dataLen bytes). */
@@ -182,7 +182,7 @@ public class DecryptedPacket {
             	this.data[i] = (byte) (16 * Utility.singleHexToInt(str.charAt(current++)) + Utility.singleHexToInt(str.charAt(current++)));
             
             /** Nonce length (4 bytes). */
-            int nonceLen = Utility.hexToInt(str.substring(current, current + (4 * Utility.HEX_PER_BYTE)));
+            final int nonceLen = Utility.hexToInt(str.substring(current, current + (4 * Utility.HEX_PER_BYTE)));
         	current += (4 * Utility.HEX_PER_BYTE);
             
             /** Nonce (nonceLen bytes). */

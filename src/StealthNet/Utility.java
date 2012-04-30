@@ -17,6 +17,7 @@ import java.net.URL;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.security.PublicKey;
 import java.security.spec.InvalidKeySpecException;
 
@@ -172,8 +173,9 @@ public class Utility {
 	 * @throws InvalidPasswordException 
 	 * @throws BadPaddingException 
 	 * @throws IllegalBlockSizeException 
+	 * @throws NoSuchProviderException 
 	 */
-	public static AsymmetricEncryption getPublicPrivateKeys(String publicKeyPath, String privateKeyPath, String privateKeyPassword) throws InvalidKeyException, NoSuchAlgorithmException, InvalidKeySpecException, NoSuchPaddingException, IOException, InvalidAlgorithmParameterException, InvalidPasswordException, IllegalBlockSizeException, BadPaddingException {
+	public static AsymmetricEncryption getPublicPrivateKeys(String publicKeyPath, String privateKeyPath, String privateKeyPassword) throws InvalidKeyException, NoSuchAlgorithmException, InvalidKeySpecException, NoSuchPaddingException, IOException, InvalidAlgorithmParameterException, InvalidPasswordException, IllegalBlockSizeException, BadPaddingException, NoSuchProviderException {
 		final URL publicKeyJAR = Utility.class.getClassLoader().getResource(publicKeyPath);
     	final URL privateKeyJAR = Utility.class.getClassLoader().getResource(privateKeyPath);
     	final File publicKeyFile = new File(publicKeyPath);

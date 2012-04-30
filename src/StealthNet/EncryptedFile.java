@@ -40,6 +40,7 @@ import javax.crypto.NoSuchPaddingException;
 import StealthNet.Security.AESEncryption;
 import StealthNet.Security.HashedMessageAuthenticationCode;
 import StealthNet.Security.InvalidPasswordException;
+import StealthNet.Security.MessageAuthenticationCode;
 import StealthNet.Security.PasswordEncryption;
 
 /* StealthNet.EncryptedFile Class Definition *********************************/
@@ -61,6 +62,7 @@ public class EncryptedFile {
     private String filename;					/** The name of the file. */
     private final String password;				/** The password to attempt to encrypt/decrypt the file. */
     private final PasswordEncryption encryption; /** The class to use to encrypt/decrypt the file. */
+    //private final MessageAuthenticationCode mac;
     
     /** 
      * TODO
@@ -101,6 +103,7 @@ public class EncryptedFile {
     	this.filename = file.getName();
     	this.password = password;
     	this.encryption = new PasswordEncryption(this.salt, this.password);
+    	//this.mac = new HashedMessageAuthenticationCode(this.encryption.getSecretKey());
     	
     	/** Clean up. */
     	dataInputStream.close();
@@ -146,6 +149,7 @@ public class EncryptedFile {
     	this.filename = file.getFile();
     	this.password = password;
     	this.encryption = new PasswordEncryption(this.salt, this.password);
+    	//this.mac = new HashedMessageAuthenticationCode(this.encryption.getSecretKey());
     	
     	/** Clean up. */
     	dataInputStream.close();
@@ -168,11 +172,15 @@ public class EncryptedFile {
     	this.filename = null;
     	this.password = password;
     	this.encryption = new PasswordEncryption(this.password);
+    	//this.mac = new HashedMessageAuthenticationCode(this.encryption.getSecretKey());
     	
     	this.salt = this.encryption.getSalt();
     	this.data = this.encryption.encrypt(decryptedData);
+    	
+    	/** Generate the message digest. */
     	//this.digest = new byte[HashedMessageAuthenticationCode.DIGEST_BYTES];
     	this.digest = new byte[0];
+    	//this.digest = mac.createMAC(data);
     	
     	/** Generate the password hash. */
     	final MessageDigest mdb = MessageDigest.getInstance(AESEncryption.HASH_ALGORITHM);
@@ -235,11 +243,14 @@ public class EncryptedFile {
     	
     	/** Check the password. */
     	final MessageDigest mdb = MessageDigest.getInstance(AESEncryption.HASH_ALGORITHM);
-    	final byte[] ourPasswordHash = mdb.digest(this.password.getBytes());
-    	if (!Arrays.equals(this.passwordHash, ourPasswordHash))
+    	final byte[] ourPasswordHash = mdb.digest(password.getBytes());
+    	if (!Arrays.equals(passwordHash, ourPasswordHash))
     		throw new InvalidPasswordException("Invalid password to decrypt file.");
     	
     	/** Check the digest. */
+    	//if (!mac.verifyMAC(data, digest)) {
+    		
+    	//}
     	
     	if (encryption != null) {
 	    	return encryption.decrypt(data);
