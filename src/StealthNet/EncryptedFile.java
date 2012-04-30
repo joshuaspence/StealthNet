@@ -218,13 +218,13 @@ public class EncryptedFile {
     	this.salt = this.encryption.getSalt();
     	this.data = this.encryption.encrypt(decryptedData);
     	
-    	/** Generate the message digest. */
-    	this.digest = new byte[HashedMessageAuthenticationCode.DIGEST_BYTES];
-    	this.digest = mac.createMAC(getDigestableData());
-    	
     	/** Generate the password hash. */
     	final MessageDigest mdb = MessageDigest.getInstance(AESEncryption.HASH_ALGORITHM);
     	this.passwordHash = mdb.digest(this.password.getBytes());
+    	
+    	/** Generate the message digest. */
+    	this.digest = new byte[HashedMessageAuthenticationCode.DIGEST_BYTES];
+    	this.digest = mac.createMAC(getDigestableData());
     }
     
     /**
