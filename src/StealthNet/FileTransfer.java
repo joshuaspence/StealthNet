@@ -46,7 +46,7 @@ public class FileTransfer extends Thread {
 	private static final boolean DEBUG_TRANSFER    = Debug.isDebug("StealthNet.FileTransfer.Transfer");
 	
 	/** Number of bytes to send at a time, before waiting for an acknowledgement. */
-    private static final int PACKETSIZE = 256;
+    private static final int PACKET_SIZE = 256;
 
     /** A progress bar to visualise the transfer. */
     private JProgressBar progressBar = null;
@@ -125,8 +125,8 @@ public class FileTransfer extends Thread {
 
     /** Send the file. */
     private synchronized void sendFile() {
-        final byte[] buf = new byte[PACKETSIZE];
-        final int fileLen = (int) ((new File(filename)).length() / PACKETSIZE);
+        final byte[] buf = new byte[PACKET_SIZE];
+        final int fileLen = (int) ((new File(filename)).length() / PACKET_SIZE);
 
         if (DEBUG_GENERAL) System.out.println("Sending file \"" + filename + "\" of size " + fileLen + ".");
         
@@ -140,7 +140,7 @@ public class FileTransfer extends Thread {
             if (DEBUG_GENERAL) System.out.println("Waiting for server response.");
             stealthComms.recvPacket();
             
-            /** Send the file, PACKETSIZE bytes at a time. */
+            /** Send the file, PACKET_SIZE bytes at a time. */
             final FileInputStream fid = new FileInputStream(filename);
             int bufLen;
             do {
@@ -174,7 +174,7 @@ public class FileTransfer extends Thread {
         try {
         	/** Get the file length from the first packet. */
         	if (DEBUG_GENERAL) System.out.println("Waiting for sender to transmit file length.");
-            final int fileLen = (new Integer(new String(stealthComms.recvPacket().data))).intValue();
+            final int fileLen = Integer.parseInt(new String(stealthComms.recvPacket().data));
             if (DEBUG_GENERAL) System.out.println("Expecting to receive file \"" + filename + "\" of size " + fileLen + " bytes.");
             
             /** Acknowledge with a NULL packet. */
@@ -188,7 +188,7 @@ public class FileTransfer extends Thread {
             final FileOutputStream fid = new FileOutputStream(filename);
             
             /** 
-             * Keep receiving file data, PACKETSIZE bytes at a time, sending an 
+             * Keep receiving file data, PACKET_SIZE bytes at a time, sending an 
              * acknowledgement (NULL packet) each time. The file data is written
              * to the file output stream.
              */

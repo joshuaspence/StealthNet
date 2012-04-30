@@ -22,6 +22,7 @@ import javax.crypto.IllegalBlockSizeException;
 import javax.management.InvalidAttributeValueException;
 
 import StealthNet.Security.Encryption;
+import StealthNet.Security.HashedMessageAuthenticationCode;
 import StealthNet.Security.MessageAuthenticationCode;
 
 /* StealthNet.Packet Class Definition ****************************************/
@@ -52,13 +53,15 @@ public class EncryptedPacket {
     /** Packet contents. */
     final byte data[];		/** The (encrypted) data being sent in the packet. */
     final byte digest[];	/** The MAC digest of the packet data (in base64 encoding). */
+    
+    private static final int digestBytes = HashedMessageAuthenticationCode.DIGEST_BYTES;
 
     /** 
      * Null constructor.
      * 
      * @param digestBytes The fixed size of the message digest.
      */
-    public EncryptedPacket(int digestBytes) {
+    public EncryptedPacket() {
         /** No data is available. */
     	this.data = new byte[0];
         
@@ -70,9 +73,8 @@ public class EncryptedPacket {
      * Constructor with no digest. Explicitly copies the data array contents.
      *
      * @param encryptedData The (encrypted) data to be sent in the packet.
-     * @param digestBytes The fixed size of the message digest.
      */
-    public EncryptedPacket(byte[] encryptedData, int digestBytes) {
+    public EncryptedPacket(byte[] encryptedData) {
         if (encryptedData == null)
         	this.data = new byte[0];
         else {
@@ -96,7 +98,7 @@ public class EncryptedPacket {
      * @throws IllegalArgumentException
      * @throws InvalidAttributeValueException 
      */
-    public EncryptedPacket(byte[] encryptedData, int encryptedDataLen, int digestBytes, MessageAuthenticationCode mac) throws IllegalArgumentException, InvalidAttributeValueException {
+    public EncryptedPacket(byte[] encryptedData, int encryptedDataLen, MessageAuthenticationCode mac) throws IllegalArgumentException, InvalidAttributeValueException {
         /** Copy the data. */
         if (encryptedData == null)
         	this.data = new byte[0];
@@ -122,9 +124,8 @@ public class EncryptedPacket {
      * at the receiving end of communications.
      * 
      * @param str A string consisting of the packet contents.
-     * @param digestBytes The fixed size of the message digest.
      */
-    public EncryptedPacket(String str, int digestBytes) {  
+    public EncryptedPacket(String str) {  
     	/** 
     	 * Add padding if necessary, to make the packet length an integer number
     	 * of bytes (each represented by 2 hexadecimal characters).
@@ -135,7 +136,7 @@ public class EncryptedPacket {
         if (str.length() == 0) {
         	/** NULL packet. */
             this.data = new byte[0];
-            this.digest = new byte[0];
+            this.digest = new byte[digestBytes];
         } else {
         	/** Current index of the string. */
         	int current = 0;
@@ -248,12 +249,10 @@ public class EncryptedPacket {
      * @throws UnsupportedEncodingException 
      */
     public DecryptedPacket decrypt(Encryption d) throws UnsupportedEncodingException, IllegalBlockSizeException, BadPaddingException {
-    	if (d != null) {
-	    	final byte[] decryptedData = d.decrypt(data);
-	    	return new DecryptedPacket(new String(decryptedData));
-    	} else {
+    	if (d != null)
+	    	return new DecryptedPacket(new String(d.decrypt(data)));
+    	else
     		return new DecryptedPacket(new String(data));
-    	}
     }
 }
 

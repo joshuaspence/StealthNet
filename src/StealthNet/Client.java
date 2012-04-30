@@ -217,8 +217,8 @@ public class Client {
                
         /** Add mouse listen for popup windows. Act on JTable row right-click. */
 		MouseListener ml = new MouseAdapter() {
-			JPopupMenu popup;
-			int row;
+			private JPopupMenu popup;
+			private int row;
 			
 			public void mousePressed(MouseEvent e) {
 				if (SwingUtilities.isRightMouseButton(e)) mouseReleased(e);
@@ -272,8 +272,8 @@ public class Client {
         secretTable.getColumnModel().getColumn(0).setPreferredWidth(180);
         
 		ml = new MouseAdapter() {
-			JPopupMenu popup;
-			int row;
+			private JPopupMenu popup;
+			private int row;
 			
 			public void mousePressed(MouseEvent e) {
 				if (SwingUtilities.isRightMouseButton(e)) mouseReleased(e);
@@ -417,6 +417,9 @@ public class Client {
             if (userID == null) 
             	return;
             
+            final String publicKeyPath  = "keys/clients/" + userID + "/public.key";
+            final String privateKeyPath = "keys/clients/" + userID + "/private.key";
+            
             do {
 	            /** Get the password for the private key. */
 	            String password = null;
@@ -424,8 +427,6 @@ public class Client {
 	            if (password == null) 
 	            	return;
 	            
-	            final String publicKeyPath  = "keys/clients/" + userID + "/public.key";
-	            final String privateKeyPath = "keys/clients/" + userID + "/private.key";
 	            try {
 	            	asymmetricEncryptionProvider = Utility.getPublicPrivateKeys(publicKeyPath, privateKeyPath, password);
 	            } catch (InvalidPasswordException e) {
@@ -439,8 +440,8 @@ public class Client {
             } while (asymmetricEncryptionProvider == null);
            	
     		if (DEBUG_ASYMMETRIC_ENCRYPTION) {
-				final String publicKeyString = new String(Utility.getHexValue(asymmetricEncryptionProvider.getPublicKey().getEncoded()));
-		    	final String privateKeyString = new String(Utility.getHexValue(asymmetricEncryptionProvider.getPrivateKey().getEncoded()));
+				final String publicKeyString = Utility.getHexValue(asymmetricEncryptionProvider.getPublicKey().getEncoded());
+		    	final String privateKeyString = Utility.getHexValue(asymmetricEncryptionProvider.getPrivateKey().getEncoded());
 		    	System.out.println("Public key: " + publicKeyString);
 		    	System.out.println("Private key: " + privateKeyString);
     		}
@@ -636,7 +637,7 @@ public class Client {
 		
 		if (DEBUG_GENERAL) System.out.println("Will save secret file \"" + name + "\" to \"" + fileSave.getDirectory() + fileSave.getFile() + "\".");
 		
-		if ((fileSave.getFile() != null) && (fileSave.getFile().length() > 0)) {
+		if (fileSave.getFile() != null && fileSave.getFile().length() > 0) {
 			/** Wait for user to connect, then start file transfer. */
 			try {
 				if (DEBUG_GENERAL) System.out.println("Waiting for target client to connect.");
@@ -842,11 +843,7 @@ public class Client {
 			if (DEBUG_ERROR_TRACE) e.printStackTrace();
             return;
         }
-
-        String iAddr, fName, sourceUser = null;
-        Integer iPort = null;
-        Comms snComms = null;
-        PublicKey peer = null;
+        
         DecryptedPacket pckt = new DecryptedPacket();
 
         /** No need to process packets while we are already processing packets. */
@@ -867,27 +864,30 @@ public class Client {
 					 * Message command
 					 **********************************************************/
                     case DecryptedPacket.CMD_MSG:
+                    {
                     	final String msg = new String(pckt.data);
                     	if (DEBUG_COMMANDS_MSG) System.out.println("Received a message command. Message: \"" + msg + "\".");
                 	    msgTextBox.append(msg + "\n");
                         break;
-
+                    }
+                    
                     /***********************************************************
 					 * Chat command
 					 **********************************************************/
                     case DecryptedPacket.CMD_CHAT:
+                    {
                     	/** 
                     	 * NOTE: Data will be of the form 
                     	 * "user@host:port".
                     	 */
                         final String chatData = new String(pckt.data);
                         
-                        iAddr =             chatData.split("@")[1].split(":")[0];
-                        iPort = new Integer(chatData.split("@")[1].split(":")[1]);
+                        final String iAddr =               chatData.split("@")[1].split(":")[0];
+                        final int iPort = Integer.parseInt(chatData.split("@")[1].split(":")[1]);
                         
                         /** Get the peer public key. */
-                        sourceUser =        chatData.split("@")[0];
-                        peer = userList.get(sourceUser).publicKey;
+                        final String sourceUser =          chatData.split("@")[0];
+                        final PublicKey peer = userList.get(sourceUser).publicKey;
                         
                         if (DEBUG_COMMANDS_CHAT) System.out.println("Received a chat command. Target host: '" + iAddr + ":" + iPort + "'.");
                         
@@ -897,32 +897,33 @@ public class Client {
                          * communications using asymmetric encryption 
                          * immediately.
                          */
-                        snComms = new Comms(new RSAAsymmetricEncryption(asymmetricEncryptionProvider, peer), true);
-                        snComms.initiateSession(new Socket(iAddr, iPort.intValue()));
+                        final Comms snComms = new Comms(new RSAAsymmetricEncryption(asymmetricEncryptionProvider, peer), true);
+                        snComms.initiateSession(new Socket(iAddr, iPort));
                         if (DEBUG_GENERAL) System.out.println("Opened a communications session with '" + iAddr + "'.");
-                        
                         
                         final Chat chat = new Chat(userID, snComms);
                         chat.start();
                         if (DEBUG_GENERAL) System.out.println("Started a chat session with '" + iAddr + "'.");
                         break;
-
+                    }
+                    
                     /***********************************************************
 					 * FTP command
 					 **********************************************************/
                     case DecryptedPacket.CMD_FTP:  
+                    {
                     	/** 
                     	 * NOTE: Data will be of the form 
                     	 * "user@host:port#filename".
                     	 */
                         final String ftpData = new String(pckt.data);
-                        fName =             ftpData.split("@")[1].split("#")[1];
-                        iAddr =             ftpData.split("@")[1].split("#")[0].split(":")[0];
-                        iPort = new Integer(ftpData.split("@")[1].split("#")[0].split(":")[1]);
+                        final String fName =               ftpData.split("@")[1].split("#")[1];
+                        final String iAddr =               ftpData.split("@")[1].split("#")[0].split(":")[0];
+                        final int iPort = Integer.parseInt(ftpData.split("@")[1].split("#")[0].split(":")[1]);
                         
                         /** Get the peer public key. */
-                        sourceUser =        ftpData.split("@")[0];
-                        peer = userList.get(sourceUser).publicKey;
+                        final String sourceUser =          ftpData.split("@")[0];
+                        final PublicKey peer = userList.get(sourceUser).publicKey;
                         
                         if (DEBUG_COMMANDS_FTP) System.out.println("Received a file transfer command. Target host: '" + iAddr + ":" + iPort + "'.");
 
@@ -932,24 +933,26 @@ public class Client {
                          * communications using asymmetric encryption 
                          * immediately.
                          */
-                        snComms = new Comms(new RSAAsymmetricEncryption(asymmetricEncryptionProvider, peer), true);
-                        snComms.initiateSession(new Socket(iAddr, iPort.intValue()));
+                        final Comms snComms = new Comms(new RSAAsymmetricEncryption(asymmetricEncryptionProvider, peer), true);
+                        snComms.initiateSession(new Socket(iAddr, iPort));
                         if (DEBUG_GENERAL) System.out.println("Opened a communications session with '" + iAddr + "'.");
                         
                         final FileDialog fileSave = new FileDialog(clientFrame, "Save As...", FileDialog.SAVE);
                         fileSave.setFile(fName);
                         fileSave.setVisible(true);
-                        if ((fileSave.getFile() != null) && (fileSave.getFile().length() > 0)) {
+                        if (fileSave.getFile() != null && fileSave.getFile().length() > 0) {
                         	if (DEBUG_GENERAL) System.out.println("File will be saved to \"" + fileSave.getDirectory() + fileSave.getFile() + "\". Starting file transfer.");                        	
                             final FileTransfer ft = new FileTransfer(snComms, fileSave.getDirectory() + fileSave.getFile(), false);
                             ft.start();
                         }
                         break;
-
+                    }
+                    
                     /***********************************************************
 					 * List command
 					 **********************************************************/
-                    case DecryptedPacket.CMD_LIST:                    	
+                    case DecryptedPacket.CMD_LIST: 
+                    {
                         String userTable = new String(pckt.data);
                         buddyListData.setRowCount(0);
                         
@@ -990,12 +993,14 @@ public class Client {
                             	});
                         }
                         break;
-                        
+                    }
+                    
                     /***********************************************************
 					 * Secret List command
 					 **********************************************************/
                    	case DecryptedPacket.CMD_SECRETLIST:                   		
-                        String secretTable = new String(pckt.data);
+                   	{
+                   		String secretTable = new String(pckt.data);
                         secretListData.setRowCount(0);
                         
                         if (DEBUG_COMMANDS_SECRETLIST) System.out.println("Received a secret list: \"" + secretTable.replaceAll("\n", "; ") + "\".");
@@ -1021,22 +1026,24 @@ public class Client {
 							secretDescriptions.put(values[0], data);
                         }
                         break;
-
+                   	}
+                   	
                     /***********************************************************
 					 * Get Secret command
 					 **********************************************************/
 					case DecryptedPacket.CMD_GETSECRET:
-						/** TODO: fix*/
-						fName = new String(pckt.data);
-						iAddr = fName.substring(fName.lastIndexOf("@") + 1);
-						iPort = new Integer(iAddr.substring(iAddr.lastIndexOf(":") + 1));
+					{
+						/** TODO: fix */
+						String fName = new String(pckt.data);
+						String iAddr = fName.substring(fName.lastIndexOf("@") + 1);
+						final int iPort = Integer.parseInt(iAddr.substring(iAddr.lastIndexOf(":") + 1));
 						iAddr = iAddr.substring(0, iAddr.lastIndexOf(":"));
 						fName = fName.substring(0, fName.lastIndexOf("@"));
 						
 						if (DEBUG_COMMANDS_GETSECRET) System.out.println("Received a get secret command. Target host: '" + iAddr + ":" + iPort + "'. The filename is \"" + fName + "\".");
 
-						snComms = new Comms();
-						snComms.initiateSession(new Socket(iAddr, iPort.intValue()));
+						final Comms snComms = new Comms();
+						snComms.initiateSession(new Socket(iAddr, iPort));
 						if (DEBUG_GENERAL) System.out.println("Opened a communications session with '" + iAddr + "'.");
 						
 						msgTextBox.append("[INFO] Sending out a secret.\n");
@@ -1044,7 +1051,8 @@ public class Client {
 						final FileTransfer ft = new FileTransfer(snComms, fName, true);
 						ft.start();
 						break;
-
+					}
+					
 					/***********************************************************
 					 * Unknown command
 					 **********************************************************/

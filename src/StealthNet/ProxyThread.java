@@ -168,8 +168,9 @@ public class ProxyThread extends Thread {
 				pcktCounter = pcktCounter.add(BigInteger.ONE);
 				
 				/** Decide whether or not to corrupt a message. */
-				if (isMalicious && (pcktCounter.compareTo(BigInteger.valueOf(noMaliciousPacketCount)) > 0) && ((rnd.nextInt() % 100) < corruptionProbability)) {
+				if (isMalicious && pcktCounter.compareTo(BigInteger.valueOf(noMaliciousPacketCount)) > 0 && (rnd.nextInt() % 100) < corruptionProbability) {
 					if (DEBUG_GENERAL) System.out.println(THREADID_PREFIX + this.getId() + THREADID_SUFFIX + "Corrupting packet...");
+					
 					/** Simply reverse the packet string. */
 					stealthCommsDestination.sendString(new StringBuffer(packetString).reverse().toString());
 				} else {
@@ -177,7 +178,7 @@ public class ProxyThread extends Thread {
 				}
 				
 				/** Decide whether or not to replay a message. */
-				if (isMalicious && (pcktCounter.compareTo(BigInteger.valueOf(noMaliciousPacketCount)) > 0) && (rnd.nextInt() % 100) < replayProbability) {
+				if (isMalicious && pcktCounter.compareTo(BigInteger.valueOf(noMaliciousPacketCount)) > 0 && (rnd.nextInt() % 100) < replayProbability) {
 					if (DEBUG_GENERAL) System.out.println(THREADID_PREFIX + this.getId() + THREADID_SUFFIX + "Replaying last packet...");
 					stealthCommsDestination.sendString(packetString);
 				}
@@ -185,7 +186,7 @@ public class ProxyThread extends Thread {
 			}
 		} catch (SocketException e) {
 			/** 
-			 * This is a fairly "clean" exit which can, but hopefully won't 
+			 * This is a fairly "clean" exit which can, but hopefully won't, 
 			 * occur.
 			 */
 			System.out.println(THREADID_PREFIX + this.getId() + THREADID_SUFFIX + "Session terminated.");
@@ -207,7 +208,7 @@ public class ProxyThread extends Thread {
 			stealthCommsDestination = null;
 		}
 		
-		/** Kill the other thread. */
+		/** Kill the paired thread. */
 		if ((pairedThread != null) && (!pairedThread.getShouldStop())) {
 			if (DEBUG_GENERAL) System.out.println(THREADID_PREFIX + this.getId() + THREADID_SUFFIX + "Killing paired thread " + pairedThread.getId() + ".");
 			pairedThread.setShouldStop(true);

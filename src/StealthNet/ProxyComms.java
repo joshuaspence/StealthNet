@@ -33,7 +33,7 @@ import java.net.SocketException;
  * A class to buffered write and buffered read to and from an opened socket.
  * This class is almost identical to the `Comms' class, but is stripped down to
  * provide only a basic forwarding functionality. It does not interpret packets,
- * but rather sends undecoded strings around.
+ * but rather sends raw strings around.
  * 
  * @author Joshua Spence
  *
@@ -46,12 +46,12 @@ public class ProxyComms {
 	private static final boolean DEBUG_RECEIVE_READY = Debug.isDebug("StealthNet.ProxyComms.ReceiveReady");
 	
 	/** Defaults. */
-	public static final String DEFAULT_PROXYNAME = "localhost";		/** Default host for the StealthNet proxy. */
+	public static final String DEFAULT_PROXYNAME = "localhost";	/** Default host for the StealthNet proxy. */
     public static final int DEFAULT_PROXYPORT = 5618;				/** Default port for the StealthNet proxy. */
     
     /** Current values. */
-    private final String servername;	/** This host - defaults to DFEAULT_SERVERNAME */
-    private final int port;				/** This port - defaults to DEFAULT_SERVERPORT. */
+    private final String serverName;	/** This host - defaults to DFEAULT_SERVERNAME */
+    private final int port;			/** This port - defaults to DEFAULT_SERVERPORT. */
 
     /** Opened socket through which the communication is to be made. */
     private Socket commsSocket;
@@ -68,16 +68,16 @@ public class ProxyComms {
     	this.dataIn = null;
     	this.dataOut = null;
         
-        this.servername = Comms.DEFAULT_SERVERNAME;
+        this.serverName = Comms.DEFAULT_SERVERNAME;
         this.port = Comms.DEFAULT_SERVERPORT;
         
-        if (DEBUG_GENERAL) System.out.println("Creating ProxyComms to " + this.servername + " on port " + this.port + ".");
+        if (DEBUG_GENERAL) System.out.println("Creating ProxyComms to " + this.serverName + " on port " + this.port + ".");
     }
     
     /** 
      * Constructor. 
      * 
-     * @param s The servername of the StealthNet server.
+     * @param s The server name of the StealthNet server.
      * @param p The port number for the StealthNet server.
      */
     public ProxyComms(String s, int p) {    	
@@ -85,10 +85,10 @@ public class ProxyComms {
         this.dataIn = null;
         this.dataOut = null;
         
-        this.servername = s;
+        this.serverName = s;
         this.port = p;
         
-        if (DEBUG_GENERAL) System.out.println("Creating ProxyComms to " + this.servername + " on port " + this.port + ".");
+        if (DEBUG_GENERAL) System.out.println("Creating ProxyComms to " + this.serverName + " on port " + this.port + ".");
     }
 
     /** 

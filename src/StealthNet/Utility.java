@@ -52,18 +52,17 @@ public class Utility {
      * Function to assist with printing cryptographic keys by returning byte 
      * arrays as a hexadecimal number.
      * 
-     * @param array The byte array to transfer into a hexadecimal number.
+     * @param array The byte array to transformx into a hexadecimal number.
      * @return The string containing the hexadecimal number.
      */    
     public static String getHexValue(byte[] array) {
-		final String hexDigitChars = "0123456789ABCDEF";
 		final StringBuffer buf = new StringBuffer(array.length * HEX_PER_BYTE);
 		
 		for (int cx = 0; cx < array.length; cx++) {
 			final int hn = ((int) (array[cx]) & 0x00FF) / HEXTABLE.length;
 			final int ln = ((int) (array[cx]) & 0x000F);
-			buf.append(hexDigitChars.charAt(hn));
-			buf.append(hexDigitChars.charAt(ln));
+			buf.append(HEXTABLE[hn]);
+			buf.append(HEXTABLE[ln]);
 		}
 		
 		return buf.toString();
@@ -106,7 +105,7 @@ public class Utility {
 		String result = Integer.toHexString(value);
 		
 		/** Pad the result to use the full 4 bytes of an integer. */
-		while (result.length() < HEX_PER_BYTE * (Integer.SIZE / Byte.SIZE))
+		while (result.length() < (HEX_PER_BYTE * (Integer.SIZE / Byte.SIZE)))
 			result = "0" + result;
 		
 		return result;
@@ -188,27 +187,27 @@ public class Utility {
     	 * try to read keys from the file system. If that doesn't work, then 
     	 * create new keys.
     	 */
-		if ((publicKeyJAR == null || privateKeyJAR == null) && (!publicKeyFileExists || !privateKeyFileExists)) {
-			/** Create the parent directories if they don't already exist. */
-	    	new File(publicKeyFile.getParent()).mkdirs();
-	    	new File(privateKeyFile.getParent()).mkdirs();
-	    	
-			/** Create new public/private keys. */
-			AsymmetricEncryption aep = new RSAAsymmetricEncryption(null);
-    		aep.savePublicKeyToFile(publicKeyPath);
-    		aep.savePrivateKeyToFile(privateKeyPath, privateKeyPassword);
-    		return aep;
-    	} else {
-    		if (publicKeyJAR != null && privateKeyJAR != null) {
-    			/** Read public/private keys from JAR. */
-	    		return new RSAAsymmetricEncryption(publicKeyJAR, privateKeyJAR, privateKeyPassword, null);
-    		} else if (publicKeyFileExists && privateKeyFileExists) {
-    			/** Read public/private keys from file system. */
-	    		return new RSAAsymmetricEncryption(publicKeyPath, privateKeyPath, privateKeyPassword, null);
-    		} else {
-    			return null;
-    		}
-    	}
+		if (publicKeyJAR != null && privateKeyJAR != null) {
+			/** Read public/private keys from JAR. */
+    		return new RSAAsymmetricEncryption(publicKeyJAR, privateKeyJAR, privateKeyPassword, null);
+		}
+		
+		if (publicKeyFileExists && privateKeyFileExists) {
+			/** Read public/private keys from file system. */
+    		return new RSAAsymmetricEncryption(publicKeyPath, privateKeyPath, privateKeyPassword, null);
+		}
+		
+		/** Create new public-private keys. */
+		
+		/** Create the parent directories if they don't already exist. */
+    	new File(publicKeyFile.getParent()).mkdirs();
+    	new File(privateKeyFile.getParent()).mkdirs();
+    	
+		/** Create new public/private keys. */
+		final AsymmetricEncryption aep = new RSAAsymmetricEncryption(null);
+		aep.savePublicKeyToFile(publicKeyPath);
+		aep.savePrivateKeyToFile(privateKeyPath, privateKeyPassword);
+		return aep;
 	}
 }
 

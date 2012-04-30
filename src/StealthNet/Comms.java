@@ -91,13 +91,13 @@ public class Comms {
 	
 	/** Defaults. */
     public static final String DEFAULT_SERVERNAME = "localhost";	/** Default host for the StealthNet server. */
-    public static final int DEFAULT_SERVERPORT = 5616;				/** Default port for the StealthNet server. */
-    public static final String DEFAULT_BANKNAME = "localhost";		/** Default host for the StealthNet bank. */
+    public static final int DEFAULT_SERVERPORT = 5616;			/** Default port for the StealthNet server. */
+    public static final String DEFAULT_BANKNAME = "localhost";	/** Default host for the StealthNet bank. */
     public static final int DEFAULT_BANKPORT = 5617;				/** Default port for the StealthNet bank. */
     
     /** Current values. */
     private final String serverName;	/** This host - defaults to DEFAULT_SERVERNAME */
-    private final int port;				/** This port - defaults to DEFAULT_SERVERPORT. */
+    private final int port;			/** This port - defaults to DEFAULT_SERVERPORT. */
 
     /** Opened socket through which the communication is to be made. */
     private Socket commsSocket;
@@ -462,7 +462,7 @@ public class Comms {
     	 */
     	EncryptedPacket encPckt;
     	try {
-    		if ((confidentialityProvider != null) && (confidentialityProvider instanceof AsymmetricEncryption) && (((AsymmetricEncryption) confidentialityProvider).getPeerPublicKey() == null))
+    		if (confidentialityProvider != null && confidentialityProvider instanceof AsymmetricEncryption && ((AsymmetricEncryption) confidentialityProvider).getPeerPublicKey() == null)
     			encPckt = decPckt.encrypt(null);
     		else
     			encPckt = decPckt.encrypt(confidentialityProvider);
@@ -471,7 +471,7 @@ public class Comms {
 			if (DEBUG_ERROR_TRACE) e.printStackTrace();
 			return false;
 		}
-		if ((confidentialityProvider != null) && DEBUG_ENCRYPTED_PACKET)	
+		if (confidentialityProvider != null && DEBUG_ENCRYPTED_PACKET)	
 			System.out.println("(encrypted) sendPacket(" + encPckt.getEncryptedString() + ")");
 		
 		if (DEBUG_RAW_PACKET)
@@ -517,7 +517,7 @@ public class Comms {
         /** Construct the packet. */
         EncryptedPacket encPckt = null;
     	try {
-    		encPckt = new EncryptedPacket(packetString, HashedMessageAuthenticationCode.DIGEST_BYTES);
+    		encPckt = new EncryptedPacket(packetString);
     	} catch (Exception e) {
     		if (DEBUG_GENERAL) System.err.println("Unable to instantiate packet. Discarding...");
     		if (DEBUG_ERROR_TRACE) e.printStackTrace();
@@ -555,7 +555,7 @@ public class Comms {
          */
     	DecryptedPacket decPckt = null;
 		try {
-			if ((confidentialityProvider != null) && (confidentialityProvider instanceof AsymmetricEncryption) && !peerHasPublicKey)
+			if (confidentialityProvider != null && confidentialityProvider instanceof AsymmetricEncryption && !peerHasPublicKey)
 				decPckt = encPckt.decrypt(null);
 			else
 				decPckt = encPckt.decrypt(confidentialityProvider);

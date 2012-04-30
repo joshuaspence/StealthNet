@@ -18,7 +18,6 @@ package StealthNet;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.security.Security;
 
 import StealthNet.Security.AsymmetricEncryption;
 import StealthNet.Security.RSAAsymmetricEncryption;
@@ -71,17 +70,18 @@ public class Server {
     		if (DEBUG_ERROR_TRACE) e.printStackTrace();
     		System.exit(1);
     	}
-    	
     	if (asymmetricEncryptionProvider == null) {
     		System.err.println("Unable to retrieve/generate public/private keys.");
     		System.exit(1);
     	}
     	
     	/** Debug information. */
-    	final String publicKeyString = new String(Utility.getHexValue(asymmetricEncryptionProvider.getPublicKey().getEncoded()));
-    	final String privateKeyString = new String(Utility.getHexValue(asymmetricEncryptionProvider.getPrivateKey().getEncoded()));
-    	if (DEBUG_ASYMMETRIC_ENCRYPTION) System.out.println("Public key: " + publicKeyString);
-		if (DEBUG_ASYMMETRIC_ENCRYPTION) System.out.println("Private key: " + privateKeyString);
+    	if (DEBUG_ASYMMETRIC_ENCRYPTION) {
+	    	final String publicKeyString = Utility.getHexValue(asymmetricEncryptionProvider.getPublicKey().getEncoded());
+	    	final String privateKeyString = Utility.getHexValue(asymmetricEncryptionProvider.getPrivateKey().getEncoded());
+	    	System.out.println("Public key: " + publicKeyString);
+			System.out.println("Private key: " + privateKeyString);
+    	}
     	
     	/** Port that the server is listening on. */
     	int port = Comms.DEFAULT_SERVERPORT;
@@ -130,7 +130,10 @@ public class Server {
 	            	System.out.println("Server accepted connection from " + conn.getInetAddress() + " on port " + conn.getPort() + ".");
 	            else
 	            	System.out.println("Server accepted connection...");
-        	} catch (Exception e) {}
+        	} catch (Exception e) {
+        		System.err.println("Error accepting new client connection. Dropping connection...");
+        		if (DEBUG_ERROR_TRACE) e.printStackTrace();
+        	}
         }
     }
 }

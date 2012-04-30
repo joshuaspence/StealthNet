@@ -95,7 +95,7 @@ public class BankThread extends Thread {
 		/** Make sure the specified user doesn't already exist in the user list. */
 		UserBankAccount userAccount = userAccounts.get(id);
 		
-		if ((userAccount != null) && (userAccount.userThread != null)) {
+		if (userAccount != null && userAccount.userThread != null) {
 			return false;
 		} else {
 			/** Create new user data for the specified user. */
@@ -144,14 +144,7 @@ public class BankThread extends Thread {
 				if (pckt == null)
 					break;
 				
-				String userKey, iAddr, msg;
-		        UserBankAccount userAccount;
-				byte msg_type;
-				
-				if (DEBUG_GENERAL) {
-					if (pckt.data == null)	 System.out.println(THREADID_PREFIX + this.getId() + THREADID_SUFFIX + "Received packet. Packet command: " + DecryptedPacket.getCommandName(pckt.command) + ".");
-					else	                 System.out.println(THREADID_PREFIX + this.getId() + THREADID_SUFFIX + "Receiced packet. Packet command: " + DecryptedPacket.getCommandName(pckt.command) + ". Packet data: \"" + new String(pckt.data) + "\".");
-				}
+				if (DEBUG_GENERAL) System.out.println(THREADID_PREFIX + this.getId() + THREADID_SUFFIX + "Received packet: (" + pckt.getDecodedString() + ").");
 
 				/** Perform the relevant action based on the packet command. */
 				switch (pckt.command) {						
@@ -159,13 +152,16 @@ public class BankThread extends Thread {
 					 * NULL command
 					 **********************************************************/
 					case DecryptedPacket.CMD_NULL:
+					{
 						if (DEBUG_COMMANDS_NULL) System.out.println(THREADID_PREFIX + this.getId() + THREADID_SUFFIX + "Received NULL command.");
 						break;
-	
+					}
+					
 					/***********************************************************
 					 * Login command
 					 **********************************************************/
 					case DecryptedPacket.CMD_LOGIN:
+					{
 						if (DEBUG_COMMANDS_LOGIN) System.out.println("Received login command.");
 	
 						if (userID != null) {
@@ -188,11 +184,13 @@ public class BankThread extends Thread {
 							System.out.println(THREADID_PREFIX + this.getId() + THREADID_SUFFIX + "User \"" + userID + "\" has logged in.");
 						}
 						break;
-						
+					}
+					
 					/***********************************************************
 					 * Logout command
 					 **********************************************************/
 					case DecryptedPacket.CMD_LOGOUT:
+					{
 						if (DEBUG_COMMANDS_LOGOUT) System.out.println(THREADID_PREFIX + this.getId() + THREADID_SUFFIX + "Received logout command.");
 	
 						if (userID == null)
@@ -202,7 +200,7 @@ public class BankThread extends Thread {
 	
 						/** The code will now break out of the while loop. */
 						break;
-	
+					}
 	
 					/***********************************************************
 					 * Unknown command

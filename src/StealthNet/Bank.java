@@ -64,10 +64,12 @@ public class Bank {
     	}
     	
     	/** Debug information. */
-    	final String publicKeyString = new String(Utility.getHexValue(asymmetricEncryptionProvider.getPublicKey().getEncoded()));
-    	final String privateKeyString = new String(Utility.getHexValue(asymmetricEncryptionProvider.getPrivateKey().getEncoded()));
-    	if (DEBUG_ASYMMETRIC_ENCRYPTION) System.out.println("Public key: " + publicKeyString);
-		if (DEBUG_ASYMMETRIC_ENCRYPTION) System.out.println("Private key: " + privateKeyString);
+    	if (DEBUG_ASYMMETRIC_ENCRYPTION) {
+    		final String publicKeyString = Utility.getHexValue(asymmetricEncryptionProvider.getPublicKey().getEncoded());
+	    	final String privateKeyString = Utility.getHexValue(asymmetricEncryptionProvider.getPrivateKey().getEncoded());
+	    	System.out.println("Public key: " + publicKeyString);
+			System.out.println("Private key: " + privateKeyString);
+    	}
     	
     	/** Port that the bank is listening on. */
     	int port = Comms.DEFAULT_BANKPORT;

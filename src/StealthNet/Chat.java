@@ -160,7 +160,7 @@ public class Chat extends Thread {
     /** Receive a chat message using StealthNet. */
     private synchronized void recvChat() {
         try {
-            if ((stealthComms == null) || (!stealthComms.recvReady()))
+            if (stealthComms == null || !stealthComms.recvReady())
                 return;
         } catch (IOException e) {
             if (stealthComms != null) {
@@ -173,7 +173,7 @@ public class Chat extends Thread {
 
         DecryptedPacket pckt = new DecryptedPacket();
         try {
-            while ((pckt.command != DecryptedPacket.CMD_LOGOUT) && (stealthComms.recvReady())) {
+            while (pckt.command != DecryptedPacket.CMD_LOGOUT && stealthComms.recvReady()) {
                 pckt = stealthComms.recvPacket();
                 
                 if (pckt == null)
@@ -184,16 +184,19 @@ public class Chat extends Thread {
 					 * Message command
 					 **********************************************************/
                     case DecryptedPacket.CMD_MSG:
+                    {
                     	/** Chat message received. */
                     	final String msg = new String(pckt.data);
                     	if (DEBUG_GENERAL) System.out.println("Received chat message: \"" + msg + "\".");
                 	    chatTextBox.append(msg + "\n");
                         break;
+                    }
                         
                     /***********************************************************
 					 * Logout command
 					 **********************************************************/
                     case DecryptedPacket.CMD_LOGOUT:
+                    {
                     	/** Terminate chat session. */
                     	if (DEBUG_GENERAL) System.out.println("Terminating chat session.");
                         JOptionPane.showMessageDialog(chatFrame,
@@ -202,7 +205,11 @@ public class Chat extends Thread {
                         stealthComms.terminateSession();
                         stealthComms = null;
                         break;
-                        
+                    }
+                    
+                    /***********************************************************
+					 * Unknown command
+					 **********************************************************/
                     default:
                         System.err.println("Unrecognised command.");
                }

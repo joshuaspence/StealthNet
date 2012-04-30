@@ -58,7 +58,7 @@ public class Proxy {
     		}
     	}
     	
-    	/** Hostname of the server. */
+    	/** Hostname of the REAL server. */
     	String serverHostname = Comms.DEFAULT_SERVERNAME;
     	
     	/** Port that the server is listening on. */
@@ -106,7 +106,7 @@ public class Proxy {
 	        	final Socket serverConn = new Socket(serverHostname, serverPort);
 	        	
 	        	final ProxyThread clientThread = new ProxyThread(clientConn, serverConn);
-	        	final ProxyThread serverThread = new ProxyThread(serverConn,clientConn);
+	        	final ProxyThread serverThread = new ProxyThread(serverConn, clientConn);
 	        	
 	        	/** 
 	        	 * Mark the threads as paired so that they can kill each other.
@@ -114,7 +114,7 @@ public class Proxy {
 	        	clientThread.setPairedThread(serverThread);
 	        	serverThread.setPairedThread(clientThread);
 	        	
-	        	/* Start thread execution. */
+	        	/** Start thread execution. */
 	        	clientThread.start();
 	        	serverThread.start();
 	            
@@ -124,8 +124,8 @@ public class Proxy {
 	            } else {
 	            	System.out.println("Proxy accepted connection...");
 	            }
-        	} catch(IOException e) {
-        		System.err.println("IO Exception.");
+        	} catch (Exception e) {
+        		System.err.println("Error accepting new client connection. Dropping connection...");
         		if (DEBUG_ERROR_TRACE) e.printStackTrace();
         	}
         }

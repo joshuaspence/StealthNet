@@ -24,7 +24,6 @@ import javax.crypto.IllegalBlockSizeException;
 import javax.management.InvalidAttributeValueException;
 
 import StealthNet.Security.Encryption;
-import StealthNet.Security.HashedMessageAuthenticationCode;
 import StealthNet.Security.MessageAuthenticationCode;
 import StealthNet.Security.NonceGenerator;
 
@@ -329,9 +328,9 @@ public class DecryptedPacket {
     public EncryptedPacket encrypt(Encryption e) throws UnsupportedEncodingException, IllegalBlockSizeException, BadPaddingException, InvalidAttributeValueException, IllegalArgumentException {
     	if (e != null) {
 	    	final byte[] encryptedData = e.encrypt(this.toString());
-	    	return new EncryptedPacket(encryptedData, encryptedData.length, HashedMessageAuthenticationCode.DIGEST_BYTES, this.mac);
+	    	return new EncryptedPacket(encryptedData, encryptedData.length, this.mac);
     	} else {
-    		return new EncryptedPacket(this.toString().getBytes(), this.toString().getBytes().length, HashedMessageAuthenticationCode.DIGEST_BYTES, this.mac);
+    		return new EncryptedPacket(this.toString().getBytes(), this.toString().getBytes().length, this.mac);
     	}
     }
 }
