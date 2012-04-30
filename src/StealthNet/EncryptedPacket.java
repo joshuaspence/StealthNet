@@ -56,11 +56,7 @@ public class EncryptedPacket {
     
     private static final int digestBytes = HashedMessageAuthenticationCode.DIGEST_BYTES;
 
-    /** 
-     * Null constructor.
-     * 
-     * @param digestBytes The fixed size of the message digest.
-     */
+    /** Null constructor. */
     public EncryptedPacket() {
         /** No data is available. */
     	this.data = new byte[0];
@@ -91,7 +87,6 @@ public class EncryptedPacket {
      *
      * @param encryptedDataLen The length of the encryptedData array.
      * @param encryptedData The data to be sent in the packet.
-     * @param digestBytes The fixed size of the message digest.
      * @param mac The MessageAuthenticationCode instance to provide a MAC 
      * digest. If null, then the digest will be blank.
      * 

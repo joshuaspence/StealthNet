@@ -225,12 +225,10 @@ public class RSAAsymmetricEncryption implements AsymmetricEncryption {
 	}
 	
 	/**
-	 * Encrypts a message using the peer public key. If the cleartext is longer
-	 * than the maximum allowable cleartext (MAX_CLEARTEXT), then the cleartext 
-	 * will be encrypted in chunks of length MAX_CLEARTEXT.
+	 * Encrypts a message using the peer public key.
 	 * 
 	 * @param cleartext The message to be encrypted.
-	 * @return The ciphertext message.
+	 * @return The ciphertext message, encoded in base 64.
 	 * 
 	 * @throws BadPaddingException 
 	 * @throws IllegalBlockSizeException 
@@ -241,12 +239,10 @@ public class RSAAsymmetricEncryption implements AsymmetricEncryption {
 	}
 	
 	/**
-	 * Encrypts a message using the peer public key. If the cleartext is longer
-	 * than the maximum allowable cleartext (MAX_CLEARTEXT), then the cleartext
-	 * will be encrypted in chunks of length MAX_CLEARTEXT.
+	 * Encrypts a message using the peer public key.
 	 * 
 	 * @param cleartext The message to be encrypted.
-	 * @return The ciphertext message.
+	 * @return The ciphertext message, encoded in base 64.
 	 * 
 	 * @throws BadPaddingException 
 	 * @throws IllegalBlockSizeException 
@@ -307,7 +303,8 @@ public class RSAAsymmetricEncryption implements AsymmetricEncryption {
 	/**
 	 * Decrypts a message using our private key.
 	 * 
-	 * @param ciphertext The message to be decrypted.
+	 * @param ciphertext The message to be decrypted, assumed to be encoded in 
+	 * base 64.
 	 * @return The cleartext message.
 	 * 
 	 * @throws BadPaddingException 
@@ -320,7 +317,8 @@ public class RSAAsymmetricEncryption implements AsymmetricEncryption {
 	/**
 	 * Decrypts a message using our private key.
 	 * 
-	 * @param ciphertext The message to be decrypted.
+	 * @param ciphertext The message to be decrypted, assumed to be encoded in 
+	 * base 64.
 	 * @return The cleartext message.
 	 * 
 	 * @throws BadPaddingException 
@@ -569,8 +567,8 @@ public class RSAAsymmetricEncryption implements AsymmetricEncryption {
 	/**
 	 * Read the public key from a file.
 	 * 
-	 * @param fileInputStream The input stream for the file containing the 
-	 * public key.
+	 * @param inputStream The input stream for the file containing the public 
+	 * key.
 	 * @return The public key contained within the file.
 	 * 
 	 * @throws IOException 
