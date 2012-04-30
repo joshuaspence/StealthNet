@@ -25,7 +25,8 @@ public class InvalidPasswordException extends Exception {
 	private static final long serialVersionUID = 1L;
 
 	/** 
-	 * Constructor
+	 * Constructor.
+	 * 
 	 * @param msg A message describing the exception.
 	 */
 	public InvalidPasswordException(String msg) {

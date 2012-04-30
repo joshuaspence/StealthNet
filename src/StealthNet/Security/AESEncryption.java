@@ -29,8 +29,6 @@ import javax.crypto.spec.IvParameterSpec;
 
 import org.apache.commons.codec.binary.Base64;
 
-import StealthNet.Utility;
-
 /* StealthNet.Security.AESEncryption Class Definition ************************/
 
 /**
@@ -81,7 +79,6 @@ public class AESEncryption implements Encryption {
         for (int i = 0; i < 16; i++)
         	iv[i] = (byte) IVGenerator.nextInt();
         this.ips = new IvParameterSpec(iv);
-        System.out.println("iv= " + Utility.getHexValue(iv));
         
         /** Initialise encryption cipher. */
         this.encryptionCipher = Cipher.getInstance(CIPHER_ALGORITHM);

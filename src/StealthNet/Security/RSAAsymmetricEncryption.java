@@ -71,9 +71,8 @@ public class RSAAsymmetricEncryption implements AsymmetricEncryption {
 	private final Cipher decryptionCipher;
 	
 	/** Constants describing the algorithm. */
-	public static final String CIPHER_ALGORITHM = "RSA";
-	public static final String ALGORITHM = CIPHER_ALGORITHM;
-	public static final int NUM_BITS = 2048;
+	public static final String ALGORITHM = "RSA";
+	private static final int NUM_BITS = 2048;
 	private static final int MAX_CLEARTEXT = (NUM_BITS / Byte.SIZE) - 11;
 	private static final int MAX_CIPHERTEXT = 256;
 	
@@ -102,7 +101,7 @@ public class RSAAsymmetricEncryption implements AsymmetricEncryption {
 		setPeerPublicKey(peer);
 		
 		/** Initialise the decryption cipher. */
-		this.decryptionCipher = Cipher.getInstance(CIPHER_ALGORITHM);
+		this.decryptionCipher = Cipher.getInstance(ALGORITHM);
 		this.decryptionCipher.init(Cipher.DECRYPT_MODE, this.privateKey);
 	}
 	
@@ -136,7 +135,7 @@ public class RSAAsymmetricEncryption implements AsymmetricEncryption {
 		setPeerPublicKey(peer);
 		
 		/** Initialise the decryption cipher. */
-		this.decryptionCipher = Cipher.getInstance(CIPHER_ALGORITHM);
+		this.decryptionCipher = Cipher.getInstance(ALGORITHM);
 		this.decryptionCipher.init(Cipher.DECRYPT_MODE, this.privateKey);
 	}
 	
@@ -169,7 +168,7 @@ public class RSAAsymmetricEncryption implements AsymmetricEncryption {
 		setPeerPublicKey(peer);
 		
 		/** Initialise the decryption cipher. */
-		this.decryptionCipher = Cipher.getInstance(CIPHER_ALGORITHM);
+		this.decryptionCipher = Cipher.getInstance(ALGORITHM);
 		this.decryptionCipher.init(Cipher.DECRYPT_MODE, this.privateKey);
 	}
 	
@@ -197,7 +196,7 @@ public class RSAAsymmetricEncryption implements AsymmetricEncryption {
 		setPeerPublicKey(peer);
 		
 		/** Initialise the decryption cipher. */
-		this.decryptionCipher = Cipher.getInstance(CIPHER_ALGORITHM);
+		this.decryptionCipher = Cipher.getInstance(ALGORITHM);
 		this.decryptionCipher.init(Cipher.DECRYPT_MODE, this.privateKey);
 	}
 	
@@ -226,7 +225,7 @@ public class RSAAsymmetricEncryption implements AsymmetricEncryption {
 		setPeerPublicKey(peer);
 		
 		/** Initialise the decryption cipher. */
-		this.decryptionCipher = Cipher.getInstance(CIPHER_ALGORITHM);
+		this.decryptionCipher = Cipher.getInstance(ALGORITHM);
 		this.decryptionCipher.init(Cipher.DECRYPT_MODE, this.privateKey);
 	}
 	
@@ -262,7 +261,11 @@ public class RSAAsymmetricEncryption implements AsymmetricEncryption {
 		if (encryptionCipher == null)
 			throw new IllegalStateException("Cannot perform encryption without a peer public key.");
 		
-		/** TODO: tidy this code. */
+		/** 
+		 * TODO: Tidy the following code. All that it does it break the 
+		 * cleartext up into 'chunks' of size MAX_CLEARTEXT, encrypt each chunk
+		 * separately, and combine the chunks together.
+		 */
 		
 		/** 
 		 * Split the cleartext up into chunks and encrypt each chunk separately.
@@ -288,7 +291,6 @@ public class RSAAsymmetricEncryption implements AsymmetricEncryption {
 
     		/** Encrypt this chunk and add it to the queue. */
     		final byte[] encryptedChunk = encryptionCipher.doFinal(chunk);
-    		System.out.println(chunkSize + " => " + encryptedChunk.length);
     		chunks.add(encryptedChunk);
     		totalLength += encryptedChunk.length;
     	}
@@ -333,7 +335,11 @@ public class RSAAsymmetricEncryption implements AsymmetricEncryption {
 		/** Decode the combined encrypted chunks. */
 		final byte[] decodedValue = Base64.decodeBase64(ciphertext);
 		
-		/** TODO: tidy this code. */
+		/** 
+		 * TODO: Tidy the following code. All that it does it break the 
+		 * ciphertext up into 'chunks' of size MAX_CIPHERTEXT, decrypt each 
+		 * chunk separately, and combine the chunks together.
+		 */
 		
 		/** 
 		 * Split the ciphertext up into chunks and decrypt each chunk separately.
@@ -358,7 +364,6 @@ public class RSAAsymmetricEncryption implements AsymmetricEncryption {
     		startIndex += chunk.length;
 
     		/** Decrypt this chunk and add it to the queue. */
-    		System.out.println(i + ", " + chunk.length);
     		final byte[] decryptedChunk = decryptionCipher.doFinal(chunk);
     		chunks.add(decryptedChunk);
     		totalLength += decryptedChunk.length;
@@ -408,7 +413,7 @@ public class RSAAsymmetricEncryption implements AsymmetricEncryption {
 		this.peerPublicKey = peer;
 		
 		if (this.peerPublicKey != null) {
-			this.encryptionCipher = Cipher.getInstance(CIPHER_ALGORITHM);
+			this.encryptionCipher = Cipher.getInstance(ALGORITHM);
 			this.encryptionCipher.init(Cipher.ENCRYPT_MODE, this.peerPublicKey);
 		} else {
 			this.encryptionCipher = null;
