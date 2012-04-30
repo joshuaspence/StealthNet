@@ -18,7 +18,6 @@ import java.io.IOException;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.spec.InvalidKeySpecException;
@@ -47,18 +46,17 @@ public interface AsymmetricEncryption extends Encryption {
 	 * @param filename The path of the file to which the public key should be 
 	 * saved.
 	 * 
+	 * @throws NoSuchAlgorithmException 
+	 * @throws InvalidKeySpecException 
 	 * @throws IOException 
 	 * @throws NoSuchPaddingException 
-	 * @throws NoSuchAlgorithmException 
-	 * @throws InvalidKeyException 
-	 * @throws InvalidKeySpecException 
 	 * @throws InvalidAlgorithmParameterException 
 	 * @throws BadPaddingException 
 	 * @throws IllegalBlockSizeException 
-	 * @throws NoSuchProviderException 
 	 * @throws InvalidAttributeValueException 
+	 * @throws InvalidKeyException 
 	 */
-	public void savePublicKeyToFile(String filename) throws NoSuchAlgorithmException, InvalidKeySpecException, IOException, InvalidKeyException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException, InvalidAlgorithmParameterException, NoSuchProviderException, InvalidAttributeValueException;
+	public void savePublicKeyToFile(String filename) throws NoSuchAlgorithmException, InvalidKeySpecException, InvalidKeyException, InvalidAttributeValueException, IllegalBlockSizeException, BadPaddingException, InvalidAlgorithmParameterException, NoSuchPaddingException, IOException;
 	
 	/**
 	 * Save the private key to a file so that it can be retrieved at a later 
@@ -68,18 +66,17 @@ public interface AsymmetricEncryption extends Encryption {
 	 * saved.
 	 * @param password The password to encrypt the file.
 	 * 
-	 * @throws NoSuchAlgorithmException
-	 * @throws InvalidKeySpecException
-	 * @throws IOException
+	 * @throws NoSuchAlgorithmException 
+	 * @throws InvalidKeySpecException 
+	 * @throws IOException 
 	 * @throws NoSuchPaddingException 
-	 * @throws InvalidKeyException 
 	 * @throws InvalidAlgorithmParameterException 
 	 * @throws BadPaddingException 
 	 * @throws IllegalBlockSizeException 
-	 * @throws NoSuchProviderException 
 	 * @throws InvalidAttributeValueException 
+	 * @throws InvalidKeyException 
 	 */
-	public void savePrivateKeyToFile(String filename, String password) throws NoSuchAlgorithmException, InvalidKeySpecException, IOException, InvalidKeyException, NoSuchPaddingException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException, NoSuchProviderException, InvalidAttributeValueException;
+	public void savePrivateKeyToFile(String filename, String password) throws NoSuchAlgorithmException, InvalidKeySpecException, InvalidKeyException, InvalidAttributeValueException, IllegalBlockSizeException, BadPaddingException, InvalidAlgorithmParameterException, NoSuchPaddingException, IOException;
 	
 	/**
 	 * Get our public key.
@@ -103,9 +100,8 @@ public interface AsymmetricEncryption extends Encryption {
 	 * @throws NoSuchPaddingException 
 	 * @throws NoSuchAlgorithmException 
 	 * @throws InvalidKeyException 
-	 * @throws NoSuchProviderException 
 	 */
-	public void setPeerPublicKey(PublicKey peer) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, NoSuchProviderException;
+	public void setPeerPublicKey(PublicKey peer) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException;
 	
 	/**
 	 * Get our private key. Our private key is used for decryption.

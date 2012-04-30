@@ -14,8 +14,6 @@ package StealthNet.Security;
 
 /* Import Libraries **********************************************************/
 
-import java.io.UnsupportedEncodingException;
-
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 
@@ -37,11 +35,11 @@ public interface Encryption {
 	 * @param cleartext The message to encrypt.
 	 * @return The encrypted message.
 	 * 
-	 * @throws IllegalBlockSizeException
-	 * @throws BadPaddingException
-	 * @throws UnsupportedEncodingException 
+	 * @throws BadPaddingException 
+	 * @throws IllegalBlockSizeException 
+	 * @throws IllegalStateException
 	 */
-	public byte[] encrypt(String cleartext) throws UnsupportedEncodingException, IllegalBlockSizeException, BadPaddingException;
+	public byte[] encrypt(String cleartext) throws IllegalBlockSizeException, BadPaddingException, IllegalStateException;
 	
 	/**
 	 * Encrypts a message using the encryption key.
@@ -49,11 +47,11 @@ public interface Encryption {
 	 * @param cleartext The message to encrypt.
 	 * @return The encrypted message.
 	 * 
-	 * @throws IllegalBlockSizeException
-	 * @throws BadPaddingException
-	 * @throws UnsupportedEncodingException 
+	 * @throws BadPaddingException 
+	 * @throws IllegalBlockSizeException 
+	 * @throws IllegalStateException
 	 */
-	public byte[] encrypt(byte[] cleartext) throws UnsupportedEncodingException, IllegalBlockSizeException, BadPaddingException;
+	public byte[] encrypt(byte[] cleartext) throws IllegalBlockSizeException, BadPaddingException, IllegalStateException;
 	
 	/**
 	 * Decrypts a message using the decryption key.
@@ -61,11 +59,10 @@ public interface Encryption {
 	 * @param ciphertext The message to be decrypted.
 	 * @return The cleartext message.
 	 * 
-	 * @throws UnsupportedEncodingException 
 	 * @throws BadPaddingException 
 	 * @throws IllegalBlockSizeException 
 	 */
-	public byte[] decrypt(String ciphertext) throws UnsupportedEncodingException, IllegalBlockSizeException, BadPaddingException;
+	public byte[] decrypt(String ciphertext) throws IllegalBlockSizeException, BadPaddingException;
 	
 	/**
 	 * Decrypts a message using the decryption key.
@@ -73,11 +70,10 @@ public interface Encryption {
 	 * @param ciphertext The message to be decrypted.
 	 * @return The cleartext message.
 	 * 
-	 * @throws UnsupportedEncodingException 
 	 * @throws BadPaddingException 
 	 * @throws IllegalBlockSizeException 
 	 */
-	public byte[] decrypt(byte[] ciphertext) throws UnsupportedEncodingException, IllegalBlockSizeException, BadPaddingException;
+	public byte[] decrypt(byte[] ciphertext) throws IllegalBlockSizeException, BadPaddingException;
 }
 
 /******************************************************************************

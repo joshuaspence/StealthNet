@@ -98,8 +98,8 @@ public class DiffieHellmanKeyExchange implements KeyExchange {
 	private final BigInteger publicValue;
 	
 	/** String constants. */
-	public static final String KEY_ALGORITHM = "DiffieHellman";
-	public static final String SECRET_KEY_ALGORITHM = "TlsPremasterSecret";
+	private static final String KEY_ALGORITHM = "DiffieHellman";
+	private static final String SECRET_KEY_ALGORITHM = "TlsPremasterSecret";
 	
 	/** 
 	 * Generate a Diffie-Hellman keypair of the specified size. 
@@ -109,7 +109,6 @@ public class DiffieHellmanKeyExchange implements KeyExchange {
 	 * 
 	 * @throws NoSuchAlgorithmException 
 	 * @throws InvalidKeySpecException 
-	 * @throws InvalidDHParameterException 
 	 */
 	public DiffieHellmanKeyExchange(int keyLength, SecureRandom random) throws NoSuchAlgorithmException, InvalidKeySpecException {
 		final KeyPairGenerator kpg = KeyPairGenerator.getInstance(KEY_ALGORITHM);
@@ -158,8 +157,8 @@ public class DiffieHellmanKeyExchange implements KeyExchange {
 	 * @param key The given PublicKey.
 	 * @return The DHPublicKeySpec corresponding to a given PublicKey.
 	 * 
-	 * @throws NoSuchAlgorithmException
-	 * @throws InvalidKeySpecException
+	 * @throws NoSuchAlgorithmException 
+	 * @throws InvalidKeySpecException 
 	 */
 	private static DHPublicKeySpec getDHPublicKeySpec(PublicKey key) throws NoSuchAlgorithmException, InvalidKeySpecException {
 		if (key instanceof DHPublicKey) {
@@ -218,7 +217,7 @@ public class DiffieHellmanKeyExchange implements KeyExchange {
 	 * @throws IllegalStateException 
 	 * @throws InvalidKeyException 
 	 */
-	 public SecretKey getSharedSecret(BigInteger peerPublicValue) throws NoSuchAlgorithmException, InvalidKeySpecException, InvalidKeyException, IllegalStateException {
+	 public SecretKey getSharedSecret(BigInteger peerPublicValue) throws NoSuchAlgorithmException, InvalidKeySpecException, InvalidKeyException {
 		 final KeyFactory kf = KeyFactory.getInstance(KEY_ALGORITHM);
 		 final KeyAgreement ka = KeyAgreement.getInstance(KEY_ALGORITHM);
 		 

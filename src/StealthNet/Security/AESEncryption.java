@@ -55,11 +55,11 @@ public class AESEncryption implements Encryption {
 	 * @param key The SecretKey to be used for both encryption and decryption.
 	 * 
 	 * @throws NoSuchPaddingException 
-	 * @throws NoSuchAlgorithmException 
-	 * @throws InvalidKeyException 
+	 * @throws NoSuchAlgorithmException
 	 * @throws InvalidAlgorithmParameterException 
+	 * @throws InvalidKeyException 
 	 */
-	public AESEncryption(SecretKey key) throws InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidAlgorithmParameterException {
+	public AESEncryption(SecretKey key) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException {
 		this.key = key;
         
         /** 
@@ -83,14 +83,14 @@ public class AESEncryption implements Encryption {
         /** Initialise encryption cipher. */
         this.encryptionCipher = Cipher.getInstance(CIPHER_ALGORITHM);
         this.encryptionCipher.init(Cipher.ENCRYPT_MODE, this.key, this.ips);
-		//System.out.println("Encryption block size = " + encryptionCipher.getBlockSize() + " bytes");
-		//System.out.println("Encryption key length = " + (encryptionIPS.getIV().length * 8) + " bits");
+		//System.out.println("Encryption block size = " + this.encryptionCipher.getBlockSize() + " bytes");
+		//System.out.println("Encryption key length = " + (this.ips.getIV().length * 8) + " bits");
 		
 		/** Initialise decryption cipher. */
 		this.decryptionCipher = Cipher.getInstance(CIPHER_ALGORITHM);
 		this.decryptionCipher.init(Cipher.DECRYPT_MODE, this.key, this.ips);
-		//System.out.println("Decryption block size = " + encryptionCipher.getBlockSize() + " bytes");
-		//System.out.println("Decryption key length = " + (encryptionIPS.getIV().length * 8) + " bits");
+		//System.out.println("Decryption block size = " + this.encryptionCipher.getBlockSize() + " bytes");
+		//System.out.println("Decryption key length = " + (this.ips.getIV().length * 8) + " bits");
 	}
 	
 	/**
@@ -98,13 +98,13 @@ public class AESEncryption implements Encryption {
 	 * decrypt(String) function.
 	 * 
 	 * @param cleartext The message to encrypt.
-	 * @return The encrypted message.
+	 * @return The encrypted message, encoded in base 64.
 	 * 
-	 * @throws IllegalBlockSizeException
-	 * @throws BadPaddingException
-	 * @throws UnsupportedEncodingException 
+	 * @throws BadPaddingException 
+	 * @throws IllegalBlockSizeException 
+	 * 
 	 */
-	public byte[] encrypt(String cleartext) throws UnsupportedEncodingException, IllegalBlockSizeException, BadPaddingException {
+	public byte[] encrypt(String cleartext) throws IllegalBlockSizeException, BadPaddingException {
 		return encrypt(cleartext.getBytes());
 	}
 	
@@ -113,11 +113,10 @@ public class AESEncryption implements Encryption {
 	 * decrypt(byte[]) function.
 	 * 
 	 * @param cleartext The message to encrypt.
-	 * @return The encrypted message.
+	 * @return The encrypted message, encoded in base 64.
 	 * 
-	 * @throws IllegalBlockSizeException
-	 * @throws BadPaddingException
-	 * @throws UnsupportedEncodingException 
+	 * @throws BadPaddingException 
+	 * @throws IllegalBlockSizeException 
 	 */
 	public byte[] encrypt(byte[] cleartext) throws IllegalBlockSizeException, BadPaddingException {		
 		final byte[] encryptedValue = encryptionCipher.doFinal(cleartext);
@@ -129,14 +128,15 @@ public class AESEncryption implements Encryption {
 	 * Decrypts a message using the decryption key. Performs the opposite of the
 	 * encrypt(String) function.
 	 * 
-	 * @param ciphertext The message to be decrypted.
+	 * @param ciphertext The message to be decrypted, assumed to be encoded in
+	 * base 64.
 	 * @return The cleartext message.
 	 * 
 	 * @throws UnsupportedEncodingException 
 	 * @throws BadPaddingException 
 	 * @throws IllegalBlockSizeException 
 	 */
-	public byte[] decrypt(String ciphertext) throws UnsupportedEncodingException, IllegalBlockSizeException, BadPaddingException {	 
+	public byte[] decrypt(String ciphertext) throws IllegalBlockSizeException, BadPaddingException {	 
 		return decrypt(ciphertext.getBytes());
 	}
 	
@@ -144,7 +144,8 @@ public class AESEncryption implements Encryption {
 	 * Decrypts a message using the decryption key. Performs the opposite of the
 	 * encrypt(byte[]) function.
 	 * 
-	 * @param ciphertext The message to be decrypted.
+	 * @param ciphertext The message to be decrypted, assumed to be encoded in
+	 * base 64.
 	 * @return The cleartext message.
 	 * 
 	 * @throws BadPaddingException 

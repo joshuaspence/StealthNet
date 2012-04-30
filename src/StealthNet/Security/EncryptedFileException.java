@@ -14,10 +14,10 @@ package StealthNet.Security;
 
 /* Import Libraries **********************************************************/
 
-/* StealthNet.Security.EncrpytedFileException Class Definition ****(**********/
+/* StealthNet.Security.EncrpytedFileException Class Definition ***************/
 
 /**
- * An exception to be thrown when the wrong password is used for decryption.
+ * An exception to be thrown when an encrypted file cannot be decrypted.
  * 
  * @author Joshua Spence
  */

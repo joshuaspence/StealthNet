@@ -17,7 +17,6 @@ import java.net.URL;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
 import java.security.PublicKey;
 import java.security.spec.InvalidKeySpecException;
 
@@ -53,7 +52,7 @@ public class Utility {
      * Function to assist with printing cryptographic keys by returning byte 
      * arrays as a hexadecimal number.
      * 
-     * @param array The byte array to transformx into a hexadecimal number.
+     * @param array The byte array to transform into a hexadecimal number.
      * @return The string containing the hexadecimal number.
      */    
     public static String getHexValue(byte[] array) {
@@ -164,19 +163,19 @@ public class Utility {
 	 * @param privateKeyPassword The password to decrypt the private key file.
 	 * @return An AsymmetricEncryption provider for the keys.
 	 * 
-	 * @throws IOException 
-	 * @throws NoSuchPaddingException 
-	 * @throws InvalidKeySpecException 
-	 * @throws NoSuchAlgorithmException 
-	 * @throws InvalidKeyException 
-	 * @throws InvalidAlgorithmParameterException 
 	 * @throws EncryptedFileException 
+	 * @throws IOException 
+	 * @throws InvalidAlgorithmParameterException 
+	 * @throws InvalidKeySpecException 
 	 * @throws BadPaddingException 
 	 * @throws IllegalBlockSizeException 
-	 * @throws NoSuchProviderException 
+	 * @throws NoSuchPaddingException 
+	 * @throws NoSuchAlgorithmException 
 	 * @throws InvalidAttributeValueException 
+	 * @throws InvalidKeyException 
+	 * 
 	 */
-	public static AsymmetricEncryption getPublicPrivateKeys(String publicKeyPath, String privateKeyPath, String privateKeyPassword) throws InvalidKeyException, NoSuchAlgorithmException, InvalidKeySpecException, NoSuchPaddingException, IOException, InvalidAlgorithmParameterException, EncryptedFileException, IllegalBlockSizeException, BadPaddingException, NoSuchProviderException, InvalidAttributeValueException {
+	public static AsymmetricEncryption getPublicPrivateKeys(String publicKeyPath, String privateKeyPath, String privateKeyPassword) throws InvalidKeyException, InvalidAttributeValueException, NoSuchAlgorithmException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException, InvalidKeySpecException, InvalidAlgorithmParameterException, IOException, EncryptedFileException {
 		final URL publicKeyJAR = Utility.class.getClassLoader().getResource(publicKeyPath);
     	final URL privateKeyJAR = Utility.class.getClassLoader().getResource(privateKeyPath);
     	final File publicKeyFile = new File(publicKeyPath);

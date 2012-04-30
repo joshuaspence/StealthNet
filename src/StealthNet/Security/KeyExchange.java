@@ -46,12 +46,11 @@ public interface KeyExchange {
 	 * @param peerPublicValue The peer's public key.
 	 * @return The secret key.
 	 * 
-	 * @throws NoSuchAlgorithmException 
+	 * @throws NoSuchAlgorithmException
 	 * @throws InvalidKeySpecException 
-	 * @throws IllegalStateException 
 	 * @throws InvalidKeyException 
 	 */
-	 public SecretKey getSharedSecret(BigInteger peerPublicValue) throws NoSuchAlgorithmException, InvalidKeySpecException, InvalidKeyException, IllegalStateException;
+	 public SecretKey getSharedSecret(BigInteger peerPublicValue) throws NoSuchAlgorithmException, InvalidKeySpecException, InvalidKeyException;
 }
 
 /******************************************************************************

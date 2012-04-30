@@ -14,7 +14,6 @@ package StealthNet.Security;
 
 /* Import Libraries **********************************************************/
 
-import java.io.UnsupportedEncodingException;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
@@ -62,11 +61,11 @@ public class PasswordEncryption implements Encryption {
 	 * 
 	 * @throws NoSuchAlgorithmException 
 	 * @throws InvalidKeySpecException 
+	 * @throws NoSuchPaddingException 
 	 * @throws InvalidAlgorithmParameterException 
 	 * @throws InvalidKeyException 
-	 * @throws NoSuchPaddingException
 	 */
-	public PasswordEncryption(String password) throws NoSuchAlgorithmException, InvalidKeySpecException, InvalidKeyException, InvalidAlgorithmParameterException, NoSuchPaddingException {
+	public PasswordEncryption(String password) throws NoSuchAlgorithmException, InvalidKeySpecException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException {
 		if (password == null)
 			throw new IllegalArgumentException("Password cannot be null.");
 		this.password = password;
@@ -100,11 +99,11 @@ public class PasswordEncryption implements Encryption {
 	 * 
 	 * @throws NoSuchAlgorithmException 
 	 * @throws InvalidKeySpecException 
+	 * @throws NoSuchPaddingException 
 	 * @throws InvalidAlgorithmParameterException 
 	 * @throws InvalidKeyException 
-	 * @throws NoSuchPaddingException
 	 */
-	public PasswordEncryption(byte[] salt, String password) throws NoSuchAlgorithmException, InvalidKeySpecException, InvalidKeyException, InvalidAlgorithmParameterException, NoSuchPaddingException {
+	public PasswordEncryption(byte[] salt, String password) throws NoSuchAlgorithmException, InvalidKeySpecException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException {
 		if (password == null)
 			throw new IllegalArgumentException("Password cannot be null.");
 		this.password = password;
@@ -133,13 +132,12 @@ public class PasswordEncryption implements Encryption {
 	 * decrypt(String) function.
 	 * 
 	 * @param cleartext The message to encrypt.
-	 * @return The encrypted message.
+	 * @return The encrypted message, encoded in base 64.
 	 * 
 	 * @throws IllegalBlockSizeException
 	 * @throws BadPaddingException
-	 * @throws UnsupportedEncodingException 
 	 */
-	public byte[] encrypt(String cleartext) throws UnsupportedEncodingException, IllegalBlockSizeException, BadPaddingException {
+	public byte[] encrypt(String cleartext) throws IllegalBlockSizeException, BadPaddingException {
 		return encrypt(cleartext.getBytes());
 	}
 	
@@ -148,11 +146,10 @@ public class PasswordEncryption implements Encryption {
 	 * decrypt(byte[]) function.
 	 * 
 	 * @param cleartext The message to encrypt.
-	 * @return The encrypted message.
+	 * @return The encrypted message, encoded in base 64.
 	 * 
 	 * @throws IllegalBlockSizeException
 	 * @throws BadPaddingException
-	 * @throws UnsupportedEncodingException 
 	 */
 	public byte[] encrypt(byte[] cleartext) throws IllegalBlockSizeException, BadPaddingException {		
 		final byte[] encryptedValue = encryptionCipher.doFinal(cleartext);
@@ -164,14 +161,15 @@ public class PasswordEncryption implements Encryption {
 	 * Decrypts a message using the decryption key. Performs the opposite of the
 	 * encrypt(String) function.
 	 * 
-	 * @param ciphertext The message to be decrypted.
+	 * @param ciphertext The message to be decrypted, assumed to be encoded in 
+	 * base 64.
 	 * @return The cleartext message.
 	 * 
-	 * @throws UnsupportedEncodingException 
 	 * @throws BadPaddingException 
 	 * @throws IllegalBlockSizeException 
+	 * 
 	 */
-	public byte[] decrypt(String ciphertext) throws UnsupportedEncodingException, IllegalBlockSizeException, BadPaddingException {	 
+	public byte[] decrypt(String ciphertext) throws IllegalBlockSizeException, BadPaddingException {	 
 		return decrypt(ciphertext.getBytes());
 	}
 	
@@ -179,13 +177,14 @@ public class PasswordEncryption implements Encryption {
 	 * Decrypts a message using the decryption key. Performs the opposite of the
 	 * encrypt(byte[]) function.
 	 * 
-	 * @param ciphertext The message to be decrypted.
+	 * @param ciphertext The message to be decrypted, assumed to be encoded in 
+	 * base 64.
 	 * @return The cleartext message.
 	 * 
 	 * @throws BadPaddingException 
 	 * @throws IllegalBlockSizeException 
 	 */
-	public byte[] decrypt(byte[] ciphertext) throws IllegalBlockSizeException, BadPaddingException {
+	public byte[] decrypt(byte[] ciphertext) throws IllegalBlockSizeException, BadPaddingException  {
 		final byte[] decodedValue = Base64.decodeBase64(ciphertext);
 		final byte[] decryptedValue = decryptionCipher.doFinal(decodedValue);
 		return decryptedValue;

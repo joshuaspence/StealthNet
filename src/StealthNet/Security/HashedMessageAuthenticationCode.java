@@ -50,8 +50,8 @@ public class HashedMessageAuthenticationCode implements MessageAuthenticationCod
 	 * 
 	 * @param key The key to use for the HMAC algorithm.
 	 * 
-	 * @throws NoSuchAlgorithmException
-	 * @throws InvalidKeyException
+	 * @throws NoSuchAlgorithmException 
+	 * @throws InvalidKeyException 
 	 */
 	public HashedMessageAuthenticationCode(SecretKey key) throws NoSuchAlgorithmException, InvalidKeyException {
 		this.key = key;
@@ -66,10 +66,9 @@ public class HashedMessageAuthenticationCode implements MessageAuthenticationCod
 	 * 
 	 * @param packetContents The message to calculate the MAC for.
 	 * @return The digest of the given message (in base-64 encoding).
-	 * 
 	 * @throws InvalidAttributeValueException 
 	 */
-	public byte[] createMAC(String packetContents) throws InvalidAttributeValueException {
+	public byte[] createMAC(String packetContents) throws InvalidAttributeValueException{
 	    return createMAC(packetContents.getBytes());
 	}
 	
@@ -78,7 +77,6 @@ public class HashedMessageAuthenticationCode implements MessageAuthenticationCod
 	 * 
 	 * @param packetContents The message to calculate the MAC for.
 	 * @return The digest of the given message (in base-64 encoding).
-	 * 
 	 * @throws InvalidAttributeValueException 
 	 */
 	public byte[] createMAC(byte[] packetContents) throws InvalidAttributeValueException {
@@ -120,6 +118,7 @@ public class HashedMessageAuthenticationCode implements MessageAuthenticationCod
 	public boolean verifyMAC(byte[] packetContents, byte[] mac) throws InvalidAttributeValueException {
 		final byte[] digest = createMAC(packetContents);
 		
+		/** Compare the two digests */
 		if (digest.length != mac.length) {
 	        return false;
 	    } else {
