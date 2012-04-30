@@ -249,7 +249,7 @@ public class EncryptedPacket {
      */
     public DecryptedPacket decrypt(Encryption d) throws UnsupportedEncodingException, IllegalBlockSizeException, BadPaddingException {
     	if (d != null) {
-	    	final byte[] decryptedData = d.decrypt(data).getBytes();
+	    	final byte[] decryptedData = d.decrypt(data);
 	    	return new DecryptedPacket(new String(decryptedData));
     	} else {
     		return new DecryptedPacket(new String(data));

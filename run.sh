@@ -81,6 +81,9 @@ DEBUG="\
 -Ddebug.StealthNet.Comms.ReplayPrevention=true \
 -Ddebug.StealthNet.Comms.AsymmetricEncryption=true \
 \
+-Ddebug.StealthNet.EncryptedFile=false \
+-Ddebug.StealthNet.EncryptedFile.FileIO=true \
+\
 -Ddebug.StealthNet.FileTransfer=false \
 -Ddebug.StealthNet.FileTransfer.General=true \
 -Ddebug.StealthNet.FileTransfer.ErrorTrace=true \

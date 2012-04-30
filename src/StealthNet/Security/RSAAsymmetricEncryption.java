@@ -15,13 +15,15 @@ package StealthNet.Security;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.StreamCorruptedException;
 import java.math.BigInteger;
 import java.net.URL;
 import java.security.InvalidAlgorithmParameterException;
@@ -32,7 +34,6 @@ import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
-import java.security.SecureRandom;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.RSAPrivateKeySpec;
 import java.security.spec.RSAPublicKeySpec;
@@ -41,23 +42,20 @@ import java.util.Queue;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
-import javax.crypto.CipherInputStream;
-import javax.crypto.CipherOutputStream;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
-import javax.crypto.SecretKey;
-import javax.crypto.SecretKeyFactory;
-import javax.crypto.spec.PBEKeySpec;
-import javax.crypto.spec.PBEParameterSpec;
 
 import org.apache.commons.codec.binary.Base64;
+
+import StealthNet.EncryptedFile;
 
 /* StealthNet.Security.AsymmetricEncryption Interface Definition *************/
 
 /**
  * A class to provide RSA asymmetric encryption. Encryption will be performed 
  * using the peer's public key. Decryption will be performed using our private 
- * key.
+ * key. Also provides the option to save the public key to an unencrypted file 
+ * and the private file to a password-protected file
  *
  * @author Joshua Spence
  */
@@ -78,15 +76,6 @@ public class RSAAsymmetricEncryption implements AsymmetricEncryption {
 	private static final int MAX_CLEARTEXT = (NUM_BITS / Byte.SIZE) - 11;
 	private static final int MAX_CIPHERTEXT = 256;
 	
-	/** 
-	 * Constants describing the algorithm for handling passwords (used to 
-	 * encrypt the private key file).
-	 */
-	private static final String PASSWORD_SECURERANDOM_ALGORITHM = "SHA1PRNG";
-	private static final int PASSWORD_SALT_BYTES = 8;
-	private static final int PASSWORD_ITERATIONS = 1000;
-	private static final String PASSWORD_KEYFACTORY_ALGORITHM = "PBEWithMD5AndDES";
-	
 	/**
 	 * Constructor to generate a new public/private key pair.
 	 * 
@@ -98,6 +87,7 @@ public class RSAAsymmetricEncryption implements AsymmetricEncryption {
 	 * @throws NoSuchPaddingException 
 	 */
 	public RSAAsymmetricEncryption(PublicKey peer) throws NoSuchAlgorithmException, InvalidKeyException, NoSuchPaddingException {
+		/** Initialise the key generator. */
 		final KeyPairGenerator kpg = KeyPairGenerator.getInstance(ALGORITHM);
 		kpg.initialize(NUM_BITS);
 		
@@ -131,8 +121,10 @@ public class RSAAsymmetricEncryption implements AsymmetricEncryption {
 	 * @throws InvalidKeySpecException 
 	 * @throws InvalidAlgorithmParameterException 
 	 * @throws InvalidPasswordException 
+	 * @throws BadPaddingException 
+	 * @throws IllegalBlockSizeException 
 	 */
-	public RSAAsymmetricEncryption(String publicKeyFileName, String privateKeyFileName, String password, PublicKey peer) throws IOException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidKeySpecException, InvalidAlgorithmParameterException, InvalidPasswordException {
+	public RSAAsymmetricEncryption(String publicKeyFileName, String privateKeyFileName, String password, PublicKey peer) throws IOException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidKeySpecException, InvalidAlgorithmParameterException, InvalidPasswordException, IllegalBlockSizeException, BadPaddingException {
 		/** Establish the keys. */
 		this.publicKey = readPublicKeyFromFile(publicKeyFileName);
 		this.privateKey = readPrivateKeyFromFile(privateKeyFileName, password);
@@ -161,8 +153,10 @@ public class RSAAsymmetricEncryption implements AsymmetricEncryption {
 	 * @throws InvalidKeySpecException 
 	 * @throws InvalidAlgorithmParameterException 
 	 * @throws InvalidPasswordException 
+	 * @throws BadPaddingException 
+	 * @throws IllegalBlockSizeException 
 	 */
-	public RSAAsymmetricEncryption(URL publicKeyFile, URL privateKeyFile, String password, PublicKey peer) throws IOException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidKeySpecException, InvalidAlgorithmParameterException, InvalidPasswordException {
+	public RSAAsymmetricEncryption(URL publicKeyFile, URL privateKeyFile, String password, PublicKey peer) throws IOException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidKeySpecException, InvalidAlgorithmParameterException, InvalidPasswordException, IllegalBlockSizeException, BadPaddingException {
 		/** Establish the keys. */
 		this.publicKey = readPublicKeyFromFile(publicKeyFile);
 		this.privateKey = readPrivateKeyFromFile(privateKeyFile, password);
@@ -231,314 +225,6 @@ public class RSAAsymmetricEncryption implements AsymmetricEncryption {
 	}
 	
 	/**
-	 * Save the public key to a file so that it can be retrieved at a later 
-	 * time. The public key file will not be encrypted in any way.
-	 * 
-	 * @param filename The path of the file to which the public key should be 
-	 * saved.
-	 * 
-	 * @throws NoSuchAlgorithmException
-	 * @throws InvalidKeySpecException
-	 * @throws IOException
-	 * @throws NoSuchPaddingException 
-	 * @throws InvalidKeyException 
-	 */
-	public void savePublicKeyToFile(String filename) throws NoSuchAlgorithmException, InvalidKeySpecException, IOException, InvalidKeyException, NoSuchPaddingException {
-		final KeyFactory factory = KeyFactory.getInstance(ALGORITHM);
-		final RSAPublicKeySpec keySpec = factory.getKeySpec(this.publicKey, RSAPublicKeySpec.class);
-		writeToFile(filename, keySpec.getModulus(), keySpec.getPublicExponent());
-	}
-	
-	/**
-	 * Save the private key to a file so that it can be retrieved at a later 
-	 * time. The private key file will be encrypted using a user-supplied 
-	 * password.
-	 * 
-	 * @param filename The path of the file to which the public key should be 
-	 * saved.
-	 * @param password The password to encrypt the file.
-	 * 
-	 * @throws NoSuchAlgorithmException
-	 * @throws InvalidKeySpecException
-	 * @throws IOException
-	 * @throws NoSuchPaddingException 
-	 * @throws InvalidKeyException 
-	 * @throws InvalidAlgorithmParameterException 
-	 */
-	public void savePrivateKeyToFile(String filename, String password) throws NoSuchAlgorithmException, InvalidKeySpecException, IOException, InvalidKeyException, NoSuchPaddingException, InvalidAlgorithmParameterException {
-		final KeyFactory factory = KeyFactory.getInstance(ALGORITHM);
-		final RSAPrivateKeySpec keySpec = factory.getKeySpec(this.privateKey, RSAPrivateKeySpec.class);
-		writeToFile(filename, keySpec.getModulus(), keySpec.getPrivateExponent(), password);
-	}
-	
-	/**
-	 * A utility function to write the modulus and exponent of a key to a file. 
-	 * The data will be written to the file without any encryption.
-	 * 
-	 * @param filename The path of the file to write to.
-	 * @param mod The modulus of the key.
-	 * @param exp The exponent of the key.
-	 * @param password A password to encrypt the file.
-	 * 
-	 * @throws IOException
-	 * @throws NoSuchAlgorithmException 
-	 * @throws NoSuchPaddingException 
-	 * @throws InvalidKeySpecException 
-	 * @throws InvalidKeyException 
-	 */
-	private static void writeToFile(String filename, BigInteger mod, BigInteger exp) throws IOException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeySpecException, InvalidKeyException {
-		final FileOutputStream fileOutputStream = new FileOutputStream(filename);
-		final BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(fileOutputStream);
-		final ObjectOutputStream objectOutputStream = new ObjectOutputStream(bufferedOutputStream);
-		
-		try {
-			objectOutputStream.writeObject(mod);
-			objectOutputStream.writeObject(exp);
-		} catch (Exception e) {
-			throw new IOException("Unexpected error", e);
-		} finally {
-			objectOutputStream.close();
-		}
-	}
-	
-	/**
-	 * A utility function to write the modulus and exponent of a key to a file
-	 * encrypted with a password.
-	 * 
-	 * @param filename The path of the file to write to.
-	 * @param mod The modulus of the key.
-	 * @param exp The exponent of the key.
-	 * @param password A password to encrypt the file.
-	 * 
-	 * @throws IOException
-	 * @throws NoSuchAlgorithmException 
-	 * @throws NoSuchPaddingException 
-	 * @throws InvalidKeySpecException 
-	 * @throws InvalidKeyException 
-	 * @throws InvalidAlgorithmParameterException 
-	 */
-	private static void writeToFile(String filename, BigInteger mod, BigInteger exp, String password) throws IOException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeySpecException, InvalidKeyException, InvalidAlgorithmParameterException {
-		final FileOutputStream fileOutputStream = new FileOutputStream(filename);
-		final BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(fileOutputStream);
-		
-		/** Generate a random salt. */
-		final SecureRandom rand = SecureRandom.getInstance(PASSWORD_SECURERANDOM_ALGORITHM);
-		byte[] salt = new byte[PASSWORD_SALT_BYTES];
-		rand.nextBytes(salt);
-		
-		/** Write the salt to the file. */
-		for (int i = 0; i < PASSWORD_SALT_BYTES; i++)
-			bufferedOutputStream.write(salt[i]);
-		
-		/** Setup encryption. */
-		final PBEParameterSpec params = new PBEParameterSpec(salt, PASSWORD_ITERATIONS);
-		final PBEKeySpec keySpec = new PBEKeySpec(password.toCharArray());
-		final SecretKeyFactory factory = SecretKeyFactory.getInstance(PASSWORD_KEYFACTORY_ALGORITHM);
-		final SecretKey key = factory.generateSecret(keySpec);
-		
-		final Cipher cipher = Cipher.getInstance(PASSWORD_KEYFACTORY_ALGORITHM);
-		cipher.init(Cipher.ENCRYPT_MODE, key, params);
-		final CipherOutputStream cipherOutputStream = new CipherOutputStream(bufferedOutputStream, cipher);
-		
-		final ObjectOutputStream objectOutputStream = new ObjectOutputStream(cipherOutputStream);
-		
-		try {
-			objectOutputStream.writeObject(mod);
-			objectOutputStream.writeObject(exp);
-		} catch (Exception e) {
-			throw new IOException("Unexpected error", e);
-		} finally {
-			objectOutputStream.close();
-		}
-	}
-	
-	/**
-	 * Read the public key from a file.
-	 * 
-	 * @param filename The path to the file containing the public key.
-	 * @return The public key contained within the file.
-	 * 
-	 * @throws IOException
-	 * @throws NoSuchAlgorithmException 
-	 * @throws InvalidKeySpecException 
-	 */
-	public static PublicKey readPublicKeyFromFile(String filename) throws IOException, NoSuchAlgorithmException, InvalidKeySpecException {
-		final FileInputStream fileInputStream = new FileInputStream(filename);
-		final BufferedInputStream bufferedInputStream = new BufferedInputStream(fileInputStream);
-		final ObjectInputStream objectInputStream = new ObjectInputStream(bufferedInputStream);
-		
-		BigInteger mod, exp = null;
-		try {
-		    mod = (BigInteger) objectInputStream.readObject();
-		    exp = (BigInteger) objectInputStream.readObject();
-		} catch (Exception e) {
-		    throw new RuntimeException("Spurious serialisation error", e);
-		} finally {
-			objectInputStream.close();
-		}
-		
-		final RSAPublicKeySpec keySpec = new RSAPublicKeySpec(mod, exp);
-	    final KeyFactory keyFactory = KeyFactory.getInstance(ALGORITHM);
-	    final PublicKey pubKey = keyFactory.generatePublic(keySpec);
-	    
-		return pubKey;
-	}
-	
-	/**
-	 * Read the public key from a file.
-	 * 
-	 * @param file The file containing the public key.
-	 * @return The public key contained within the file.
-	 * 
-	 * @throws IOException
-	 * @throws NoSuchAlgorithmException 
-	 * @throws InvalidKeySpecException 
-	 */
-	public static PublicKey readPublicKeyFromFile(URL file) throws IOException, NoSuchAlgorithmException, InvalidKeySpecException {
-		final InputStream urlInputStream = file.openStream();
-		final BufferedInputStream bufferedInputStream = new BufferedInputStream(urlInputStream);
-		final ObjectInputStream objectInputStream = new ObjectInputStream(bufferedInputStream);
-		
-		BigInteger mod, exp = null;
-		try {
-		    mod = (BigInteger) objectInputStream.readObject();
-		    exp = (BigInteger) objectInputStream.readObject();
-		} catch (Exception e) {
-		    throw new RuntimeException("Spurious serialisation error", e);
-		} finally {
-			objectInputStream.close();
-		}
-		
-		final RSAPublicKeySpec keySpec = new RSAPublicKeySpec(mod, exp);
-	    final KeyFactory keyFactory = KeyFactory.getInstance(ALGORITHM);
-	    final PublicKey pubKey = keyFactory.generatePublic(keySpec);
-		
-		return pubKey;
-	}
-	
-	/**
-	 * Read the private key from a password-encrypted file.
-	 * 
-	 * @param filename The path to the file containing the private key.
-	 * @param password The password to decrypt the private key file.
-	 * @return The private key contained within the file.
-	 * 
-	 * @throws IOException
-	 * @throws NoSuchAlgorithmException 
-	 * @throws InvalidKeySpecException 
-	 * @throws NoSuchPaddingException 
-	 * @throws InvalidKeyException 
-	 * @throws InvalidAlgorithmParameterException 
-	 * @throws InvalidPasswordException 
-	 */
-	private static PrivateKey readPrivateKeyFromFile(String filename, String password) throws IOException, NoSuchAlgorithmException, InvalidKeySpecException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException, InvalidPasswordException {
-		final FileInputStream fileInputStream = new FileInputStream(filename);
-		final BufferedInputStream bufferedInputStream = new BufferedInputStream(fileInputStream);
-		
-		/** Read the salt from the file. */
-		byte[] salt = new byte[PASSWORD_SALT_BYTES];
-		bufferedInputStream.read(salt);
-		
-		/** Setup decryption. */
-		final PBEParameterSpec params = new PBEParameterSpec(salt, PASSWORD_ITERATIONS);
-		final PBEKeySpec keySpec = new PBEKeySpec(password.toCharArray());
-		final SecretKeyFactory factory = SecretKeyFactory.getInstance(PASSWORD_KEYFACTORY_ALGORITHM);
-		final SecretKey key = factory.generateSecret(keySpec);
-		
-		final Cipher cipher = Cipher.getInstance(PASSWORD_KEYFACTORY_ALGORITHM);
-		cipher.init(Cipher.DECRYPT_MODE, key, params);
-		final CipherInputStream cipherInputStream = new CipherInputStream(bufferedInputStream, cipher);
-		
-		/** 
-		 * If a StreamCorruptedException is thrown, then it is likely that the 
-		 * incorrect password was used to decrypt the private key.
-		 */
-		ObjectInputStream objectInputStream = null;
-		try {
-			objectInputStream = new ObjectInputStream(cipherInputStream);
-		} catch (StreamCorruptedException e) {
-			throw new InvalidPasswordException("Invalid password to decrypt private key.");
-		}
-		
-		BigInteger mod, exp = null;
-		try {
-		    mod = (BigInteger) objectInputStream.readObject();
-		    exp = (BigInteger) objectInputStream.readObject();
-		} catch (Exception e) {
-		    throw new RuntimeException("Spurious serialisation error", e);
-		} finally {
-			objectInputStream.close();
-		}
-		
-		final RSAPrivateKeySpec rsaKeySpec = new RSAPrivateKeySpec(mod, exp);
-	    final KeyFactory rsaKeyFactory = KeyFactory.getInstance(ALGORITHM);
-	    final PrivateKey privKey = rsaKeyFactory.generatePrivate(rsaKeySpec);
-		
-		return privKey;
-	}
-	
-	/**
-	 * Read the private key from a password-encrypted file.
-	 * 
-	 * @param file The file containing the private key.
-	 * @param password The password to decrypt the file.
-	 * @return The private key contained within the file.
-	 * 
-	 * @throws IOException
-	 * @throws NoSuchAlgorithmException 
-	 * @throws InvalidKeySpecException 
-	 * @throws NoSuchPaddingException 
-	 * @throws InvalidKeyException 
-	 * @throws InvalidAlgorithmParameterException 
-	 * @throws InvalidPasswordException 
-	 */
-	private static PrivateKey readPrivateKeyFromFile(URL file, String password) throws IOException, NoSuchAlgorithmException, InvalidKeySpecException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException, InvalidPasswordException {
-		final InputStream urlInputStream = file.openStream();
-		final BufferedInputStream bufferedInputStream = new BufferedInputStream(urlInputStream);
-		
-		/** Read the salt from the file. */
-		byte[] salt = new byte[PASSWORD_SALT_BYTES];
-		bufferedInputStream.read(salt);
-		
-		/** Setup decryption. */
-		final PBEParameterSpec params = new PBEParameterSpec(salt, PASSWORD_ITERATIONS);
-		final PBEKeySpec keySpec = new PBEKeySpec(password.toCharArray());
-		final SecretKeyFactory factory = SecretKeyFactory.getInstance(PASSWORD_KEYFACTORY_ALGORITHM);
-		final SecretKey key = factory.generateSecret(keySpec);
-		
-		final Cipher cipher = Cipher.getInstance(PASSWORD_KEYFACTORY_ALGORITHM);
-		cipher.init(Cipher.DECRYPT_MODE, key, params);
-		final CipherInputStream cipherInputStream = new CipherInputStream(bufferedInputStream, cipher);
-		
-		/** 
-		 * If a StreamCorruptedException is thrown, then it is likely that the 
-		 * incorrect password was used to decrypt the private key.
-		 */
-		ObjectInputStream objectInputStream = null;
-		try {
-			objectInputStream = new ObjectInputStream(cipherInputStream);
-		} catch (StreamCorruptedException e) {
-			throw new InvalidPasswordException("Invalid password to decrypt private key.");
-		}
-		
-		BigInteger mod, exp = null;
-		try {
-		    mod = (BigInteger) objectInputStream.readObject();
-		    exp = (BigInteger) objectInputStream.readObject();
-		} catch (Exception e) {
-		    throw new RuntimeException("Spurious serialisation error", e);
-		} finally {
-			objectInputStream.close();
-		}
-		
-		final RSAPrivateKeySpec rsaKeySpec = new RSAPrivateKeySpec(mod, exp);
-	    final KeyFactory rsaKeyfactory = KeyFactory.getInstance(ALGORITHM);
-	    final PrivateKey privKey = rsaKeyfactory.generatePrivate(rsaKeySpec);
-		
-		return privKey;
-	}
-	
-	/**
 	 * Encrypts a message using the peer public key. If the cleartext is longer
 	 * than the maximum allowable cleartext (MAX_CLEARTEXT), then the cleartext 
 	 * will be encrypted in chunks of length MAX_CLEARTEXT.
@@ -550,7 +236,7 @@ public class RSAAsymmetricEncryption implements AsymmetricEncryption {
 	 * @throws IllegalBlockSizeException 
 	 * @throws IllegalStateException
 	 */
-	public String encrypt(String cleartext) throws IllegalBlockSizeException, BadPaddingException, IllegalStateException {
+	public byte[] encrypt(String cleartext) throws IllegalBlockSizeException, BadPaddingException, IllegalStateException {
 		return encrypt(cleartext.getBytes());
 	}
 	
@@ -566,9 +252,11 @@ public class RSAAsymmetricEncryption implements AsymmetricEncryption {
 	 * @throws IllegalBlockSizeException 
 	 * @throws IllegalStateException
 	 */
-	public String encrypt(byte[] cleartext) throws IllegalBlockSizeException, BadPaddingException, IllegalStateException {
+	public byte[] encrypt(byte[] cleartext) throws IllegalBlockSizeException, BadPaddingException, IllegalStateException {
 		if (encryptionCipher == null)
 			throw new IllegalStateException("Cannot perform encryption without a peer public key.");
+		
+		/** TODO: tidy this code. */
 		
 		/** 
 		 * Split the cleartext up into chunks and encrypt each chunk separately.
@@ -606,7 +294,7 @@ public class RSAAsymmetricEncryption implements AsymmetricEncryption {
 		
     	/** Encode the combined encrypted chunks. */
         final byte[] encodedValue = Base64.encodeBase64(combinedChunks);
-        return new String(encodedValue);
+        return encodedValue;
 	}
 	
 	/**
@@ -618,7 +306,7 @@ public class RSAAsymmetricEncryption implements AsymmetricEncryption {
 	 * @throws BadPaddingException 
 	 * @throws IllegalBlockSizeException 
 	 */
-	public String decrypt(String ciphertext) throws IllegalBlockSizeException, BadPaddingException {
+	public byte[] decrypt(String ciphertext) throws IllegalBlockSizeException, BadPaddingException {
 		return decrypt(ciphertext.getBytes());
 	}
 	
@@ -631,9 +319,11 @@ public class RSAAsymmetricEncryption implements AsymmetricEncryption {
 	 * @throws BadPaddingException 
 	 * @throws IllegalBlockSizeException 
 	 */
-	public String decrypt(byte[] ciphertext) throws IllegalBlockSizeException, BadPaddingException {
+	public byte[] decrypt(byte[] ciphertext) throws IllegalBlockSizeException, BadPaddingException {
 		/** Decode the combined encrypted chunks. */
 		final byte[] decodedValue = Base64.decodeBase64(ciphertext);
+		
+		/** TODO: tidy this code. */
 		
 		/** 
 		 * Split the ciphertext up into chunks and decrypt each chunk separately.
@@ -669,7 +359,7 @@ public class RSAAsymmetricEncryption implements AsymmetricEncryption {
     		currentIndex += chunk.length;
         }
     	
-        return new String(combinedChunks);
+        return combinedChunks;
 	}
 	
 	/**
@@ -717,6 +407,281 @@ public class RSAAsymmetricEncryption implements AsymmetricEncryption {
 	 */
 	public PrivateKey getPrivateKey() {
 		return privateKey;
+	}
+	
+	/**
+	 * Save the public key to a file so that it can be retrieved at a later 
+	 * time. The public key file will not be encrypted in any way.
+	 * 
+	 * @param filename The path of the file to which the public key should be 
+	 * saved.
+	 * 
+	 * @throws NoSuchAlgorithmException
+	 * @throws InvalidKeySpecException
+	 * @throws IOException
+	 * @throws NoSuchPaddingException 
+	 * @throws InvalidKeyException 
+	 * @throws InvalidAlgorithmParameterException 
+	 * @throws BadPaddingException 
+	 * @throws IllegalBlockSizeException 
+	 */
+	public void savePublicKeyToFile(String filename) throws NoSuchAlgorithmException, InvalidKeySpecException, IOException, InvalidKeyException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException, InvalidAlgorithmParameterException {
+		final KeyFactory factory = KeyFactory.getInstance(ALGORITHM);
+		final RSAPublicKeySpec keySpec = factory.getKeySpec(this.publicKey, RSAPublicKeySpec.class);
+		writeToFile(filename, keySpec.getModulus(), keySpec.getPublicExponent(), null);
+	}
+	
+	/**
+	 * Save the private key to a file so that it can be retrieved at a later 
+	 * time. The private key file will be encrypted using a user-supplied 
+	 * password.
+	 * 
+	 * @param filename The path of the file to which the public key should be 
+	 * saved.
+	 * @param password The password to encrypt the file.
+	 * 
+	 * @throws NoSuchAlgorithmException
+	 * @throws InvalidKeySpecException
+	 * @throws IOException
+	 * @throws NoSuchPaddingException 
+	 * @throws InvalidKeyException 
+	 * @throws InvalidAlgorithmParameterException 
+	 * @throws BadPaddingException 
+	 * @throws IllegalBlockSizeException 
+	 */
+	public void savePrivateKeyToFile(String filename, String password) throws NoSuchAlgorithmException, InvalidKeySpecException, IOException, InvalidKeyException, NoSuchPaddingException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException {
+		final KeyFactory factory = KeyFactory.getInstance(ALGORITHM);
+		final RSAPrivateKeySpec keySpec = factory.getKeySpec(this.privateKey, RSAPrivateKeySpec.class);
+		writeToFile(filename, keySpec.getModulus(), keySpec.getPrivateExponent(), password);
+	}
+	
+	/**
+	 * A utility function to write the modulus and exponent of a key to a file
+	 * encrypted with a password.
+	 * 
+	 * @param filename The path of the file to write to.
+	 * @param mod The modulus of the key.
+	 * @param exp The exponent of the key.
+	 * @param password A password to encrypt the file. Null for no password
+	 * 
+	 * @throws IOException 
+	 * @throws NoSuchPaddingException 
+	 * @throws InvalidAlgorithmParameterException 
+	 * @throws InvalidKeySpecException 
+	 * @throws BadPaddingException 
+	 * @throws IllegalBlockSizeException 
+	 * @throws NoSuchAlgorithmException 
+	 * @throws InvalidKeyException 
+	 */
+	private static void writeToFile(String filename, BigInteger mod, BigInteger exp, String password) throws IOException, InvalidKeyException, NoSuchAlgorithmException, IllegalBlockSizeException, BadPaddingException, InvalidKeySpecException, InvalidAlgorithmParameterException, NoSuchPaddingException {
+		final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+		final BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(outputStream);
+		final DataOutputStream dataOutputStream = new DataOutputStream(bufferedOutputStream);
+		
+		/** Write the modulus and exponent to a byte array. */
+		try {
+			/** Write the modulus to the output byte array. */
+			final byte[] modArray = mod.toByteArray();
+			dataOutputStream.writeInt(modArray.length);
+			dataOutputStream.write(modArray);
+			
+			/** Write the exponent to a byte array. */
+			final byte[] expArray = exp.toByteArray();
+			dataOutputStream.writeInt(expArray.length);
+			dataOutputStream.write(expArray);
+		} catch (Exception e) {
+			throw new IOException("Unexpected error", e);
+		} finally {
+			dataOutputStream.flush();
+			bufferedOutputStream.flush();
+			outputStream.flush();
+			dataOutputStream.close();
+			bufferedOutputStream.close();
+		}
+		
+		/** Write the byte array to an (un)encrypted file. */
+		if (password != null) {
+			EncryptedFile file = new EncryptedFile(outputStream.toByteArray(), password);
+			file.writeToFile(new File(filename));
+		} else {
+			final FileOutputStream fileOutputStream = new FileOutputStream(filename);
+			
+			try {
+				fileOutputStream.write(outputStream.toByteArray());
+			} catch (Exception e) {
+				throw new IOException("Unexpected error", e);
+			} finally {
+				fileOutputStream.flush();
+				fileOutputStream.close();
+			}
+		}
+		
+		/** Close the output stream. */
+		outputStream.close();
+	}
+	
+	/**
+	 * Read a public key from a file.
+	 * 
+	 * @param filename The path to the file containing the public key.
+	 * @return The public key contained within the file.
+	 * 
+	 * @throws IOException
+	 * @throws NoSuchAlgorithmException 
+	 * @throws InvalidKeySpecException 
+	 */
+	public static PublicKey readPublicKeyFromFile(String filename) throws IOException, NoSuchAlgorithmException, InvalidKeySpecException {
+		return readPublicKeyFromFile(new FileInputStream(filename));
+	}
+	
+	/**
+	 * Read a public key from a file.
+	 * 
+	 * @param file The file containing the public key.
+	 * @return The public key contained within the file.
+	 * 
+	 * @throws IOException
+	 * @throws NoSuchAlgorithmException 
+	 * @throws InvalidKeySpecException 
+	 */
+	public static PublicKey readPublicKeyFromFile(URL file) throws IOException, NoSuchAlgorithmException, InvalidKeySpecException {
+		return readPublicKeyFromFile(file.openStream());
+	}
+	
+	/**
+	 * Read the public key from a file.
+	 * 
+	 * @param fileInputStream The input stream for the file containing the 
+	 * public key.
+	 * @return The public key contained within the file.
+	 * 
+	 * @throws IOException
+	 * @throws NoSuchAlgorithmException 
+	 * @throws InvalidKeySpecException 
+	 */
+	public static PublicKey readPublicKeyFromFile(InputStream inputStream) throws IOException, NoSuchAlgorithmException, InvalidKeySpecException {
+		final BufferedInputStream bufferedInputStream = new BufferedInputStream(inputStream);
+		final DataInputStream dataInputStream = new DataInputStream(bufferedInputStream);
+		
+		/** Get the modulus and exponent from the decrypted data. */
+		BigInteger mod = null;
+		BigInteger exp = null;
+		try {
+			final int modBytes = dataInputStream.readInt();
+			final byte[] modByteArray = new byte[modBytes];
+			dataInputStream.read(modByteArray);
+			mod = new BigInteger(modByteArray);
+			
+			final int expBytes = dataInputStream.readInt();
+			final byte[] expByteArray = new byte[expBytes];
+			dataInputStream.read(expByteArray);
+			exp = new BigInteger(expByteArray);
+		} catch (Exception e) {
+			throw new IOException("Unexpected error", e);
+		} finally {
+			dataInputStream.close();
+			bufferedInputStream.close();
+		}
+		
+		/** Recreate the public key. */
+		final RSAPublicKeySpec keySpec = new RSAPublicKeySpec(mod, exp);
+	    final KeyFactory keyFactory = KeyFactory.getInstance(ALGORITHM);
+	    final PublicKey pubKey = keyFactory.generatePublic(keySpec);
+		
+		return pubKey;
+	}
+	
+	/**
+	 * Read a private key from a password-encrypted file.
+	 * 
+	 * @param filename The path to the file containing the private key.
+	 * @param password The password to decrypt the private key file.
+	 * @return The private key contained within the file.
+	 * 
+	 * @throws IOException
+	 * @throws NoSuchAlgorithmException 
+	 * @throws InvalidKeySpecException 
+	 * @throws NoSuchPaddingException 
+	 * @throws InvalidKeyException 
+	 * @throws InvalidAlgorithmParameterException 
+	 * @throws InvalidPasswordException 
+	 * @throws BadPaddingException 
+	 * @throws IllegalBlockSizeException 
+	 */
+	private static PrivateKey readPrivateKeyFromFile(String filename, String password) throws IOException, NoSuchAlgorithmException, InvalidKeySpecException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException, InvalidPasswordException, IllegalBlockSizeException, BadPaddingException {
+		return readPrivateKeyFromFile(new EncryptedFile(new File(filename), password));
+	}
+	
+	/**
+	 * Read a private key from a password-encrypted file.
+	 * 
+	 * @param file The file containing the private key.
+	 * @param password The password to decrypt the file.
+	 * @return The private key contained within the file.
+	 * 
+	 * @throws IOException
+	 * @throws NoSuchAlgorithmException 
+	 * @throws InvalidKeySpecException 
+	 * @throws NoSuchPaddingException 
+	 * @throws InvalidKeyException 
+	 * @throws InvalidAlgorithmParameterException 
+	 * @throws InvalidPasswordException 
+	 * @throws BadPaddingException 
+	 * @throws IllegalBlockSizeException 
+	 */
+	private static PrivateKey readPrivateKeyFromFile(URL file, String password) throws IOException, NoSuchAlgorithmException, InvalidKeySpecException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException, InvalidPasswordException, IllegalBlockSizeException, BadPaddingException {
+		return readPrivateKeyFromFile(new EncryptedFile(file, password));
+	}
+	
+	/**
+	 * Read a private key from a password-encrypted file.
+	 * 
+	 * @param file The file containing the private key.
+	 * @return The private key contained within the file.
+	 * 
+	 * @throws IOException
+	 * @throws NoSuchAlgorithmException 
+	 * @throws InvalidKeySpecException 
+	 * @throws NoSuchPaddingException 
+	 * @throws InvalidKeyException 
+	 * @throws InvalidAlgorithmParameterException 
+	 * @throws InvalidPasswordException 
+	 * @throws BadPaddingException 
+	 * @throws IllegalBlockSizeException 
+	 */
+	private static PrivateKey readPrivateKeyFromFile(EncryptedFile file) throws IOException, NoSuchAlgorithmException, InvalidKeySpecException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException, InvalidPasswordException, IllegalBlockSizeException, BadPaddingException {
+		final byte[] decryptedData = file.decrypt();
+		final ByteArrayInputStream inputStream = new ByteArrayInputStream(decryptedData);
+		final BufferedInputStream bufferedInputStream = new BufferedInputStream(inputStream);
+		final DataInputStream dataInputStream = new DataInputStream(bufferedInputStream);
+		
+		/** Get the modulus and exponent from the decrypted data. */
+		BigInteger mod = null;
+		BigInteger exp = null;
+		try {
+			final int modBytes = dataInputStream.readInt();
+			final byte[] modByteArray = new byte[modBytes];
+			dataInputStream.read(modByteArray);
+			mod = new BigInteger(modByteArray);
+					
+			final int expBytes = dataInputStream.readInt();
+			final byte[] expByteArray = new byte[expBytes];
+			dataInputStream.read(expByteArray);
+			exp = new BigInteger(expByteArray);
+		} catch (Exception e) {
+			throw new IOException("Unexpected error", e);
+		} finally {
+			dataInputStream.close();
+			bufferedInputStream.close();
+			inputStream.close();
+		}
+		
+		/** Recreate the private key. */
+		final RSAPrivateKeySpec rsaKeySpec = new RSAPrivateKeySpec(mod, exp);
+	    final KeyFactory rsaKeyFactory = KeyFactory.getInstance(ALGORITHM);
+	    final PrivateKey privKey = rsaKeyFactory.generatePrivate(rsaKeySpec);
+		
+		return privKey;
 	}
 }
 

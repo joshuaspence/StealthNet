@@ -56,7 +56,7 @@ public class Server {
 	 * @param args The command line arguments.
 	 * @throws IOException
 	 */
-    public static void main(String[] args) throws IOException {    	
+    public static void main(String[] args) throws IOException {
     	/** 
     	 * Try to read keys from the JAR file first. If that doesn't work, then
     	 * try to read keys from the file system. If that doesn't work, then 

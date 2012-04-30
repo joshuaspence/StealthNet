@@ -52,7 +52,7 @@ import StealthNet.Security.NonceGenerator;
  */
 public class DecryptedPacket {
 	/** Commands. */
-    public static final byte CMD_NULL = 0x00;				/** used for acknowledgement */
+    public static final byte CMD_NULL = 0x00;					/** used for acknowledgement */
     public static final byte CMD_LOGIN = 0x01;
     public static final byte CMD_LOGOUT = 0x02;
     public static final byte CMD_MSG = 0x03;
@@ -68,7 +68,7 @@ public class DecryptedPacket {
      * or server, but rather should always be handled within the Comms class. 
      */
     public static final byte CMD_AUTHENTICATIONKEY = 0x0A;	/** common key for Diffie-Hellman key exchange */
-    public static final byte CMD_INTEGRITYKEY = 0x0B;		/** key for MAC generator */
+    public static final byte CMD_INTEGRITYKEY = 0x0B;			/** key for MAC generator */
     public static final byte CMD_NONCESEED = 0x0C;			/** seed for nonce generator */
     public static final byte CMD_PUBLICKEY = 0x0D;			/** asymmetric public key */
     
@@ -328,7 +328,7 @@ public class DecryptedPacket {
      */
     public EncryptedPacket encrypt(Encryption e) throws UnsupportedEncodingException, IllegalBlockSizeException, BadPaddingException, InvalidAttributeValueException, IllegalArgumentException {
     	if (e != null) {
-	    	final byte[] encryptedData = e.encrypt(this.toString()).getBytes();
+	    	final byte[] encryptedData = e.encrypt(this.toString());
 	    	return new EncryptedPacket(encryptedData, encryptedData.length, HashedMessageAuthenticationCode.DIGEST_BYTES, this.mac);
     	} else {
     		return new EncryptedPacket(this.toString().getBytes(), this.toString().getBytes().length, HashedMessageAuthenticationCode.DIGEST_BYTES, this.mac);

@@ -44,10 +44,11 @@ public class AESEncryption implements Encryption {
 	private final Cipher encryptionCipher;
 	private final Cipher decryptionCipher;
 	
-	/** String constants. */
+	/** Constants. */
 	public static final String HASH_ALGORITHM = "MD5";
 	public static final String KEY_ALGORITHM = "AES";
 	public static final String CIPHER_ALGORITHM = "AES/CBC/PKCS5Padding";
+	private static final int SALT_BYTES = 16;
 	
 	/**
 	 * Constructor.
@@ -68,23 +69,23 @@ public class AESEncryption implements Encryption {
          * this way, both peers should generate the same initialisation 
          * vectors.
          */
-        final byte[] IV = new byte[16];
+        final byte[] iv = new byte[SALT_BYTES];
         final byte[] salt = ByteBuffer.allocate(Integer.SIZE / Byte.SIZE).putInt(key.hashCode()).array();
         final SecureRandom IVGenerator = new SecureRandom(salt);
         
         for (int i = 0; i < 16; i++)
-        	IV[i] = (byte) IVGenerator.nextInt();
-        this.ips = new IvParameterSpec(IV);
+        	iv[i] = (byte) IVGenerator.nextInt();
+        this.ips = new IvParameterSpec(iv);
         
         /** Initialise encryption cipher. */
-        encryptionCipher = Cipher.getInstance(CIPHER_ALGORITHM);
-		encryptionCipher.init(Cipher.ENCRYPT_MODE, this.key, this.ips);
+        this.encryptionCipher = Cipher.getInstance(CIPHER_ALGORITHM);
+        this.encryptionCipher.init(Cipher.ENCRYPT_MODE, this.key, this.ips);
 		//System.out.println("Encryption block size = " + encryptionCipher.getBlockSize() + " bytes");
 		//System.out.println("Encryption key length = " + (encryptionIPS.getIV().length * 8) + " bits");
 		
 		/** Initialise decryption cipher. */
-		decryptionCipher = Cipher.getInstance(CIPHER_ALGORITHM);
-		decryptionCipher.init(Cipher.DECRYPT_MODE, this.key, this.ips);
+		this.decryptionCipher = Cipher.getInstance(CIPHER_ALGORITHM);
+		this.decryptionCipher.init(Cipher.DECRYPT_MODE, this.key, this.ips);
 		//System.out.println("Decryption block size = " + encryptionCipher.getBlockSize() + " bytes");
 		//System.out.println("Decryption key length = " + (encryptionIPS.getIV().length * 8) + " bits");
 	}
@@ -100,7 +101,7 @@ public class AESEncryption implements Encryption {
 	 * @throws BadPaddingException
 	 * @throws UnsupportedEncodingException 
 	 */
-	public String encrypt(String cleartext) throws UnsupportedEncodingException, IllegalBlockSizeException, BadPaddingException {
+	public byte[] encrypt(String cleartext) throws UnsupportedEncodingException, IllegalBlockSizeException, BadPaddingException {
 		return encrypt(cleartext.getBytes());
 	}
 	
@@ -115,10 +116,10 @@ public class AESEncryption implements Encryption {
 	 * @throws BadPaddingException
 	 * @throws UnsupportedEncodingException 
 	 */
-	public String encrypt(byte[] cleartext) throws IllegalBlockSizeException, BadPaddingException {		
-		byte[] encryptedValue = encryptionCipher.doFinal(cleartext);
-        byte[] encodedValue = Base64.encodeBase64(encryptedValue);    
-        return new String(encodedValue);
+	public byte[] encrypt(byte[] cleartext) throws IllegalBlockSizeException, BadPaddingException {		
+		final byte[] encryptedValue = encryptionCipher.doFinal(cleartext);
+		final byte[] encodedValue = Base64.encodeBase64(encryptedValue);    
+        return encodedValue;
 	}
 	
 	/**
@@ -132,7 +133,7 @@ public class AESEncryption implements Encryption {
 	 * @throws BadPaddingException 
 	 * @throws IllegalBlockSizeException 
 	 */
-	public String decrypt(String ciphertext) throws UnsupportedEncodingException, IllegalBlockSizeException, BadPaddingException {	 
+	public byte[] decrypt(String ciphertext) throws UnsupportedEncodingException, IllegalBlockSizeException, BadPaddingException {	 
 		return decrypt(ciphertext.getBytes());
 	}
 	
@@ -146,10 +147,10 @@ public class AESEncryption implements Encryption {
 	 * @throws BadPaddingException 
 	 * @throws IllegalBlockSizeException 
 	 */
-	public String decrypt(byte[] ciphertext) throws IllegalBlockSizeException, BadPaddingException {
-		byte[] decodedValue = Base64.decodeBase64(ciphertext);
-		byte[] decryptedValue = decryptionCipher.doFinal(decodedValue);
-		return new String(decryptedValue);
+	public byte[] decrypt(byte[] ciphertext) throws IllegalBlockSizeException, BadPaddingException {
+		final byte[] decodedValue = Base64.decodeBase64(ciphertext);
+		final byte[] decryptedValue = decryptionCipher.doFinal(decodedValue);
+		return decryptedValue;
 	}
 }
 

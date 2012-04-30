@@ -22,6 +22,8 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.spec.InvalidKeySpecException;
 
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 
 /* StealthNet.Security.AsymmetricEncryption Interface Definition *************/
@@ -48,8 +50,11 @@ public interface AsymmetricEncryption extends Encryption {
 	 * @throws NoSuchAlgorithmException 
 	 * @throws InvalidKeyException 
 	 * @throws InvalidKeySpecException 
+	 * @throws InvalidAlgorithmParameterException 
+	 * @throws BadPaddingException 
+	 * @throws IllegalBlockSizeException 
 	 */
-	public void savePublicKeyToFile(String filename) throws NoSuchAlgorithmException, InvalidKeySpecException, IOException, InvalidKeyException, NoSuchPaddingException;
+	public void savePublicKeyToFile(String filename) throws NoSuchAlgorithmException, InvalidKeySpecException, IOException, InvalidKeyException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException, InvalidAlgorithmParameterException;
 	
 	/**
 	 * Save the private key to a file so that it can be retrieved at a later 
@@ -65,8 +70,10 @@ public interface AsymmetricEncryption extends Encryption {
 	 * @throws NoSuchPaddingException 
 	 * @throws InvalidKeyException 
 	 * @throws InvalidAlgorithmParameterException 
+	 * @throws BadPaddingException 
+	 * @throws IllegalBlockSizeException 
 	 */
-	public void savePrivateKeyToFile(String filename, String password) throws NoSuchAlgorithmException, InvalidKeySpecException, IOException, InvalidKeyException, NoSuchPaddingException, InvalidAlgorithmParameterException;
+	public void savePrivateKeyToFile(String filename, String password) throws NoSuchAlgorithmException, InvalidKeySpecException, IOException, InvalidKeyException, NoSuchPaddingException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException;
 	
 	/**
 	 * Get our public key.

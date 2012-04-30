@@ -48,16 +48,17 @@ public class PasswordEncryption implements Encryption {
 	private final Cipher encryptionCipher;
 	private final Cipher decryptionCipher;
 	
-	/** String constants. */
-	private static final String SECURERANDOM_ALGORITHM = "SHA1PRNG";
-	private static final int SALT_BYTES = 8;
-	private static final int ALGORITHM_ITERATIONS = 1000;
-	private static final String KEYFACTORY_ALGORITHM = "PBEWithMD5AndDES";
+	/** Constants. */
+	public static final String SECURERANDOM_ALGORITHM = "SHA1PRNG";
+	public static final int SALT_BYTES = 8;
+	public static final int ALGORITHM_ITERATIONS = 1000;
+	public static final String KEYFACTORY_ALGORITHM = "PBEWithMD5AndDES";
 	
 	/**
-	 * Constructor.
+	 * Constructor with a randomly generated salt.
 	 * 
-	 * @param password The password to be used for encryption and decryption.
+	 * @param password The password to be used for encryption and decryption. 
+	 * Note that the password cannot be null.
 	 * 
 	 * @throws NoSuchAlgorithmException 
 	 * @throws InvalidKeySpecException 
@@ -91,10 +92,11 @@ public class PasswordEncryption implements Encryption {
 	}
 	
 	/**
-	 * Constructor.
+	 * Constructor with a specified salt.
 	 * 
 	 * @param salt The salt to use for encryption and decryption.
-	 * @param password The password to be used for encryption and decryption.
+	 * @param password The password to be used for encryption and decryption. 
+	 * Note that the password cannot be null.
 	 * 
 	 * @throws NoSuchAlgorithmException 
 	 * @throws InvalidKeySpecException 
@@ -137,7 +139,7 @@ public class PasswordEncryption implements Encryption {
 	 * @throws BadPaddingException
 	 * @throws UnsupportedEncodingException 
 	 */
-	public String encrypt(String cleartext) throws UnsupportedEncodingException, IllegalBlockSizeException, BadPaddingException {
+	public byte[] encrypt(String cleartext) throws UnsupportedEncodingException, IllegalBlockSizeException, BadPaddingException {
 		return encrypt(cleartext.getBytes());
 	}
 	
@@ -152,10 +154,10 @@ public class PasswordEncryption implements Encryption {
 	 * @throws BadPaddingException
 	 * @throws UnsupportedEncodingException 
 	 */
-	public String encrypt(byte[] cleartext) throws IllegalBlockSizeException, BadPaddingException {		
-		byte[] encryptedValue = encryptionCipher.doFinal(cleartext);
-        byte[] encodedValue = Base64.encodeBase64(encryptedValue);    
-        return new String(encodedValue);
+	public byte[] encrypt(byte[] cleartext) throws IllegalBlockSizeException, BadPaddingException {		
+		final byte[] encryptedValue = encryptionCipher.doFinal(cleartext);
+		final byte[] encodedValue = Base64.encodeBase64(encryptedValue);    
+        return encodedValue;
 	}
 	
 	/**
@@ -169,7 +171,7 @@ public class PasswordEncryption implements Encryption {
 	 * @throws BadPaddingException 
 	 * @throws IllegalBlockSizeException 
 	 */
-	public String decrypt(String ciphertext) throws UnsupportedEncodingException, IllegalBlockSizeException, BadPaddingException {	 
+	public byte[] decrypt(String ciphertext) throws UnsupportedEncodingException, IllegalBlockSizeException, BadPaddingException {	 
 		return decrypt(ciphertext.getBytes());
 	}
 	
@@ -183,10 +185,10 @@ public class PasswordEncryption implements Encryption {
 	 * @throws BadPaddingException 
 	 * @throws IllegalBlockSizeException 
 	 */
-	public String decrypt(byte[] ciphertext) throws IllegalBlockSizeException, BadPaddingException {
-		byte[] decodedValue = Base64.decodeBase64(ciphertext);
-		byte[] decryptedValue = decryptionCipher.doFinal(decodedValue);
-		return new String(decryptedValue);
+	public byte[] decrypt(byte[] ciphertext) throws IllegalBlockSizeException, BadPaddingException {
+		final byte[] decodedValue = Base64.decodeBase64(ciphertext);
+		final byte[] decryptedValue = decryptionCipher.doFinal(decodedValue);
+		return decryptedValue;
 	}
 	
 	/**
