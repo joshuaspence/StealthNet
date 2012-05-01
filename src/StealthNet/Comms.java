@@ -95,10 +95,6 @@ public class Comms {
     public static final String DEFAULT_BANKNAME = "localhost";	/** Default host for the StealthNet bank. */
     public static final int DEFAULT_BANKPORT = 5617;				/** Default port for the StealthNet bank. */
     
-    /** Current values. */
-    private final String serverName;	/** This host - defaults to DEFAULT_SERVERNAME */
-    private final int port;			/** This port - defaults to DEFAULT_SERVERPORT. */
-
     /** Opened socket through which the communication is to be made. */
     private Socket commsSocket;
     
@@ -138,12 +134,7 @@ public class Comms {
     	this.dataIn = null;
     	this.dataOut = null;
         
-        this.serverName = DEFAULT_SERVERNAME;
-        this.port = DEFAULT_SERVERPORT;
-        
-        this.asymmetricEncryptionProvider = null;
-        
-        if (DEBUG_GENERAL) System.out.println("Creating Comms to " + this.serverName + " on port " + this.port + ".");
+       this.asymmetricEncryptionProvider = null;
     }
     
     /** 
@@ -156,15 +147,10 @@ public class Comms {
     	this.dataIn = null;
     	this.dataOut = null;
         
-        this.serverName = DEFAULT_SERVERNAME;
-        this.port = DEFAULT_SERVERPORT;
-        
         this.asymmetricEncryptionProvider = aep;
         if (this.asymmetricEncryptionProvider != null && this.asymmetricEncryptionProvider.getPeerPublicKey() != null)
         	if (DEBUG_ASYMMETRIC_ENCRYPTION) System.out.println("Asymmetric encryption enabled using public key: " + new String(Utility.getHexValue(asymmetricEncryptionProvider.getPeerPublicKey().getEncoded())));
         this.confidentialityProvider = this.asymmetricEncryptionProvider;
-        
-        if (DEBUG_GENERAL) System.out.println("Creating Comms to " + this.serverName + " on port " + this.port + ".");
     }
     
     /** 
@@ -178,60 +164,13 @@ public class Comms {
     	this.dataIn = null;
     	this.dataOut = null;
         
-        this.serverName = DEFAULT_SERVERNAME;
-        this.port = DEFAULT_SERVERPORT;
-        
         this.asymmetricEncryptionProvider = aep;
         if (this.asymmetricEncryptionProvider != null && this.asymmetricEncryptionProvider.getPeerPublicKey() != null)
         	if (DEBUG_ASYMMETRIC_ENCRYPTION) System.out.println("Asymmetric encryption enabled using public key: " + new String(Utility.getHexValue(asymmetricEncryptionProvider.getPeerPublicKey().getEncoded())));
         this.confidentialityProvider = this.asymmetricEncryptionProvider;
         this.peerHasPublicKey = peerHasPublicKey;
-        
-        if (DEBUG_GENERAL) System.out.println("Creating Comms to " + this.serverName + " on port " + this.port + ".");
     }
     
-    /** 
-     * Constructor. 
-     * 
-     * @param s The servername of the StealthNet server.
-     * @param p The port number for the StealthNet server.
-     */
-    public Comms(String s, int p) {    	
-    	this.commsSocket = null;
-        this.dataIn = null;
-        this.dataOut = null;
-        
-        this.serverName = s;
-        this.port = p;
-        
-        this.asymmetricEncryptionProvider = null;
-        
-        if (DEBUG_GENERAL) System.out.println("Creating Comms to " + this.serverName + " on port " + this.port + ".");
-    }
-    
-    /** 
-     * Constructor. 
-     * 
-     * @param s The servername of the StealthNet server.
-     * @param p The port number for the StealthNet server.
-     * @param aep To provide asymmetric encryption and public-private keys.
-     */
-    public Comms(String s, int p, AsymmetricEncryption aep) {    	
-    	this.commsSocket = null;
-        this.dataIn = null;
-        this.dataOut = null;
-        
-        this.serverName = s;
-        this.port = p;
-        
-        this.asymmetricEncryptionProvider = aep;
-        if (this.asymmetricEncryptionProvider != null && this.asymmetricEncryptionProvider.getPeerPublicKey() != null)
-        	if (DEBUG_ASYMMETRIC_ENCRYPTION) System.out.println("Asymmetric encryption enabled using public key: " + new String(Utility.getHexValue(asymmetricEncryptionProvider.getPeerPublicKey().getEncoded())));
-        this.confidentialityProvider = this.asymmetricEncryptionProvider;
-        
-        if (DEBUG_GENERAL) System.out.println("Creating Comms to " + this.serverName + " on port " + this.port + ".");
-    }
-
     /** 
      * Cleans up before terminating the class.
      * 
@@ -445,7 +384,7 @@ public class Comms {
      * @param decPckt The packet to be sent.
      * @return True if successful, otherwise false.
      */
-    public boolean sendPacket(DecryptedPacket decPckt) {    	
+    private boolean sendPacket(DecryptedPacket decPckt) {    	
     	/** Print debug information. */
     	if (DEBUG_PURE_PACKET)
 			System.out.println("(pure)      sendPacket(" + decPckt.toString() + ")");

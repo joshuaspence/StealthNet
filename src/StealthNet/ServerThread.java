@@ -454,12 +454,11 @@ public class ServerThread extends Thread {
 						}
 						
 						/** 
-                    	 * NOTE: Data will be of the form 
-                    	 * "user@host:port".
-                    	 */
-						final String chatData = new String(pckt.data);
-						final String iAddr = chatData.split("@")[1];
-						final String userKey = chatData.split("@")[0];
+						 * NOTE: Data will be of the form "user@host:port".
+						 */
+						final String data = new String(pckt.data);
+						final String iAddr = data.split("@")[1];
+						final String userKey = data.split("@")[0];
 						final UserData userInfo = userList.get(userKey);
 						
 						if (userInfo == null || userInfo.userThread == null) {
@@ -498,12 +497,11 @@ public class ServerThread extends Thread {
 						}
 						
 						/** 
-                    	 * NOTE: Data will be of the form 
-                    	 * "user@host:port".
-                    	 */
-						final String ftpData = new String(pckt.data);
-						final String iAddr = ftpData.split("@")[1];
-						final String userKey = ftpData.split("@")[0];
+						 * NOTE: Data will be of the form "user@host:port".
+						 */
+						final String data = new String(pckt.data);
+						final String iAddr = data.split("@")[1];
+						final String userKey = data.split("@")[0];
 						final UserData userInfo = userList.get(userKey);
 						
 						if (userInfo == null || userInfo.userThread == null) {
@@ -581,9 +579,12 @@ public class ServerThread extends Thread {
 							break;
 						}
 						
+						/** 
+						 * NOTE: Data will be of the form "name@address".
+						 */
 						final String data = new String(pckt.data);
-						final String iAddr = data.substring(data.lastIndexOf("@") + 1);
-						final String name = data.substring(0, data.length() - iAddr.length() - 1);
+						final String name = data.split("@")[0];
+						final String destination = data.split("@")[1];
 						final SecretData secretInfo = secretList.get(name);
 						
 						if (secretInfo == null) {
@@ -615,9 +616,9 @@ public class ServerThread extends Thread {
 								
 								/** Send an acknowledgement. */
 								
-								final String fName = secretInfo.dirname + secretInfo.filename;
+								final String fileName = secretInfo.dirname + secretInfo.filename;
 								final byte msg_type = DecryptedPacket.CMD_GETSECRET;
-								final String msg = fName + "@" + iAddr;
+								final String msg = fileName + "@" + destination;
 								
 								if (DEBUG_COMMANDS_GETSECRET) System.out.println(THREADID_PREFIX + this.getId() + THREADID_SUFFIX + "Sending get secret message \"" + msg + "\" to user \"" + user + "\".");
 								userInfo.userThread.stealthComms.sendPacket(msg_type, msg);

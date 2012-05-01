@@ -68,9 +68,9 @@ public class FileTransfer extends Thread {
      * @param send True to indicate sending, false to indicate receiving.
      */
     public FileTransfer(Comms snComms, String fn, boolean send) {
-        stealthComms = snComms;
-        filename = fn.trim();
-        bSend = send;
+        this.stealthComms = snComms;
+        this.filename = fn.trim();
+        this.bSend = send;
     }
 
     /** 

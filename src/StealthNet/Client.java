@@ -860,7 +860,7 @@ public class Client {
                 if (DEBUG_GENERAL) System.out.println("Received packet. Packet command: " + DecryptedPacket.getCommandName(pckt.command) + ". Packet data: \"" + new String(pckt.data).replaceAll("\n", ";") + "\".");
                 
                 switch (pckt.command) {
-	                /***********************************************************
+					/***********************************************************
 					 * Message command
 					 **********************************************************/
                     case DecryptedPacket.CMD_MSG:
@@ -871,7 +871,7 @@ public class Client {
                         break;
                     }
                     
-                    /***********************************************************
+					/***********************************************************
 					 * Chat command
 					 **********************************************************/
                     case DecryptedPacket.CMD_CHAT:
@@ -880,13 +880,13 @@ public class Client {
                     	 * NOTE: Data will be of the form 
                     	 * "user@host:port".
                     	 */
-                        final String chatData = new String(pckt.data);
+                        final String data = new String(pckt.data);
                         
-                        final String iAddr =               chatData.split("@")[1].split(":")[0];
-                        final int iPort = Integer.parseInt(chatData.split("@")[1].split(":")[1]);
+                        final String iAddr =               data.split("@")[1].split(":")[0];
+                        final int iPort = Integer.parseInt(data.split("@")[1].split(":")[1]);
                         
                         /** Get the peer public key. */
-                        final String sourceUser =          chatData.split("@")[0];
+                        final String sourceUser =          data.split("@")[0];
                         final PublicKey peer = userList.get(sourceUser).publicKey;
                         
                         if (DEBUG_COMMANDS_CHAT) System.out.println("Received a chat command. Target host: '" + iAddr + ":" + iPort + "'.");
@@ -907,22 +907,21 @@ public class Client {
                         break;
                     }
                     
-                    /***********************************************************
+					/***********************************************************
 					 * FTP command
 					 **********************************************************/
                     case DecryptedPacket.CMD_FTP:  
                     {
                     	/** 
-                    	 * NOTE: Data will be of the form 
-                    	 * "user@host:port#filename".
+                    	 * NOTE: Data will be of the form  "user@host:port#filename".
                     	 */
-                        final String ftpData = new String(pckt.data);
-                        final String fName =               ftpData.split("@")[1].split("#")[1];
-                        final String iAddr =               ftpData.split("@")[1].split("#")[0].split(":")[0];
-                        final int iPort = Integer.parseInt(ftpData.split("@")[1].split("#")[0].split(":")[1]);
+                        final String data = new String(pckt.data);
+                        final String fName =               data.split("@")[1].split("#")[1];
+                        final String iAddr =               data.split("@")[1].split("#")[0].split(":")[0];
+                        final int iPort = Integer.parseInt(data.split("@")[1].split("#")[0].split(":")[1]);
                         
                         /** Get the peer public key. */
-                        final String sourceUser =          ftpData.split("@")[0];
+                        final String sourceUser =          data.split("@")[0];
                         final PublicKey peer = userList.get(sourceUser).publicKey;
                         
                         if (DEBUG_COMMANDS_FTP) System.out.println("Received a file transfer command. Target host: '" + iAddr + ":" + iPort + "'.");
@@ -948,7 +947,7 @@ public class Client {
                         break;
                     }
                     
-                    /***********************************************************
+					/***********************************************************
 					 * List command
 					 **********************************************************/
                     case DecryptedPacket.CMD_LIST: 
@@ -995,7 +994,7 @@ public class Client {
                         break;
                     }
                     
-                    /***********************************************************
+					/***********************************************************
 					 * Secret List command
 					 **********************************************************/
                    	case DecryptedPacket.CMD_SECRETLIST:                   		
@@ -1028,19 +1027,21 @@ public class Client {
                         break;
                    	}
                    	
-                    /***********************************************************
+					/***********************************************************
 					 * Get Secret command
 					 **********************************************************/
 					case DecryptedPacket.CMD_GETSECRET:
 					{
 						/** TODO: fix */
-						String fName = new String(pckt.data);
-						String iAddr = fName.substring(fName.lastIndexOf("@") + 1);
-						final int iPort = Integer.parseInt(iAddr.substring(iAddr.lastIndexOf(":") + 1));
-						iAddr = iAddr.substring(0, iAddr.lastIndexOf(":"));
-						fName = fName.substring(0, fName.lastIndexOf("@"));
+						/** 
+						 * NOTE: Data will be of the form  "name@address".
+						 */
+						final String data = new String(pckt.data);
+						final String fileName = data.split("@")[0];
+						final String iAddr = data.split("@")[1].split(":")[0];
+						final int iPort = Integer.parseInt(data.split("@")[1].split(":")[1]);
 						
-						if (DEBUG_COMMANDS_GETSECRET) System.out.println("Received a get secret command. Target host: '" + iAddr + ":" + iPort + "'. The filename is \"" + fName + "\".");
+						if (DEBUG_COMMANDS_GETSECRET) System.out.println("Received a get secret command. Target host: '" + iAddr + ":" + iPort + "'. The filename is \"" + fileName + "\".");
 
 						final Comms snComms = new Comms();
 						snComms.initiateSession(new Socket(iAddr, iPort));
@@ -1048,7 +1049,7 @@ public class Client {
 						
 						msgTextBox.append("[INFO] Sending out a secret.\n");
 						if (DEBUG_GENERAL) System.out.println("Starting file transfer.");
-						final FileTransfer ft = new FileTransfer(snComms, fName, true);
+						final FileTransfer ft = new FileTransfer(snComms, fileName, true);
 						ft.start();
 						break;
 					}
