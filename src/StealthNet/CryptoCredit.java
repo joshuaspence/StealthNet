@@ -18,8 +18,6 @@ import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.util.Stack;
 
-import StealthNet.Security.AESEncryption;
-
 /* StealthNet.CryptoCredit Class Definition **********************************/
 
 /**
@@ -29,6 +27,9 @@ import StealthNet.Security.AESEncryption;
  * @author James Dimitrios Moutafidis
  */
 public class CryptoCredit {
+	/** Constants. */
+	private static final String HASH_ALGORITHM = "MD5";
+
 	/** Stack to store the hash chain. */
 	private static final Stack<byte[]> hashChain = new Stack<byte[]>();
 
@@ -55,21 +56,25 @@ public class CryptoCredit {
 	public void createNewHashChain() {
 		final MessageDigest mdb;
 		try {
-			mdb = MessageDigest.getInstance(AESEncryption.HASH_ALGORITHM);
+			mdb = MessageDigest.getInstance(HASH_ALGORITHM);
 		} catch (final Exception e) {
 			System.err.println("Unable to create hash chain.");
 			return;
 		}
 		final SecureRandom secureRandom = new SecureRandom();
 		startingCredit = secureRandom.nextInt();
+
 		final String startingCreditString = startingCredit + "";
+
 		byte[] creditHash = mdb.digest(startingCreditString.getBytes());
 		hashChain.clear();
 		hashChain.push(creditHash);
+
 		for (int i = 1; i<cryptoCredits; i++) {
 			creditHash = mdb.digest(hashChain.peek().toString().getBytes());
 			hashChain.push(creditHash);
 		}
+
 		cryptoCredits = hashChain.size();
 	}
 
