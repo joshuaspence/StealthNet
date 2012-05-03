@@ -29,7 +29,6 @@ import StealthNet.Security.AESEncryption;
  * @author James Dimitrios Moutafidis
  */
 public class CryptoCredit {
-	/* JM Edit Start */
 	/** Stack to store the hash chain. */
 	private static final Stack<byte[]> hashChain = new Stack<byte[]>();
 
@@ -53,8 +52,7 @@ public class CryptoCredit {
 	 * Create a new hash chain. The old chain is deleted and a new one is
 	 * generated.
 	 */
-	public void createNewHashChain()
-	{
+	public void createNewHashChain() {
 		final MessageDigest mdb;
 		try {
 			mdb = MessageDigest.getInstance(AESEncryption.HASH_ALGORITHM);
@@ -68,8 +66,7 @@ public class CryptoCredit {
 		byte[] creditHash = mdb.digest(startingCreditString.getBytes());
 		hashChain.clear();
 		hashChain.push(creditHash);
-		for (int i=1; i<cryptoCredits; i++)
-		{
+		for (int i = 1; i<cryptoCredits; i++) {
 			creditHash = mdb.digest(hashChain.peek().toString().getBytes());
 			hashChain.push(creditHash);
 		}
@@ -81,8 +78,7 @@ public class CryptoCredit {
 	 * 
 	 * @return The starting credit.
 	 */
-	public int getStartingCredit()
-	{
+	public int getStartingCredit() {
 		return startingCredit;
 	}
 
@@ -91,8 +87,7 @@ public class CryptoCredit {
 	 * 
 	 * @return The stack of hashes.
 	 */
-	public Stack<byte[]> getHashChain()
-	{
+	public Stack<byte[]> getHashChain() {
 		return hashChain;
 	}
 
@@ -103,17 +98,14 @@ public class CryptoCredit {
 	 * 
 	 * @return The top credit in the stack.
 	 */
-	public byte[] spend()
-	{
+	public byte[] spend() {
 		byte[] topCredit = null;
-		if (!hashChain.isEmpty())
-		{
+		if (!hashChain.isEmpty()) {
 			topCredit = hashChain.pop();
 			cryptoCredits--;
 		}
 		return topCredit;
 	}
-	/* JM Edit End */
 }
 
 /******************************************************************************
