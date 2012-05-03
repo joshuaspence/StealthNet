@@ -113,7 +113,6 @@ DEBUG="\
 -Ddebug.StealthNet.ServerThread.Commands=false \
 -Ddebug.StealthNet.ServerThread.Commands.Null=true \
 -Ddebug.StealthNet.ServerThread.Commands.Login=true \
--Ddebug.StealthNet.ServerThread.Commands.Logout=true \
 -Ddebug.StealthNet.ServerThread.Commands.Message=true \
 -Ddebug.StealthNet.ServerThread.Commands.Chat=true \
 -Ddebug.StealthNet.ServerThread.Commands.FTP=true \

@@ -35,10 +35,6 @@ public class BankThread extends Thread {
 	private static final boolean DEBUG_COMMANDS_LOGIN   = Debug.isDebug("StealthNet.BankThread.Commands.Login");
 	private static final boolean DEBUG_COMMANDS_LOGOUT  = Debug.isDebug("StealthNet.BankThread.Commands.Logout");
 
-	/** Used to separate thread ID from debug output. */
-	private static final String THREADID_PREFIX = "Thread ";
-	private static final String THREADID_SUFFIX = " >> ";
-
 	/** Constants. */
 	private static final int INITIAL_BALANCE = 100;
 
@@ -71,7 +67,7 @@ public class BankThread extends Thread {
 		/** Thread constructor. */
 		super("StealthNet.BankThread");
 
-		if (DEBUG_GENERAL) System.out.println(THREADID_PREFIX + getId() + THREADID_SUFFIX + "Creating a BankThread.");
+		if (DEBUG_GENERAL) System.out.println("Creating a BankThread.");
 
 		asymmetricEncryptionProvider = aep;
 
@@ -114,7 +110,7 @@ public class BankThread extends Thread {
 			userAccount.userThread = this;
 			userAccounts.put(id, userAccount);
 
-			if (DEBUG_GENERAL) System.out.println(THREADID_PREFIX + getId() + THREADID_SUFFIX + "Added user \"" + id + "\" to the user list.");
+			if (DEBUG_GENERAL) System.out.println("Added user \"" + id + "\" to the user list.");
 			return true;
 		}
 	}
@@ -130,7 +126,7 @@ public class BankThread extends Thread {
 		final UserBankAccount userAccount = userAccounts.get(id);
 		if (userAccount != null) {
 			userAccount.userThread = null;
-			if (DEBUG_GENERAL) System.out.println(THREADID_PREFIX + getId() + THREADID_SUFFIX + "Removed user \"" + id + "\" from the user list.");
+			if (DEBUG_GENERAL) System.out.println("Removed user \"" + id + "\" from the user list.");
 			return true;
 		} else
 			return false;
@@ -143,7 +139,7 @@ public class BankThread extends Thread {
 	 * TODO
 	 */
 	public void run() {
-		if (DEBUG_GENERAL) System.out.println(THREADID_PREFIX + getId() + THREADID_SUFFIX + "Running BankThread...");
+		if (DEBUG_GENERAL) System.out.println("Running BankThread...");
 
 		DecryptedPacket pckt = new DecryptedPacket();
 		try {
@@ -154,7 +150,7 @@ public class BankThread extends Thread {
 				if (pckt == null)
 					break;
 
-				if (DEBUG_GENERAL) System.out.println(THREADID_PREFIX + getId() + THREADID_SUFFIX + "Received packet: (" + pckt.getDecodedString() + ").");
+				if (DEBUG_GENERAL) System.out.println("Received packet: (" + pckt.getDecodedString() + ").");
 
 				/** Perform the relevant action based on the packet command. */
 				switch (pckt.command) {
@@ -163,7 +159,7 @@ public class BankThread extends Thread {
 				 **********************************************************/
 				case DecryptedPacket.CMD_NULL:
 				{
-					if (DEBUG_COMMANDS_NULL) System.out.println(THREADID_PREFIX + getId() + THREADID_SUFFIX + "Received NULL command.");
+					if (DEBUG_COMMANDS_NULL) System.out.println("Received NULL command.");
 					break;
 				}
 
@@ -176,7 +172,7 @@ public class BankThread extends Thread {
 
 					if (userID != null) {
 						/** A user is already logged in. */
-						System.err.println(THREADID_PREFIX + getId() + THREADID_SUFFIX + "User \"" + userID + "\" trying to log in twice.");
+						System.err.println("User \"" + userID + "\" trying to log in twice.");
 						break;
 					}
 
@@ -185,13 +181,13 @@ public class BankThread extends Thread {
 
 					/** Log the user in. */
 					if (!addUser(userID)) {
-						System.out.println(THREADID_PREFIX + getId() + THREADID_SUFFIX + "User \"" + userID + "\" is already logged in.");
+						System.out.println("User \"" + userID + "\" is already logged in.");
 
 						/** Cancel the current login attempt. */
 						pckt.command = DecryptedPacket.CMD_LOGOUT;
 						userID = null;
 					} else
-						System.out.println(THREADID_PREFIX + getId() + THREADID_SUFFIX + "User \"" + userID + "\" has logged in.");
+						System.out.println("User \"" + userID + "\" has logged in.");
 					break;
 				}
 
@@ -200,12 +196,12 @@ public class BankThread extends Thread {
 				 **********************************************************/
 				case DecryptedPacket.CMD_LOGOUT:
 				{
-					if (DEBUG_COMMANDS_LOGOUT) System.out.println(THREADID_PREFIX + getId() + THREADID_SUFFIX + "Received logout command.");
+					if (DEBUG_COMMANDS_LOGOUT) System.out.println("Received logout command.");
 
 					if (userID == null)
-						System.err.println(THREADID_PREFIX + getId() + THREADID_SUFFIX + "Unknown user trying to log out.");
+						System.err.println("Unknown user trying to log out.");
 					else
-						System.out.println(THREADID_PREFIX + getId() + THREADID_SUFFIX + "User \"" + userID + "\" has logged out.");
+						System.out.println("User \"" + userID + "\" has logged out.");
 
 					/** The code will now break out of the while loop. */
 					break;
@@ -219,10 +215,10 @@ public class BankThread extends Thread {
 				}
 			}
 		} catch (final IOException e) {
-			System.err.println(THREADID_PREFIX + getId() + THREADID_SUFFIX + "User \"" + userID + "\" session terminated.");
+			System.err.println("User \"" + userID + "\" session terminated.");
 			if (DEBUG_ERROR_TRACE) e.printStackTrace();
 		} catch (final Exception e) {
-			System.err.println(THREADID_PREFIX + getId() + THREADID_SUFFIX + "Error running server thread.");
+			System.err.println("Error running server thread.");
 			if (DEBUG_ERROR_TRACE) e.printStackTrace();
 		}
 

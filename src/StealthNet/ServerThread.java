@@ -53,17 +53,12 @@ public class ServerThread extends Thread {
 	private static final boolean DEBUG_ERROR_TRACE           = Debug.isDebug("StealthNet.ServerThread.ErrorTrace") || Debug.isDebug("ErrorTrace");
 	private static final boolean DEBUG_COMMANDS_NULL         = Debug.isDebug("StealthNet.ServerThread.Commands.Null");
 	private static final boolean DEBUG_COMMANDS_LOGIN        = Debug.isDebug("StealthNet.ServerThread.Commands.Login");
-	private static final boolean DEBUG_COMMANDS_LOGOUT       = Debug.isDebug("StealthNet.ServerThread.Commands.Logout");
 	private static final boolean DEBUG_COMMANDS_MSG          = Debug.isDebug("StealthNet.ServerThread.Commands.Msg");
 	private static final boolean DEBUG_COMMANDS_CHAT         = Debug.isDebug("StealthNet.ServerThread.Commands.Chat");
 	private static final boolean DEBUG_COMMANDS_FTP          = Debug.isDebug("StealthNet.ServerThread.Commands.FTP");
 	private static final boolean DEBUG_COMMANDS_CREATESECRET = Debug.isDebug("StealthNet.ServerThread.Commands.CreateSecret");
 	private static final boolean DEBUG_COMMANDS_GETSECRET    = Debug.isDebug("StealthNet.ServerThread.Commands.GetSecret");
 	private static final boolean DEBUG_ASYMMETRIC_ENCRYPTION = Debug.isDebug("StealthNet.ServerThread.AsymmetricEncryption");
-
-	/** Used to separate thread ID from debug output. */
-	private static final String THREADID_PREFIX = "Thread ";
-	private static final String THREADID_SUFFIX = " >> ";
 
 	/**
 	 * Used to store details of other clients that this thread may want to
@@ -190,7 +185,7 @@ public class ServerThread extends Thread {
 		/** Thread constructor. */
 		super("StealthNet.ServerThread");
 
-		if (DEBUG_GENERAL) System.out.println(THREADID_PREFIX + getId() + THREADID_SUFFIX + "Creating a ServerThread.");
+		if (DEBUG_GENERAL) System.out.println("Creating a ServerThread.");
 
 		/**
 		 * Create a new StealthNet.Comms instance and accept sessions. Note that
@@ -232,7 +227,7 @@ public class ServerThread extends Thread {
 			userInfo.publicKey = clientComms.getPeerPublicKey();
 			userList.put(id, userInfo);
 
-			if (DEBUG_GENERAL) System.out.println(THREADID_PREFIX + getId() + THREADID_SUFFIX + "Added user \"" + id + "\" to the user list.");
+			if (DEBUG_GENERAL) System.out.println("Added user \"" + id + "\" to the user list.");
 			return true;
 		}
 	}
@@ -253,7 +248,7 @@ public class ServerThread extends Thread {
 		else {
 			/** Add the secret data to the secret list. */
 			secretList.put(t.name, t);
-			if (DEBUG_GENERAL) System.out.println(THREADID_PREFIX + getId() + THREADID_SUFFIX + "Added secret \"" + t.name + "\" to the secret list.");
+			if (DEBUG_GENERAL) System.out.println("User '" + userID + "' added secret \"" + t.name + "\" to the secret list.");
 			return true;
 		}
 	}
@@ -269,7 +264,7 @@ public class ServerThread extends Thread {
 		final UserData userInfo = userList.get(id);
 		if (userInfo != null) {
 			userInfo.userThread = null;
-			if (DEBUG_GENERAL) System.out.println(THREADID_PREFIX + getId() + THREADID_SUFFIX + "Removed user \"" + id + "\" from the user list.");
+			if (DEBUG_GENERAL) System.out.println("Removed user \"" + id + "\" from the user list.");
 			return true;
 		} else
 			return false;
@@ -284,7 +279,7 @@ public class ServerThread extends Thread {
 	@SuppressWarnings("unused")
 	private synchronized boolean removeSecret(final String name) {
 		secretList.remove(name);
-		if (DEBUG_GENERAL) System.out.println(THREADID_PREFIX + getId() + THREADID_SUFFIX + "Removed secret \"" + name + "\" from the secret list.");
+		if (DEBUG_GENERAL) System.out.println("User '" + userID + "' removed secret \"" + name + "\" from the secret list.");
 		return true;
 	}
 
@@ -360,7 +355,7 @@ public class ServerThread extends Thread {
 					userInfo.userThread = null;
 				else {
 					/** Send this user the user list in a packet. */
-					if (DEBUG_GENERAL) System.out.println(THREADID_PREFIX + getId() + THREADID_SUFFIX + "Sending the user list to user \"" + userKey + "\".");
+					if (DEBUG_GENERAL) System.out.println("Sending the user list to user \"" + userKey + "\".");
 					userInfo.userThread.clientComms.sendPacket(DecryptedPacket.CMD_LIST, userTable);
 				}
 		}
@@ -383,7 +378,7 @@ public class ServerThread extends Thread {
 					userInfo.userThread = null;
 				else {
 					/** Send this user the secret list in a packet. */
-					if (DEBUG_GENERAL) System.out.println(THREADID_PREFIX + getId() + THREADID_SUFFIX + "Sending the secret list to user \"" + userKey + "\".");
+					if (DEBUG_GENERAL) System.out.println("Sending the secret list to user \"" + userKey + "\".");
 					userInfo.userThread.clientComms.sendPacket(DecryptedPacket.CMD_SECRETLIST, secretTable);
 				}
 		}
@@ -414,7 +409,7 @@ public class ServerThread extends Thread {
 	 * to all currently logged in users.
 	 */
 	public void run() {
-		if (DEBUG_GENERAL) System.out.println(THREADID_PREFIX + getId() + THREADID_SUFFIX + "Running ServerThread...");
+		if (DEBUG_GENERAL) System.out.println("Running ServerThread... (Thread ID is " + getId() + ")");
 
 		DecryptedPacket pckt = new DecryptedPacket();
 		try {
@@ -425,7 +420,7 @@ public class ServerThread extends Thread {
 				if (pckt == null)
 					break;
 
-				if (DEBUG_GENERAL) System.out.println(THREADID_PREFIX + getId() + THREADID_SUFFIX + "Received packet: (" + pckt.getDecodedString() + ").");
+				if (DEBUG_GENERAL) System.out.println("Received packet: (" + pckt.getDecodedString() + ").");
 
 				/** Perform the relevant action based on the packet command. */
 				switch (pckt.command) {
@@ -434,7 +429,11 @@ public class ServerThread extends Thread {
 				 **********************************************************/
 				case DecryptedPacket.CMD_NULL:
 				{
-					if (DEBUG_COMMANDS_NULL) System.out.println(THREADID_PREFIX + getId() + THREADID_SUFFIX + "Received NULL command.");
+					if (DEBUG_COMMANDS_NULL)
+						if (userID == null)
+							System.out.println("Received NULL command.");
+						else
+							System.out.println("User '" + userID + "' sent NULL command.");
 					break;
 				}
 
@@ -447,7 +446,7 @@ public class ServerThread extends Thread {
 
 					if (userID != null) {
 						/** A user is already logged in. */
-						System.err.println(THREADID_PREFIX + getId() + THREADID_SUFFIX + "User \"" + userID + "\" trying to log in twice.");
+						System.err.println("User \"" + userID + "\" trying to log in twice.");
 						break;
 					}
 
@@ -456,23 +455,23 @@ public class ServerThread extends Thread {
 
 					/** Log the user in. */
 					if (!addUser(userID)) {
-						System.out.println(THREADID_PREFIX + getId() + THREADID_SUFFIX + "User \"" + userID + "\" is already logged in.");
+						System.out.println("User \"" + userID + "\" is already logged in.");
 
 						/** Cancel the current login attempt. */
 						pckt.command = DecryptedPacket.CMD_LOGOUT;
 						userID = null;
 					} else {
-						System.out.println(THREADID_PREFIX + getId() + THREADID_SUFFIX + "User \"" + userID + "\" has logged in.");
+						System.out.println("User \"" + userID + "\" has logged in.");
 
 						if (DEBUG_COMMANDS_LOGIN) {
 							System.out.println("Distributing user list...");
-							System.out.println(THREADID_PREFIX + getId() + THREADID_SUFFIX + "Distributing user list: \"" + userListAsString().replace('\n', ';') + "\"");
+							System.out.println("Distributing user list: \"" + userListAsString().replace('\n', ';') + "\"");
 						}
 						sendUserList();
 
 						if (DEBUG_COMMANDS_LOGIN) {
-							System.out.println(THREADID_PREFIX + getId() + THREADID_SUFFIX + "Distributing secret list...");
-							System.out.println(THREADID_PREFIX + getId() + THREADID_SUFFIX + "Distributing secret list: \"" + secretListAsString().replace('\n', ';') + "\"");
+							System.out.println("Distributing secret list...");
+							System.out.println("Distributing secret list: \"" + secretListAsString().replace('\n', ';') + "\"");
 						}
 						sendSecretList();
 					}
@@ -484,12 +483,10 @@ public class ServerThread extends Thread {
 				 **********************************************************/
 				case DecryptedPacket.CMD_LOGOUT:
 				{
-					if (DEBUG_COMMANDS_LOGOUT) System.out.println(THREADID_PREFIX + getId() + THREADID_SUFFIX + "Received logout command.");
-
 					if (userID == null)
-						System.err.println(THREADID_PREFIX + getId() + THREADID_SUFFIX + "Unknown user trying to log out.");
+						System.err.println("Unknown user trying to log out.");
 					else
-						System.out.println(THREADID_PREFIX + getId() + THREADID_SUFFIX + "User \"" + userID + "\" has logged out.");
+						System.out.println("User \"" + userID + "\" has logged out.");
 
 					/** The code will now break out of the while loop. */
 					break;
@@ -500,12 +497,11 @@ public class ServerThread extends Thread {
 				 **********************************************************/
 				case DecryptedPacket.CMD_MSG:
 				{
-					if (DEBUG_COMMANDS_MSG) System.out.println(THREADID_PREFIX + getId() + THREADID_SUFFIX + "Received message command.");
-
 					if (userID == null) {
-						System.err.println(THREADID_PREFIX + getId() + THREADID_SUFFIX + "Unknown user trying to send message.");
+						System.err.println("Unknown user trying to send message.");
 						break;
-					}
+					} else
+						if (DEBUG_COMMANDS_MSG) System.out.println("User '" + userID + "' sent message command.");
 
 					/** Send the message to all users. */
 					final String msg = "[" + userID + "] " + new String(pckt.data);
@@ -515,7 +511,7 @@ public class ServerThread extends Thread {
 						final UserData userInfo = userList.get(userKey);
 
 						if (userInfo != null && userInfo.userThread != null) {
-							if (DEBUG_COMMANDS_MSG) System.out.println(THREADID_PREFIX + getId() + THREADID_SUFFIX + "Sending message \"" + msg + "\" to user \"" + userKey + "\".");
+							if (DEBUG_COMMANDS_MSG) System.out.println("Sending message \"" + msg + "\" to user \"" + userKey + "\".");
 							userInfo.userThread.clientComms.sendPacket(DecryptedPacket.CMD_MSG, msg);
 						}
 					}
@@ -527,12 +523,11 @@ public class ServerThread extends Thread {
 				 **********************************************************/
 				case DecryptedPacket.CMD_CHAT:
 				{
-					if (DEBUG_COMMANDS_CHAT) System.out.println(THREADID_PREFIX + getId() + THREADID_SUFFIX + "Received chat command.");
-
 					if (userID == null) {
-						System.err.println(THREADID_PREFIX + getId() + THREADID_SUFFIX + "Unknown user trying to chat.");
+						System.err.println("Unknown user trying to chat.");
 						break;
-					}
+					} else
+						if (DEBUG_COMMANDS_CHAT) System.out.println("User '" + userID + "' sent chat command.");
 
 					/**
 					 * NOTE: Data will be of the form "user@host:port".
@@ -546,19 +541,19 @@ public class ServerThread extends Thread {
 						final byte msg_type = DecryptedPacket.CMD_MSG;
 						final String msg = "[*SVR*] User not logged in";
 
-						if (DEBUG_COMMANDS_CHAT) System.out.println(THREADID_PREFIX + getId() + THREADID_SUFFIX + "Returning error message \"" + msg + "\".");
+						if (DEBUG_COMMANDS_CHAT) System.out.println("Returning error message \"" + msg + "\" to user '" + userID + "'.");
 						clientComms.sendPacket(msg_type, msg);
 					} else if (userInfo.userThread == Thread.currentThread()) {
 						final byte msg_type = DecryptedPacket.CMD_MSG;
 						final String msg = "[*SVR*] Cannot chat to self";
 
-						if (DEBUG_COMMANDS_CHAT) System.out.println(THREADID_PREFIX + getId() + THREADID_SUFFIX + "Returning error message \"" + msg + "\".");
+						if (DEBUG_COMMANDS_CHAT) System.out.println("Returning error message \"" + msg + "\" to user '" + userID + "'.");
 						clientComms.sendPacket(msg_type, msg);
 					} else {
 						final byte msg_type = DecryptedPacket.CMD_CHAT;
 						final String msg = userID + "@" + iAddr;
 
-						if (DEBUG_COMMANDS_CHAT) System.out.println(THREADID_PREFIX + getId() + THREADID_SUFFIX + "Sending chat message \"" + msg + "\" to user \"" + userKey + "\".");
+						if (DEBUG_COMMANDS_CHAT) System.out.println("Sending chat message \"" + msg + "\" to user \"" + userKey + "\".");
 						userInfo.userThread.clientComms.sendPacket(msg_type, msg);
 					}
 
@@ -570,12 +565,11 @@ public class ServerThread extends Thread {
 				 **********************************************************/
 				case DecryptedPacket.CMD_FTP:
 				{
-					if (DEBUG_COMMANDS_FTP) System.out.println(THREADID_PREFIX + getId() + THREADID_SUFFIX + "Received FTP command.");
-
 					if (userID == null) {
-						System.err.println(THREADID_PREFIX + getId() + THREADID_SUFFIX + "Unknown user trying to transfer file.");
+						System.err.println("Unknown user trying to transfer file.");
 						break;
-					}
+					} else
+						if (DEBUG_COMMANDS_FTP) System.out.println("User '" + userID + "' sent FTP command.");
 
 					/**
 					 * NOTE: Data will be of the form "user@host:port".
@@ -589,19 +583,19 @@ public class ServerThread extends Thread {
 						final byte msg_type = DecryptedPacket.CMD_MSG;
 						final String msg = "[*SVR*] User not logged in";
 
-						if (DEBUG_COMMANDS_FTP) System.out.println(THREADID_PREFIX + getId() + THREADID_SUFFIX + "Returning error message \"" + msg + "\".");
+						if (DEBUG_COMMANDS_FTP) System.out.println("Returning error message \"" + msg + "\" to user '" + userID + "'.");
 						clientComms.sendPacket(msg_type, msg);
 					} else if (userInfo.userThread == Thread.currentThread()) {
 						final byte msg_type = DecryptedPacket.CMD_MSG;
 						final String msg = "[*SVR*] Cannot ftp to self";
 
-						if (DEBUG_COMMANDS_FTP) System.out.println(THREADID_PREFIX + getId() + THREADID_SUFFIX + "Returning error message \"" + msg + "\".");
+						if (DEBUG_COMMANDS_FTP) System.out.println("Returning error message \"" + msg + "\" to user '" + userID + "'.");
 						clientComms.sendPacket(msg_type, msg);
 					} else {
 						final byte msg_type = DecryptedPacket.CMD_FTP;
 						final String msg = userID + "@" + iAddr;
 
-						if (DEBUG_COMMANDS_FTP) System.out.println(THREADID_PREFIX + getId() + THREADID_SUFFIX + "Sending file transfer message \"" + msg + "\" to user \"" + userKey + "\".");
+						if (DEBUG_COMMANDS_FTP) System.out.println("Sending file transfer message \"" + msg + "\" to user \"" + userKey + "\".");
 						userInfo.userThread.clientComms.sendPacket(msg_type, msg);
 					}
 					break;
@@ -612,12 +606,11 @@ public class ServerThread extends Thread {
 				 **********************************************************/
 				case DecryptedPacket.CMD_CREATESECRET:
 				{
-					if (DEBUG_COMMANDS_CREATESECRET) System.out.println(THREADID_PREFIX + getId() + THREADID_SUFFIX + "Received create secret command.");
-
 					if (userID == null) {
-						System.err.println(THREADID_PREFIX + getId() + THREADID_SUFFIX + "Unknown user trying to create secret.");
+						System.err.println("Unknown user trying to create secret.");
 						break;
-					}
+					} else
+						if (DEBUG_COMMANDS_CREATESECRET) System.out.println("User '" + userID + "' sent create secret command.");
 
 					/** Depacketise the create secret command. */
 					final SecretData t = new SecretData();
@@ -637,14 +630,14 @@ public class ServerThread extends Thread {
 
 					addSecret(t);
 					if (DEBUG_COMMANDS_CREATESECRET)
-						System.out.println(THREADID_PREFIX + getId() + THREADID_SUFFIX + userID + " added secret \"" + t.name + "\" to secret list.");
+						System.out.println("User '" + userID + "' added secret \"" + t.name + "\" to secret list.");
 					else
-						System.out.println(THREADID_PREFIX + getId() + THREADID_SUFFIX + userID + " added secret.\n");
+						System.out.println("User '" + userID + "' added secret.\n");
 
 					if (DEBUG_COMMANDS_CREATESECRET)
-						System.out.println(THREADID_PREFIX + getId() + THREADID_SUFFIX + "Distributing secret list: \"" + secretListAsString() + "\"");
+						System.out.println("Distributing secret list: \"" + secretListAsString() + "\"");
 					else
-						System.out.println(THREADID_PREFIX + getId() + THREADID_SUFFIX + "Distributing secret list.\n");
+						System.out.println("Distributing secret list.\n");
 					sendSecretList();
 					break;
 				}
@@ -653,12 +646,11 @@ public class ServerThread extends Thread {
 				 **********************************************************/
 				case DecryptedPacket.CMD_GETSECRET:
 				{
-					if (DEBUG_COMMANDS_GETSECRET) System.out.println(THREADID_PREFIX + getId() + THREADID_SUFFIX + "Received Get Secret command.");
-
 					if (userID == null) {
-						System.err.println(THREADID_PREFIX + getId() + THREADID_SUFFIX + "Unknown user trying to get secret.");
+						System.err.println("Unknown user trying to get secret.");
 						break;
-					}
+					} else
+						if (DEBUG_COMMANDS_GETSECRET) System.out.println("User '" + userID + "' sent Get Secret command.");
 
 					/**
 					 * NOTE: Data will be of the form "name@address".
@@ -672,7 +664,7 @@ public class ServerThread extends Thread {
 						final byte msg_type = DecryptedPacket.CMD_MSG;
 						final String msg = "[*SVR*] Secret is not available";
 
-						if (DEBUG_COMMANDS_GETSECRET) System.out.println(THREADID_PREFIX + getId() + THREADID_SUFFIX + "Returning error message \"" + msg + "\".");
+						if (DEBUG_COMMANDS_GETSECRET) System.out.println("Returning error message \"" + msg + "\" to user '" + userID + "'.");
 						clientComms.sendPacket(msg_type, msg);
 					} else {
 						final String user = secretInfo.owner;
@@ -682,13 +674,13 @@ public class ServerThread extends Thread {
 							final byte msg_type = DecryptedPacket.CMD_MSG;
 							final String msg = "[*SVR*] Secret is not currently available";
 
-							if (DEBUG_COMMANDS_GETSECRET) System.out.println(THREADID_PREFIX + getId() + THREADID_SUFFIX + "Returning error message \"" + msg + "\".");
+							if (DEBUG_COMMANDS_GETSECRET) System.out.println("Returning error message \"" + msg + "\" to user '" + userID + "'.");
 							clientComms.sendPacket(msg_type, msg);
 						} else if (userInfo.userThread == Thread.currentThread()) {
 							final byte msg_type = DecryptedPacket.CMD_MSG;
 							final String msg = "[*SVR*] You can't purchase a secret from yourself!";
 
-							if (DEBUG_COMMANDS_GETSECRET) System.out.println(THREADID_PREFIX + getId() + THREADID_SUFFIX + "Returning error message \"" + msg + "\".");
+							if (DEBUG_COMMANDS_GETSECRET) System.out.println("Returning error message \"" + msg + "\" to user '" + userID + "'.");
 							clientComms.sendPacket(msg_type, msg);
 						} else {
 							/** Wait for the signed purchase. */
@@ -701,7 +693,7 @@ public class ServerThread extends Thread {
 							final byte msg_type = DecryptedPacket.CMD_GETSECRET;
 							final String msg = fileName + "@" + destination;
 
-							if (DEBUG_COMMANDS_GETSECRET) System.out.println(THREADID_PREFIX + getId() + THREADID_SUFFIX + "Sending get secret message \"" + msg + "\" to user \"" + user + "\".");
+							if (DEBUG_COMMANDS_GETSECRET) System.out.println("Sending get secret message \"" + msg + "\" to user \"" + user + "\".");
 							userInfo.userThread.clientComms.sendPacket(msg_type, msg);
 						}
 					}
@@ -713,7 +705,11 @@ public class ServerThread extends Thread {
 				 **********************************************************/
 				case DecryptedPacket.CMD_GETPUBLICKEY:
 				{
-					if (DEBUG_COMMANDS_LOGIN) System.out.println("Received get public key command.");
+					if (userID == null) {
+						System.err.println("Unknown user trying to get public key.");
+						break;
+					} else
+						if (DEBUG_COMMANDS_LOGIN) System.out.println("User '" + userID + "' sent get public key command.");
 
 					/** Extract the user ID from the packet data. */
 					final String requestedUserID = new String(pckt.data);
@@ -736,10 +732,10 @@ public class ServerThread extends Thread {
 				}
 			}
 		} catch (final IOException e) {
-			System.err.println(THREADID_PREFIX + getId() + THREADID_SUFFIX + "User \"" + userID + "\" session terminated.");
+			System.err.println("User \"" + userID + "\" session terminated.");
 			if (DEBUG_ERROR_TRACE) e.printStackTrace();
 		} catch (final Exception e) {
-			System.err.println(THREADID_PREFIX + getId() + THREADID_SUFFIX + "Error running server thread.");
+			System.err.println("Error running server thread.");
 			if (DEBUG_ERROR_TRACE) e.printStackTrace();
 		}
 
@@ -754,11 +750,10 @@ public class ServerThread extends Thread {
 		 * Now that a user has logged out, re-transmit the user list to all
 		 * currently logged in users.
 		 */
-		if (DEBUG_GENERAL) System.out.println(THREADID_PREFIX + getId() + THREADID_SUFFIX + "Distributing user list...");
 		if (DEBUG_GENERAL)
-			System.out.println(THREADID_PREFIX + getId() + THREADID_SUFFIX + "Distributing user list: \"" + userListAsString() + "\"");
+			System.out.println("Distributing user list: \"" + userListAsString() + "\"");
 		else
-			System.out.println(THREADID_PREFIX + getId() + THREADID_SUFFIX + "Distributing user list.\n");
+			System.out.println("Distributing user list.\n");
 		sendUserList();
 
 		/** Clean up. */
