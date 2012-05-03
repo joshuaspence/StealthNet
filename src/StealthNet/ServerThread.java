@@ -116,8 +116,7 @@ public class ServerThread extends Thread {
 		if (serverKeys == null) {
 			System.err.println("Unable to retrieve/generate public-private keys.");
 			System.exit(1);
-		} else
-			ServerThread.setServerKeys(serverKeys);
+		}
 
 		/** Debug information. */
 		if (DEBUG_ASYMMETRIC_ENCRYPTION) {
@@ -210,16 +209,6 @@ public class ServerThread extends Thread {
 	protected void finalize() throws IOException {
 		if (clientComms != null)
 			clientComms.terminateSession();
-	}
-
-	/**
-	 * Set the server keys. This should be called before creating any
-	 * ServerThreads.
-	 * 
-	 * @param keys The server public-private key pair.
-	 */
-	public static void setServerKeys(final KeyPair keys) {
-		serverKeys = keys;
 	}
 
 	/**
