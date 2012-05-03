@@ -30,7 +30,6 @@ import java.awt.event.MouseListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.IOException;
-import java.lang.reflect.Method;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -62,7 +61,6 @@ import javax.swing.table.DefaultTableModel;
 
 import StealthNet.Security.AsymmetricEncryption;
 import StealthNet.Security.EncryptedFileException;
-import StealthNet.Security.Encryption;
 import StealthNet.Security.RSAAsymmetricEncryption;
 
 /* StealthNet.Client Class Definition ****************************************/
@@ -681,9 +679,13 @@ public class Client {
 		fileSave.setFile(data.filename);
 		fileSave.setVisible(true);
 
-		/** TODO: what about public key? */
-
 		if (DEBUG_GENERAL) System.out.println("Will save secret file \"" + name + "\" to \"" + fileSave.getDirectory() + fileSave.getFile() + "\".");
+
+		/**
+		 * Note that we don't yet have the public key of the owner of the
+		 * secret. They will, however, have our public key and so can send us
+		 * their public key in encrypted form.
+		 */
 
 		if (fileSave.getFile() != null && fileSave.getFile().length() > 0)
 			/** Wait for user to connect, then start file transfer. */
@@ -692,7 +694,7 @@ public class Client {
 
 				/** Set a 2 second timeout on the socket. */
 				ftpSocket.setSoTimeout(2000);
-				final Comms snComms = new Comms();
+				final Comms snComms = new Comms(new RSAAsymmetricEncryption(clientKeys), true);
 				final Socket conn = ftpSocket.accept();
 				snComms.acceptSession(conn);
 
@@ -1090,7 +1092,6 @@ public class Client {
 				 **********************************************************/
 				case DecryptedPacket.CMD_GETSECRET:
 				{
-					/** TODO: fix */
 					/**
 					 * NOTE: Data will be of the form  "name@address".
 					 */
@@ -1101,7 +1102,14 @@ public class Client {
 
 					if (DEBUG_COMMANDS_GETSECRET) System.out.println("Received a get secret command. Target host: '" + iAddr + ":" + iPort + "'. The filename is \"" + fileName + "\".");
 
-					final Comms snComms = new Comms();
+					/**
+					 * Note that we don't yet have the public key of the owner of the
+					 * secret. They will, however, have our public key and so can send us
+					 * their public key in encrypted form.
+					 */
+					final PublicKey receiver = waitForPublicKey();
+
+					final Comms snComms = new Comms(new RSAAsymmetricEncryption(clientKeys, receiver), false);
 					snComms.initiateSession(new Socket(iAddr, iPort));
 					if (DEBUG_GENERAL) System.out.println("Opened a communications session with '" + iAddr + "'.");
 
@@ -1217,10 +1225,17 @@ public class Client {
 		if (DEBUG_GENERAL) System.out.println("Asking server for the public key of user '" + id + "'");
 		serverComms.sendPacket(DecryptedPacket.CMD_GETPUBLICKEY, id);
 
-		/**
-		 * Wait for server to send the public key of the other party.
-		 */
-		if (DEBUG_GENERAL) System.out.println("Waiting for the server to send the public key of user '" + id + "'");
+		/** Wait for server to send the public key of the other party. */
+		return waitForPublicKey();
+	}
+
+	/**
+	 * Wait for the server to send a public key.
+	 * 
+	 * @return The public key sent by the server.
+	 */
+	private PublicKey waitForPublicKey() {
+		if (DEBUG_GENERAL) System.out.println("Waiting for the server to send a public key.");
 		DecryptedPacket pckt = new DecryptedPacket();
 		while (true)
 			try {
@@ -1234,24 +1249,12 @@ public class Client {
 				 * Get public key command
 				 **********************************************************/
 				case DecryptedPacket.CMD_GETPUBLICKEY:
-				{
 					/** Convert packet contents to public key. */
-					try {
-						final Method m = Encryption.DEFAULT_ASYMMETRIC_ENCRYPTION.getMethod("stringToPublicKey", String.class);
-						return (PublicKey) m.invoke(null, new String(pckt.data));
-					} catch (final NoSuchMethodException e) {
-						System.err.println(Encryption.DEFAULT_ASYMMETRIC_ENCRYPTION.getName() + " does not contain a stringToPublicKey method.");
-						System.exit(1);
-					} catch (final Exception e) {
-						System.err.println("Unable to convert packet contents to public key.");
-						if (DEBUG_ERROR_TRACE) e.printStackTrace();
-						return null;
-					}
-				}
+					return RSAAsymmetricEncryption.stringToPublicKey(new String(pckt.data));
 
-				/***********************************************************
-				 * Unknown command
-				 **********************************************************/
+					/***********************************************************
+					 * Unknown command
+					 **********************************************************/
 				default:
 					System.err.println("Unrecognised command received from server.");
 				}

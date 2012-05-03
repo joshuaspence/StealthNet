@@ -118,6 +118,7 @@ DEBUG="\
 -Ddebug.StealthNet.ServerThread.Commands.FTP=true \
 -Ddebug.StealthNet.ServerThread.Commands.CreateSecret=true \
 -Ddebug.StealthNet.ServerThread.Commands.GetSecret=true \
+-Ddebug.StealthNet.ServerThread.Commands.GetPublicKey=true \
 -Ddebug.StealthNet.ServerThread.AsymmetricEncryption=true \
 "
 DEBUG_ARG=

@@ -58,6 +58,7 @@ public class ServerThread extends Thread {
 	private static final boolean DEBUG_COMMANDS_FTP          = Debug.isDebug("StealthNet.ServerThread.Commands.FTP");
 	private static final boolean DEBUG_COMMANDS_CREATESECRET = Debug.isDebug("StealthNet.ServerThread.Commands.CreateSecret");
 	private static final boolean DEBUG_COMMANDS_GETSECRET    = Debug.isDebug("StealthNet.ServerThread.Commands.GetSecret");
+	private static final boolean DEBUG_COMMANDS_GETPUBLICKEY = Debug.isDebug("StealthNet.ServerThread.Commands.GetPublicKey");
 	private static final boolean DEBUG_ASYMMETRIC_ENCRYPTION = Debug.isDebug("StealthNet.ServerThread.AsymmetricEncryption");
 
 	/**
@@ -695,6 +696,17 @@ public class ServerThread extends Thread {
 
 							if (DEBUG_COMMANDS_GETSECRET) System.out.println("Sending get secret message \"" + msg + "\" to user \"" + user + "\".");
 							userInfo.userThread.clientComms.sendPacket(msg_type, msg);
+
+							/**
+							 * Send public key of receiving user to sending
+							 * user. Note that the receiving user does not know
+							 * the public key of the sending user.
+							 */
+
+							/** Send the public key back to the client. */
+							if (DEBUG_COMMANDS_GETPUBLICKEY) System.out.println("Sending user '" + name + "' the public key of user '" + userID + "'.");
+							userInfo.userThread.clientComms.sendPacket(DecryptedPacket.CMD_GETPUBLICKEY, Base64.encodeBase64String(clientComms.getPeerPublicKey().getEncoded()));
+							break;
 						}
 					}
 					break;
@@ -709,17 +721,17 @@ public class ServerThread extends Thread {
 						System.err.println("Unknown user trying to get public key.");
 						break;
 					} else
-						if (DEBUG_COMMANDS_LOGIN) System.out.println("User '" + userID + "' sent get public key command.");
+						if (DEBUG_COMMANDS_GETPUBLICKEY) System.out.println("User '" + userID + "' sent get public key command.");
 
 					/** Extract the user ID from the packet data. */
 					final String requestedUserID = new String(pckt.data);
-					if (DEBUG_COMMANDS_LOGIN) System.out.println("User '" + userID + "' is requesting the public key of user '" + requestedUserID + "'.");
+					if (DEBUG_COMMANDS_GETPUBLICKEY) System.out.println("User '" + userID + "' is requesting the public key of user '" + requestedUserID + "'.");
 
 					/** Get the public key of the requested user. */
 					final PublicKey key = userList.get(requestedUserID).publicKey;
 
 					/** Send the public key back to the client. */
-					if (DEBUG_COMMANDS_LOGIN) System.out.println("Sending user '" + userID + "' the public key of user '" + requestedUserID + "'.");
+					if (DEBUG_COMMANDS_GETPUBLICKEY) System.out.println("Sending user '" + userID + "' the public key of user '" + requestedUserID + "'.");
 					clientComms.sendPacket(DecryptedPacket.CMD_GETPUBLICKEY, Base64.encodeBase64String(key.getEncoded()));
 					break;
 				}
