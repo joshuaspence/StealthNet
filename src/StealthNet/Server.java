@@ -18,10 +18,6 @@ package StealthNet;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.security.KeyPair;
-
-import StealthNet.Security.AsymmetricEncryption;
-import StealthNet.Security.RSAAsymmetricEncryption;
 
 /* StealthNet.Server Class Definition ****************************************/
 
@@ -44,12 +40,6 @@ public class Server {
 	/** Debug options. */
 	private static final boolean DEBUG_GENERAL               = Debug.isDebug("StealthNet.Server.General");
 	private static final boolean DEBUG_ERROR_TRACE           = Debug.isDebug("StealthNet.Server.ErrorTrace") || Debug.isDebug("ErrorTrace");
-	private static final boolean DEBUG_ASYMMETRIC_ENCRYPTION = Debug.isDebug("StealthNet.Server.AsymmetricEncryption");
-
-	/** Constants. */
-	private static final String PUBLIC_KEY_FILE = "keys/server/public.key";
-	private static final String PRIVATE_KEY_FILE = "keys/server/private.key";
-	private static final String PRIVATE_KEY_FILE_PASSWORD = "server";
 
 	/**
 	 * The main Server function.
@@ -58,32 +48,6 @@ public class Server {
 	 * @throws IOException
 	 */
 	public static void main(final String[] args) throws IOException {
-		/**
-		 * Try to read keys from the JAR file first. If that doesn't work, then
-		 * try to read keys from the file system. If that doesn't work, then
-		 * create new keys.
-		 */
-		KeyPair serverKeys = null;
-		try {
-			serverKeys = Utility.getPublicPrivateKeys(PUBLIC_KEY_FILE, PRIVATE_KEY_FILE, PRIVATE_KEY_FILE_PASSWORD);
-		} catch (final Exception e) {
-			System.err.println("Unable to retrieve/generate public/private keys.");
-			if (DEBUG_ERROR_TRACE) e.printStackTrace();
-			System.exit(1);
-		}
-		if (serverKeys == null) {
-			System.err.println("Unable to retrieve/generate public-private keys.");
-			System.exit(1);
-		}
-
-		/** Debug information. */
-		if (DEBUG_ASYMMETRIC_ENCRYPTION) {
-			final String publicKeyString = Utility.getHexValue(serverKeys.getPublic().getEncoded());
-			final String privateKeyString = Utility.getHexValue(serverKeys.getPrivate().getEncoded());
-			System.out.println("Public key: " + publicKeyString);
-			System.out.println("Private key: " + privateKeyString);
-		}
-
 		/** Port that the server is listening on. */
 		int port = Comms.DEFAULT_SERVERPORT;
 
@@ -122,8 +86,7 @@ public class Server {
 		while (true)
 			try {
 				final Socket conn = svrSocket.accept();
-				final AsymmetricEncryption ae = new RSAAsymmetricEncryption(serverKeys);
-				final ServerThread thread = new ServerThread(conn, ae);
+				final ServerThread thread = new ServerThread(conn);
 				thread.start();
 
 				if (DEBUG_GENERAL)

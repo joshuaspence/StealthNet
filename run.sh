@@ -106,7 +106,6 @@ DEBUG="\
 -Ddebug.StealthNet.Server=false \
 -Ddebug.StealthNet.Server.General=true \
 -Ddebug.StealthNet.Server.ErrorTrace=true \
--Ddebug.StealthNet.Server.AsymmetricEncryption=true \
 \
 -Ddebug.StealthNet.ServerThread=false \
 -Ddebug.StealthNet.ServerThread.General=true \
@@ -120,6 +119,7 @@ DEBUG="\
 -Ddebug.StealthNet.ServerThread.Commands.FTP=true \
 -Ddebug.StealthNet.ServerThread.Commands.CreateSecret=true \
 -Ddebug.StealthNet.ServerThread.Commands.GetSecret=true \
+-Ddebug.StealthNet.ServerThread.AsymmetricEncryption=true \
 "
 DEBUG_ARG=
 ADDITIONAL_ARG=

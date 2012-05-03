@@ -514,7 +514,7 @@ public class Client {
 
 			/** Initiate a connection with the StealthNet bank. */
 			/** TODO: Probably want a timeout on this. */
-			if (DEBUG_GENERAL) System.out.println("Initiating a connection with StealthNet bank '" + serverHostname + "' on port " + serverPort + ".");
+			if (DEBUG_GENERAL) System.out.println("Initiating a connection with StealthNet bank '" + bankHostname + "' on port " + bankPort + ".");
 			bankComms = new Comms(bankEncryption);
 			bankComms.initiateSession(new Socket(bankHostname, bankPort));
 
