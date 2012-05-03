@@ -30,14 +30,13 @@ import java.awt.event.MouseListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
-import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.PublicKey;
-import java.security.spec.X509EncodedKeySpec;
 import java.util.Hashtable;
 
 import javax.swing.BorderFactory;
@@ -61,10 +60,9 @@ import javax.swing.Timer;
 import javax.swing.UIManager;
 import javax.swing.table.DefaultTableModel;
 
-import org.apache.commons.codec.binary.Base64;
-
 import StealthNet.Security.AsymmetricEncryption;
 import StealthNet.Security.EncryptedFileException;
+import StealthNet.Security.Encryption;
 import StealthNet.Security.RSAAsymmetricEncryption;
 
 /* StealthNet.Client Class Definition ****************************************/
@@ -139,13 +137,6 @@ public class Client {
 	/** Buddy list. */
 	private JTable buddyTable = null;
 	private DefaultTableModel buddyListData = null;
-
-	/** User list. */
-	private class UserData {
-		boolean online = false;
-		PublicKey publicKey = null;
-	}
-	private static final Hashtable<String, UserData> userList = new Hashtable<String, UserData>();
 
 	/** Secret list. */
 	private DefaultTableModel secretListData = null;
@@ -583,7 +574,6 @@ public class Client {
 			/** Hide user and secret list. */
 			buddyListData.setRowCount(0);
 			secretListData.setRowCount(0);
-			userList.clear();
 
 			msgTextBox.append("Disconnected.\n");
 			if (DEBUG_GENERAL) System.out.println("Disconnected.");
@@ -691,12 +681,14 @@ public class Client {
 		fileSave.setFile(data.filename);
 		fileSave.setVisible(true);
 
+		/** TODO: what about public key? */
+
 		if (DEBUG_GENERAL) System.out.println("Will save secret file \"" + name + "\" to \"" + fileSave.getDirectory() + fileSave.getFile() + "\".");
 
 		if (fileSave.getFile() != null && fileSave.getFile().length() > 0)
 			/** Wait for user to connect, then start file transfer. */
 			try {
-				if (DEBUG_GENERAL) System.out.println("Waiting for target client to connect.");
+				if (DEBUG_GENERAL) System.out.println("Waiting for target client to connect for file transfer.");
 
 				/** Set a 2 second timeout on the socket. */
 				ftpSocket.setSoTimeout(2000);
@@ -750,7 +742,6 @@ public class Client {
 
 		/** Get the ID of the target user. */
 		final String myid = buddyTable.getValueAt(row, 0).toString().trim();
-		final PublicKey peer = userList.get(myid).publicKey;
 
 		/** Set up socket on a free port for the chat session. */
 		ServerSocket chatSocket = null;
@@ -779,12 +770,19 @@ public class Client {
 		}
 		iAddr += ":" + Integer.toString(chatSocket.getLocalPort());
 
+		/** Get the public key of the other client. */
+		final PublicKey peer = getPublicKey(myid);
+		if (peer == null) {
+			System.err.println("Unable to determine peer public key.");
+			return;
+		}
+
 		if (DEBUG_GENERAL) System.out.println("Sending chat message to server. Target client should connect on '" + iAddr + ":" + chatSocket.getLocalPort() + "'.");
 		serverComms.sendPacket(DecryptedPacket.CMD_CHAT, myid + "@" + iAddr);
 
 		/** Wait for user to connect and open chat window. */
 		try {
-			if (DEBUG_GENERAL) System.out.println("Waiting for target client to connect.");
+			if (DEBUG_GENERAL) System.out.println("Waiting for target client to connect for chat session.");
 
 			/** Set 2 second timeout on socket. */
 			chatSocket.setSoTimeout(2000);
@@ -819,7 +817,13 @@ public class Client {
 
 		/** Get the user ID. */
 		final String myid = (String) buddyTable.getValueAt(row, 0);
-		final PublicKey peer = userList.get(myid).publicKey;
+
+		/** Get the public key of the other client. */
+		final PublicKey peer = getPublicKey(myid);
+		if (peer == null) {
+			System.err.println("Unable to determine peer public key.");
+			return;
+		}
 
 		/** Select the file to send. */
 		final FileDialog fileOpen = new FileDialog(clientFrame, "Open...", FileDialog.LOAD);
@@ -941,7 +945,13 @@ public class Client {
 
 					/** Get the peer public key. */
 					final String sourceUser =          data.split("@")[0];
-					final PublicKey peer = userList.get(sourceUser).publicKey;
+
+					/** Get the public key of the other client. */
+					final PublicKey peer = getPublicKey(sourceUser);
+					if (peer == null) {
+						System.err.println("Unable to determine peer public key.");
+						return;
+					}
 
 					if (DEBUG_COMMANDS_CHAT) System.out.println("Received a chat command. Target host: '" + iAddr + ":" + iPort + "'.");
 
@@ -976,7 +986,13 @@ public class Client {
 
 					/** Get the peer public key. */
 					final String sourceUser =          data.split("@")[0];
-					final PublicKey peer = userList.get(sourceUser).publicKey;
+
+					/** Get the public key of the other client. */
+					final PublicKey peer = getPublicKey(sourceUser);
+					if (peer == null) {
+						System.err.println("Unable to determine peer public key.");
+						return;
+					}
 
 					if (DEBUG_COMMANDS_FTP) System.out.println("Received a file transfer command. Target host: '" + iAddr + ":" + iPort + "'.");
 
@@ -1011,7 +1027,6 @@ public class Client {
 
 					if (DEBUG_COMMANDS_LIST) System.out.println("Received a user list: \"" + userTable.replaceAll("\n", "; ") + "\".");
 
-					userList.clear();
 					while (userTable.length() > 0) {
 						final int indx = userTable.indexOf("\n");
 						String row;
@@ -1026,23 +1041,12 @@ public class Client {
 
 						/** Add the user to the user list. */
 						final String userID = row.split(";")[0].trim();
-						final UserData userData = new UserData();
-						userData.online = row.split(";")[1].trim().compareTo("true") == 0;
-						try {
-							final KeyFactory factory = KeyFactory.getInstance(RSAAsymmetricEncryption.ALGORITHM);
-							final X509EncodedKeySpec keySpec = new X509EncodedKeySpec(Base64.decodeBase64(row.split(";")[2].trim()));
-							userData.publicKey = factory.generatePublic(keySpec);
-						} catch (final Exception e) {
-							System.err.println("Failed to parse public key.");
-							if (DEBUG_ERROR_TRACE) e.printStackTrace();
-							continue;
-						}
-						userList.put(userID, userData);
+						final boolean online = row.split(";")[1].trim().compareTo("true") == 0;
 
 						/** Add the user to the GUI list. */
 						buddyListData.addRow(new Object[] {
 								userID,
-								userData.online ? "true" : "false"
+								online ? "true" : "false"
 						});
 					}
 					break;
@@ -1199,6 +1203,62 @@ public class Client {
 		});
 		clientFrame.pack();
 		clientFrame.setVisible(true);
+	}
+
+	/**
+	 * Get the public key of a peer client.
+	 * 
+	 * @param id The ID of the requested user.
+	 * @return The public key belonging to the requested user, or null if it
+	 * could not determined.
+	 */
+	private PublicKey getPublicKey(final String id) {
+		/** Request the public key of the peer. */
+		if (DEBUG_GENERAL) System.out.println("Asking server for the public key of user '" + id + "'");
+		serverComms.sendPacket(DecryptedPacket.CMD_GETPUBLICKEY, id);
+
+		/**
+		 * Wait for server to send the public key of the other party.
+		 */
+		if (DEBUG_GENERAL) System.out.println("Waiting for the server to send the public key of user '" + id + "'");
+		DecryptedPacket pckt = new DecryptedPacket();
+		while (true)
+			try {
+				pckt = serverComms.recvPacket();
+
+				if (pckt == null)
+					return null;
+
+				switch (pckt.command) {
+				/***********************************************************
+				 * Get public key command
+				 **********************************************************/
+				case DecryptedPacket.CMD_GETPUBLICKEY:
+				{
+					/** Convert packet contents to public key. */
+					try {
+						final Method m = Encryption.DEFAULT_ASYMMETRIC_ENCRYPTION.getMethod("stringToPublicKey", String.class);
+						return (PublicKey) m.invoke(null, new String(pckt.data));
+					} catch (final NoSuchMethodException e) {
+						System.err.println(Encryption.DEFAULT_ASYMMETRIC_ENCRYPTION.getName() + " does not contain a stringToPublicKey method.");
+						System.exit(1);
+					} catch (final Exception e) {
+						System.err.println("Unable to convert packet contents to public key.");
+						if (DEBUG_ERROR_TRACE) e.printStackTrace();
+						return null;
+					}
+				}
+
+				/***********************************************************
+				 * Unknown command
+				 **********************************************************/
+				default:
+					System.err.println("Unrecognised command received from server.");
+				}
+			} catch (final Exception e) {
+				System.err.println("Error running client thread.");
+				if (DEBUG_ERROR_TRACE) e.printStackTrace();
+			}
 	}
 }
 

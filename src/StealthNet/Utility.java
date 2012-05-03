@@ -147,6 +147,7 @@ public class Utility {
 					return (PublicKey) m.invoke(null, publicKeyJAR);
 				} catch (final NoSuchMethodException e) {
 					System.err.println(Encryption.DEFAULT_ASYMMETRIC_ENCRYPTION.getName() + " does not contain a readPublicKeyFromFile method.");
+					System.exit(1);
 					return null;
 				} catch (final Exception e) {
 					System.err.println("Unable to read public key from file.");
@@ -160,6 +161,7 @@ public class Utility {
 					return (PublicKey) m.invoke(null, publicKeyPath);
 				} catch (final NoSuchMethodException e) {
 					System.err.println(Encryption.DEFAULT_ASYMMETRIC_ENCRYPTION.getName() + " does not contain a readPublicKeyFromFile method.");
+					System.exit(1);
 					return null;
 				} catch (final Exception e) {
 					System.err.println("Unable to read public key from file.");
@@ -211,14 +213,15 @@ public class Utility {
 		 */
 		if (publicKeyJAR != null && privateKeyJAR != null) {
 			/** Read public/private keys from JAR. */
-			PublicKey publicKey;
-			PrivateKey privateKey;
+			PublicKey publicKey = null;
+			PrivateKey privateKey = null;
 
 			try {
 				final Method publicKeyMethod = Encryption.DEFAULT_ASYMMETRIC_ENCRYPTION.getMethod("readPublicKeyFromFile", URL.class);
 				publicKey = (PublicKey) publicKeyMethod.invoke(null, publicKeyJAR);
 			} catch (final NoSuchMethodException e) {
 				System.err.println(Encryption.DEFAULT_ASYMMETRIC_ENCRYPTION.getName() + " does not contain a readPublicKeyFromFile method.");
+				System.exit(1);
 				return null;
 			} catch (final Exception e) {
 				System.err.println("Unable to read public key from file.");
@@ -231,6 +234,7 @@ public class Utility {
 				privateKey = (PrivateKey) privateKeyMethod.invoke(null, privateKeyJAR, privateKeyPassword);
 			} catch (final NoSuchMethodException e) {
 				System.err.println(Encryption.DEFAULT_ASYMMETRIC_ENCRYPTION.getName() + " does not contain a readPrivateKeyFromFile method.");
+				System.exit(1);
 				return null;
 			} catch (final Exception e) {
 				System.err.println("Unable to read private key from file.");
@@ -249,6 +253,7 @@ public class Utility {
 				publicKey = (PublicKey) publicKeyMethod.invoke(null, publicKeyPath);
 			} catch (final NoSuchMethodException e) {
 				System.err.println(Encryption.DEFAULT_ASYMMETRIC_ENCRYPTION.getName() + " does not contain a readPublicKeyFromFile method.");
+				System.exit(1);
 				return null;
 			} catch (final Exception e) {
 				System.err.println("Unable to read public key from file.");
@@ -261,6 +266,7 @@ public class Utility {
 				privateKey = (PrivateKey) privateKeyMethod.invoke(null, privateKeyPath, privateKeyPassword);
 			} catch (final NoSuchMethodException e) {
 				System.err.println(Encryption.DEFAULT_ASYMMETRIC_ENCRYPTION.getName() + " does not contain a readPrivateKeyFromFile method.");
+				System.exit(1);
 				return null;
 			} catch (final Exception e) {
 				System.err.println("Unable to read private key from file.");
@@ -285,6 +291,7 @@ public class Utility {
 				kp = (KeyPair) m.invoke(null, new Object[] {});
 			} catch (final NoSuchMethodException e) {
 				System.err.println(Encryption.DEFAULT_ASYMMETRIC_ENCRYPTION.getName() + " does not contain a generateKeys method.");
+				System.exit(1);
 				return null;
 			} catch (final Exception e) {
 				System.err.println("Unable to generate public-private keys.");
@@ -298,6 +305,7 @@ public class Utility {
 				m.invoke(null, kp.getPublic(), publicKeyPath);
 			} catch (final NoSuchMethodException e) {
 				System.err.println(Encryption.DEFAULT_ASYMMETRIC_ENCRYPTION.getName() + " does not contain a savePublicKeyToFile method.");
+				System.exit(1);
 				return null;
 			} catch (final Exception e) {
 				System.err.println("Unable to save private key to file.");
@@ -309,6 +317,7 @@ public class Utility {
 				m.invoke(null, kp.getPrivate(), privateKeyPath, privateKeyPassword);
 			} catch (final NoSuchMethodException e) {
 				System.err.println(Encryption.DEFAULT_ASYMMETRIC_ENCRYPTION.getName() + " does not contain a savePrivateKeyToFile method.");
+				System.exit(1);
 				return null;
 			} catch (final Exception e) {
 				System.err.println("Unable to save private key to file.");

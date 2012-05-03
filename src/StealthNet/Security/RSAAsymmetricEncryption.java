@@ -35,6 +35,7 @@ import java.security.PublicKey;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.RSAPrivateKeySpec;
 import java.security.spec.RSAPublicKeySpec;
+import java.security.spec.X509EncodedKeySpec;
 import java.util.LinkedList;
 import java.util.Queue;
 
@@ -503,6 +504,24 @@ public class RSAAsymmetricEncryption extends AsymmetricEncryption {
 		final PrivateKey privKey = keyFactory.generatePrivate(keySpec);
 
 		return privKey;
+	}
+
+	/**
+	 * Converts a string to a public key.
+	 * 
+	 * @param keyString The string representing the public key, assumed to be
+	 * encoded in base 64.
+	 * @return The public key represented by the input string, or null if a
+	 * public key cannot be formed.
+	 */
+	public static PublicKey stringToPublicKey(final String keyString) {
+		try {
+			final KeyFactory factory = KeyFactory.getInstance(RSAAsymmetricEncryption.ALGORITHM);
+			final X509EncodedKeySpec keySpec = new X509EncodedKeySpec(Base64.decodeBase64(keyString));
+			return factory.generatePublic(keySpec);
+		} catch (final Exception e) {
+			return null;
+		}
 	}
 }
 

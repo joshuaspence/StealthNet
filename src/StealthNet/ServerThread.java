@@ -293,7 +293,7 @@ public class ServerThread extends Thread {
 	 * packet.
 	 * 
 	 * @return A String representing the user list. The output string is of the
-	 * form "user;loggedOn;publicKey\n..."
+	 * form "user;loggedOn\n..."
 	 */
 	private synchronized String userListAsString() {
 		String userTable = "";
@@ -309,9 +309,6 @@ public class ServerThread extends Thread {
 				userTable += "true";
 			else
 				userTable += "false";
-			userTable += ";";
-			if (userInfo != null && userInfo.publicKey != null)
-				userTable += new String(Base64.encodeBase64String(userInfo.publicKey.getEncoded()));
 			userTable += "\n";
 		}
 
@@ -708,6 +705,26 @@ public class ServerThread extends Thread {
 							userInfo.userThread.clientComms.sendPacket(msg_type, msg);
 						}
 					}
+					break;
+				}
+
+				/***********************************************************
+				 * Get Public Key command
+				 **********************************************************/
+				case DecryptedPacket.CMD_GETPUBLICKEY:
+				{
+					if (DEBUG_COMMANDS_LOGIN) System.out.println("Received get public key command.");
+
+					/** Extract the user ID from the packet data. */
+					final String requestedUserID = new String(pckt.data);
+					if (DEBUG_COMMANDS_LOGIN) System.out.println("User '" + userID + "' is requesting the public key of user '" + requestedUserID + "'.");
+
+					/** Get the public key of the requested user. */
+					final PublicKey key = userList.get(requestedUserID).publicKey;
+
+					/** Send the public key back to the client. */
+					if (DEBUG_COMMANDS_LOGIN) System.out.println("Sending user '" + userID + "' the public key of user '" + requestedUserID + "'.");
+					clientComms.sendPacket(DecryptedPacket.CMD_GETPUBLICKEY, Base64.encodeBase64String(key.getEncoded()));
 					break;
 				}
 
