@@ -42,11 +42,12 @@ public interface KeyExchange {
 	public BigInteger getPublicKey();
 	
 	/**
-	 * Get the shared secret key that has been agreed on through the key
+	 * Get the shared {@link SecretKey} that has been agreed on through the key
 	 * exchange protocol.
 	 * 
 	 * @param peerPublicValue The peer's public key.
-	 * @return The secret key.
+	 * @return The shared {@link SecretKey}. Both peers should generate the same
+	 *         {@link SecretKey}.
 	 * 
 	 * @throws NoSuchAlgorithmException
 	 * @throws InvalidKeySpecException

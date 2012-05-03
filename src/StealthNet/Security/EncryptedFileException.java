@@ -14,6 +14,8 @@
 
 package StealthNet.Security;
 
+import StealthNet.EncryptedFile;
+
 /* Import Libraries ******************************************************** */
 
 /* StealthNet.Security.EncrpytedFileException Class Definition ************* */
@@ -21,7 +23,13 @@ package StealthNet.Security;
 /**
  * An exception to be thrown when an encrypted file cannot be decrypted.
  * 
+ * An encrypted file may be unable to be decrypted because either the supplied
+ * password is incorrect, or the file has been corrupted. It can, in some
+ * situations, be difficult to differentiate these two cases.
+ * 
  * @author Joshua Spence
+ * @see Exception
+ * @see EncryptedFile
  */
 public class EncryptedFileException extends Exception {
 	private static final long serialVersionUID = 1L;

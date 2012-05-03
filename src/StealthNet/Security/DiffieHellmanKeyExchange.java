@@ -44,70 +44,83 @@ import javax.crypto.spec.DHPublicKeySpec;
  * private key and our public key. Through the magic of Diffie-Hellman we both
  * come up with the same number. This number is secret (discounting MITM
  * attacks) and hence called the shared secret. It has the same length as the
- * modulus, e.g. 512 or 1024 bit.
- * 
- * The thing to note is that the shared secret is constant for two partners with
- * constant private keys. This is often not what we want, which is why it is
- * generally a good idea to create a new private key for each session.
- * Generating a private key involves one modular exponentiation assuming
- * suitable Diffie-Hellman parameters are available.
- * 
- * 
+ * modulus, e.g. 512 or 1024 bit. <p> The thing to note is that the shared
+ * secret is constant for two partners with constant private keys. This is often
+ * not what we want, which is why it is generally a good idea to create a new
+ * private key for each session. Generating a private key involves one modular
+ * exponentiation assuming suitable Diffie-Hellman parameters are available. <p>
  * The protocol depends on the discrete logarithm problem for its security. It
  * assumes that it is computationally infeasible to calculate the shared secret
- * key 'k = generator^ab mod prime' given the two public values 'generator^a mod
- * prime' and 'generator^b mod prime' when the prime is sufficiently large.
- * Maurer has shown that breaking the Diffie-Hellman protocol is equivalent to
- * computing discrete logarithms under certain assumptions.
- * 
- * The Diffie-Hellman key exchange is vulnerable to a man-in-the-middle attack.
- * In this attack, an opponent Carol intercepts Alice's public value and sends
- * her own public value to Bob. When Bob transmits his public value, Carol
- * substitutes it with her own and sends it to Alice. Carol and Alice thus agree
- * on one shared key and Carol and Bob agree on another shared key. After this
- * exchange, Carol simply decrypts any messages sent out by Alice or Bob, and
- * then reads and possibly modifies them before re-encrypting with the
- * appropriate key and transmitting them to the other party. This vulnerability
- * is present because Diffie-Hellman key exchange does not authenticate the
- * participants. Possible solutions include the use of digital signatures and
- * other protocol variants.
+ * key <code>k = generator^ab mod prime</code> given the two public values
+ * <code>generator^a mod prime</code> and <code>generator^b mod prime</code>
+ * when the prime is sufficiently large. Maurer has shown that breaking the
+ * Diffie-Hellman protocol is equivalent to computing discrete logarithms under
+ * certain assumptions. <p> The Diffie-Hellman key exchange is vulnerable to a
+ * man-in-the-middle attack. In this attack, an opponent Carol intercepts
+ * Alice's public value and sends her own public value to Bob. When Bob
+ * transmits his public value, Carol substitutes it with her own and sends it to
+ * Alice. Carol and Alice thus agree on one shared key and Carol and Bob agree
+ * on another shared key. After this exchange, Carol simply decrypts any
+ * messages sent out by Alice or Bob, and then reads and possibly modifies them
+ * before re-encrypting with the appropriate key and transmitting them to the
+ * other party. This vulnerability is present because Diffie-Hellman key
+ * exchange does not authenticate the participants. Possible solutions include
+ * the use of digital signatures and other protocol variants.
  * 
  * @author Joshua Spence
+ * @see KeyExchange
  */
 public class DiffieHellmanKeyExchange implements KeyExchange {
 	/**
 	 * Group parameters.
 	 * 
-	 * Parameter <pre>prime</pre> is a prime number and parameter
-	 * <pre>generator</pre> is an integer less than <pre>prime</pre>, with the
-	 * following property: for every number <pre>n</pre> between <pre>1</pre>
-	 * and <pre>prime - 1</pre> inclusive, there is a power <pre>k</pre> of
-	 * <pre>generator</pre> such that <pre>n = generator^k mod prime</pre>.
+	 * Parameter <code>prime</code> is a prime number and parameter
+	 * <code>generator</code> is an integer less than <code>prime</code>, with
+	 * the following property: for every number <pre>n</pre> between
+	 * <code>1</code> and <code>prime - 1</code> inclusive, there is a power
+	 * <code>k</code> of <code>generator</code> such that <code>n = generator^k
+	 * mod prime</code>.
 	 */
 	private final BigInteger prime;
-	private final BigInteger generator;
 	
 	/**
-	 * <em>NOTE:</em> It is preferable for security, though not necessary, that
-	 * base be a generator with respect to prime. Otherwise, the pool of
-	 * possible keys is reduced, leaving the system more vulnerable to attack.
+	 * Group parameters.
+	 * 
+	 * Parameter <code>prime</code> is a prime number and parameter
+	 * <code>generator</code> is an integer less than <code>prime</code>, with
+	 * the following property: for every number <pre>n</pre> between
+	 * <code>1</code> and <code>prime - 1</code> inclusive, there is a power
+	 * <code>k</code> of <code>generator</code> such that <code>n = generator^k
+	 * mod prime</code>.
+	 */
+	private final BigInteger generator;
+	
+	/*
+	 * NOTE: It is preferable for security, though not necessary, that base be a
+	 * generator with respect to prime. Otherwise, the pool of possible keys is
+	 * reduced, leaving the system more vulnerable to attack.
 	 */
 	
 	/** Our private key. */
 	private final PrivateKey privateKey;
 	
-	/** Public component of our key (= `generator^random mod prime'). */
+	/**
+	 * The public component of our key, equal to <code>generator^random mod
+	 * prime</code>.
+	 */
 	private final BigInteger publicValue;
 	
-	/** String constants. */
+	/** The {@link Key} algorithm to use. */
 	private static final String KEY_ALGORITHM = "DiffieHellman";
+	
+	/** The {@link KeyAgreement} algorithm to use. */
 	private static final String SECRET_KEY_ALGORITHM = "TlsPremasterSecret";
 	
 	/**
 	 * Generate a Diffie-Hellman keypair of the specified size.
 	 * 
 	 * @param keyLength Number of bits for the key.
-	 * @param random A SecureRandom number.
+	 * @param random A {@link SecureRandom} number.
 	 * 
 	 * @throws NoSuchAlgorithmException
 	 * @throws InvalidKeySpecException
@@ -130,15 +143,15 @@ public class DiffieHellmanKeyExchange implements KeyExchange {
 	/**
 	 * Generate a Diffie-Hellman key pair using the specified parameters.
 	 * 
-	 * @param prime The Diffie-Hellman large prime 'p'.
-	 * @param generator The Diffie-Hellman generator 'g'.
-	 * @param random A SecureRandom number.
+	 * @param prime The Diffie-Hellman large prime <code>p</code>.
+	 * @param generator The Diffie-Hellman generator <code>g</code>.
+	 * @param random A {@link SecureRandom} number.
 	 * 
 	 * @throws NoSuchAlgorithmException
 	 * @throws InvalidAlgorithmParameterException
 	 * @throws InvalidKeySpecException
 	 */
-	DiffieHellmanKeyExchange(final BigInteger prime, final BigInteger generator, final SecureRandom random) throws NoSuchAlgorithmException, InvalidAlgorithmParameterException, InvalidKeySpecException {
+	public DiffieHellmanKeyExchange(final BigInteger prime, final BigInteger generator, final SecureRandom random) throws NoSuchAlgorithmException, InvalidAlgorithmParameterException, InvalidKeySpecException {
 		this.prime = prime;
 		this.generator = generator;
 		
@@ -154,10 +167,12 @@ public class DiffieHellmanKeyExchange implements KeyExchange {
 	}
 	
 	/**
-	 * Returns the DHPublicKeySpec corresponding to a given PublicKey.
+	 * Returns the {@link DHPublicKeySpec} corresponding to a given
+	 * {@link PublicKey}.
 	 * 
-	 * @param key The given PublicKey.
-	 * @return The DHPublicKeySpec corresponding to a given PublicKey.
+	 * @param key The given {@link PublicKey}.
+	 * @return The {@link DHPublicKeySpec} corresponding to a given
+	 *         {@link PublicKey}.
 	 * 
 	 * @throws NoSuchAlgorithmException
 	 * @throws InvalidKeySpecException
@@ -202,18 +217,18 @@ public class DiffieHellmanKeyExchange implements KeyExchange {
 	}
 	
 	/**
-	 * Get the secret data that has been agreed on through Diffie-Hellman key
-	 * agreement protocol. Note that in the two party protocol, if the peer keys
-	 * are already known, no other data needs to be sent in order to agree on a
-	 * secret. That is, a secured message may be sent without any mandatory
+	 * Get the {@link SecretKey} that has been agreed on through Diffie-Hellman
+	 * key agreement protocol. Note that in the two party protocol, if the peer
+	 * keys are already known, no other data needs to be sent in order to agree
+	 * on a secret. That is, a secured message may be sent without any mandatory
 	 * round-trip overheads.
 	 * 
 	 * It is illegal to call this member function if the private key has not
 	 * been set (or generated).
 	 * 
 	 * @param peerPublicValue The peer's public key.
-	 * @return The secret, which is an unsigned big-endian integer the same size
-	 *         as the Diffie-Hellman modulus.
+	 * @return The {@link SecretKey}, which is an unsigned big-endian integer
+	 *         the same size as the Diffie-Hellman modulus.
 	 * 
 	 * @throws NoSuchAlgorithmException
 	 * @throws InvalidKeySpecException

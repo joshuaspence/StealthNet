@@ -36,24 +36,31 @@ import org.apache.commons.codec.binary.Base64;
  * it uses to verify allowable nonces).
  * 
  * @author Joshua Spence
+ * @see NonceGenerator
  */
 public class PRNGNonceGenerator implements NonceGenerator {
-	/** The PRNG. */
+	/** The pseudo-random number generator used to generate nonces. */
 	private final SecureRandom prng;
 	
-	/** The seed for the PRNG. */
+	/** The number of bytes to generate for a nonce. */
 	public static final int NONCE_BYTES = 8;
+	
+	/**
+	 * The seed used to initialise for the {@link SecureRandom} pseudo-random
+	 * number generator.
+	 */
 	private final byte[] seed;
 	
 	/**
-	 * The set of all consumed nonces. If a nonce in this set is received again,
-	 * it should be discarded.
+	 * The set of all nonces that have been consumed. If a nonce in this set is
+	 * received again, it should be discarded as this is indicative of a replay
+	 * attack.
 	 */
 	private final Set<byte[]> consumedNonces;
 	
 	/** Constructor. */
 	public PRNGNonceGenerator() {
-		/** Use an unseeded pseudo-random number generator to create a seed, */
+		/* Use an unseeded pseudo-random number generator to create a seed. */
 		final SecureRandom seedGenerator = new SecureRandom();
 		seed = new byte[NONCE_BYTES];
 		seedGenerator.nextBytes(seed);
@@ -65,9 +72,11 @@ public class PRNGNonceGenerator implements NonceGenerator {
 	/**
 	 * Constructor.
 	 * 
-	 * @param s Seed for the PRNG.
+	 * @param s Seed for the {@link SecureRandom} pseudo-random number
+	 *        generator, assumed to be enoded in base-64.
 	 * 
 	 * @throws IllegalArgumentException
+	 * @see Base64
 	 */
 	public PRNGNonceGenerator(byte[] s) throws IllegalArgumentException {
 		s = Base64.decodeBase64(s);
@@ -83,10 +92,11 @@ public class PRNGNonceGenerator implements NonceGenerator {
 	}
 	
 	/**
-	 * Get the next sequence number from the PRNG. Also consumes a sequence
-	 * number.
+	 * Get the next sequence number (nonce) from the psuedo-random number
+	 * generator. Also consumes a sequence number.
 	 * 
-	 * @return The next sequence number (represented by a byte array).
+	 * @return The next sequence number (represented by a byte array of size
+	 *         <code>NONCE_BYTES</code>).
 	 */
 	@Override
 	public byte[] getNext() {
@@ -114,16 +124,18 @@ public class PRNGNonceGenerator implements NonceGenerator {
 		if (consumedNonces.contains(nonce))
 			return false;
 		
-		/** Consume the nonce. */
+		/* Consume the nonce. */
 		consumedNonces.add(nonce);
 		
 		return true;
 	}
 	
 	/**
-	 * Gets the seed used for the PRNG.
+	 * Gets the seed used for the {@link SecureRandom} pseudo-random number
+	 * generator.
 	 * 
-	 * @return The seed used to initialise the PRNG.
+	 * @return The seed used to initialise the {@link SecureRandom}
+	 *         pseudo-random number generator, encoded in base-64.
 	 */
 	@Override
 	public byte[] getSeed() {

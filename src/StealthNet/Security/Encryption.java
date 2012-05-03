@@ -6,8 +6,8 @@
  * PACKAGE:         StealthNet.Securtity
  * FILENAME:        Encryption.java
  * AUTHORS:         Joshua Spence
- * DESCRIPTION:     An abstract class to provide the encryption and decryption
- * 					of packets in StealthNet.
+ * DESCRIPTION:     A base class to provide the encryption and decryption of
+ * 					packets in StealthNet.
  *
  *****************************************************************************/
 /* @formatter:on */
@@ -33,37 +33,44 @@ import org.apache.commons.codec.binary.Base64;
 /* StealthNet.Security.Encryption Class Definition ************************ */
 
 /**
- * An abstract class to provide encryption and decryption of messages, in order
- * to provide confidentiality of the communications in StealthNet.
- * 
- * Ideally, only the sender should be able to encrypt the message; and only the
- * receiver should be able to decrypt the message.
+ * A base class to provide encryption and decryption of messages, in order to
+ * provide confidentiality of the communications in StealthNet. <p> Ideally,
+ * only the sender should be able to encrypt the message; and only the receiver
+ * should be able to decrypt the message.
  * 
  * @author Joshua Spence
  */
-public abstract class Encryption {
-	/** Keys and ciphers. */
+public class Encryption {
+	/** The {@link Key} used to encrypt data. */
 	protected Key encryptionKey;
+	
+	/** The {@link Cipher} used to encrypt data. */
 	protected Cipher encryptionCipher;
+	
+	/** The {@link Key} used to decrypt data. */
 	protected Key decryptionKey;
+	
+	/** The {@link Cipher} used to decrypt data. */
 	protected Cipher decryptionCipher;
 	
 	/** Constants. */
 	private final String algorithm;
 	
 	/**
-	 * Constructor
+	 * Constructor.
 	 * 
-	 * @param algorithm The cipher algorithm to be used.
+	 * @param algorithm The {@link Cipher} algorithm to be used for encryption
+	 *        and decryption.
 	 */
 	protected Encryption(final String algorithm) {
 		this.algorithm = algorithm;
 	}
 	
 	/**
-	 * Set the encryption cipher and key.
+	 * Set the encryption {@link Cipher} and {@link Key}. <p> These must be set
+	 * before attempting to encrypt any data.
 	 * 
-	 * @param key The key used for encryption.
+	 * @param key The {@link Key} to be used for encryption.
 	 * 
 	 * @throws NoSuchPaddingException
 	 * @throws NoSuchAlgorithmException
@@ -76,10 +83,12 @@ public abstract class Encryption {
 	}
 	
 	/**
-	 * Set the encryption cipher and key.
+	 * Set the encryption {@link Cipher} and {@link Key}. <p> These must be set
+	 * before attempting to encrypt any data.
 	 * 
-	 * @param key The key used for encryption.
-	 * @param specs The algorithm parameter specifications for the cipher.
+	 * @param key The {@link Key} to be used for encryption.
+	 * @param specs The {@link AlgorithmParameterSpec} to be used for the
+	 *        {@link Cipher}.
 	 * 
 	 * @throws NoSuchPaddingException
 	 * @throws NoSuchAlgorithmException
@@ -93,9 +102,10 @@ public abstract class Encryption {
 	}
 	
 	/**
-	 * Set the decryption cipher and key.
+	 * Set the decryption {@link Cipher} and {@link Key}. <p> These must be set
+	 * before attempting to decrypt any data.
 	 * 
-	 * @param key The key used for decryption.
+	 * @param key The {@link Key} to be used for decryption.
 	 * 
 	 * @throws NoSuchPaddingException
 	 * @throws NoSuchAlgorithmException
@@ -108,10 +118,12 @@ public abstract class Encryption {
 	}
 	
 	/**
-	 * Set the decryption cipher and key.
+	 * Set the decryption {@link Cipher} and {@link Key}. <p> These must be set
+	 * before attempting to decrypt any data.
 	 * 
-	 * @param key The key used for encryption.
-	 * @param specs The algorithm parameter specifications for the cipher.
+	 * @param key The {@link Key} to be used for encryption.
+	 * @param specs The {@link AlgorithmParameterSpec} to be used for the
+	 *        {@link Cipher}.
 	 * 
 	 * @throws NoSuchPaddingException
 	 * @throws NoSuchAlgorithmException
@@ -125,36 +137,39 @@ public abstract class Encryption {
 	}
 	
 	/**
-	 * Encrypts a message using the encryption key. Performs the opposite of the
-	 * decrypt(String) function.
+	 * Encrypts data using the encryption key. Performs the opposite of the
+	 * <code>decrypt(String)</code> function.
 	 * 
-	 * @param cleartext The message to encrypt.
-	 * @return The encrypted message, encoded in base 64.
+	 * @param cleartext The data to encrypt.
+	 * @return The encrypted message, encoded in base-64.
 	 * 
 	 * @throws BadPaddingException
 	 * @throws IllegalBlockSizeException
-	 * 
+	 * @throws IllegalStateException If the encryption cipher hasn't been set.
+	 * @see Base64
 	 */
 	public byte[] encrypt(final String cleartext) throws IllegalBlockSizeException, BadPaddingException {
 		if (encryptionCipher == null)
-			throw new IllegalStateException("Cannot perform encryption without a decryption cipher.");
+			throw new IllegalStateException("Cannot perform encryption without an encryption cipher.");
 		
 		return encrypt(cleartext.getBytes());
 	}
 	
 	/**
-	 * Encrypts a message using the encryption key. Performs the opposite of the
-	 * decrypt(byte[]) function.
+	 * Encrypts data using the encryption key. Performs the opposite of the
+	 * <code>decrypt(byte[])</code> function.
 	 * 
-	 * @param cleartext The message to encrypt.
-	 * @return The encrypted message, encoded in base 64.
+	 * @param cleartext The data to encrypt.
+	 * @return The encrypted message, encoded in base-64.
 	 * 
 	 * @throws BadPaddingException
 	 * @throws IllegalBlockSizeException
+	 * @throws IllegalStateException If the encryption cipher hasn't been set.
+	 * @see Base64
 	 */
 	public byte[] encrypt(final byte[] cleartext) throws IllegalBlockSizeException, BadPaddingException {
 		if (encryptionCipher == null)
-			throw new IllegalStateException("Cannot perform encryption without a decryption cipher.");
+			throw new IllegalStateException("Cannot perform encryption without an encryption cipher.");
 		
 		final byte[] encryptedValue = encryptionCipher.doFinal(cleartext);
 		final byte[] encodedValue = Base64.encodeBase64(encryptedValue);
@@ -162,16 +177,18 @@ public abstract class Encryption {
 	}
 	
 	/**
-	 * Decrypts a message using the decryption key. Performs the opposite of the
-	 * encrypt(String) function.
+	 * Decrypts data using the decryption key. Performs the opposite of the
+	 * <code>decrypt(String)</code> function.
 	 * 
-	 * @param ciphertext The message to be decrypted, assumed to be encoded in
-	 *        base 64.
+	 * @param ciphertext The data to be decrypted, assumed to be encoded in
+	 *        base-64.
 	 * @return The cleartext message.
 	 * 
 	 * @throws UnsupportedEncodingException
 	 * @throws BadPaddingException
 	 * @throws IllegalBlockSizeException
+	 * @throws IllegalStateException If the decryption cipher hasn't been set.
+	 * @see Base64
 	 */
 	public byte[] decrypt(final String ciphertext) throws IllegalBlockSizeException, BadPaddingException {
 		if (decryptionCipher == null)
@@ -181,15 +198,17 @@ public abstract class Encryption {
 	}
 	
 	/**
-	 * Decrypts a message using the decryption key. Performs the opposite of the
-	 * encrypt(byte[]) function.
+	 * Decrypts data using the decryption key. Performs the opposite of the
+	 * <code>encrypt(byte[])</code> function.
 	 * 
-	 * @param ciphertext The message to be decrypted, assumed to be encoded in
-	 *        base 64.
+	 * @param ciphertext The data to be decrypted, assumed to be encoded in
+	 *        base-64.
 	 * @return The cleartext message.
 	 * 
 	 * @throws BadPaddingException
 	 * @throws IllegalBlockSizeException
+	 * @throws IllegalStateException If the decryption cipher hasn't been set.
+	 * @see Base64
 	 */
 	public byte[] decrypt(final byte[] ciphertext) throws IllegalBlockSizeException, BadPaddingException {
 		if (decryptionCipher == null)

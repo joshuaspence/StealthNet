@@ -18,6 +18,8 @@ package StealthNet.Security;
 
 import javax.management.InvalidAttributeValueException;
 
+import org.apache.commons.codec.binary.Base64;
+
 /* StealthNet.Security.MessageAuthenticationCode Interface Definition ****** */
 
 /**
@@ -26,67 +28,70 @@ import javax.management.InvalidAttributeValueException;
  * 
  * When a packet is sent, the sender calculates the MAC for the packet and
  * appends it to the message. When a packet is received, the receiver calculates
- * the MAC for the packet (without the MAC digest) and compares it to the
+ * the MAC for the packet (disregarding the MAC digest) and compares it to the
  * received MAC digest. If the calculated digest matches the received digest,
- * then the receiver can be assured of the message integrity.
- * 
- * In order for this to occur, the sender and receiver must at some stage
- * exchange an "integrity key", used as a key for the hash function.
+ * then the receiver can be assured of the message integrity. <p> In order for
+ * this to occur, the sender and receiver must at some stage exchange an
+ * "integrity key", used as a key for the hash function.
  * 
  * @author Joshua Spence
  */
 public interface MessageAuthenticationCode {
 	/**
-	 * Calculates the Message Authentication Code (MAC) for a given message.
+	 * Calculates the Message Authentication Code (MAC) for the given data.
 	 * 
-	 * @param packetContents The message to calculate the Message Authentication
-	 *        Codes (MAC) for.
-	 * @return The digest of the given message (in base-64 encoding).
-	 * 
-	 * @throws InvalidAttributeValueException
-	 */
-	public byte[] createMAC(String packetContents) throws InvalidAttributeValueException;
-	
-	/**
-	 * Calculates the Message Authentication Code (MAC) for a given message.
-	 * 
-	 * @param packetContents The message to calculate the Message Authentication
-	 *        Codes (MAC) for.
-	 * @return The digest of the given message (in base-64 encoding).
+	 * @param data The data to calculate the Message Authentication Codes (MAC)
+	 *        for.
+	 * @return The digest of the given message, encoded in base-64.
 	 * 
 	 * @throws InvalidAttributeValueException
+	 * @see Base64
 	 */
-	public byte[] createMAC(byte[] packetContents) throws InvalidAttributeValueException;
+	public byte[] createMAC(String data) throws InvalidAttributeValueException;
 	
 	/**
-	 * Verifies a given message against a given Message Authentication Codes
-	 * (MAC) digest.
+	 * Calculates the Message Authentication Code (MAC) for the given data.
 	 * 
-	 * @param packetContents The message to check.
-	 * @param mac The given Message Authentication Codes (MAC) digest (in
-	 *        base-64 encoding).
+	 * @param data The data to calculate the Message Authentication Codes (MAC)
+	 *        for.
+	 * @return The digest of the given message, encoded in base-64.
+	 * 
+	 * @throws InvalidAttributeValueException
+	 * @see Base64
+	 */
+	public byte[] createMAC(byte[] data) throws InvalidAttributeValueException;
+	
+	/**
+	 * Verifies the given data against a given Message Authentication Code (MAC)
+	 * digest.
+	 * 
+	 * @param data The data to check the digest of.
+	 * @param digest The given Message Authentication Codes (MAC) digest,
+	 *        assumed to be encoded in base-64.
 	 * 
 	 * @return True if the message matches the given MAC digest, otherwise
 	 *         false.
 	 * 
 	 * @throws InvalidAttributeValueException
+	 * @see Base64
 	 */
-	public boolean verifyMAC(String packetContents, byte[] mac) throws InvalidAttributeValueException;
+	public boolean verifyMAC(String data, byte[] digest) throws InvalidAttributeValueException;
 	
 	/**
-	 * Verifies a given message against a given Message Authentication Codes
+	 * Verifies the given data against a given Message Authentication Codes
 	 * (MAC) digest.
 	 * 
-	 * @param packetContents The message to check.
-	 * @param mac The given Message Authentication Codes (MAC) digest (in
-	 *        base-64 encoding).
+	 * @param data The data to check the digest of.
+	 * @param digest The given Message Authentication Codes (MAC) digest,
+	 *        assumed to be encoded in bsae-64.
 	 * 
 	 * @return True if the message matches the given MAC digest, otherwise
 	 *         false.
 	 * 
 	 * @throws InvalidAttributeValueException
+	 * @see Base64
 	 */
-	public boolean verifyMAC(byte[] packetContents, byte[] mac) throws InvalidAttributeValueException;
+	public boolean verifyMAC(byte[] data, byte[] digest) throws InvalidAttributeValueException;
 }
 
 /******************************************************************************
