@@ -225,6 +225,8 @@ public class Utility {
 
 			try {
 				privateKey = RSAAsymmetricEncryption.readPrivateKeyFromFile(privateKeyPath, privateKeyPassword);
+			} catch (final EncryptedFileException e) {
+				throw e;
 			} catch (final Exception e) {
 				System.err.println("Unable to read private key from file.");
 				e.printStackTrace();
