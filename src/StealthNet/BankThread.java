@@ -29,11 +29,11 @@ import StealthNet.Security.AsymmetricEncryption;
  */
 public class BankThread extends Thread {
 	/** Debug options. */
-	private static final boolean DEBUG_GENERAL               = Debug.isDebug("StealthNet.BankThread.General");
-	private static final boolean DEBUG_ERROR_TRACE           = Debug.isDebug("StealthNet.BankThread.ErrorTrace") || Debug.isDebug("ErrorTrace");
-	private static final boolean DEBUG_COMMANDS_NULL         = Debug.isDebug("StealthNet.BankThread.Commands.Null");
-	private static final boolean DEBUG_COMMANDS_LOGIN        = Debug.isDebug("StealthNet.BankThread.Commands.Login");
-	private static final boolean DEBUG_COMMANDS_LOGOUT       = Debug.isDebug("StealthNet.BankThread.Commands.Logout");
+	private static final boolean DEBUG_GENERAL          = Debug.isDebug("StealthNet.BankThread.General");
+	private static final boolean DEBUG_ERROR_TRACE      = Debug.isDebug("StealthNet.BankThread.ErrorTrace") || Debug.isDebug("ErrorTrace");
+	private static final boolean DEBUG_COMMANDS_NULL    = Debug.isDebug("StealthNet.BankThread.Commands.Null");
+	private static final boolean DEBUG_COMMANDS_LOGIN   = Debug.isDebug("StealthNet.BankThread.Commands.Login");
+	private static final boolean DEBUG_COMMANDS_LOGOUT  = Debug.isDebug("StealthNet.BankThread.Commands.Logout");
 
 	/** Used to separate thread ID from debug output. */
 	private static final String THREADID_PREFIX = "Thread ";

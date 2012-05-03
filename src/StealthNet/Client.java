@@ -109,6 +109,11 @@ public class Client {
 	private final int serverPort;
 	private static final String SERVER_PUBLIC_KEY_FILE = "keys/server/public.key";
 
+	/** StealthNet bank options. */
+	private final String bankHostname;
+	private final int bankPort;
+	private static final String BANK_PUBLIC_KEY_FILE = "keys/bank/public.key";
+
 	/** The main frame for this client. */
 	private static JFrame clientFrame;
 
@@ -118,12 +123,12 @@ public class Client {
 	/** Button to log into StealthNet. */
 	private JButton loginBtn;
 
-	/** Used for communications with the StealthNet server. */
-	private Comms stealthComms = null;
+	/** Used for communications with the StealthNet server/bank. */
+	private Comms serverComms = null;
+	private Comms bankComms = null;
 
 	/** Public-private keys to identify this client. */
 	private KeyPair clientKeys;
-	private AsymmetricEncryption asymmetricEncryptionProvider;
 
 	/** A timer to periodically process incoming packets. */
 	private final Timer stealthTimer;
@@ -172,22 +177,30 @@ public class Client {
 
 		serverHostname = Comms.DEFAULT_SERVERNAME;
 		serverPort = Comms.DEFAULT_SERVERPORT;
+
+		bankHostname = Comms.DEFAULT_BANKNAME;
+		bankPort = Comms.DEFAULT_BANKPORT;
 	}
 
 	/**
 	 * Constructor.
 	 * 
-	 * @param s The hostname of the StealthNet server.
-	 * @param p The port that the StealthNet server is listening on.
+	 * @param server The hostname of the StealthNet server.
+	 * @param serverPort The port that the StealthNet server is listening on.
+	 * @param bank The hostname of the StealthNet bank.
+	 * @param bankPort The port that the StealthNet bank is listening on.
 	 */
-	public Client(final String s, final int p) {
+	public Client(final String server, final int serverPort, final String bank, final int bankPort) {
 		/** Create a timer to process packets every 100ms. */
 		stealthTimer = new Timer(100, new ActionListener() {
 			public void actionPerformed(final ActionEvent e) { processPackets(); }
 		});
 
-		serverHostname = s;
-		serverPort = p;
+		serverHostname = server;
+		this.serverPort = serverPort;
+
+		bankHostname = bank;
+		this.bankPort = bankPort;
 	}
 
 	/**
@@ -365,7 +378,7 @@ public class Client {
 		loginBtn.setToolTipText("Login");
 		loginBtn.addActionListener(new ActionListener() {
 			public void actionPerformed(final ActionEvent e) {
-				if (stealthComms == null)
+				if (serverComms == null || bankComms == null)
 					login();
 				else
 					logout();
@@ -403,21 +416,25 @@ public class Client {
 	}
 
 	/**
-	 * Login to StealthNet. This will establish comms to the StealthNet server.
-	 * The communications will be encrypted using the server's public key. This
-	 * means that if another party is masquerading as the server, then (without
-	 * the server's private key) they are unable to decrypt the packets.
+	 * Login to StealthNet. This will establish comms to the StealthNet server
+	 * and to the StealthNet bank. The communications will be encrypted using
+	 * the server/bank's public key. This means that if another party is
+	 * masquerading as the server/bank, then (without the server/bank's private
+	 * key) they are unable to decrypt the packets.
 	 */
 	private synchronized void login() {
 		if (DEBUG_GENERAL) System.out.println("Logging in to StealthNet.");
 
-		if (stealthComms != null) {
+		if (serverComms != null && bankComms != null) {
 			System.err.println("Already logged in!");
 			msgTextBox.append("[*ERR*] Already logged in.\n");
 			return;
 		}
 
 		try {
+			AsymmetricEncryption serverEncryption = null;
+			AsymmetricEncryption bankEncryption = null;
+
 			/** Get the user ID. */
 			userID = JOptionPane.showInputDialog("Login:", userID);
 			if (userID == null)
@@ -435,7 +452,8 @@ public class Client {
 
 				try {
 					clientKeys = Utility.getPublicPrivateKeys(publicKeyPath, privateKeyPath, password);
-					asymmetricEncryptionProvider = new RSAAsymmetricEncryption(clientKeys);
+					serverEncryption = new RSAAsymmetricEncryption(clientKeys);
+					bankEncryption = new RSAAsymmetricEncryption(clientKeys);
 				} catch (final EncryptedFileException e) {
 					JOptionPane.showMessageDialog(null, "The password you entered was incorrect.", "Invalid password", JOptionPane.ERROR_MESSAGE);
 					continue;
@@ -444,7 +462,7 @@ public class Client {
 					if (DEBUG_ERROR_TRACE) e.printStackTrace();
 					System.exit(1);
 				}
-			} while (asymmetricEncryptionProvider == null);
+			} while (clientKeys == null);
 
 			if (DEBUG_ASYMMETRIC_ENCRYPTION) {
 				final String publicKeyString = Utility.getHexValue(clientKeys.getPublic().getEncoded());
@@ -454,7 +472,8 @@ public class Client {
 			}
 
 			/**
-			 * Set up asymmetric encryption. Get server public key from JAR file.
+			 * Set up asymmetric encryption. Get server public key from JAR
+			 * file.
 			 */
 			try {
 				final PublicKey serverPublicKey = Utility.getPublicKey(SERVER_PUBLIC_KEY_FILE);
@@ -463,7 +482,24 @@ public class Client {
 					System.exit(1);
 				}
 
-				asymmetricEncryptionProvider.setPeerPublicKey(serverPublicKey);
+				serverEncryption.setPeerPublicKey(serverPublicKey);
+			} catch (final Exception e) {
+				System.err.println("Unable to set peer public key.");
+				if (DEBUG_ERROR_TRACE) e.printStackTrace();
+				System.exit(1);
+			}
+
+			/**
+			 * Set up asymmetric encryption. Get bank public key from JAR file.
+			 */
+			try {
+				final PublicKey bankPublicKey = Utility.getPublicKey(BANK_PUBLIC_KEY_FILE);
+				if (bankPublicKey == null) {
+					System.err.println("Unable to determine bank public key.");
+					System.exit(1);
+				}
+
+				bankEncryption.setPeerPublicKey(bankPublicKey);
 			} catch (final Exception e) {
 				System.err.println("Unable to set peer public key.");
 				if (DEBUG_ERROR_TRACE) e.printStackTrace();
@@ -473,12 +509,22 @@ public class Client {
 			/** Initiate a connection with the StealthNet server. */
 			/** TODO: Probably want a timeout on this. */
 			if (DEBUG_GENERAL) System.out.println("Initiating a connection with StealthNet server '" + serverHostname + "' on port " + serverPort + ".");
-			stealthComms = new Comms(asymmetricEncryptionProvider);
-			stealthComms.initiateSession(new Socket(serverHostname, serverPort));
+			serverComms = new Comms(serverEncryption);
+			serverComms.initiateSession(new Socket(serverHostname, serverPort));
+
+			/** Initiate a connection with the StealthNet bank. */
+			/** TODO: Probably want a timeout on this. */
+			if (DEBUG_GENERAL) System.out.println("Initiating a connection with StealthNet bank '" + serverHostname + "' on port " + serverPort + ".");
+			bankComms = new Comms(bankEncryption);
+			bankComms.initiateSession(new Socket(bankHostname, bankPort));
 
 			/** Send the server a login command. */
 			if (DEBUG_GENERAL) System.out.println("Sending the server a login packet for user \"" + userID + "\".");
-			stealthComms.sendPacket(DecryptedPacket.CMD_LOGIN, userID);
+			serverComms.sendPacket(DecryptedPacket.CMD_LOGIN, userID);
+
+			/** Send the bank a login command. */
+			if (DEBUG_GENERAL) System.out.println("Sending the bank a login packet for user \"" + userID + "\".");
+			bankComms.sendPacket(DecryptedPacket.CMD_LOGIN, userID);
 
 			/** Create our hash chain. */
 			/* new Stack<Hashes> */
@@ -516,16 +562,19 @@ public class Client {
 	private synchronized void logout() {
 		if (DEBUG_GENERAL) System.out.println("Logging out of StealthNet.");
 
-		if (stealthComms != null) {
+		if (serverComms != null) {
 			/** Stop periodically checking for packets. */
 			stealthTimer.stop();
 
-			/** Send the server a logout command. */
-			stealthComms.sendPacket(DecryptedPacket.CMD_LOGOUT);
+			/** Send the server and bank a logout command. */
+			serverComms.sendPacket(DecryptedPacket.CMD_LOGOUT);
+			bankComms.sendPacket(DecryptedPacket.CMD_LOGOUT);
 
 			/** Terminate session. */
-			stealthComms.terminateSession();
-			stealthComms = null;
+			serverComms.terminateSession();
+			bankComms.terminateSession();
+			serverComms = null;
+			bankComms = null;
 
 			/** Change the logout button back to a login button. */
 			loginBtn.setIcon(new ImageIcon(this.getClass().getClassLoader().getResource("img/login.gif")));
@@ -545,7 +594,7 @@ public class Client {
 	private void createSecret() {
 		if (DEBUG_GENERAL) System.out.println("Creating secret.");
 
-		if (stealthComms == null)
+		if (serverComms == null)
 			msgTextBox.append("[*ERR*] Not logged in.\n");
 		else {
 			String name = "", description = "", cost = "";
@@ -565,7 +614,7 @@ public class Client {
 			if (userMsg != null)
 				/** Create the secret on the server. */
 				if (DEBUG_GENERAL) System.out.println("Sending secret details to server. Secret name is \"" + name + "\". Secret cost is " + cost + ". Secret description is \"" + description + "\". Secret file is \"" + fileOpen.getDirectory() + fileOpen.getFile() + "\".");
-			stealthComms.sendPacket(DecryptedPacket.CMD_CREATESECRET, userMsg);
+			serverComms.sendPacket(DecryptedPacket.CMD_CREATESECRET, userMsg);
 		}
 	}
 
@@ -635,7 +684,7 @@ public class Client {
 		 * number for the file transfer.
 		 */
 		if (DEBUG_GENERAL) System.out.println("Sending get secret message to server. Target client should connect on '" + iAddr + ":" + ftpSocket.getLocalPort() + "'.");
-		stealthComms.sendPacket(DecryptedPacket.CMD_GETSECRET, name + "@" + iAddr);
+		serverComms.sendPacket(DecryptedPacket.CMD_GETSECRET, name + "@" + iAddr);
 
 		/** Choose where to save the secret file. */
 		final FileDialog fileSave = new FileDialog(clientFrame, "Save As...", FileDialog.SAVE);
@@ -731,7 +780,7 @@ public class Client {
 		iAddr += ":" + Integer.toString(chatSocket.getLocalPort());
 
 		if (DEBUG_GENERAL) System.out.println("Sending chat message to server. Target client should connect on '" + iAddr + ":" + chatSocket.getLocalPort() + "'.");
-		stealthComms.sendPacket(DecryptedPacket.CMD_CHAT, myid + "@" + iAddr);
+		serverComms.sendPacket(DecryptedPacket.CMD_CHAT, myid + "@" + iAddr);
 
 		/** Wait for user to connect and open chat window. */
 		try {
@@ -745,7 +794,7 @@ public class Client {
 			 * our public key, and hence can encrypt the communications using
 			 * asymmetric encryption immediately.
 			 */
-			final Comms snComms = new Comms(new RSAAsymmetricEncryption(asymmetricEncryptionProvider, peer), true);
+			final Comms snComms = new Comms(new RSAAsymmetricEncryption(clientKeys, peer), true);
 			final Socket conn = chatSocket.accept();
 			snComms.acceptSession(conn);
 
@@ -806,7 +855,7 @@ public class Client {
 		iAddr += ":" + Integer.toString(ftpSocket.getLocalPort());
 
 		if (DEBUG_GENERAL) System.out.println("Sending FTP message to server. Target client should connect on '" + iAddr + ":" + ftpSocket.getLocalPort() + "'.");
-		stealthComms.sendPacket(DecryptedPacket.CMD_FTP,  myid + "@" + iAddr + "#" + fileOpen.getFile());
+		serverComms.sendPacket(DecryptedPacket.CMD_FTP,  myid + "@" + iAddr + "#" + fileOpen.getFile());
 
 		/** Wait for user to connect, then start file transfer. */
 		try {
@@ -820,7 +869,7 @@ public class Client {
 			 * our public key, and hence can encrypt the communications using
 			 * asymmetric encryption immediately.
 			 */
-			final Comms snComms = new Comms(new RSAAsymmetricEncryption(asymmetricEncryptionProvider, peer), true);
+			final Comms snComms = new Comms(new RSAAsymmetricEncryption(clientKeys, peer), true);
 			final Socket conn = ftpSocket.accept();
 			snComms.acceptSession(conn);
 
@@ -840,7 +889,7 @@ public class Client {
 		creditsBox.setText(new Integer(credits).toString());
 
 		try {
-			if (stealthComms == null || !stealthComms.recvReady())
+			if (serverComms == null || !serverComms.recvReady())
 				return;
 		} catch (final IOException e) {
 			System.err.println("The server appears to be down.");
@@ -856,8 +905,8 @@ public class Client {
 
 		try {
 			/** Check for message from server. */
-			while (stealthComms.recvReady()) {
-				pckt = stealthComms.recvPacket();
+			while (serverComms.recvReady()) {
+				pckt = serverComms.recvPacket();
 
 				if (pckt == null)
 					break;
@@ -902,7 +951,7 @@ public class Client {
 					 * communications using asymmetric encryption
 					 * immediately.
 					 */
-					final Comms snComms = new Comms(new RSAAsymmetricEncryption(asymmetricEncryptionProvider, peer), true);
+					final Comms snComms = new Comms(new RSAAsymmetricEncryption(clientKeys, peer), true);
 					snComms.initiateSession(new Socket(iAddr, iPort));
 					if (DEBUG_GENERAL) System.out.println("Opened a communications session with '" + iAddr + "'.");
 
@@ -937,7 +986,7 @@ public class Client {
 					 * communications using asymmetric encryption
 					 * immediately.
 					 */
-					final Comms snComms = new Comms(new RSAAsymmetricEncryption(asymmetricEncryptionProvider, peer), true);
+					final Comms snComms = new Comms(new RSAAsymmetricEncryption(clientKeys, peer), true);
 					snComms.initiateSession(new Socket(iAddr, iPort));
 					if (DEBUG_GENERAL) System.out.println("Opened a communications session with '" + iAddr + "'.");
 
@@ -1081,28 +1130,48 @@ public class Client {
 	 * @param args The command line arguments.
 	 */
 	public static void main(final String[] args) {
-		/** Hostname of the proxy. */
-		String hostname = Comms.DEFAULT_SERVERNAME;
+		/** The server. */
+		String serverHostname = Comms.DEFAULT_SERVERNAME;
+		int serverPort = Comms.DEFAULT_SERVERPORT;
 
-		/** Port that the proxy is listening on. */
-		int port = Comms.DEFAULT_SERVERPORT;
+		/** The bank. */
+		String bankHostname = Comms.DEFAULT_BANKNAME;
+		int bankPort = Comms.DEFAULT_BANKPORT;
 
 		/** Check if a host and port was specified at the command line. */
-		if (args.length > 0)
+		if (args.length > 0) {
 			try {
 				final String[] input = args[0].split(":", 2);
 
-				hostname = input[0];
+				serverHostname = input[0];
 				if (input.length > 1)
-					port = Integer.parseInt(input[1]);
+					serverPort = Integer.parseInt(input[1]);
 
-				if (port <= 0 || port > 65535)
-					throw new NumberFormatException("Invalid port number: " + port);
+				if (serverPort <= 0 || serverPort > 65535)
+					throw new NumberFormatException("Invalid port number: " + serverPort);
 			} catch (final NumberFormatException e) {
 				System.err.println(e.getMessage());
 				if (DEBUG_ERROR_TRACE) e.printStackTrace();
 				System.exit(1);
 			}
+
+			if (args.length > 1)
+				try {
+					final String[] input = args[1].split(":", 2);
+
+					bankHostname = input[0];
+					if (input.length > 1)
+						bankPort = Integer.parseInt(input[1]);
+
+					if (bankPort <= 0 || bankPort > 65535)
+						throw new NumberFormatException("Invalid port number: " + bankPort);
+				} catch (final NumberFormatException e) {
+					System.err.println(e.getMessage());
+					if (DEBUG_ERROR_TRACE) e.printStackTrace();
+					System.exit(1);
+				}
+		}
+
 
 		try {
 			UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
@@ -1112,7 +1181,7 @@ public class Client {
 		clientFrame = new JFrame("stealthnet");
 		Client app = null;
 		try {
-			app = new Client(hostname, port);
+			app = new Client(serverHostname, serverPort, bankHostname, bankPort);
 		} catch (final Exception e) {
 			System.out.println("Unable to create StealthNet client.");
 			if (DEBUG_ERROR_TRACE) e.printStackTrace();
