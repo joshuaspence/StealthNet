@@ -1,3 +1,4 @@
+/* @formatter:off */
 /******************************************************************************
  * ELEC5616
  * Computer and Network Security, The University of Sydney
@@ -8,6 +9,7 @@
  * DESCRIPTION:     Utility functions that are common throughout StealthNet.
  *
  *****************************************************************************/
+/* @formatter:on */
 
 package StealthNet;
 
@@ -30,9 +32,9 @@ import javax.management.InvalidAttributeValueException;
 import StealthNet.Security.EncryptedFileException;
 import StealthNet.Security.RSAAsymmetricEncryption;
 
-/* Import Libraries **********************************************************/
+/* Import Libraries ******************************************************** */
 
-/* StealthNet.Utility Class Definition ***************************************/
+/* StealthNet.Utility Class Definition ************************************* */
 
 /**
  * Utility functions that are common throughout StealthNet.
@@ -44,11 +46,11 @@ import StealthNet.Security.RSAAsymmetricEncryption;
  */
 public class Utility {
 	/** Hexadecimal characters. */
-	public static final char[] HEXTABLE = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
-
+	public static final char[] HEXTABLE = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' };
+	
 	/** Number of hexadecimal characters required to represent a single byte. */
 	public static final int HEX_PER_BYTE = Byte.SIZE / (int) logBase2(HEXTABLE.length);
-
+	
 	/**
 	 * Function to assist with printing cryptographic keys by returning byte
 	 * arrays as a hexadecimal number.
@@ -58,17 +60,17 @@ public class Utility {
 	 */
 	public static String getHexValue(final byte[] array) {
 		final StringBuffer buf = new StringBuffer(array.length * HEX_PER_BYTE);
-
+		
 		for (final byte element : array) {
 			final int hn = (element & 0x00FF) / HEXTABLE.length;
 			final int ln = element & 0x000F;
 			buf.append(HEXTABLE[hn]);
 			buf.append(HEXTABLE[ln]);
 		}
-
+		
 		return buf.toString();
 	}
-
+	
 	/**
 	 * A utility function to convert a single hexadecimal character to a decimal
 	 * integer.
@@ -77,12 +79,16 @@ public class Utility {
 	 * @return The integer value of the hexadecimal character.
 	 */
 	public static int singleHexToInt(final char hex) {
-		if (hex >= '0' && hex <= '9') return hex - '0';
-		else if (hex >= 'A' && hex <= 'F') return hex - 'A' + 10;
-		else if (hex >= 'a' && hex <= 'f') return hex - 'a' + 10;
-		else return 0;
+		if (hex >= '0' && hex <= '9')
+			return hex - '0';
+		else if (hex >= 'A' && hex <= 'F')
+			return hex - 'A' + 10;
+		else if (hex >= 'a' && hex <= 'f')
+			return hex - 'a' + 10;
+		else
+			return 0;
 	}
-
+	
 	/**
 	 * Convert a hexadecimal string to an integer.
 	 * 
@@ -93,7 +99,7 @@ public class Utility {
 	public static int hexToInt(final String hex) throws NumberFormatException {
 		return Integer.parseInt(hex, HEXTABLE.length);
 	}
-
+	
 	/**
 	 * Convert an integer to a hexadecimal string. The length of the hexadecimal
 	 * string will be equal to the length that would be required to encode
@@ -104,14 +110,14 @@ public class Utility {
 	 */
 	public static String intToHex(final int value) {
 		String result = Integer.toHexString(value);
-
+		
 		/** Pad the result to use the full 4 bytes of an integer. */
 		while (result.length() < HEX_PER_BYTE * (Integer.SIZE / Byte.SIZE))
 			result = "0" + result;
-
+		
 		return result;
 	}
-
+	
 	/**
 	 * Find the logarithm of a number in base 2.
 	 * 
@@ -121,7 +127,7 @@ public class Utility {
 	public static double logBase2(final double x) {
 		return Math.log(x) / Math.log(2);
 	}
-
+	
 	/**
 	 * Retrieve public keys. The keys will first try to be retrieved from the
 	 * JAR and then from the file system. Otherwise no key will be returned.
@@ -132,7 +138,7 @@ public class Utility {
 	public static PublicKey getPublicKey(final String publicKeyPath) {
 		final URL publicKeyJAR = Utility.class.getClassLoader().getResource(publicKeyPath);
 		final boolean publicKeyFileExists = new File(publicKeyPath).exists();
-
+		
 		/**
 		 * Try to read keys from the JAR file first. If that doesn't work, then
 		 * try to read keys from the file system. If that doesn't work, return
@@ -152,7 +158,7 @@ public class Utility {
 			return null;
 		}
 	}
-
+	
 	/**
 	 * Retrieve public-private keys. The keys will first try to be retrieved
 	 * from the JAR and then from the file system. Finally, new public-private
@@ -182,7 +188,7 @@ public class Utility {
 		final File privateKeyFile = new File(privateKeyPath);
 		final boolean publicKeyFileExists = publicKeyFile.exists();
 		final boolean privateKeyFileExists = privateKeyFile.exists();
-
+		
 		/**
 		 * Try to read keys from the JAR file first. If that doesn't work, then
 		 * try to read keys from the file system. If that doesn't work, then
@@ -192,7 +198,7 @@ public class Utility {
 			/** Read public/private keys from JAR. */
 			PublicKey publicKey = null;
 			PrivateKey privateKey = null;
-
+			
 			try {
 				publicKey = RSAAsymmetricEncryption.readPublicKeyFromFile(publicKeyJAR);
 			} catch (final Exception e) {
@@ -200,7 +206,7 @@ public class Utility {
 				e.printStackTrace();
 				return null;
 			}
-
+			
 			try {
 				privateKey = RSAAsymmetricEncryption.readPrivateKeyFromFile(privateKeyJAR, privateKeyPassword);
 			} catch (final Exception e) {
@@ -208,13 +214,13 @@ public class Utility {
 				e.printStackTrace();
 				return null;
 			}
-
+			
 			return new KeyPair(publicKey, privateKey);
 		} else if (publicKeyFileExists && privateKeyFileExists) {
 			/** Read public/private keys from file system. */
 			PublicKey publicKey = null;
 			PrivateKey privateKey = null;
-
+			
 			try {
 				publicKey = RSAAsymmetricEncryption.readPublicKeyFromFile(publicKeyPath);
 			} catch (final Exception e) {
@@ -222,7 +228,7 @@ public class Utility {
 				e.printStackTrace();
 				return null;
 			}
-
+			
 			try {
 				privateKey = RSAAsymmetricEncryption.readPrivateKeyFromFile(privateKeyPath, privateKeyPassword);
 			} catch (final EncryptedFileException e) {
@@ -232,17 +238,17 @@ public class Utility {
 				e.printStackTrace();
 				return null;
 			}
-
+			
 			return new KeyPair(publicKey, privateKey);
 		} else {
 			/**
 			 * Create new public-private keys.
 			 */
-
+			
 			/** Create the parent directories if they don't already exist. */
 			new File(publicKeyFile.getParent()).mkdirs();
 			new File(privateKeyFile.getParent()).mkdirs();
-
+			
 			/** Create new public/private keys. */
 			KeyPair kp = null;
 			try {
@@ -252,7 +258,7 @@ public class Utility {
 				e.printStackTrace();
 				return null;
 			}
-
+			
 			/** Save the keys to the file system. */
 			try {
 				RSAAsymmetricEncryption.savePublicKeyToFile(kp.getPublic(), publicKeyPath);
@@ -261,7 +267,7 @@ public class Utility {
 				e.printStackTrace();
 				return null;
 			}
-
+			
 			try {
 				RSAAsymmetricEncryption.savePrivateKeyToFile(kp.getPrivate(), privateKeyPath, privateKeyPassword);
 			} catch (final Exception e) {
@@ -269,7 +275,7 @@ public class Utility {
 				e.printStackTrace();
 				return null;
 			}
-
+			
 			return kp;
 		}
 	}

@@ -1,3 +1,4 @@
+/* @formatter:off */
 /******************************************************************************
  * ELEC5616
  * Computer and Network Security, The University of Sydney
@@ -9,10 +10,11 @@
  * 					of packets in StealthNet.
  *
  *****************************************************************************/
+/* @formatter:on */
 
 package StealthNet.Security;
 
-/* Import Libraries **********************************************************/
+/* Import Libraries ******************************************************** */
 
 import java.io.UnsupportedEncodingException;
 import java.security.InvalidAlgorithmParameterException;
@@ -28,7 +30,7 @@ import javax.crypto.NoSuchPaddingException;
 
 import org.apache.commons.codec.binary.Base64;
 
-/* StealthNet.Security.Encryption Class Definition **************************/
+/* StealthNet.Security.Encryption Class Definition ************************ */
 
 /**
  * An abstract class to provide encryption and decryption of messages, in order
@@ -45,10 +47,10 @@ public abstract class Encryption {
 	protected Cipher encryptionCipher;
 	protected Key decryptionKey;
 	protected Cipher decryptionCipher;
-
+	
 	/** Constants. */
 	private final String algorithm;
-
+	
 	/**
 	 * Constructor
 	 * 
@@ -57,7 +59,7 @@ public abstract class Encryption {
 	protected Encryption(final String algorithm) {
 		this.algorithm = algorithm;
 	}
-
+	
 	/**
 	 * Set the encryption cipher and key.
 	 * 
@@ -72,7 +74,7 @@ public abstract class Encryption {
 		encryptionCipher = Cipher.getInstance(algorithm);
 		encryptionCipher.init(Cipher.ENCRYPT_MODE, encryptionKey);
 	}
-
+	
 	/**
 	 * Set the encryption cipher and key.
 	 * 
@@ -89,7 +91,7 @@ public abstract class Encryption {
 		encryptionCipher = Cipher.getInstance(algorithm);
 		encryptionCipher.init(Cipher.ENCRYPT_MODE, encryptionKey, specs);
 	}
-
+	
 	/**
 	 * Set the decryption cipher and key.
 	 * 
@@ -104,7 +106,7 @@ public abstract class Encryption {
 		decryptionCipher = Cipher.getInstance(algorithm);
 		decryptionCipher.init(Cipher.DECRYPT_MODE, decryptionKey);
 	}
-
+	
 	/**
 	 * Set the decryption cipher and key.
 	 * 
@@ -121,7 +123,7 @@ public abstract class Encryption {
 		decryptionCipher = Cipher.getInstance(algorithm);
 		decryptionCipher.init(Cipher.DECRYPT_MODE, decryptionKey, specs);
 	}
-
+	
 	/**
 	 * Encrypts a message using the encryption key. Performs the opposite of the
 	 * decrypt(String) function.
@@ -136,10 +138,10 @@ public abstract class Encryption {
 	public byte[] encrypt(final String cleartext) throws IllegalBlockSizeException, BadPaddingException {
 		if (encryptionCipher == null)
 			throw new IllegalStateException("Cannot perform encryption without a decryption cipher.");
-
+		
 		return encrypt(cleartext.getBytes());
 	}
-
+	
 	/**
 	 * Encrypts a message using the encryption key. Performs the opposite of the
 	 * decrypt(byte[]) function.
@@ -153,18 +155,18 @@ public abstract class Encryption {
 	public byte[] encrypt(final byte[] cleartext) throws IllegalBlockSizeException, BadPaddingException {
 		if (encryptionCipher == null)
 			throw new IllegalStateException("Cannot perform encryption without a decryption cipher.");
-
+		
 		final byte[] encryptedValue = encryptionCipher.doFinal(cleartext);
 		final byte[] encodedValue = Base64.encodeBase64(encryptedValue);
 		return encodedValue;
 	}
-
+	
 	/**
 	 * Decrypts a message using the decryption key. Performs the opposite of the
 	 * encrypt(String) function.
 	 * 
 	 * @param ciphertext The message to be decrypted, assumed to be encoded in
-	 * base 64.
+	 *        base 64.
 	 * @return The cleartext message.
 	 * 
 	 * @throws UnsupportedEncodingException
@@ -174,16 +176,16 @@ public abstract class Encryption {
 	public byte[] decrypt(final String ciphertext) throws IllegalBlockSizeException, BadPaddingException {
 		if (decryptionCipher == null)
 			throw new IllegalStateException("Cannot perform decryption without a decryption cipher.");
-
+		
 		return decrypt(ciphertext.getBytes());
 	}
-
+	
 	/**
 	 * Decrypts a message using the decryption key. Performs the opposite of the
 	 * encrypt(byte[]) function.
 	 * 
 	 * @param ciphertext The message to be decrypted, assumed to be encoded in
-	 * base 64.
+	 *        base 64.
 	 * @return The cleartext message.
 	 * 
 	 * @throws BadPaddingException
@@ -192,7 +194,7 @@ public abstract class Encryption {
 	public byte[] decrypt(final byte[] ciphertext) throws IllegalBlockSizeException, BadPaddingException {
 		if (decryptionCipher == null)
 			throw new IllegalStateException("Cannot perform decryption without a decryption cipher.");
-
+		
 		final byte[] decodedValue = Base64.decodeBase64(ciphertext);
 		final byte[] decryptedValue = decryptionCipher.doFinal(decodedValue);
 		return decryptedValue;
@@ -200,5 +202,5 @@ public abstract class Encryption {
 }
 
 /******************************************************************************
- * END OF FILE:     Encryption.java
+ * END OF FILE: Encryption.java
  *****************************************************************************/

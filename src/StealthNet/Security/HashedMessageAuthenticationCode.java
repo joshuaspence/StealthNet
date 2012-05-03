@@ -1,3 +1,4 @@
+/* @formatter:off */
 /******************************************************************************
  * ELEC5616
  * Computer and Network Security, The University of Sydney
@@ -9,10 +10,11 @@
  * 					(HMAC) for StealthNet communications.
  *
  *****************************************************************************/
+/* @formatter:on */
 
 package StealthNet.Security;
 
-/* Import Libraries **********************************************************/
+/* Import Libraries ******************************************************** */
 
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
@@ -21,7 +23,7 @@ import javax.crypto.Mac;
 import javax.crypto.SecretKey;
 import javax.management.InvalidAttributeValueException;
 
-/* StealthNet.Security.HashedMessageAuthenticationCode Class Definition ******/
+/* StealthNet.Security.HashedMessageAuthenticationCode Class Definition **** */
 
 /**
  * A class to calculate a verify packet HMACs.
@@ -39,26 +41,26 @@ public class HashedMessageAuthenticationCode implements MessageAuthenticationCod
 	public static final String HMAC_ALGORITHM = "HmacSHA1";
 	
 	/**
-	 * The expected fixed number of bytes of the digest produced by this MAC 
-	 * function. We need to know this so that we don't have to encode the data 
+	 * The expected fixed number of bytes of the digest produced by this MAC
+	 * function. We need to know this so that we don't have to encode the data
 	 * length and digest length into the transmitted string.
 	 */
-	public static final int DIGEST_BYTES = 20; 
+	public static final int DIGEST_BYTES = 20;
 	
 	/**
 	 * Constructor
 	 * 
 	 * @param key The key to use for the HMAC algorithm.
 	 * 
-	 * @throws NoSuchAlgorithmException 
-	 * @throws InvalidKeyException 
+	 * @throws NoSuchAlgorithmException
+	 * @throws InvalidKeyException
 	 */
-	public HashedMessageAuthenticationCode(SecretKey key) throws NoSuchAlgorithmException, InvalidKeyException {
+	public HashedMessageAuthenticationCode(final SecretKey key) throws NoSuchAlgorithmException, InvalidKeyException {
 		this.key = key;
 		
 		/** Create a MAC object using HMAC-SHA1 and initialise with key. */
-		this.mac = Mac.getInstance(HMAC_ALGORITHM);
-	    this.mac.init(this.key);
+		mac = Mac.getInstance(HMAC_ALGORITHM);
+		mac.init(this.key);
 	}
 	
 	/**
@@ -66,10 +68,11 @@ public class HashedMessageAuthenticationCode implements MessageAuthenticationCod
 	 * 
 	 * @param packetContents The message to calculate the MAC for.
 	 * @return The digest of the given message (in base-64 encoding).
-	 * @throws InvalidAttributeValueException 
+	 * @throws InvalidAttributeValueException
 	 */
-	public byte[] createMAC(String packetContents) throws InvalidAttributeValueException{
-	    return createMAC(packetContents.getBytes());
+	@Override
+	public byte[] createMAC(final String packetContents) throws InvalidAttributeValueException {
+		return createMAC(packetContents.getBytes());
 	}
 	
 	/**
@@ -77,10 +80,11 @@ public class HashedMessageAuthenticationCode implements MessageAuthenticationCod
 	 * 
 	 * @param packetContents The message to calculate the MAC for.
 	 * @return The digest of the given message (in base-64 encoding).
-	 * @throws InvalidAttributeValueException 
+	 * @throws InvalidAttributeValueException
 	 */
-	public byte[] createMAC(byte[] packetContents) throws InvalidAttributeValueException {
-		final byte[] digest = this.mac.doFinal(packetContents);
+	@Override
+	public byte[] createMAC(final byte[] packetContents) throws InvalidAttributeValueException {
+		final byte[] digest = mac.doFinal(packetContents);
 		
 		/** A sanity check. */
 		if (digest.length != DIGEST_BYTES)
@@ -95,12 +99,13 @@ public class HashedMessageAuthenticationCode implements MessageAuthenticationCod
 	 * @param packetContents The message to check.
 	 * @param mac The given MAC digest (in base-64 encoding).
 	 * 
-	 * @return True if the message matches the given MAC digest, otherwise 
-	 * false.
+	 * @return True if the message matches the given MAC digest, otherwise
+	 *         false.
 	 * 
-	 * @throws InvalidAttributeValueException 
+	 * @throws InvalidAttributeValueException
 	 */
-	public boolean verifyMAC(String packetContents, byte[] mac) throws InvalidAttributeValueException {
+	@Override
+	public boolean verifyMAC(final String packetContents, final byte[] mac) throws InvalidAttributeValueException {
 		return verifyMAC(packetContents.getBytes(), mac);
 	}
 	
@@ -110,27 +115,27 @@ public class HashedMessageAuthenticationCode implements MessageAuthenticationCod
 	 * @param packetContents The message to check.
 	 * @param mac The given MAC digest (in base-64 encoding).
 	 * 
-	 * @return True if the message matches the given MAC digest, otherwise 
-	 * false.
+	 * @return True if the message matches the given MAC digest, otherwise
+	 *         false.
 	 * 
-	 * @throws InvalidAttributeValueException 
+	 * @throws InvalidAttributeValueException
 	 */
-	public boolean verifyMAC(byte[] packetContents, byte[] mac) throws InvalidAttributeValueException {
+	@Override
+	public boolean verifyMAC(final byte[] packetContents, final byte[] mac) throws InvalidAttributeValueException {
 		final byte[] digest = createMAC(packetContents);
 		
 		/** Compare the two digests */
-		if (digest.length != mac.length) {
-	        return false;
-	    } else {
-	        for (int i = 0; i < mac.length; i++)
-	            if (mac[i] != digest[i])
-	                return false;
-	    }
+		if (digest.length != mac.length)
+			return false;
+		else
+			for (int i = 0; i < mac.length; i++)
+				if (mac[i] != digest[i])
+					return false;
 		
 		return true;
 	}
 }
 
 /******************************************************************************
- * END OF FILE:     HashedMessageAuthenticationCode.java
+ * END OF FILE: HashedMessageAuthenticationCode.java
  *****************************************************************************/

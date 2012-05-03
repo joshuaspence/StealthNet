@@ -1,3 +1,4 @@
+/* @formatter:off */
 /******************************************************************************
  * ELEC5616/NETS3016
  * Computer and Network Security, The University of Sydney
@@ -10,16 +11,17 @@
  *                  programming assignment.
  *
  *****************************************************************************/
+/* @formatter:on */
 
 package StealthNet;
 
-/* Import Libraries **********************************************************/
+/* Import Libraries ******************************************************** */
 
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 
-/* StealthNet.Server Class Definition ****************************************/
+/* StealthNet.Server Class Definition ************************************** */
 
 /**
  * A server process for StealthNet communications. Opens a server socket,
@@ -38,9 +40,9 @@ import java.net.Socket;
  */
 public class Server {
 	/** Debug options. */
-	private static final boolean DEBUG_GENERAL               = Debug.isDebug("StealthNet.Server.General");
-	private static final boolean DEBUG_ERROR_TRACE           = Debug.isDebug("StealthNet.Server.ErrorTrace") || Debug.isDebug("ErrorTrace");
-
+	private static final boolean DEBUG_GENERAL = Debug.isDebug("StealthNet.Server.General");
+	private static final boolean DEBUG_ERROR_TRACE = Debug.isDebug("StealthNet.Server.ErrorTrace") || Debug.isDebug("ErrorTrace");
+	
 	/**
 	 * The main Server function.
 	 * 
@@ -50,34 +52,37 @@ public class Server {
 	public static void main(final String[] args) throws IOException {
 		/** Port that the server is listening on. */
 		int port = Comms.DEFAULT_SERVERPORT;
-
+		
 		/** Check if a port number was specified at the command line. */
 		if (args.length > 0)
 			try {
 				port = Integer.parseInt(args[0]);
-
+				
 				/** Check for a valid port number. */
 				if (port <= 0 || port > 65535)
 					throw new NumberFormatException("Invalid port number: " + port);
 			} catch (final NumberFormatException e) {
 				System.err.println(e.getMessage());
-				if (DEBUG_ERROR_TRACE) e.printStackTrace();
+				if (DEBUG_ERROR_TRACE)
+					e.printStackTrace();
 				System.exit(1);
 			}
-
+		
 		/** Try to create a server socket listening on a specified port. */
 		ServerSocket svrSocket = null;
 		try {
 			svrSocket = new ServerSocket(port);
 		} catch (final IOException e) {
 			System.err.println("Could not listen on port " + port);
-			if (DEBUG_ERROR_TRACE) e.printStackTrace();
+			if (DEBUG_ERROR_TRACE)
+				e.printStackTrace();
 			System.exit(1);
 		}
-
-		if (DEBUG_GENERAL) System.out.println("Server is listening on port " + port + ".");
+		
+		if (DEBUG_GENERAL)
+			System.out.println("Server is listening on port " + port + ".");
 		System.out.println("Server online...");
-
+		
 		/**
 		 * Wait for and accept connections on the server socket. Create a new
 		 * thread for each connection. For each connection, create a new
@@ -88,18 +93,19 @@ public class Server {
 				final Socket conn = svrSocket.accept();
 				final ServerThread thread = new ServerThread(conn);
 				thread.start();
-
+				
 				if (DEBUG_GENERAL)
 					System.out.println("Server accepted connection from " + conn.getInetAddress() + " on port " + conn.getPort() + ".");
 				else
 					System.out.println("Server accepted connection...");
 			} catch (final Exception e) {
 				System.err.println("Error accepting new client connection. Dropping connection...");
-				if (DEBUG_ERROR_TRACE) e.printStackTrace();
+				if (DEBUG_ERROR_TRACE)
+					e.printStackTrace();
 			}
 	}
 }
 
 /******************************************************************************
- * END OF FILE:     Server.java
+ * END OF FILE: Server.java
  *****************************************************************************/

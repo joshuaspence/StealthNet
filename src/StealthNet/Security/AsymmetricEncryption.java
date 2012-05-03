@@ -1,3 +1,4 @@
+/* @formatter:off */
 /******************************************************************************
  * ELEC5616
  * Computer and Network Security, The University of Sydney
@@ -9,10 +10,11 @@
  * 					asymmetric (public-private key) encryption.
  *
  *****************************************************************************/
+/* @formatter:on */
 
 package StealthNet.Security;
 
-/* Import Libraries **********************************************************/
+/* Import Libraries ******************************************************** */
 
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
@@ -35,7 +37,7 @@ import javax.management.InvalidAttributeValueException;
 
 import StealthNet.EncryptedFile;
 
-/* StealthNet.Security.AsymmetricEncryption Class Definition ****************/
+/* StealthNet.Security.AsymmetricEncryption Class Definition ************** */
 
 /**
  * An abstract class to provide public-private key (asymmetric) encryption.
@@ -44,14 +46,14 @@ import StealthNet.EncryptedFile;
  * 
  * Asymmetric encryption is slow and should only be used until it is possible to
  * securely use symmetric encryption.
- *
+ * 
  * @author Joshua Spence
  */
 public abstract class AsymmetricEncryption extends Encryption {
 	/** Keys. */
 	protected final KeyPair ourKeys;
 	protected PublicKey peerPublicKey;
-
+	
 	/**
 	 * Constructor.
 	 * 
@@ -67,7 +69,7 @@ public abstract class AsymmetricEncryption extends Encryption {
 		ourKeys = keys;
 		super.setDecryption(ourKeys.getPrivate());
 	}
-
+	
 	/**
 	 * Get our public key.
 	 * 
@@ -76,7 +78,7 @@ public abstract class AsymmetricEncryption extends Encryption {
 	public final PublicKey getPublicKey() {
 		return ourKeys.getPublic();
 	}
-
+	
 	/**
 	 * Get our public-private key pair.
 	 * 
@@ -85,8 +87,7 @@ public abstract class AsymmetricEncryption extends Encryption {
 	public final KeyPair getKeys() {
 		return ourKeys;
 	}
-
-
+	
 	/**
 	 * Get the peer's public key. The peer's public key is used for encryption.
 	 * 
@@ -95,7 +96,7 @@ public abstract class AsymmetricEncryption extends Encryption {
 	public final PublicKey getPeerPublicKey() {
 		return peerPublicKey;
 	}
-
+	
 	/**
 	 * Set the peer's public key. The peer's public key is used for encryption.
 	 * 
@@ -109,7 +110,7 @@ public abstract class AsymmetricEncryption extends Encryption {
 		peerPublicKey = peer;
 		super.setEncryption(peerPublicKey);
 	}
-
+	
 	/**
 	 * A utility function to write the modulus and exponent of a key to a file
 	 * encrypted with a password.
@@ -133,14 +134,14 @@ public abstract class AsymmetricEncryption extends Encryption {
 		final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 		final BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(outputStream);
 		final DataOutputStream dataOutputStream = new DataOutputStream(bufferedOutputStream);
-
+		
 		/** Write the modulus and exponent to a byte array. */
 		try {
 			/** Write the modulus to the output byte array. */
 			final byte[] modArray = mod.toByteArray();
 			dataOutputStream.writeInt(modArray.length);
 			dataOutputStream.write(modArray);
-
+			
 			/** Write the exponent to a byte array. */
 			final byte[] expArray = exp.toByteArray();
 			dataOutputStream.writeInt(expArray.length);
@@ -154,14 +155,14 @@ public abstract class AsymmetricEncryption extends Encryption {
 			dataOutputStream.close();
 			bufferedOutputStream.close();
 		}
-
+		
 		/** Write the byte array to an (un)encrypted file. */
 		if (password != null) {
 			final EncryptedFile file = new EncryptedFile(outputStream.toByteArray(), password);
 			file.writeToFile(new File(filename));
 		} else {
 			final FileOutputStream fileOutputStream = new FileOutputStream(filename);
-
+			
 			try {
 				fileOutputStream.write(outputStream.toByteArray());
 			} catch (final Exception e) {
@@ -171,12 +172,12 @@ public abstract class AsymmetricEncryption extends Encryption {
 				fileOutputStream.close();
 			}
 		}
-
+		
 		/** Close the output stream. */
 		outputStream.close();
 	}
 }
 
 /******************************************************************************
- * END OF FILE:     AsymmetricEncryption.java
+ * END OF FILE: AsymmetricEncryption.java
  *****************************************************************************/
