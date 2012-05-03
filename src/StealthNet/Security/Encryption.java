@@ -40,10 +40,6 @@ import org.apache.commons.codec.binary.Base64;
  * @author Joshua Spence
  */
 public abstract class Encryption {
-	/** StealthNet defaults. */
-	public static final Class<? extends Encryption> DEFAULT_SYMMETRIC_ENCRYPTION = AESEncryption.class;
-	public static final Class<? extends AsymmetricEncryption> DEFAULT_ASYMMETRIC_ENCRYPTION = RSAAsymmetricEncryption.class;
-
 	/** Keys and ciphers. */
 	protected Key encryptionKey;
 	protected Cipher encryptionCipher;

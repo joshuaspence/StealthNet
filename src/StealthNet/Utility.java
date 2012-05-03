@@ -13,7 +13,6 @@ package StealthNet;
 
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.Method;
 import java.net.URL;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
@@ -29,7 +28,7 @@ import javax.crypto.NoSuchPaddingException;
 import javax.management.InvalidAttributeValueException;
 
 import StealthNet.Security.EncryptedFileException;
-import StealthNet.Security.Encryption;
+import StealthNet.Security.RSAAsymmetricEncryption;
 
 /* Import Libraries **********************************************************/
 
@@ -142,32 +141,10 @@ public class Utility {
 		try {
 			if (publicKeyJAR != null)
 				/** Read public key from JAR. */
-				try {
-					final Method m = Encryption.DEFAULT_ASYMMETRIC_ENCRYPTION.getMethod("readPublicKeyFromFile", URL.class);
-					return (PublicKey) m.invoke(null, publicKeyJAR);
-				} catch (final NoSuchMethodException e) {
-					System.err.println(Encryption.DEFAULT_ASYMMETRIC_ENCRYPTION.getName() + " does not contain a readPublicKeyFromFile method.");
-					System.exit(1);
-					return null;
-				} catch (final Exception e) {
-					System.err.println("Unable to read public key from file.");
-					e.printStackTrace();
-					return null;
-				}
+				return RSAAsymmetricEncryption.readPublicKeyFromFile(publicKeyJAR);
 			else if (publicKeyFileExists)
 				/** Read public keys from file system. */
-				try {
-					final Method m = Encryption.DEFAULT_ASYMMETRIC_ENCRYPTION.getMethod("readPublicKeyFromFile", String.class);
-					return (PublicKey) m.invoke(null, publicKeyPath);
-				} catch (final NoSuchMethodException e) {
-					System.err.println(Encryption.DEFAULT_ASYMMETRIC_ENCRYPTION.getName() + " does not contain a readPublicKeyFromFile method.");
-					System.exit(1);
-					return null;
-				} catch (final Exception e) {
-					System.err.println("Unable to read public key from file.");
-					e.printStackTrace();
-					return null;
-				}
+				return RSAAsymmetricEncryption.readPublicKeyFromFile(publicKeyPath);
 			else
 				return null;
 		} catch (final Exception e) {
@@ -217,12 +194,7 @@ public class Utility {
 			PrivateKey privateKey = null;
 
 			try {
-				final Method publicKeyMethod = Encryption.DEFAULT_ASYMMETRIC_ENCRYPTION.getMethod("readPublicKeyFromFile", URL.class);
-				publicKey = (PublicKey) publicKeyMethod.invoke(null, publicKeyJAR);
-			} catch (final NoSuchMethodException e) {
-				System.err.println(Encryption.DEFAULT_ASYMMETRIC_ENCRYPTION.getName() + " does not contain a readPublicKeyFromFile method.");
-				System.exit(1);
-				return null;
+				publicKey = RSAAsymmetricEncryption.readPublicKeyFromFile(publicKeyJAR);
 			} catch (final Exception e) {
 				System.err.println("Unable to read public key from file.");
 				e.printStackTrace();
@@ -230,12 +202,7 @@ public class Utility {
 			}
 
 			try {
-				final Method privateKeyMethod = Encryption.DEFAULT_ASYMMETRIC_ENCRYPTION.getMethod("readPrivateKeyFromFile", URL.class, String.class);
-				privateKey = (PrivateKey) privateKeyMethod.invoke(null, privateKeyJAR, privateKeyPassword);
-			} catch (final NoSuchMethodException e) {
-				System.err.println(Encryption.DEFAULT_ASYMMETRIC_ENCRYPTION.getName() + " does not contain a readPrivateKeyFromFile method.");
-				System.exit(1);
-				return null;
+				privateKey = RSAAsymmetricEncryption.readPrivateKeyFromFile(privateKeyJAR, privateKeyPassword);
 			} catch (final Exception e) {
 				System.err.println("Unable to read private key from file.");
 				e.printStackTrace();
@@ -245,16 +212,11 @@ public class Utility {
 			return new KeyPair(publicKey, privateKey);
 		} else if (publicKeyFileExists && privateKeyFileExists) {
 			/** Read public/private keys from file system. */
-			PublicKey publicKey;
-			PrivateKey privateKey;
+			PublicKey publicKey = null;
+			PrivateKey privateKey = null;
 
 			try {
-				final Method publicKeyMethod = Encryption.DEFAULT_ASYMMETRIC_ENCRYPTION.getMethod("readPublicKeyFromFile", String.class);
-				publicKey = (PublicKey) publicKeyMethod.invoke(null, publicKeyPath);
-			} catch (final NoSuchMethodException e) {
-				System.err.println(Encryption.DEFAULT_ASYMMETRIC_ENCRYPTION.getName() + " does not contain a readPublicKeyFromFile method.");
-				System.exit(1);
-				return null;
+				publicKey = RSAAsymmetricEncryption.readPublicKeyFromFile(publicKeyPath);
 			} catch (final Exception e) {
 				System.err.println("Unable to read public key from file.");
 				e.printStackTrace();
@@ -262,12 +224,7 @@ public class Utility {
 			}
 
 			try {
-				final Method privateKeyMethod = Encryption.DEFAULT_ASYMMETRIC_ENCRYPTION.getMethod("readPrivateKeyFromFile", String.class, String.class);
-				privateKey = (PrivateKey) privateKeyMethod.invoke(null, privateKeyPath, privateKeyPassword);
-			} catch (final NoSuchMethodException e) {
-				System.err.println(Encryption.DEFAULT_ASYMMETRIC_ENCRYPTION.getName() + " does not contain a readPrivateKeyFromFile method.");
-				System.exit(1);
-				return null;
+				privateKey = RSAAsymmetricEncryption.readPrivateKeyFromFile(privateKeyPath, privateKeyPassword);
 			} catch (final Exception e) {
 				System.err.println("Unable to read private key from file.");
 				e.printStackTrace();
@@ -285,14 +242,9 @@ public class Utility {
 			new File(privateKeyFile.getParent()).mkdirs();
 
 			/** Create new public/private keys. */
-			KeyPair kp;
+			KeyPair kp = null;
 			try {
-				final Method m = Encryption.DEFAULT_ASYMMETRIC_ENCRYPTION.getMethod("generateKeys", new Class[] {});
-				kp = (KeyPair) m.invoke(null, new Object[] {});
-			} catch (final NoSuchMethodException e) {
-				System.err.println(Encryption.DEFAULT_ASYMMETRIC_ENCRYPTION.getName() + " does not contain a generateKeys method.");
-				System.exit(1);
-				return null;
+				kp = RSAAsymmetricEncryption.generateKeys();
 			} catch (final Exception e) {
 				System.err.println("Unable to generate public-private keys.");
 				e.printStackTrace();
@@ -301,24 +253,15 @@ public class Utility {
 
 			/** Save the keys to the file system. */
 			try {
-				final Method m = Encryption.DEFAULT_ASYMMETRIC_ENCRYPTION.getMethod("savePublicKeyToFile", PublicKey.class, String.class);
-				m.invoke(null, kp.getPublic(), publicKeyPath);
-			} catch (final NoSuchMethodException e) {
-				System.err.println(Encryption.DEFAULT_ASYMMETRIC_ENCRYPTION.getName() + " does not contain a savePublicKeyToFile method.");
-				System.exit(1);
-				return null;
+				RSAAsymmetricEncryption.savePublicKeyToFile(kp.getPublic(), publicKeyPath);
 			} catch (final Exception e) {
 				System.err.println("Unable to save private key to file.");
 				e.printStackTrace();
 				return null;
 			}
+
 			try {
-				final Method m = Encryption.DEFAULT_ASYMMETRIC_ENCRYPTION.getMethod("savePrivateKeyToFile", PrivateKey.class, String.class, String.class);
-				m.invoke(null, kp.getPrivate(), privateKeyPath, privateKeyPassword);
-			} catch (final NoSuchMethodException e) {
-				System.err.println(Encryption.DEFAULT_ASYMMETRIC_ENCRYPTION.getName() + " does not contain a savePrivateKeyToFile method.");
-				System.exit(1);
-				return null;
+				RSAAsymmetricEncryption.savePrivateKeyToFile(kp.getPrivate(), privateKeyPath, privateKeyPassword);
 			} catch (final Exception e) {
 				System.err.println("Unable to save private key to file.");
 				e.printStackTrace();
