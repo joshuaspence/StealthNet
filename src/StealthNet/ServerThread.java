@@ -98,7 +98,7 @@ public class ServerThread extends Thread {
 	private String userID = null;
 	
 	/** The public-private {@link KeyPair} for this server. */
-	private static KeyPair serverKeys = null;
+	private static final KeyPair serverKeys;
 	
 	/** The location of the server's {@link PublicKey} file. */
 	private static final String PUBLIC_KEY_FILE = "keys/server/public.key";
@@ -111,23 +111,26 @@ public class ServerThread extends Thread {
 	
 	/* Initialise the server public-private {@link KeyPair}. */
 	static {
+		KeyPair kp = null;
+		
 		/*
 		 * Try to read keys from the JAR file first. If that doesn't work, then
 		 * try to read keys from the file system. If that doesn't work, then
 		 * create new keys.
 		 */
 		try {
-			serverKeys = Utility.getPublicPrivateKeys(PUBLIC_KEY_FILE, PRIVATE_KEY_FILE, PRIVATE_KEY_FILE_PASSWORD);
+			kp = Utility.getPublicPrivateKeys(PUBLIC_KEY_FILE, PRIVATE_KEY_FILE, PRIVATE_KEY_FILE_PASSWORD);
 		} catch (final Exception e) {
-			System.err.println("Unable to retrieve/generate public/private keys.");
+			System.err.println("Unable to retrieve/generate public-private keys.");
 			if (DEBUG_ERROR_TRACE)
 				e.printStackTrace();
 			System.exit(1);
 		}
-		if (serverKeys == null) {
+		if (kp == null) {
 			System.err.println("Unable to retrieve/generate public-private keys.");
 			System.exit(1);
 		}
+		serverKeys = kp;
 		
 		/* Debug information. */
 		if (DEBUG_ASYMMETRIC_ENCRYPTION) {
@@ -154,7 +157,7 @@ public class ServerThread extends Thread {
 	 */
 	private static Comms bankComms = null;
 	
-	/** The loocation of the {@link PublicKey} file of the {@link Bank}. */
+	/** The location of the {@link PublicKey} file of the {@link Bank}. */
 	private static final String BANK_PUBLIC_KEY_FILE = "keys/bank/public.key";
 	
 	/* Initialise the bank communications. */

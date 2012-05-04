@@ -18,9 +18,18 @@ package StealthNet;
 
 import java.io.IOException;
 import java.net.Socket;
+import java.security.InvalidKeyException;
+import java.security.KeyPair;
+import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.util.Hashtable;
 
-import StealthNet.Security.AsymmetricEncryption;
+import javax.crypto.NoSuchPaddingException;
+
+import StealthNet.Security.AsymmetricVerification;
+import StealthNet.Security.RSAAsymmetricEncryption;
+import StealthNet.Security.SHA1withRSAAsymmetricVerification;
 
 /* StealthNet.BankThread Class Definition ********************************** */
 
@@ -36,6 +45,7 @@ public class BankThread extends Thread {
 	private static final boolean DEBUG_COMMANDS_NULL = Debug.isDebug("StealthNet.BankThread.Commands.Null");
 	private static final boolean DEBUG_COMMANDS_LOGIN = Debug.isDebug("StealthNet.BankThread.Commands.Login");
 	private static final boolean DEBUG_COMMANDS_LOGOUT = Debug.isDebug("StealthNet.BankThread.Commands.Logout");
+	private static final boolean DEBUG_ASYMMETRIC_ENCRYPTION = Debug.isDebug("StealthNet.BankThread.AsymmetricEncryption");
 	
 	/* Constants. */
 	private static final int INITIAL_BALANCE = 100;
@@ -52,32 +62,92 @@ public class BankThread extends Thread {
 	/** The user ID for the user owning the thread. */
 	private String userID = null;
 	
-	/** A StealthNetComms class to handle communications for this client. */
+	/**
+	 * A {@link Comms} class to handle communications for this {@link Client} or
+	 * {@link Server}.
+	 */
 	private Comms stealthComms = null;
 	
-	/** The bank's asymmetric encryption class. */
-	private final AsymmetricEncryption asymmetricEncryptionProvider;
+	/** The location of the bank's {@link PublicKey} file. */
+	private static final String PUBLIC_KEY_FILE = "keys/bank/public.key";
+	
+	/** The location of the bank's {@link PrivateKey} file. */
+	private static final String PRIVATE_KEY_FILE = "keys/bank/private.key";
+	
+	/** The password to decrypt the server's {@link PrivateKey} file. */
+	private static final String PRIVATE_KEY_FILE_PASSWORD = "bank";
+	
+	/** The public-private {@link KeyPair} for this bank. */
+	private static final KeyPair bankKeys;
+	
+	/** To allow the bank to sign messages. */
+	private static final AsymmetricVerification asymmetricVerificationProvider;
+	
+	/* Initialise the bank public-private {@link KeyPair}. */
+	static {
+		KeyPair kp = null;
+		
+		/*
+		 * Try to read keys from the JAR file first. If that doesn't work, then
+		 * try to read keys from the file system. If that doesn't work, then
+		 * create new keys.
+		 */
+		try {
+			kp = Utility.getPublicPrivateKeys(PUBLIC_KEY_FILE, PRIVATE_KEY_FILE, PRIVATE_KEY_FILE_PASSWORD);
+		} catch (final Exception e) {
+			System.err.println("Unable to retrieve/generate public-private keys.");
+			if (DEBUG_ERROR_TRACE)
+				e.printStackTrace();
+			System.exit(1);
+		}
+		if (kp == null) {
+			System.err.println("Unable to retrieve/generate public-private keys.");
+			System.exit(1);
+		}
+		bankKeys = kp;
+		
+		/* Debug information. */
+		if (DEBUG_ASYMMETRIC_ENCRYPTION) {
+			final String publicKeyString = Utility.getHexValue(bankKeys.getPublic().getEncoded());
+			final String privateKeyString = Utility.getHexValue(bankKeys.getPrivate().getEncoded());
+			System.out.println("Public key: " + publicKeyString);
+			System.out.println("Private key: " + privateKeyString);
+		}
+		
+		AsymmetricVerification av = null;
+		try {
+			av = new SHA1withRSAAsymmetricVerification(bankKeys);
+		} catch (final Exception e) {
+			System.err.println("Unable to enable asymmetric verification.");
+			if (DEBUG_ERROR_TRACE)
+				e.printStackTrace();
+			System.exit(1);
+		}
+		asymmetricVerificationProvider = av;
+	}
 	
 	/**
 	 * Constructor.
 	 * 
-	 * @param socket The socket that the server is listening on.
+	 * @param socket The {@link Socket} that the bank is listening on.
+	 * 
+	 * @throws NoSuchPaddingException
+	 * @throws NoSuchAlgorithmException
+	 * @throws InvalidKeyException
 	 */
-	public BankThread(final Socket socket, final AsymmetricEncryption aep) {
+	public BankThread(final Socket socket) throws InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException {
 		/* Thread constructor. */
 		super("StealthNet.BankThread");
 		
 		if (DEBUG_GENERAL)
 			System.out.println("Creating a BankThread.");
 		
-		asymmetricEncryptionProvider = aep;
-		
 		/*
-		 * Create a new StealthNet.Comms instance and accept sessions. Note that
-		 * the client already has our public key and can hence encrypt messages
-		 * destined for us.
+		 * Create a new Comms instance and accept sessions. Note that the
+		 * client/server already has our public key and can hence encrypt
+		 * messages destined for us.
 		 */
-		stealthComms = new Comms(asymmetricEncryptionProvider, true);
+		stealthComms = new Comms(new RSAAsymmetricEncryption(bankKeys), true);
 		stealthComms.acceptSession(socket);
 	}
 	

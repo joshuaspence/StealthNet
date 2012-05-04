@@ -20,12 +20,6 @@ package StealthNet;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.security.KeyPair;
-import java.security.PrivateKey;
-import java.security.PublicKey;
-
-import StealthNet.Security.AsymmetricEncryption;
-import StealthNet.Security.RSAAsymmetricEncryption;
 
 /* StealthNet.Bank Class Definition **************************************** */
 
@@ -38,16 +32,6 @@ public class Bank {
 	/* Debug options. */
 	private static final boolean DEBUG_GENERAL = Debug.isDebug("StealthNet.Bank.General");
 	private static final boolean DEBUG_ERROR_TRACE = Debug.isDebug("StealthNet.Bank.ErrorTrace") || Debug.isDebug("ErrorTrace");
-	private static final boolean DEBUG_ASYMMETRIC_ENCRYPTION = Debug.isDebug("StealthNet.Bank.AsymmetricEncryption");
-	
-	/** The location of the bank's {@link PublicKey} file. */
-	private static final String PUBLIC_KEY_FILE = "keys/bank/public.key";
-	
-	/** The location of the bank's {@link PrivateKey} file. */
-	private static final String PRIVATE_KEY_FILE = "keys/bank/private.key";
-	
-	/** The password to decrypt the server's {@link PrivateKey} file. */
-	private static final String PRIVATE_KEY_FILE_PASSWORD = "bank";
 	
 	/**
 	 * The main Bank function.
@@ -56,33 +40,6 @@ public class Bank {
 	 * @throws IOException
 	 */
 	public static void main(final String[] args) throws IOException {
-		/*
-		 * Try to read keys from the JAR file first. If that doesn't work, then
-		 * try to read keys from the file system. If that doesn't work, then
-		 * create new keys.
-		 */
-		KeyPair bankKeys = null;
-		try {
-			bankKeys = Utility.getPublicPrivateKeys(PUBLIC_KEY_FILE, PRIVATE_KEY_FILE, PRIVATE_KEY_FILE_PASSWORD);
-		} catch (final Exception e) {
-			System.err.println("Unable to retrieve/generate public/private keys.");
-			if (DEBUG_ERROR_TRACE)
-				e.printStackTrace();
-			System.exit(1);
-		}
-		if (bankKeys == null) {
-			System.err.println("Unable to retrieve/generate public-private keys.");
-			System.exit(1);
-		}
-		
-		/* Debug information. */
-		if (DEBUG_ASYMMETRIC_ENCRYPTION) {
-			final String publicKeyString = Utility.getHexValue(bankKeys.getPublic().getEncoded());
-			final String privateKeyString = Utility.getHexValue(bankKeys.getPrivate().getEncoded());
-			System.out.println("Public key: " + publicKeyString);
-			System.out.println("Private key: " + privateKeyString);
-		}
-		
 		/* Port that the bank is listening on. */
 		int port = Comms.DEFAULT_BANKPORT;
 		
@@ -123,8 +80,7 @@ public class Bank {
 		while (true)
 			try {
 				final Socket conn = svrSocket.accept();
-				final AsymmetricEncryption ae = new RSAAsymmetricEncryption(bankKeys);
-				final BankThread thread = new BankThread(conn, ae);
+				final BankThread thread = new BankThread(conn);
 				thread.start();
 				
 				if (DEBUG_GENERAL)

@@ -40,7 +40,6 @@ DEBUG="\
 -Ddebug.StealthNet.Bank=false \
 -Ddebug.StealthNet.Bank.General=true \
 -Ddebug.StealthNet.Bank.ErrorTrace=true \
--Ddebug.StealthNet.Bank.AsymmetricEncryption=true \
 \
 -Ddebug.StealthNet.BankThread=false \
 -Ddebug.StealthNet.BankThread.General=true \
@@ -49,6 +48,7 @@ DEBUG="\
 -Ddebug.StealthNet.BankThread.Commands.Null=true \
 -Ddebug.StealthNet.BankThread.Commands.Login=true \
 -Ddebug.StealthNet.BankThread.Commands.Logout=true \
+-Ddebug.StealthNet.BankThread.AsymmetricEncryption=true \
 \
 -Ddebug.StealthNet.Chat=false \
 -Ddebug.StealthNet.Chat.General=true \
