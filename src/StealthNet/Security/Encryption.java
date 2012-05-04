@@ -53,7 +53,7 @@ public class Encryption {
 	/** The {@link Cipher} used to decrypt data. */
 	protected Cipher decryptionCipher;
 	
-	/** Constants. */
+	/** The algorithm used to initialise the {@link Cipher}s. */
 	private final String algorithm;
 	
 	/**

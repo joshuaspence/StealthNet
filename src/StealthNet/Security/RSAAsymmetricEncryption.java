@@ -55,9 +55,9 @@ import StealthNet.EncryptedFile;
 
 /**
  * A class to provide RSA asymmetric encryption. Encryption will be performed
- * using the peer's public key. Decryption will be performed using our private
- * key. Also provides the option to save the public key to an unencrypted file
- * and the private file to a password-protected file.
+ * using the peer's {@link PublicKey}. Decryption will be performed using our
+ * {@link PrivateKey}. Also provides the option to save the {@link PublicKey} to
+ * an unencrypted file and the {@link PrivateKey} to a password-protected file.
  * 
  * @author Joshua Spence
  * @see AsymmetricEncryption
