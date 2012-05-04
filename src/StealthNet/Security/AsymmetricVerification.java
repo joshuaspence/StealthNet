@@ -130,6 +130,7 @@ public class AsymmetricVerification {
 	 */
 	private final void setSigner(final PrivateKey key) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException {
 		signerKey = key;
+		System.out.println("setSigner");
 	}
 	
 	/**
@@ -144,6 +145,7 @@ public class AsymmetricVerification {
 	 */
 	private final void setVerifier(final PublicKey key) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException {
 		verifierKey = key;
+		System.out.println("setVerifier");
 	}
 	
 	/**
@@ -160,6 +162,7 @@ public class AsymmetricVerification {
 	 * @see Base64
 	 */
 	public byte[] sign(final String message) throws InvalidKeyException, NoSuchAlgorithmException, SignatureException {
+		System.out.println("blah");
 		if (signerKey == null)
 			throw new IllegalStateException("Cannot perform encryption without a signer key.");
 		
@@ -181,6 +184,7 @@ public class AsymmetricVerification {
 	 * @see Base64
 	 */
 	public byte[] sign(final byte[] message) throws NoSuchAlgorithmException, InvalidKeyException, SignatureException {
+		System.out.println("blahblah");
 		if (signerKey == null)
 			throw new IllegalStateException("Cannot perform encryption without a signer key.");
 		

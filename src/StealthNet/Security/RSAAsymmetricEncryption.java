@@ -51,7 +51,7 @@ import org.apache.commons.codec.binary.Base64;
 
 import StealthNet.EncryptedFile;
 
-/* StealthNet.Security.AsymmetricEncryption Interface Definition *********** */
+/* StealthNet.Security.AsymmetricEncryption Class Definition *************** */
 
 /**
  * A class to provide RSA asymmetric encryption. Encryption will be performed
