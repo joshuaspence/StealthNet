@@ -33,35 +33,39 @@ import java.net.SocketException;
 
 /**
  * A class to buffered write and buffered read to and from an opened socket.
- * This class is almost identical to the <pre>Comms</pre> class, but is stripped
+ * This class is almost identical to the {@link Comms} class, but is stripped
  * down to provide only a basic forwarding functionality. It does not interpret
- * packets, but rather sends raw strings around.
+ * {@link DecryptedPacket}s, but rather sends raw {@link EncryptedPacket}s
+ * around.
  * 
  * @author Joshua Spence
- * 
  */
 public class ProxyComms {
-	/** Debug options. */
+	/* Debug options. */
 	private static final boolean DEBUG_GENERAL = Debug.isDebug("StealthNet.ProxyComms.General");
 	private static final boolean DEBUG_ERROR_TRACE = Debug.isDebug("StealthNet.ProxyComms.ErrorTrace") || Debug.isDebug("ErrorTrace");
 	private static final boolean DEBUG_RAW_PACKET = Debug.isDebug("StealthNet.ProxyComms.RawOutput");
 	private static final boolean DEBUG_RECEIVE_READY = Debug.isDebug("StealthNet.ProxyComms.ReceiveReady");
 	
-	/** Defaults. */
-	public static final String DEFAULT_PROXYNAME = "localhost";	// Default host for the StealthNet proxy.
-	public static final int DEFAULT_PROXYPORT = 5618;				// Default port for the StealthNet proxy.
+	/** Default host for the StealthNet proxy. */
+	public static final String DEFAULT_PROXYNAME = "localhost";
 	
-	/** Current values. */
-	private final String serverName;	// This host - defaults to DFEAULT_SERVERNAME
-	private final int port;			// This port - defaults to DEFAULT_SERVERPORT.
+	/** Default port for the StealthNet proxy. */
+	public static final int DEFAULT_PROXYPORT = 5618;
 	
-	/** Opened socket through which the communication is to be made. */
+	/** The hostname of the StealthNet {@link Server}. */
+	private final String serverName;
+	
+	/** The port number of the StealthNet {@link Server}. */
+	private final int port;
+	
+	/** The opened {@link Socket} through which the communication is to be made. */
 	private Socket commsSocket;
 	
-	/** Output data stream for the socket. */
+	/** Output data stream for the {@link Socket}. */
 	private PrintWriter dataOut;
 	
-	/** Input data stream for the socket. */
+	/** Input data stream for the {@link Socket}. */
 	private BufferedReader dataIn;
 	
 	/** Constructor. */
@@ -80,8 +84,8 @@ public class ProxyComms {
 	/**
 	 * Constructor.
 	 * 
-	 * @param s The server name of the StealthNet server.
-	 * @param p The port number for the StealthNet server.
+	 * @param s The server name of the StealthNet {@link Server}.
+	 * @param p The port number for the StealthNet {@link Server}.
 	 */
 	public ProxyComms(final String s, final int p) {
 		commsSocket = null;
@@ -112,9 +116,9 @@ public class ProxyComms {
 	
 	/**
 	 * Initiates a communications session on the given socket. Note that, unlike
-	 * the Comms class, no security protocols are implemented here.
+	 * the {@link Comms} class, no security protocols are implemented here.
 	 * 
-	 * @param socket The socket through which the connection is made.
+	 * @param socket The {@link Socket} through which the connection is made.
 	 * @return True if the initialisation succeeds. False if the initialisation
 	 *         fails.
 	 */
@@ -136,10 +140,10 @@ public class ProxyComms {
 	}
 	
 	/**
-	 * Accepts a connection on the given socket. Note that, unlike the Comms
-	 * class, no security protocols are implemented here.
+	 * Accepts a connection on the given {@link Socket}. Note that, unlike the
+	 * {@link Comms} class, no security protocols are implemented here.
 	 * 
-	 * @param socket The socket through which the connection is made.
+	 * @param socket The {@link Socket} through which the connection is made.
 	 * @return True if the initialisation succeeds. False if the initialisation
 	 *         fails.
 	 */
@@ -161,8 +165,9 @@ public class ProxyComms {
 	}
 	
 	/**
-	 * Terminates the communication session and closes the socket, print writer
-	 * and buffered reader associated with the communications.
+	 * Terminates the communication session and closes the {@link Socket},
+	 * {@link PrintWriter} and {@link BufferedReader} associated with the
+	 * communications.
 	 * 
 	 * @return True if the termination succeeds, otherwise false.
 	 */
@@ -187,13 +192,14 @@ public class ProxyComms {
 	}
 	
 	/**
-	 * Sends a string by writing it to the print writer for the socket.
+	 * Sends a string by writing it to the {@link PrintWriter} for the
+	 * {@link Socket}.
 	 * 
-	 * @param str The string to be sent.
+	 * @param str The {@link String} to be sent.
 	 * @return True if successful, otherwise false.
 	 */
 	public boolean sendString(final String str) throws SocketException {
-		/** Print debug information. */
+		/* Print debug information. */
 		if (DEBUG_RAW_PACKET)
 			System.out.println("(raw)       sendString(" + str + ")");
 		
@@ -202,28 +208,29 @@ public class ProxyComms {
 			return false;
 		}
 		
-		/** Print the packet to the output writer. */
+		/* Print the packet to the output writer. */
 		dataOut.println(str);
 		return true;
 	}
 	
 	/**
-	 * Reads a string from the buffered reader for the socket.
+	 * Reads a {@link String} from the {@link BufferedReader} for the
+	 * {@link Socket}.
 	 * 
-	 * @return A string representing the packet that was received.
+	 * @return A {@link String} representing the packet that was received.
 	 */
 	public String recvString() throws IOException, SocketException {
-		/** Read data from the input buffer. */
+		/* Read data from the input buffer. */
 		final String packetString = dataIn.readLine();
 		
-		/** Print debug information. */
+		/* Print debug information. */
 		if (DEBUG_RAW_PACKET)
 			System.out.println("(raw)       recvString(" + packetString + ")");
 		
 		return packetString;
 	}
 	
-	/**
+	/*
 	 * To limit the verbosity of output in recvReady, we will only print these
 	 * values if they change.
 	 */
@@ -240,7 +247,7 @@ public class ProxyComms {
 	 * @throws IOException
 	 */
 	public boolean recvReady() throws IOException {
-		/**
+		/*
 		 * To limit the verbosity of output in recvReady, we will only print
 		 * these values if they change.
 		 */
@@ -263,7 +270,7 @@ public class ProxyComms {
 		
 		is_first_time = false;
 		
-		/** Return the result - the only real useful code in this function. */
+		/* Return the result - the only real useful code in this function. */
 		return dataIn.ready();
 	}
 }

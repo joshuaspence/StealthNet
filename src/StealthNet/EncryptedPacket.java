@@ -23,6 +23,8 @@ import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 import javax.management.InvalidAttributeValueException;
 
+import org.apache.commons.codec.binary.Base64;
+
 import StealthNet.Security.Encryption;
 import StealthNet.Security.HashedMessageAuthenticationCode;
 import StealthNet.Security.MessageAuthenticationCode;
@@ -30,31 +32,49 @@ import StealthNet.Security.MessageAuthenticationCode;
 /* StealthNet.Packet Class Definition ************************************** */
 
 /**
- * A class to store the encrypted data passed between StealthNet clients. An
- * encrypted StealthNet "packet" consists of two parts: <ul> <li>data
+ * A class to store the encrypted data passed between StealthNet {@link Client}
+ * s. An encrypted StealthNet packet consists of two parts: <ul> <li>data
  * (encrypted)</li> <li> digest</li> </ul>
  * 
- * A message digest is produced by passing a
- * <pre>MessageAuthenticationCode</pre> instance to the relevant function. This
- * class will allow encrypted packets to be created without a digest (if a null
- * <pre>MessageAuthenticationCode</pre> instance is passed to the function, for
- * instance). A higher layer should check whether or not this should be allowed.
+ * To avoid the need to transmit the length of the data field, we ensure that
+ * the length of the digest field is fixed, and known by the {@link Client}s.
+ * 
+ * A message digest is produced by passing a {@link MessageAuthenticationCode}
+ * instance to the relevant function. This class will allow encrypted packets to
+ * be created without a digest (if a null {@link MessageAuthenticationCode}
+ * instance is passed to the function, for instance). A higher layer should
+ * check whether or not this should be allowed.
  * 
  * The data contained in this class does not necessarily have to be encrypted,
  * it could simply be the same data that was contained in the corresponding
- * <pre>DecryptedPacket</pre> class. However, <pre>EncryptedPacket</pre>s are
- * the only packets that are transmitted over the communications channel.
+ * {@link DecryptedPacket} class. However, encrypted packets are the only
+ * packets that are actually transmitted over the communications channel.
  * 
  * @author Matt Barrie
  * @author Stephen Gould
  * @author Ryan Junee
  * @author Joshua Spence
+ * 
+ * @see DecryptedPacket
+ * @see MessageAuthenticationCode
  */
 public class EncryptedPacket {
-	/** Packet contents. */
-	final byte data[];		// The (encrypted) data being sent in the packet.
-	final byte digest[];	// The MAC digest of the packet data (in base64 encoding).
+	/** The (usually encrypted) data being sent in the packet. */
+	final byte data[];
 	
+	/**
+	 * The {@link MessageAuthenticationCode} digest of the packet data, encoded
+	 * in base-64
+	 * 
+	 * @see Base64
+	 */
+	final byte digest[];
+	
+	/**
+	 * The (fixed) length of the digest field, to avoid having to transmit the
+	 * length of the data field, which complicates decryption, especially in the
+	 * case of modified packet data.
+	 */
 	private static final int digestBytes = HashedMessageAuthenticationCode.DIGEST_BYTES;
 	
 	/** Null constructor. */
@@ -67,9 +87,11 @@ public class EncryptedPacket {
 	}
 	
 	/**
-	 * Constructor with no digest. Explicitly copies the data array contents.
+	 * Constructor with no {@link MessageAuthenticationCode} digest. Explicitly
+	 * copies the data array contents.
 	 * 
-	 * @param encryptedData The (encrypted) data to be sent in the packet.
+	 * @param encryptedData The (usually encrypted) data to be sent in the
+	 *        packet.
 	 */
 	public EncryptedPacket(final byte[] encryptedData) {
 		if (encryptedData == null)
@@ -79,23 +101,25 @@ public class EncryptedPacket {
 			System.arraycopy(encryptedData, 0, data, 0, encryptedData.length);
 		}
 		
-		/** No digest is available. */
+		/* No digest is available. */
 		digest = new byte[digestBytes];
 	}
 	
 	/**
-	 * Constructor with digest. Explicitly copies the data array contents.
+	 * Constructor with {@link MessageAuthenticationCode} digest. Explicitly
+	 * copies the data array contents.
 	 * 
-	 * @param encryptedDataLen The length of the encryptedData array.
+	 * @param encryptedDataLen The length of the <code>encryptedData</code>
+	 *        array.
 	 * @param encryptedData The data to be sent in the packet.
-	 * @param mac The MessageAuthenticationCode instance to provide a MAC
-	 *        digest. If null, then the digest will be blank.
+	 * @param mac The {@link MessageAuthenticationCode} instance to provide a
+	 *        MAC digest. If null, then the digest will be blank.
 	 * 
 	 * @throws IllegalArgumentException
 	 * @throws InvalidAttributeValueException
 	 */
 	public EncryptedPacket(final byte[] encryptedData, final int encryptedDataLen, final MessageAuthenticationCode mac) throws IllegalArgumentException, InvalidAttributeValueException {
-		/** Copy the data. */
+		/* Copy the data. */
 		if (encryptedData == null)
 			data = new byte[0];
 		else {
@@ -103,7 +127,7 @@ public class EncryptedPacket {
 			System.arraycopy(encryptedData, 0, data, 0, encryptedDataLen);
 		}
 		
-		/** Create the MAC digest (if possible). */
+		/* Create the MAC digest (if possible). */
 		if (mac == null)
 			digest = new byte[digestBytes];
 		else {
@@ -115,37 +139,37 @@ public class EncryptedPacket {
 	}
 	
 	/**
-	 * Constructor. This function must "undo" the effects of the toString()
-	 * function, because this function converts the received data into a packet
-	 * at the receiving end of communications.
+	 * Constructor. This function must "undo" the effects of the
+	 * <code>toString()</code> function, because this function converts the
+	 * received data into a packet at the receiving end of communications.
 	 * 
-	 * @param str A string consisting of the packet contents.
+	 * @param str A {@link String} consisting of the packet contents.
 	 */
 	public EncryptedPacket(String str) {
-		/**
+		/*
 		 * Add padding if necessary, to make the packet length an integer number
-		 * of bytes (each represented by 2 hexadecimal characters).
+		 * of bytes (each represented by HEX_PER_BYTE hexadecimal characters).
 		 */
-		if (str.length() % 2 == 1)
+		while (str.length() % Utility.HEX_PER_BYTE != 0)
 			str = "0" + str;
 		
 		if (str.length() == 0) {
-			/** NULL packet. */
+			/* NULL packet. */
 			data = new byte[0];
 			digest = new byte[digestBytes];
 		} else {
-			/** Current index of the string. */
+			/* Current index of the string. */
 			int current = 0;
 			
-			/** Data length. */
+			/* Data length. */
 			final int dataLen = str.length() / Utility.HEX_PER_BYTE - digestBytes;
 			
-			/** Data (dataLen bytes). */
+			/* Data (dataLen bytes). */
 			data = new byte[dataLen];
 			for (int i = 0; i < data.length; i++)
 				data[i] = (byte) (16 * Utility.singleHexToInt(str.charAt(current++)) + Utility.singleHexToInt(str.charAt(current++)));
 			
-			/** Digest (digestBytes bytes). */
+			/* Digest (digestBytes bytes). */
 			digest = new byte[digestBytes];
 			for (int i = 0; i < digest.length; i++)
 				digest[i] = (byte) (16 * Utility.singleHexToInt(str.charAt(current++)) + Utility.singleHexToInt(str.charAt(current++)));
@@ -154,18 +178,18 @@ public class EncryptedPacket {
 	
 	/**
 	 * Converts the packet to a string. This function must undo the effects of
-	 * the <pre>EncryptedPacket(String)</pre> constructor, because this function
-	 * is used to convert a packet to a string for transmission at the sending
-	 * end of communications.
+	 * the <code>EncryptedPacket(String)</code> constructor, because this
+	 * function is used to convert a packet to a string for transmission at the
+	 * sending end of communications.
 	 * 
-	 * @return A string representing the contents of the packet.
+	 * @return A {@link String} representing the contents of the packet.
 	 */
 	@Override
 	public String toString() {
 		String str = "";
 		int lowHalfByte, highHalfByte;
 		
-		/** Data (data.length bytes). */
+		/* Data (data.length bytes). */
 		for (final byte element : data) {
 			highHalfByte = element >= 0 ? element : 256 + element;
 			lowHalfByte = highHalfByte & 0xF;
@@ -174,7 +198,7 @@ public class EncryptedPacket {
 			str += Utility.HEXTABLE[lowHalfByte];
 		}
 		
-		/** Digest (digest.length bytes). */
+		/* Digest (digest.length bytes). */
 		for (final byte element : digest) {
 			highHalfByte = element >= 0 ? element : 256 + element;
 			lowHalfByte = highHalfByte & 0xF;
@@ -187,18 +211,20 @@ public class EncryptedPacket {
 	}
 	
 	/**
-	 * Verify a MAC digest by calculating our own MAC digest of the same data,
-	 * and comparing it with the MAC digest stored in the packet. If the
-	 * <pre>MessageAuthenticationCode</pre> instance is null, then the
-	 * verification will pass automatically. Beware that this may not always be
-	 * the desired result, so this should be checked at a higher layer.
+	 * Verify a {@link MessageAuthenticationCode} digest by calculating our own
+	 * {@link MessageAuthenticationCode} digest of the same data, and comparing
+	 * it with the {@link MessageAuthenticationCode} digest stored in the
+	 * packet. If the {@link MessageAuthenticationCode} instance is null, then
+	 * the verification will pass automatically. Beware that this may not always
+	 * be the desired result, so this should be checked at a higher layer.
 	 * 
-	 * @param mac The MessageAuthenticationCode instance to calculate the MAC
-	 *        digest.
+	 * @param mac The {@link MessageAuthenticationCode} instance to calculate
+	 *        the {@link MessageAuthenticationCode} digest.
 	 * @return True if the digest matches (or if the MessageAuthenticationCode
 	 *         instance is null), otherwise false.
 	 * 
 	 * @throws InvalidAttributeValueException
+	 * @see MessageAuthenticationCode
 	 */
 	public boolean verifyMAC(final MessageAuthenticationCode mac) throws InvalidAttributeValueException {
 		if (mac == null)
@@ -208,7 +234,8 @@ public class EncryptedPacket {
 	}
 	
 	/**
-	 * Get a string representation of the packet. For debug purposes only.
+	 * Get a {@link String} representation of the packet. For debug purposes
+	 * only.
 	 * 
 	 * @return A comma-separated string containing the the value of each of the
 	 *         packet's fields. For purely cosmetic purposes, newline characters
@@ -217,14 +244,14 @@ public class EncryptedPacket {
 	public String getEncryptedString() {
 		String str = "";
 		
-		/** Packet data. */
+		/* Packet data. */
 		if (data.length > 0)
 			str += new String(data).replaceAll("\n", ";");
 		else
 			str += "null";
 		str += ", ";
 		
-		/** Packet digest. */
+		/* Packet digest. */
 		if (digest.length > 0)
 			str += Utility.getHexValue(digest);
 		else
@@ -236,15 +263,18 @@ public class EncryptedPacket {
 	/**
 	 * Decrypt this packet.
 	 * 
-	 * @param d The encryption instance to decrypt the packet. If null, then it
-	 *        will be assumed that the packet is not encrypted.
+	 * @param d The {@link Encryption} instance to decrypt the packet. If null,
+	 *        then it will be assumed that the packet is not encrypted.
 	 * @return The decrypted packet. If parameter d is null, then the
-	 *         DecryptedPacket is identical to the data stored in the
+	 *         {@link DecryptedPacket} is identical to the data stored in the
 	 *         EncryptedPacket.
 	 * 
 	 * @throws BadPaddingException
 	 * @throws IllegalBlockSizeException
 	 * @throws UnsupportedEncodingException
+	 * 
+	 * @see Encryption
+	 * @see DecryptedPacket
 	 */
 	public DecryptedPacket decrypt(final Encryption d) throws UnsupportedEncodingException, IllegalBlockSizeException, BadPaddingException {
 		if (d != null)

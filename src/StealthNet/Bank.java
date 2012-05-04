@@ -21,6 +21,8 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.security.KeyPair;
+import java.security.PrivateKey;
+import java.security.PublicKey;
 
 import StealthNet.Security.AsymmetricEncryption;
 import StealthNet.Security.RSAAsymmetricEncryption;
@@ -33,14 +35,18 @@ import StealthNet.Security.RSAAsymmetricEncryption;
  * @author Joshua Spence
  */
 public class Bank {
-	/** Debug options. */
+	/* Debug options. */
 	private static final boolean DEBUG_GENERAL = Debug.isDebug("StealthNet.Bank.General");
 	private static final boolean DEBUG_ERROR_TRACE = Debug.isDebug("StealthNet.Bank.ErrorTrace") || Debug.isDebug("ErrorTrace");
 	private static final boolean DEBUG_ASYMMETRIC_ENCRYPTION = Debug.isDebug("StealthNet.Bank.AsymmetricEncryption");
 	
-	/** Constants. */
+	/** The location of the bank's {@link PublicKey} file. */
 	private static final String PUBLIC_KEY_FILE = "keys/bank/public.key";
+	
+	/** The location of the bank's {@link PrivateKey} file. */
 	private static final String PRIVATE_KEY_FILE = "keys/bank/private.key";
+	
+	/** The password to decrypt the server's {@link PrivateKey} file. */
 	private static final String PRIVATE_KEY_FILE_PASSWORD = "bank";
 	
 	/**
@@ -50,7 +56,7 @@ public class Bank {
 	 * @throws IOException
 	 */
 	public static void main(final String[] args) throws IOException {
-		/**
+		/*
 		 * Try to read keys from the JAR file first. If that doesn't work, then
 		 * try to read keys from the file system. If that doesn't work, then
 		 * create new keys.
@@ -69,7 +75,7 @@ public class Bank {
 			System.exit(1);
 		}
 		
-		/** Debug information. */
+		/* Debug information. */
 		if (DEBUG_ASYMMETRIC_ENCRYPTION) {
 			final String publicKeyString = Utility.getHexValue(bankKeys.getPublic().getEncoded());
 			final String privateKeyString = Utility.getHexValue(bankKeys.getPrivate().getEncoded());
@@ -77,10 +83,10 @@ public class Bank {
 			System.out.println("Private key: " + privateKeyString);
 		}
 		
-		/** Port that the bank is listening on. */
+		/* Port that the bank is listening on. */
 		int port = Comms.DEFAULT_BANKPORT;
 		
-		/** Check if a port number was specified at the command line. */
+		/* Check if a port number was specified at the command line. */
 		if (args.length > 0)
 			try {
 				port = Integer.parseInt(args[0]);
@@ -95,7 +101,7 @@ public class Bank {
 				System.exit(1);
 			}
 		
-		/** Try to create a server socket listening on a specified port. */
+		/* Try to create a server socket listening on a specified port. */
 		ServerSocket svrSocket = null;
 		try {
 			svrSocket = new ServerSocket(port);
@@ -110,7 +116,7 @@ public class Bank {
 			System.out.println("Bank is listening on port " + port + ".");
 		System.out.println("Bank online...");
 		
-		/**
+		/*
 		 * Wait for and accept connections on the server socket. Create a new
 		 * thread for each connection.
 		 */

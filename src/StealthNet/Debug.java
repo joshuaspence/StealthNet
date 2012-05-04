@@ -28,11 +28,11 @@ import java.util.Arrays;
  */
 public class Debug {
 	/**
-	 * If set to <pre>new Boolean(true)<pre> then all calls to
-	 * <pre>isDebug</pre> will automatically return true. If set to <pre>new
-	 * Boolean(false)</pre> then all calls to <pre>isDebug</pre> will
-	 * automatically return false. If set to <pre>null</pre>, then
-	 * <pre>isDebug</pre> will proceed as intended.
+	 * If set to <code>new Boolean(true)</code> then all calls to
+	 * <code>isDebug</code> will automatically return true. If set to <code>new
+	 * Boolean(false)</code> then all calls to <code>isDebug</code> will
+	 * automatically return false. If set to <code>null</code>, then
+	 * <code>isDebug</code> will proceed as intended.
 	 */
 	private static final Boolean overwriteResult = null;
 	
@@ -44,12 +44,12 @@ public class Debug {
 	
 	/**
 	 * Checks if debug output should be enabled for a given function. For
-	 * example: <pre>isDebug("StealthNet.Client.Commands.FTP")</pre> will return
-	 * true if any of the following are defined to be true at the command line
-	 * (using <pre>-Dxxx=true</pre>): <pre>debug</pre>,
-	 * <pre>debug.StealthNet.</pre>, <pre>debug.StealthNet.Client</pre>,
-	 * <pre>debug.StealthNet.Client.Commands</pre>,
-	 * <pre>debug.StealthNet.Client.Commands.FTP</pre>.
+	 * example: <code>isDebug("StealthNet.Client.Commands.FTP")</code> will
+	 * return true if any of the following are defined to be true at the command
+	 * line (using <code>-Dxxx=true</code>): <code>debug</code>,
+	 * <code>debug.StealthNet.</pre>, <code>debug.StealthNet.Client</code>,
+	 * <code>debug.StealthNet.Client.Commands</code>,
+	 * <code>debug.StealthNet.Client.Commands.FTP</code>.
 	 * 
 	 * @param s The function to check for debug functionality.
 	 * @return True if debug functionality should be enabled, otherwise false.
@@ -65,7 +65,7 @@ public class Debug {
 			if (System.getProperty(propertyString, FALSE_STRING).equals(TRUE_STRING))
 				return true;
 			
-			/** Check if we are done. */
+			/* Check if we are done. */
 			if (sections.size() <= 0)
 				break;
 			

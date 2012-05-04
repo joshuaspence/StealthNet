@@ -29,6 +29,7 @@ import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import javax.management.InvalidAttributeValueException;
 
+import StealthNet.Security.AsymmetricEncryption;
 import StealthNet.Security.EncryptedFileException;
 import StealthNet.Security.RSAAsymmetricEncryption;
 
@@ -45,10 +46,15 @@ import StealthNet.Security.RSAAsymmetricEncryption;
  * @author Joshua Spence
  */
 public class Utility {
-	/** Hexadecimal characters. */
+	/**
+	 * A table of hexadecimal characters, mapping an integer to its hexadecimal
+	 * character.
+	 */
 	public static final char[] HEXTABLE = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' };
 	
-	/** Number of hexadecimal characters required to represent a single byte. */
+	/**
+	 * The number of hexadecimal characters required to represent a single byte.
+	 */
 	public static final int HEX_PER_BYTE = Byte.SIZE / (int) logBase2(HEXTABLE.length);
 	
 	/**
@@ -90,7 +96,8 @@ public class Utility {
 	}
 	
 	/**
-	 * Convert a hexadecimal string to an integer.
+	 * Convert a hexadecimal string to the integer representing the value of the
+	 * hexadecimal string.
 	 * 
 	 * @param hex The string to convert.
 	 * @return An integer representing the hexadecimal string.
@@ -101,9 +108,9 @@ public class Utility {
 	}
 	
 	/**
-	 * Convert an integer to a hexadecimal string. The length of the hexadecimal
-	 * string will be equal to the length that would be required to encode
-	 * Integer.MAX_VALUE as a hexadecimal string.
+	 * Convert an integer to a hexadecimal string representing the same value.
+	 * The length of the hexadecimal string will be equal to the length that
+	 * would be required to encode Integer.MAX_VALUE as a hexadecimal string.
 	 * 
 	 * @param value The integer to convert.
 	 * @return The hexadecimal string representing the integer.
@@ -111,7 +118,10 @@ public class Utility {
 	public static String intToHex(final int value) {
 		String result = Integer.toHexString(value);
 		
-		/** Pad the result to use the full 4 bytes of an integer. */
+		/*
+		 * Pad the result to use the full (Integer.SIZE / Byte.SIZE) bytes of an
+		 * integer.
+		 */
 		while (result.length() < HEX_PER_BYTE * (Integer.SIZE / Byte.SIZE))
 			result = "0" + result;
 		
@@ -134,22 +144,24 @@ public class Utility {
 	 * 
 	 * @param publicKeyPath The path to the public key file.
 	 * @return The requested public key, or null if it cannot be found.
+	 * 
+	 * @see RSAAsymmetricEncryption
 	 */
 	public static PublicKey getPublicKey(final String publicKeyPath) {
 		final URL publicKeyJAR = Utility.class.getClassLoader().getResource(publicKeyPath);
 		final boolean publicKeyFileExists = new File(publicKeyPath).exists();
 		
-		/**
+		/*
 		 * Try to read keys from the JAR file first. If that doesn't work, then
 		 * try to read keys from the file system. If that doesn't work, return
 		 * null.
 		 */
 		try {
 			if (publicKeyJAR != null)
-				/** Read public key from JAR. */
+				/* Read public key from JAR. */
 				return RSAAsymmetricEncryption.readPublicKeyFromFile(publicKeyJAR);
 			else if (publicKeyFileExists)
-				/** Read public keys from file system. */
+				/* Read public keys from file system. */
 				return RSAAsymmetricEncryption.readPublicKeyFromFile(publicKeyPath);
 			else
 				return null;
@@ -167,7 +179,7 @@ public class Utility {
 	 * @param publicKeyPath The path to the public key file.
 	 * @param privateKeyPath The path to the private key file.
 	 * @param privateKeyPassword The password to decrypt the private key file.
-	 * @return An AsymmetricEncryption provider for the keys.
+	 * @return An {@link AsymmetricEncryption} provider for the keys.
 	 * 
 	 * @throws EncryptedFileException
 	 * @throws IOException
@@ -180,6 +192,7 @@ public class Utility {
 	 * @throws InvalidAttributeValueException
 	 * @throws InvalidKeyException
 	 * 
+	 * @see RSAAsymmetricEncryption
 	 */
 	public static KeyPair getPublicPrivateKeys(final String publicKeyPath, final String privateKeyPath, final String privateKeyPassword) throws InvalidKeyException, InvalidAttributeValueException, NoSuchAlgorithmException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException, InvalidKeySpecException, InvalidAlgorithmParameterException, IOException, EncryptedFileException {
 		final URL publicKeyJAR = Utility.class.getClassLoader().getResource(publicKeyPath);
@@ -189,13 +202,13 @@ public class Utility {
 		final boolean publicKeyFileExists = publicKeyFile.exists();
 		final boolean privateKeyFileExists = privateKeyFile.exists();
 		
-		/**
+		/*
 		 * Try to read keys from the JAR file first. If that doesn't work, then
 		 * try to read keys from the file system. If that doesn't work, then
 		 * create new keys.
 		 */
 		if (publicKeyJAR != null && privateKeyJAR != null) {
-			/** Read public/private keys from JAR. */
+			/* Read public/private keys from JAR. */
 			PublicKey publicKey = null;
 			PrivateKey privateKey = null;
 			
@@ -217,7 +230,7 @@ public class Utility {
 			
 			return new KeyPair(publicKey, privateKey);
 		} else if (publicKeyFileExists && privateKeyFileExists) {
-			/** Read public/private keys from file system. */
+			/* Read public/private keys from file system. */
 			PublicKey publicKey = null;
 			PrivateKey privateKey = null;
 			
@@ -241,15 +254,15 @@ public class Utility {
 			
 			return new KeyPair(publicKey, privateKey);
 		} else {
-			/**
+			/*
 			 * Create new public-private keys.
 			 */
 			
-			/** Create the parent directories if they don't already exist. */
+			/* Create the parent directories if they don't already exist. */
 			new File(publicKeyFile.getParent()).mkdirs();
 			new File(privateKeyFile.getParent()).mkdirs();
 			
-			/** Create new public/private keys. */
+			/* Create new public/private keys. */
 			KeyPair kp = null;
 			try {
 				kp = RSAAsymmetricEncryption.generateKeys();
@@ -259,7 +272,7 @@ public class Utility {
 				return null;
 			}
 			
-			/** Save the keys to the file system. */
+			/* Save the keys to the file system. */
 			try {
 				RSAAsymmetricEncryption.savePublicKeyToFile(kp.getPublic(), publicKeyPath);
 			} catch (final Exception e) {

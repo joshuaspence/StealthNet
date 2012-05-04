@@ -69,14 +69,14 @@ import StealthNet.Security.RSAAsymmetricEncryption;
 
 /**
  * A client for the StealthNet chat program. Receives information about clients
- * and secrets from a StealthNet server.
+ * and secrets from a StealthNet {@link Server}.
  * 
  * If the client wants to start a chat session with a user, then the source
- * client sends a command to the server, containing an IP address and port
- * number on which the source client is waiting to accept a connection from the
- * destination client. The server relays this information to the destination
- * client, which should then connect with the source client to start the chat
- * session.
+ * client sends a command to the {@link Server}, containing an IP address and
+ * port number on which the source client is waiting to accept a connection from
+ * the destination client. The {@link Server} relays this information to the
+ * destination client, which should then connect with the source client to start
+ * the chat session.
  * 
  * Similarly, if the clients wants to send a file to another client, then the
  * source client sends a command to the server, containing an IP address and
@@ -91,7 +91,7 @@ import StealthNet.Security.RSAAsymmetricEncryption;
  * @author Joshua Spence
  */
 public class Client {
-	/** Debug options. */
+	/* Debug options. */
 	private static final boolean DEBUG_GENERAL = Debug.isDebug("StealthNet.Client.General");
 	private static final boolean DEBUG_ERROR_TRACE = Debug.isDebug("StealthNet.Client.ErrorTrace") || Debug.isDebug("ErrorTrace");
 	private static final boolean DEBUG_COMMANDS_MSG = Debug.isDebug("StealthNet.Client.Commands.Msg");
@@ -102,14 +102,22 @@ public class Client {
 	private static final boolean DEBUG_COMMANDS_GETSECRET = Debug.isDebug("StealthNet.Client.Commands.GetSecret");
 	private static final boolean DEBUG_ASYMMETRIC_ENCRYPTION = Debug.isDebug("StealthNet.Client.AsymmetricEncryption");
 	
-	/** StealthNet server options. */
+	/** The hostname of the StealthNet {@link Server}. */
 	private final String serverHostname;
+	
+	/** The port number of the StealthNet {@link Server}. */
 	private final int serverPort;
+	
+	/** The location of the server's {@link PublicKey} file. */
 	private static final String SERVER_PUBLIC_KEY_FILE = "keys/server/public.key";
 	
-	/** StealthNet bank options. */
+	/** The hostname of the StealthNet {@link Bank}. */
 	private final String bankHostname;
+	
+	/** The port number of the StealthNet {@link Bank}. */
 	private final int bankPort;
+	
+	/** The location of the bank's {@link PublicKey} file. */
 	private static final String BANK_PUBLIC_KEY_FILE = "keys/bank/public.key";
 	
 	/** The main frame for this client. */
@@ -118,27 +126,29 @@ public class Client {
 	/** A text box used to display messages to the user. */
 	private JTextArea msgTextBox;
 	
-	/** Button to log into StealthNet. */
+	/** A button to log into StealthNet. */
 	private JButton loginBtn;
 	
-	/** Used for communications with the StealthNet server/bank. */
+	/** To communicate with the StealthNet {@link Server}. */
 	private Comms serverComms = null;
+	
+	/** To communicate with the StealthNet {@link Bank}. */
 	private Comms bankComms = null;
 	
-	/** Public-private keys to identify this client. */
+	/** Public-private {@link KeyPair} to identify this client. */
 	private KeyPair clientKeys;
 	
-	/** A timer to periodically process incoming packets. */
+	/** A {@link Timer} to periodically process incoming packets. */
 	private final Timer stealthTimer;
 	
 	/** The ID of this (client) user. */
 	private String userID = null;
 	
-	/** Buddy list. */
+	/* Buddy list. */
 	private JTable buddyTable = null;
 	private DefaultTableModel buddyListData = null;
 	
-	/** Secret list. */
+	/** List of secrets. */
 	private DefaultTableModel secretListData = null;
 	
 	/** Graphical representation of the secret list. */
@@ -147,8 +157,15 @@ public class Client {
 	/** Field to show the remaining number of credits. */
 	JTextField creditsBox;
 	
-	/** Credits. */
-	private final int credits = 100;
+	/** Number of credits. */
+	/* TODO: remove. */
+	private static final int credits = 100;
+	
+	/** Default requested hash chain length. */
+	private static final int DEFAULT_HASH_CHAIN_LENGTH = 100;
+	
+	// private CryptoCredit myCredits;
+	// The number of credits he has = CryptoCredit.size()
 	
 	/** Secret data. */
 	private class SecretData {
@@ -161,7 +178,7 @@ public class Client {
 	
 	/** Constructor. */
 	public Client() {
-		/** Create a timer to process packets every 100ms. */
+		/* Create a timer to process packets every 100ms. */
 		stealthTimer = new Timer(100, new ActionListener() {
 			@Override
 			public void actionPerformed(final ActionEvent e) {
@@ -179,13 +196,15 @@ public class Client {
 	/**
 	 * Constructor.
 	 * 
-	 * @param server The hostname of the StealthNet server.
-	 * @param serverPort The port that the StealthNet server is listening on.
-	 * @param bank The hostname of the StealthNet bank.
-	 * @param bankPort The port that the StealthNet bank is listening on.
+	 * @param server The hostname of the StealthNet {@link Server}.
+	 * @param serverPort The port that the StealthNet {@link Server} is
+	 *        listening on.
+	 * @param bank The hostname of the StealthNet {@link Bank}.
+	 * @param bankPort The port that the StealthNet {@link Bank} is listening
+	 *        on.
 	 */
 	public Client(final String server, final int serverPort, final String bank, final int bankPort) {
-		/** Create a timer to process packets every 100ms. */
+		/* Create a timer to process packets every 100ms. */
 		stealthTimer = new Timer(100, new ActionListener() {
 			@Override
 			public void actionPerformed(final ActionEvent e) {
@@ -208,7 +227,7 @@ public class Client {
 	public Component createGUI() {
 		final JPanel pane = new JPanel();
 		
-		/** Create user list. */
+		/* Create user list. */
 		buddyListData = new DefaultTableModel() {
 			private static final long serialVersionUID = 1L;
 			
@@ -226,7 +245,7 @@ public class Client {
 		final JScrollPane buddyScrollPane = new JScrollPane(buddyTable);
 		buddyScrollPane.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createCompoundBorder(BorderFactory.createTitledBorder("User List"), BorderFactory.createEmptyBorder(0, 0, 0, 0)), buddyScrollPane.getBorder()));
 		
-		/** Add mouse listen for popup windows. Act on JTable row right-click. */
+		/* Add mouse listen for popup windows. Act on JTable row right-click. */
 		MouseListener ml = new MouseAdapter() {
 			private JPopupMenu popup;
 			private int row;
@@ -280,7 +299,7 @@ public class Client {
 		};
 		buddyTable.addMouseListener(ml);
 		
-		/** Create secret window. */
+		/* Create secret window. */
 		secretListData = new DefaultTableModel() {
 			private static final long serialVersionUID = 1L;
 			
@@ -352,7 +371,7 @@ public class Client {
 		final JScrollPane secretScrollPane = new JScrollPane(secretTable);
 		secretScrollPane.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createCompoundBorder(BorderFactory.createTitledBorder("Secrets List"), BorderFactory.createEmptyBorder(0, 0, 0, 0)), secretScrollPane.getBorder()));
 		
-		/** Create instant message window. */
+		/* Create instant message window. */
 		msgTextBox = new JTextArea("Authentication required.\n");
 		msgTextBox.setLineWrap(true);
 		msgTextBox.setWrapStyleWord(true);
@@ -370,7 +389,7 @@ public class Client {
 		final JSplitPane topPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, splitPane, msgScrollPane);
 		topPane.setOneTouchExpandable(true);
 		
-		/** Credits display. */
+		/* Credits display. */
 		final JPanel creditsPane = new JPanel();
 		creditsPane.setLayout(new GridLayout(1, 0));
 		creditsPane.setPreferredSize(new Dimension(180, 30));
@@ -380,7 +399,7 @@ public class Client {
 		creditsBox.setEditable(false);
 		creditsPane.add(creditsBox);
 		
-		/** Create buttons (login, send message, chat, ftp) */
+		/* Create buttons (login, send message, chat, ftp) */
 		loginBtn = new JButton(new ImageIcon(this.getClass().getClassLoader().getResource("img/login.gif")));
 		loginBtn.setVerticalTextPosition(SwingConstants.BOTTOM);
 		loginBtn.setHorizontalTextPosition(SwingConstants.CENTER);
@@ -420,7 +439,7 @@ public class Client {
 		bottomPane.add(creditsPane, BorderLayout.NORTH);
 		bottomPane.add(btnPane, BorderLayout.SOUTH);
 		
-		/** Create top-level panel and add components. */
+		/* Create top-level panel and add components. */
 		pane.setBorder(BorderFactory.createEmptyBorder(10, 10, 5, 10));
 		pane.setLayout(new BorderLayout());
 		pane.add(topPane, BorderLayout.NORTH);
@@ -430,11 +449,12 @@ public class Client {
 	}
 	
 	/**
-	 * Login to StealthNet. This will establish comms to the StealthNet server
-	 * and to the StealthNet bank. The communications will be encrypted using
-	 * the server/bank's public key. This means that if another party is
-	 * masquerading as the server/bank, then (without the server/bank's private
-	 * key) they are unable to decrypt the packets.
+	 * Login to StealthNet. This will establish {@link Comms} to the StealthNet
+	 * {@link Server} and to the StealthNet {@link Bank}. The communications
+	 * will be encrypted using the {@link Server}'s {@link PublicKey} and the
+	 * {@link Bank}'s {@link PublicKey}. This means that if another party is
+	 * masquerading as the {@link Server} or as the {@link Bank}, then (without
+	 * the {lin private key) they are unable to decrypt the packets.
 	 */
 	private synchronized void login() {
 		if (DEBUG_GENERAL)
@@ -450,7 +470,7 @@ public class Client {
 			AsymmetricEncryption serverEncryption = null;
 			AsymmetricEncryption bankEncryption = null;
 			
-			/** Get the user ID. */
+			/* Get the user ID. */
 			userID = JOptionPane.showInputDialog("Login:", userID);
 			if (userID == null)
 				return;
@@ -459,7 +479,7 @@ public class Client {
 			final String privateKeyPath = "keys/clients/" + userID + "/private.key";
 			
 			do {
-				/** Get the password for the private key. */
+				/* Get the password for the private key. */
 				String password = null;
 				password = JOptionPane.showInputDialog("Password:", password);
 				if (password == null)
@@ -487,7 +507,7 @@ public class Client {
 				System.out.println("Private key: " + privateKeyString);
 			}
 			
-			/**
+			/*
 			 * Set up asymmetric encryption. Get server public key from JAR
 			 * file.
 			 */
@@ -506,7 +526,7 @@ public class Client {
 				System.exit(1);
 			}
 			
-			/**
+			/*
 			 * Set up asymmetric encryption. Get bank public key from JAR file.
 			 */
 			try {
@@ -524,15 +544,15 @@ public class Client {
 				System.exit(1);
 			}
 			
-			/** Initiate a connection with the StealthNet server. */
-			/** TODO: Probably want a timeout on this. */
+			/* Initiate a connection with the StealthNet server. */
+			/* TODO: Probably want a timeout on this. */
 			if (DEBUG_GENERAL)
 				System.out.println("Initiating a connection with StealthNet server '" + serverHostname + "' on port " + serverPort + ".");
 			serverComms = new Comms(serverEncryption);
 			serverComms.initiateSession(new Socket(serverHostname, serverPort));
 			
-			/** Initiate a connection with the StealthNet bank. */
-			/** TODO: Probably want a timeout on this. */
+			/* Initiate a connection with the StealthNet bank. */
+			/* TODO: Probably want a timeout on this. */
 			if (DEBUG_GENERAL)
 				System.out.println("Initiating a connection with StealthNet bank '" + bankHostname + "' on port " + bankPort + ".");
 			bankComms = new Comms(bankEncryption);
@@ -543,17 +563,12 @@ public class Client {
 				System.out.println("Sending the server a login packet for user \"" + userID + "\".");
 			serverComms.sendPacket(DecryptedPacket.CMD_LOGIN, userID);
 			
-			/** Send the bank a login command. */
+			/* Send the bank a login command. */
 			if (DEBUG_GENERAL)
 				System.out.println("Sending the bank a login packet for user \"" + userID + "\".");
 			bankComms.sendPacket(DecryptedPacket.CMD_LOGIN, userID);
 			
-			/** Create our hash chain. */
-			/* new Stack<Hashes> */
-			/* Create a random string for the starting coin. */
-			/* Hash that coin 100 times, adding each hash to the stack. */
-			
-			/** Start periodically checking for packets. */
+			/* Start periodically checking for packets. */
 			stealthTimer.start();
 		} catch (final UnknownHostException e) {
 			System.err.println("Unknown host for StealthNet server: \"" + serverHostname + "\".");
@@ -569,44 +584,47 @@ public class Client {
 			return;
 		}
 		
-		/** NOTE: We should now be connected to the StealthNet server. */
+		/* NOTE: We should now be connected to the StealthNet server. */
 		
 		msgTextBox.append("Connected to StealthNet.\n");
 		if (DEBUG_GENERAL)
 			System.out.println("Connected to StealthNet.");
 		
-		/** Set the frame title. */
+		/* Set the frame title. */
 		clientFrame.setTitle("stealthnet [" + userID + "]");
 		
-		/** Change the login button to a logout button. */
+		/* Change the login button to a logout button. */
 		loginBtn.setIcon(new ImageIcon(this.getClass().getClassLoader().getResource("img/logout.gif")));
 		loginBtn.setToolTipText("Logout");
 	}
 	
-	/** Logout of StealthNet. */
+	/**
+	 * Logout of StealthNet. This will send a <code>CMD_LOGOUT</code> packet to
+	 * both the StealthNet {@link Server} and the StealthNet {@link Bank}.
+	 */
 	private synchronized void logout() {
 		if (DEBUG_GENERAL)
 			System.out.println("Logging out of StealthNet.");
 		
 		if (serverComms != null) {
-			/** Stop periodically checking for packets. */
+			/* Stop periodically checking for packets. */
 			stealthTimer.stop();
 			
-			/** Send the server and bank a logout command. */
+			/* Send the server and bank a logout command. */
 			serverComms.sendPacket(DecryptedPacket.CMD_LOGOUT);
 			bankComms.sendPacket(DecryptedPacket.CMD_LOGOUT);
 			
-			/** Terminate session. */
+			/* Terminate session. */
 			serverComms.terminateSession();
 			bankComms.terminateSession();
 			serverComms = null;
 			bankComms = null;
 			
-			/** Change the logout button back to a login button. */
+			/* Change the logout button back to a login button. */
 			loginBtn.setIcon(new ImageIcon(this.getClass().getClassLoader().getResource("img/login.gif")));
 			loginBtn.setToolTipText("Login");
 			
-			/** Hide user and secret list. */
+			/* Hide user and secret list. */
 			buddyListData.setRowCount(0);
 			secretListData.setRowCount(0);
 			
@@ -616,7 +634,7 @@ public class Client {
 		}
 	}
 	
-	/** Create a secret. */
+	/** Create a secret on the {@link Server}. */
 	private void createSecret() {
 		if (DEBUG_GENERAL)
 			System.out.println("Creating secret.");
@@ -626,12 +644,12 @@ public class Client {
 		else {
 			String name = "", description = "", cost = "";
 			
-			/** Prompt the user for the secret name, description and cost. */
+			/* Prompt the user for the secret name, description and cost. */
 			name = JOptionPane.showInputDialog("Secret Name:", name);
 			description = JOptionPane.showInputDialog("Secret Description:", description);
 			cost = JOptionPane.showInputDialog("Secret Cost (credits):", cost);
 			
-			/** Prompt the user for the secret file. */
+			/* Prompt the user for the secret file. */
 			final FileDialog fileOpen = new FileDialog(clientFrame, "Select Secret File....", FileDialog.LOAD);
 			fileOpen.setVisible(true);
 			if (fileOpen.getFile().length() == 0)
@@ -639,7 +657,7 @@ public class Client {
 			
 			final String userMsg = name + ";" + description + ";" + cost + ";" + fileOpen.getDirectory() + ";" + fileOpen.getFile();
 			if (userMsg != null) {
-				/** Create the secret on the server. */
+				/* Create the secret on the server. */
 				if (DEBUG_GENERAL)
 					System.out.println("Sending secret details to server. Secret name is \"" + name + "\". Secret cost is " + cost + ". Secret description is \"" + description + "\". Secret file is \"" + fileOpen.getDirectory() + fileOpen.getFile() + "\".");
 				serverComms.sendPacket(DecryptedPacket.CMD_CREATESECRET, userMsg);
@@ -674,7 +692,7 @@ public class Client {
 		if (data == null)
 			return;
 		
-		/** Set up socket on a free port for file transfer of the secret file. */
+		/* Set up socket on a free port for file transfer of the secret file. */
 		ServerSocket ftpSocket = null;
 		try {
 			ftpSocket = new ServerSocket(0);
@@ -689,7 +707,7 @@ public class Client {
 		if (DEBUG_GENERAL)
 			System.out.println("Set up socket on port " + ftpSocket.getLocalPort() + " for transfer of secret file \"" + name + "\".");
 		
-		/** Discover our own IP address. */
+		/* Discover our own IP address. */
 		String iAddr;
 		try {
 			iAddr = InetAddress.getLocalHost().toString();
@@ -700,18 +718,7 @@ public class Client {
 		}
 		iAddr += ":" + Integer.toString(ftpSocket.getLocalPort());
 		
-		/** Get the bank to sign the purchase. */
-		
-		/**
-		 * If the bank refuses to sign the purchase, regenerate our hash chain
-		 * because there was possibly a collision.
-		 */
-		
-		/** Give the server the signed purchase. */
-		
-		/** Wait to server to verify. */
-		
-		/**
+		/*
 		 * Send the server the name of the secret and the IP address and port
 		 * number for the file transfer.
 		 */
@@ -719,7 +726,41 @@ public class Client {
 			System.out.println("Sending get secret message to server. Target client should connect on '" + iAddr + ":" + ftpSocket.getLocalPort() + "'.");
 		serverComms.sendPacket(DecryptedPacket.CMD_GETSECRET, name + "@" + iAddr);
 		
-		/** Choose where to save the secret file. */
+		/* @formatter:off */
+		/*
+		 * while loop to send partial payments:
+		 * 		Wait for the server to send a CMD_REQUESTPAYMENT packet.
+		 * 
+		 * 		if REQUESTEDPAYMENT == 0 then
+		 * 			break
+		 * 		else
+		 * 			boolean sent_payment = false
+		 * 			while !sent_payment:
+		 * 				Hash payment = getCreditsFromHashChain(REQUESTEDPAYMENT)
+		 * 				int paymentCredits from above
+		 * 
+		 * 				if payment != null
+		 * 					send CMD_PAYMENT to server(paymentCredits, payment)
+		 * 					sent_payment = true
+		 * 					break
+		 * 				else
+		 * 					getCreditsFromBank(100)
+		 * 
+		 * 					if our hash chain is null
+		 * 						send CMD_PAYMENT (null)
+		 * 						exit function... not enough credits for purchase
+		 * 					end if
+		 * 				end if
+		 * 			end while
+		 * end loop
+		 * 
+		 * Methods we will need in client:
+		 * 		- Hash getCreditsFromHashChain(int credits)
+		 * 		- void getCreditsFromBank(int credits)
+		 */
+		/* @formatter:on */
+		
+		/* Choose where to save the secret file. */
 		final FileDialog fileSave = new FileDialog(clientFrame, "Save As...", FileDialog.SAVE);
 		fileSave.setFile(data.filename);
 		fileSave.setVisible(true);
@@ -727,19 +768,19 @@ public class Client {
 		if (DEBUG_GENERAL)
 			System.out.println("Will save secret file \"" + name + "\" to \"" + fileSave.getDirectory() + fileSave.getFile() + "\".");
 		
-		/**
+		/*
 		 * Note that we don't yet have the public key of the owner of the
 		 * secret. They will, however, have our public key and so can send us
 		 * their public key in encrypted form.
 		 */
 		
 		if (fileSave.getFile() != null && fileSave.getFile().length() > 0)
-			/** Wait for user to connect, then start file transfer. */
+			/* Wait for user to connect, then start file transfer. */
 			try {
 				if (DEBUG_GENERAL)
 					System.out.println("Waiting for target client to connect for file transfer.");
 				
-				/** Set a 2 second timeout on the socket. */
+				/* Set a 2 second timeout on the socket. */
 				ftpSocket.setSoTimeout(2000);
 				final Comms snComms = new Comms(new RSAAsymmetricEncryption(clientKeys), true);
 				final Socket conn = ftpSocket.accept();
@@ -761,6 +802,8 @@ public class Client {
 	 * Check if we are able to send a message to a specified user.
 	 * 
 	 * @param row The user to check.
+	 * @return True if we are able to chat with the specified user, otherwise
+	 *         false.
 	 */
 	private boolean isOKtoSendtoRow(final int row) {
 		final String myid = (String) buddyTable.getValueAt(row, 0);
@@ -772,7 +815,7 @@ public class Client {
 			return false;
 		}
 		
-		/** Check if the user is logged in. */
+		/* Check if the user is logged in. */
 		if (mystatus.equals("false")) {
 			System.err.println("User \"" + myid + "\" is not online.");
 			msgTextBox.append("[*ERR*] User is not online.\n");
@@ -791,10 +834,10 @@ public class Client {
 		if (!isOKtoSendtoRow(row))
 			return;
 		
-		/** Get the ID of the target user. */
+		/* Get the ID of the target user. */
 		final String myid = buddyTable.getValueAt(row, 0).toString().trim();
 		
-		/** Set up socket on a free port for the chat session. */
+		/* Set up socket on a free port for the chat session. */
 		ServerSocket chatSocket = null;
 		try {
 			chatSocket = new ServerSocket(0);
@@ -809,7 +852,7 @@ public class Client {
 		if (DEBUG_GENERAL)
 			System.out.println("Set up socket on port " + chatSocket.getLocalPort() + " for chat session with \"" + myid + "\".");
 		
-		/**
+		/*
 		 * Send message to server with target user and listening address and
 		 * port for the chat session.
 		 */
@@ -823,7 +866,7 @@ public class Client {
 		}
 		iAddr += ":" + Integer.toString(chatSocket.getLocalPort());
 		
-		/** Get the public key of the other client. */
+		/* Get the public key of the other client. */
 		final PublicKey peer = getPublicKey(myid);
 		if (peer == null) {
 			System.err.println("Unable to determine peer public key.");
@@ -834,15 +877,15 @@ public class Client {
 			System.out.println("Sending chat message to server. Target client should connect on '" + iAddr + ":" + chatSocket.getLocalPort() + "'.");
 		serverComms.sendPacket(DecryptedPacket.CMD_CHAT, myid + "@" + iAddr);
 		
-		/** Wait for user to connect and open chat window. */
+		/* Wait for user to connect and open chat window. */
 		try {
 			if (DEBUG_GENERAL)
 				System.out.println("Waiting for target client to connect for chat session.");
 			
-			/** Set 2 second timeout on socket. */
+			/* Set 2 second timeout on socket. */
 			chatSocket.setSoTimeout(2000);
 			
-			/**
+			/*
 			 * Create communications to the peer. Note that the peer will have
 			 * our public key, and hence can encrypt the communications using
 			 * asymmetric encryption immediately.
@@ -872,23 +915,23 @@ public class Client {
 		if (!isOKtoSendtoRow(row))
 			return;
 		
-		/** Get the user ID. */
+		/* Get the user ID. */
 		final String myid = (String) buddyTable.getValueAt(row, 0);
 		
-		/** Get the public key of the other client. */
+		/* Get the public key of the other client. */
 		final PublicKey peer = getPublicKey(myid);
 		if (peer == null) {
 			System.err.println("Unable to determine peer public key.");
 			return;
 		}
 		
-		/** Select the file to send. */
+		/* Select the file to send. */
 		final FileDialog fileOpen = new FileDialog(clientFrame, "Open...", FileDialog.LOAD);
 		fileOpen.setVisible(true);
 		if (fileOpen.getFile().length() == 0)
 			return;
 		
-		/** Set up socket on a free port. */
+		/* Set up socket on a free port. */
 		ServerSocket ftpSocket = null;
 		try {
 			ftpSocket = new ServerSocket(0);
@@ -903,7 +946,7 @@ public class Client {
 		if (DEBUG_GENERAL)
 			System.out.println("Set up socket on port " + ftpSocket.getLocalPort() + " for transfer of file \"" + fileOpen.getFile() + "\" to \"" + myid + "\".");
 		
-		/**
+		/*
 		 * Send message to server with target user and listening address and
 		 * port for file transfer.
 		 */
@@ -921,15 +964,15 @@ public class Client {
 			System.out.println("Sending FTP message to server. Target client should connect on '" + iAddr + ":" + ftpSocket.getLocalPort() + "'.");
 		serverComms.sendPacket(DecryptedPacket.CMD_FTP, myid + "@" + iAddr + "#" + fileOpen.getFile());
 		
-		/** Wait for user to connect, then start file transfer. */
+		/* Wait for user to connect, then start file transfer. */
 		try {
 			if (DEBUG_GENERAL)
 				System.out.println("Waiting for target client to connect for file transfer.");
 			
-			/** Set 2 second timeout on socket. */
+			/* Set 2 second timeout on socket. */
 			ftpSocket.setSoTimeout(2000);
 			
-			/**
+			/*
 			 * Create communications to the peer. Note that the peer will have
 			 * our public key, and hence can encrypt the communications using
 			 * asymmetric encryption immediately.
@@ -952,7 +995,7 @@ public class Client {
 	
 	/** Process incoming packets. */
 	private void processPackets() {
-		/** Update credits box, stick it here for convenience. */
+		/* Update credits box, stick it here for convenience. */
 		creditsBox.setText(new Integer(credits).toString());
 		
 		try {
@@ -968,11 +1011,11 @@ public class Client {
 		
 		DecryptedPacket pckt = new DecryptedPacket();
 		
-		/** No need to process packets while we are already processing packets. */
+		/* No need to process packets while we are already processing packets. */
 		stealthTimer.stop();
 		
 		try {
-			/** Check for message from server. */
+			/* Check for packets from the server. */
 			while (serverComms.recvReady()) {
 				pckt = serverComms.recvPacket();
 				
@@ -983,9 +1026,11 @@ public class Client {
 					System.out.println("Received packet. Packet command: " + DecryptedPacket.getCommandName(pckt.command) + ". Packet data: \"" + new String(pckt.data).replaceAll("\n", ";") + "\".");
 				
 				switch (pckt.command) {
-				/***********************************************************
-				 * Message command
-				 **********************************************************/
+/* @formatter:off */
+					/***********************************************************
+					 * Message command
+					 **********************************************************/
+/* @formatter:on */
 					case DecryptedPacket.CMD_MSG: {
 						final String msg = new String(pckt.data);
 						if (DEBUG_COMMANDS_MSG)
@@ -998,7 +1043,7 @@ public class Client {
 					 * Chat command
 					 **********************************************************/
 					case DecryptedPacket.CMD_CHAT: {
-						/**
+						/*
 						 * NOTE: Data will be of the form "user@host:port".
 						 */
 						final String data = new String(pckt.data);
@@ -1006,10 +1051,10 @@ public class Client {
 						final String iAddr = data.split("@")[1].split(":")[0];
 						final int iPort = Integer.parseInt(data.split("@")[1].split(":")[1]);
 						
-						/** Get the peer public key. */
+						/* Get the peer public key. */
 						final String sourceUser = data.split("@")[0];
 						
-						/** Get the public key of the other client. */
+						/* Get the public key of the other client. */
 						final PublicKey peer = getPublicKey(sourceUser);
 						if (peer == null) {
 							System.err.println("Unable to determine peer public key.");
@@ -1019,7 +1064,7 @@ public class Client {
 						if (DEBUG_COMMANDS_CHAT)
 							System.out.println("Received a chat command. Target host: '" + iAddr + ":" + iPort + "'.");
 						
-						/**
+						/*
 						 * Create communications to the peer. Note that the peer
 						 * will have our public key, and hence can encrypt the
 						 * communications using asymmetric encryption
@@ -1041,7 +1086,7 @@ public class Client {
 					 * FTP command
 					 **********************************************************/
 					case DecryptedPacket.CMD_FTP: {
-						/**
+						/*
 						 * NOTE: Data will be of the form
 						 * "user@host:port#filename".
 						 */
@@ -1050,10 +1095,10 @@ public class Client {
 						final String iAddr = data.split("@")[1].split("#")[0].split(":")[0];
 						final int iPort = Integer.parseInt(data.split("@")[1].split("#")[0].split(":")[1]);
 						
-						/** Get the peer public key. */
+						/* Get the peer public key. */
 						final String sourceUser = data.split("@")[0];
 						
-						/** Get the public key of the other client. */
+						/* Get the public key of the other client. */
 						final PublicKey peer = getPublicKey(sourceUser);
 						if (peer == null) {
 							System.err.println("Unable to determine peer public key.");
@@ -1063,7 +1108,7 @@ public class Client {
 						if (DEBUG_COMMANDS_FTP)
 							System.out.println("Received a file transfer command. Target host: '" + iAddr + ":" + iPort + "'.");
 						
-						/**
+						/*
 						 * Create communications to the peer. Note that the peer
 						 * will have our public key, and hence can encrypt the
 						 * communications using asymmetric encryption
@@ -1108,11 +1153,11 @@ public class Client {
 								userTable = "";
 							}
 							
-							/** Add the user to the user list. */
+							/* Add the user to the user list. */
 							final String userID = row.split(";")[0].trim();
 							final boolean online = row.split(";")[1].trim().compareTo("true") == 0;
 							
-							/** Add the user to the GUI list. */
+							/* Add the user to the GUI list. */
 							buddyListData.addRow(new Object[] { userID, online ? "true" : "false" });
 						}
 						break;
@@ -1155,7 +1200,7 @@ public class Client {
 					 * Get Secret command
 					 **********************************************************/
 					case DecryptedPacket.CMD_GETSECRET: {
-						/**
+						/*
 						 * NOTE: Data will be of the form "name@address".
 						 */
 						final String data = new String(pckt.data);
@@ -1166,7 +1211,7 @@ public class Client {
 						if (DEBUG_COMMANDS_GETSECRET)
 							System.out.println("Received a get secret command. Target host: '" + iAddr + ":" + iPort + "'. The filename is \"" + fileName + "\".");
 						
-						/**
+						/*
 						 * Note that we don't yet have the public key of the
 						 * owner of the secret. They will, however, have our
 						 * public key and so can send us their public key in
@@ -1200,7 +1245,7 @@ public class Client {
 				e.printStackTrace();
 		}
 		
-		/** Start processing packets again. */
+		/* Start processing packets again. */
 		stealthTimer.start();
 	}
 	
@@ -1210,15 +1255,15 @@ public class Client {
 	 * @param args The command line arguments.
 	 */
 	public static void main(final String[] args) {
-		/** The server. */
+		/* The server. */
 		String serverHostname = Comms.DEFAULT_SERVERNAME;
 		int serverPort = Comms.DEFAULT_SERVERPORT;
 		
-		/** The bank. */
+		/* The bank. */
 		String bankHostname = Comms.DEFAULT_BANKNAME;
 		int bankPort = Comms.DEFAULT_BANKPORT;
 		
-		/** Check if a host and port was specified at the command line. */
+		/* Check if a host and port was specified at the command line. */
 		if (args.length > 0) {
 			try {
 				final String[] input = args[0].split(":", 2);
@@ -1258,7 +1303,7 @@ public class Client {
 			UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
 		} catch (final Exception e) {}
 		
-		/** Create the top-level container and contents. */
+		/* Create the top-level container and contents. */
 		clientFrame = new JFrame("stealthnet");
 		Client app = null;
 		try {
@@ -1272,7 +1317,7 @@ public class Client {
 		final Component contents = app.createGUI();
 		clientFrame.getContentPane().add(contents, BorderLayout.CENTER);
 		
-		/**
+		/*
 		 * Finish setting up the GUI - add a window listener such that closing
 		 * the GUI closes the application properly.
 		 */
@@ -1287,26 +1332,27 @@ public class Client {
 	}
 	
 	/**
-	 * Get the public key of a peer client.
+	 * Get the {@link PublicKey} of a peer client. Blocks until the server
+	 * responds.
 	 * 
 	 * @param id The ID of the requested user.
-	 * @return The public key belonging to the requested user, or null if it
-	 *         could not determined.
+	 * @return The {@link PublicKey} belonging to the requested user, or null if
+	 *         it could not determined.
 	 */
 	private PublicKey getPublicKey(final String id) {
-		/** Request the public key of the peer. */
+		/* Request the public key of the peer. */
 		if (DEBUG_GENERAL)
 			System.out.println("Asking server for the public key of user '" + id + "'");
 		serverComms.sendPacket(DecryptedPacket.CMD_GETPUBLICKEY, id);
 		
-		/** Wait for server to send the public key of the other party. */
+		/* Wait for server to send the public key of the other party. */
 		return waitForPublicKey();
 	}
 	
 	/**
-	 * Wait for the server to send a public key.
+	 * Wait for the {@link Server} to send a {@link PublicKey}.
 	 * 
-	 * @return The public key sent by the server.
+	 * @return The {@link PublicKey} sent by the {@link Server}.
 	 */
 	private PublicKey waitForPublicKey() {
 		if (DEBUG_GENERAL)
@@ -1326,7 +1372,7 @@ public class Client {
 					 **********************************************************/
 /* @formatter:on */
 					case DecryptedPacket.CMD_GETPUBLICKEY:
-						/** Convert packet contents to public key. */
+						/* Convert packet contents to public key. */
 						return RSAAsymmetricEncryption.stringToPublicKey(new String(pckt.data));
 						
 						/***********************************************************

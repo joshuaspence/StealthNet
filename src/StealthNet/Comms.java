@@ -53,10 +53,10 @@ import StealthNet.Security.RSAAsymmetricEncryption;
 /* StealthNet.Comms class *************************************************** */
 
 /**
- * A class to buffered write and buffered read to and from an opened socket.
- * Enables bidirectional communication between two StealthNet peers. This class,
- * before allowing communications between the parties, secures the communication
- * by establishing several security protocols.
+ * A class to buffered write and buffered read to and from an opened
+ * {@link Socket}. Enables bidirectional communication between two StealthNet
+ * peers. This class, before allowing communications between the parties,
+ * secures the communication by establishing several security protocols.
  * 
  * @author Stephen Gould
  * @author Matt Barrie
@@ -64,7 +64,7 @@ import StealthNet.Security.RSAAsymmetricEncryption;
  * @author Joshua Spence
  */
 public class Comms {
-	/** Debug options. */
+	/* Debug options. */
 	private static final boolean DEBUG_GENERAL = Debug.isDebug("StealthNet.Comms.General");
 	private static final boolean DEBUG_ERROR_TRACE = Debug.isDebug("StealthNet.Comms.ErrorTrace") || Debug.isDebug("ErrorTrace");
 	private static final boolean DEBUG_PURE_PACKET = Debug.isDebug("StealthNet.Comms.PureOutput");
@@ -79,17 +79,19 @@ public class Comms {
 	private static final boolean DEBUG_REPLAY_PREVENTION = Debug.isDebug("StealthNet.Comms.ReplayPrevention");
 	private static final boolean DEBUG_ASYMMETRIC_ENCRYPTION = Debug.isDebug("StealthNet.Comms.AsymmetricEncryption");
 	
-	/** Defaults. */
-	public static final String DEFAULT_SERVERNAME = "localhost";
 	/** Default host for the StealthNet server. */
-	public static final int DEFAULT_SERVERPORT = 5616;
-	/** Default port for the StealthNet server. */
-	public static final String DEFAULT_BANKNAME = "localhost";
-	/** Default host for the StealthNet bank. */
-	public static final int DEFAULT_BANKPORT = 5617;
-	/** Default port for the StealthNet bank. */
+	public static final String DEFAULT_SERVERNAME = "localhost";
 	
-	/** Opened socket through which the communication is to be made. */
+	/** Default port for the StealthNet server. */
+	public static final int DEFAULT_SERVERPORT = 5616;
+	
+	/** Default host for the StealthNet bank. */
+	public static final String DEFAULT_BANKNAME = "localhost";
+	
+	/** Default port for the StealthNet bank. */
+	public static final int DEFAULT_BANKPORT = 5617;
+	
+	/** Opened {@link Socket} through which the communication is to be made. */
 	private Socket commsSocket;
 	
 	/**
@@ -97,33 +99,47 @@ public class Comms {
 	 * symmetric encryption can be used.
 	 */
 	private final AsymmetricEncryption asymmetricEncryptionProvider;
-	private boolean peerHasPublicKey = false;
+	
 	/**
-	 * if our peer doesn't have our public key, then don't attempt to decrypt
-	 * packets
+	 * If our peer doesn't have our {@link PublicKey}, then don't attempt to
+	 * decrypt packets, as the peer will not be able to encrypt packets to us.
 	 */
+	private boolean peerHasPublicKey = false;
+	
+	/** The number of bits to use for the key exchange key. */
+	private final static int KEY_EXCHANGE_NUM_BITS = 1024;
 	
 	/** Provides authentication for the communication. */
-	private final static int KEY_EXCHANGE_NUM_BITS = 1024;
 	private KeyExchange authenticationProvider = null;
+	
+	/** The key to use for providing authentication. */
 	private SecretKey authenticationKey = null;
 	
 	/** Provides encryption and decryption for the communications. */
 	private Encryption confidentialityProvider = null;
+	
+	/** The encryption/decryption key for the communications. */
 	private SecretKey confidentialityKey = null;
 	
 	/** Provides integrity through creating checksums for messages. */
 	private MessageAuthenticationCode integrityProvider = null;
+	
+	/**
+	 * The key used for the {@link MessageAuthenticationCode} for providing
+	 * packet integrity.
+	 */
 	private SecretKey integrityKey = null;
 	
-	/** Prevents replay attacks using a PRNG. */
+	/** Prevents replay attacks for outgoing packets using a PRNG. */
 	private NonceGenerator replayPreventionTX = null;
+	
+	/** Prevents replay attacks for incoming packets using a PRNG. */
 	private NonceGenerator replayPreventionRX = null;
 	
-	/** Output data stream for the socket. */
+	/** Output data stream for the {@link Socket}. */
 	private PrintWriter dataOut;
 	
-	/** Input data stream for the socket. */
+	/** Input data stream for the {@link Socket}. */
 	private BufferedReader dataIn;
 	
 	/** Constructor without asymmetric encryption. */
@@ -187,12 +203,12 @@ public class Comms {
 	}
 	
 	/**
-	 * Initiates a communications session. This usually occurs on the client
-	 * side. The peer that initiates the session is also responsible for
-	 * initiating the security features (key exchange, encryption, MAC and
-	 * replay prevention nonce).
+	 * Initiates a communications session. This usually occurs on the
+	 * {@link Client} side. The peer that initiates the session is also
+	 * responsible for initiating the security features (key exchange,
+	 * encryption, MAC and replay prevention nonce).
 	 * 
-	 * @param socket The socket through which the connection is made.
+	 * @param socket The {@link Socket} through which the connection is made.
 	 * @return True if the initialisation succeeds. False if the initialisation
 	 *         fails.
 	 */
@@ -210,52 +226,53 @@ public class Comms {
 			return false;
 		}
 		
-		/**
-		 * <em>NOTE:</em> All communications from here will be encrypted with
-		 * asymmetric encryption.
+		/*
+		 * NOTE: All communications from here will be encrypted with asymmetric
+		 * encryption.
 		 */
 		if (DEBUG_ASYMMETRIC_ENCRYPTION)
 			System.out.println("Asymmetric encryption enabled.");
 		
-		/** Send the peer our public key for asymmetric encryption. */
+		/* Send the peer our public key for asymmetric encryption. */
 		if (!peerHasPublicKey)
 			sendPublicKey();
 		
-		/** Perform key exchange (Diffie-Hellman key exchange). */
+		/* Perform key exchange (Diffie-Hellman key exchange). */
 		initKeyExchange();
 		
-		/** Wait for key exchange to finish. */
+		/* Wait for key exchange to finish. */
 		waitForKeyExchange();
 		
-		/** Encrypt the communications. */
+		/* Encrypt the communications. */
 		initEncryption();
 		
-		/**
-		 * <em>NOTE:</em> All communications from here will be encrypted with
-		 * symmetric encryption.
+		/*
+		 * NOTE: All communications from here will be encrypted with symmetric
+		 * encryption.
 		 */
 		
-		/** Generate and transmit integrity (HMAC) key. */
+		/* Generate and transmit integrity (HMAC) key. */
 		initIntegrityKey();
 		
-		/** Wait for the peer to send acknowledgement of integrity key. */
+		/* Wait for the peer to send acknowledgement of integrity key. */
 		waitForIntegrityKey();
 		
-		/** Generate and transmit replay prevention RX seed (PRNG seed). */
+		/* Generate and transmit replay prevention RX seed (PRNG seed). */
 		initReplayPrevention();
 		
-		/** Wait for the peer to send replay prevention TX seed (PRNG seed). */
+		/* Wait for the peer to send replay prevention TX seed (PRNG seed). */
 		waitForReplayPreventionSeed();
 		
 		return true;
 	}
 	
 	/**
-	 * Accepts a connection on the given socket. This usually occurs on the
-	 * server side. Once the socket has been created, the peer waits for the
-	 * other party to initiate all of the relevant security protocols.
+	 * Accepts a connection on the given {@link Socket}. This usually occurs on
+	 * the {@link Server} side. Once the {@link Socket} has been created, the
+	 * peer waits for the other party to initiate all of the relevant security
+	 * protocols.
 	 * 
-	 * @param socket The socket through which the connection is made.
+	 * @param socket The {@link Socket} through which the connection is made.
 	 * @return True if the initialisation succeeds. False if the initialisation
 	 *         fails.
 	 */
@@ -273,39 +290,39 @@ public class Comms {
 			return false;
 		}
 		
-		/**
-		 * <em>NOTE:</em> All communications from here will be encrypted with
-		 * asymmetric encryption.
+		/*
+		 * NOTE: All communications from here will be encrypted with asymmetric
+		 * encryption.
 		 */
 		
-		/**
+		/*
 		 * Wait for the peer to send their public key so that we can encrypt
 		 * outgoing communications.
 		 */
 		if (asymmetricEncryptionProvider.getPeerPublicKey() == null)
 			recvPublicKey();
 		
-		/**
+		/*
 		 * Wait for key exchange (Diffie-Hellman key exchange) to occur. This
 		 * should be initiated on the other end of the communications.
 		 */
 		waitForKeyExchange();
 		
-		/** Encrypt the communications. */
+		/* Encrypt the communications. */
 		initEncryption();
 		
-		/**
-		 * <em>NOTE:</em> All communications from here will be encrypted with
-		 * symmetric encryption.
+		/*
+		 * NOTE: All communications from here will be encrypted with symmetric
+		 * encryption.
 		 */
 		
-		/**
+		/*
 		 * Wait for integrity key exchange to occur. This should be initiated on
 		 * the other end of the communications.
 		 */
 		waitForIntegrityKey();
 		
-		/**
+		/*
 		 * Wait for replay prevent seed (PRNG seed) exchange to occur. This
 		 * should be initiated on the other end of the communications.
 		 */
@@ -396,15 +413,18 @@ public class Comms {
 	 * 
 	 * @param decPckt The packet to be sent.
 	 * @return True if successful, otherwise false.
+	 * 
+	 * @see DecryptedPacket
+	 * @see EncryptedPacket
 	 */
 	private boolean sendPacket(final DecryptedPacket decPckt) {
-		/** Print debug information. */
+		/* Print debug information. */
 		if (DEBUG_PURE_PACKET)
 			System.out.println("(pure)      sendPacket(" + decPckt.toString() + ")");
 		if (DEBUG_DECODED_PACKET)
 			System.out.println("(decoded)   sendPacket(" + decPckt.getDecodedString() + ")");
 		
-		/**
+		/*
 		 * Encrypt the packet. If confidentialityProvider is null, then the
 		 * EncryptionPacket will not actually be encrypted in any way, but
 		 * rather will contain the unencrypted packet contents.
@@ -435,7 +455,7 @@ public class Comms {
 			return false;
 		}
 		
-		/** Print the packet to the output writer. */
+		/* Print the packet to the output writer. */
 		dataOut.println(encPckt.toString());
 		return true;
 	}
@@ -443,8 +463,8 @@ public class Comms {
 	/**
 	 * Reads a StealthNet packet from the buffered reader for the socket. Note
 	 * that this function should (in the normal case) not return any security
-	 * related packets (<pre>CMD_AUTHENTICATIONKEY</pre>,
-	 * <pre>CMD_INTEGRITYKEY</pre>, <pre>CMD_NONCESEED</pre>).
+	 * related packets (<code>CMD_AUTHENTICATIONKEY</code>,
+	 * <code>CMD_INTEGRITYKEY</code>, <code>CMD_NONCESEED</code>).
 	 * 
 	 * If any step (such as decryption) of an incoming packet fails, then this
 	 * function will recursively call itself. The result is that the only
@@ -452,23 +472,27 @@ public class Comms {
 	 * have in some way been closed.
 	 * 
 	 * Note that the string received by the buffered data reader represents an
-	 * EncryptedPacket. This function will attempt to decrypt this packet (into
-	 * a DecryptedPacket) before returning the packet to the user.
+	 * {@link EncryptedPacket}. This function will attempt to decrypt this
+	 * packet (into a {@link DecryptedPacket}) before returning the packet to
+	 * the user.
 	 * 
 	 * @return The packet that was received.
+	 * 
+	 * @see EncryptedPacket
+	 * @see DecryptedPacket
 	 */
 	public DecryptedPacket recvPacket() throws IOException {
-		/** Read data from the input buffer. */
+		/* Read data from the input buffer. */
 		final String packetString = dataIn.readLine();
 		
 		if (packetString == null)
 			return null;
 		
-		/** Debug information. */
+		/* Debug information. */
 		if (DEBUG_RAW_PACKET)
 			System.out.println("(raw)       recvPacket(" + packetString + ")");
 		
-		/** Construct the packet. */
+		/* Construct the packet. */
 		EncryptedPacket encPckt = null;
 		try {
 			encPckt = new EncryptedPacket(packetString);
@@ -478,17 +502,17 @@ public class Comms {
 			if (DEBUG_ERROR_TRACE)
 				e.printStackTrace();
 			
-			/** Retrieve another packet by recursion. */
+			/* Retrieve another packet by recursion. */
 			return recvPacket();
 		}
 		
-		/** Check the integrity of the message. */
+		/* Check the integrity of the message. */
 		if (integrityProvider != null)
 			try {
 				if (!encPckt.verifyMAC(integrityProvider)) {
 					System.err.println("(verified)  recvPacket - Packet failed MAC verification! Discarding...");
 					
-					/** Retrieve another packet by recursion. */
+					/* Retrieve another packet by recursion. */
 					return recvPacket();
 				} else if (DEBUG_INTEGRITY)
 					System.out.println("(verified)  recvPacket - Packet passed MAC verification.");
@@ -498,11 +522,11 @@ public class Comms {
 				if (DEBUG_ERROR_TRACE)
 					e.printStackTrace();
 				
-				/** Retrieve another packet by recursion. */
+				/* Retrieve another packet by recursion. */
 				return recvPacket();
 			}
 		
-		/**
+		/*
 		 * Attempt to decrypt the packet. If we are using asymmetric encryption,
 		 * then we cannot decrypt the packet until we are sure that the peer has
 		 * received our public key (because otherwise the peer would not be able
@@ -523,7 +547,8 @@ public class Comms {
 			/** Retrieve another packet by recursion. */
 			return recvPacket();
 		}
-		/** Print debug information. */
+		
+		/* Print debug information. */
 		if (DEBUG_DECRYPTED_PACKET)
 			System.out.println("(decrypted) recvPacket(" + decPckt.toString() + ")");
 		else if (DEBUG_RAW_PACKET)
@@ -536,16 +561,16 @@ public class Comms {
 				if (DEBUG_GENERAL)
 					System.err.println("(verified)  recvPacket - Packet failed replay prevention! Discarding...");
 				
-				/** Retrieve another packet by recursion. */
+				/* Retrieve another packet by recursion. */
 				return recvPacket();
 			} else if (DEBUG_INTEGRITY)
 				System.out.println("(verified)  recvPacket - Packet passed replay prevention.");
 		
-		/** Done. Return the packet. */
+		/* Done. Return the packet. */
 		return decPckt;
 	}
 	
-	/**
+	/*
 	 * To limit the verbosity of output in recvReady, we will only print these
 	 * values if they change.
 	 */
@@ -562,7 +587,7 @@ public class Comms {
 	 * @throws IOException
 	 */
 	public boolean recvReady() throws IOException {
-		/**
+		/*
 		 * To limit the verbosity of output in recvReady, we will only print
 		 * these values if they change.
 		 */
@@ -585,14 +610,16 @@ public class Comms {
 		
 		is_first_time = false;
 		
-		/** Return the result - the only real useful code in this function. */
+		/* Return the result - the only real useful code in this function. */
 		return dataIn.ready();
 	}
 	
 	/**
-	 * Send the peer our public key for asymmetric encryption. Once we have
-	 * received acknowledgement that the peer has our public key value, the peer
-	 * will be able to encrypt messages to us.
+	 * Send the peer our {@link PublicKey} for asymmetric encryption. Once we
+	 * have received acknowledgement that the peer has our public key value, the
+	 * peer will be able to encrypt messages to us.
+	 * 
+	 * @see AsymmetricEncryption
 	 */
 	private void sendPublicKey() {
 		if (DEBUG_ASYMMETRIC_ENCRYPTION)
@@ -608,7 +635,7 @@ public class Comms {
 		if (DEBUG_ASYMMETRIC_ENCRYPTION)
 			System.out.println("Sent public key to peer.");
 		
-		/** Wait for acknowledgement. */
+		/* Wait for acknowledgement. */
 		DecryptedPacket pckt = new DecryptedPacket();
 		while (!peerHasPublicKey)
 			try {
@@ -626,8 +653,10 @@ public class Comms {
 	}
 	
 	/**
-	 * Receive the peer's public key for asymmetric encryption. Send an
+	 * Receive the peer's {@link PublicKey} for asymmetric encryption. Send an
 	 * acknowledgement to the peer and then enable asymmetric encryption.
+	 * 
+	 * @see AsymmetricEncryption
 	 */
 	private void recvPublicKey() {
 		if (DEBUG_ASYMMETRIC_ENCRYPTION)
@@ -647,10 +676,10 @@ public class Comms {
 						if (DEBUG_ASYMMETRIC_ENCRYPTION)
 							System.out.println("Received peer public key: " + peerPubKeyString);
 						
-						/** Send acknowledgement. */
+						/* Send acknowledgement. */
 						sendPacket(DecryptedPacket.CMD_NULL);
 						
-						/** Enable asymmetric encryption. */
+						/* Enable asymmetric encryption. */
 						try {
 							final KeyFactory factory = KeyFactory.getInstance(RSAAsymmetricEncryption.ALGORITHM);
 							final X509EncodedKeySpec keySpec = new X509EncodedKeySpec(peerPubKeyBytes);
@@ -674,6 +703,8 @@ public class Comms {
 	 * Perform a key exchange with the other party. This function is called by
 	 * the peer that wishes to initiate the key exchange (ie. the peer that
 	 * initiated the session).
+	 * 
+	 * @see KeyExchange
 	 */
 	private void initKeyExchange() {
 		if (DEBUG_AUTHENTICATION)
@@ -697,7 +728,7 @@ public class Comms {
 			System.exit(1);
 		}
 		
-		/** Transmit our public key. */
+		/* Transmit our public key. */
 		final String pubKey = authenticationProvider.getPublicKey().toString();
 		if (DEBUG_AUTHENTICATION)
 			System.out.println("Sending public key to peer: " + pubKey);
@@ -709,6 +740,8 @@ public class Comms {
 	/**
 	 * Continuously receives (and discards unrelated) packets until the
 	 * Diffie-Hellman key exchange has completed.
+	 * 
+	 * @see KeyExchange
 	 */
 	private void waitForKeyExchange() {
 		if (DEBUG_AUTHENTICATION)
@@ -743,13 +776,15 @@ public class Comms {
 	 * key should have been established.
 	 * 
 	 * @param publicKey The public key that was sent to us.
+	 * 
+	 * @see KeyExchange
 	 */
 	private void keyExchange(final String publicKey) {
 		if (authenticationProvider == null)
-			/** We haven't yet made our own private/public keys. */
+			/* We haven't yet made our own private/public keys. */
 			initKeyExchange();
 		
-		/** Generate the shared key. */
+		/* Generate the shared key. */
 		try {
 			if (DEBUG_AUTHENTICATION)
 				System.out.println("Generating the Diffie-Hellman shared secret key.");
@@ -772,6 +807,8 @@ public class Comms {
 	 * 
 	 * After this function returns (unless an error occurred), encryption and
 	 * decryption for this communication should be initialised.
+	 * 
+	 * @see Encryption
 	 */
 	private void initEncryption() {
 		if (authenticationKey == null) {
@@ -780,7 +817,7 @@ public class Comms {
 		}
 		
 		try {
-			/**
+			/*
 			 * Use a hash of the shared secret key for encryption and
 			 * decryption.
 			 */
@@ -807,6 +844,8 @@ public class Comms {
 	/**
 	 * Enable Message Authentication Codes (MACs) on the communications.
 	 * Generates a key for the HMAC and transmits it to the other peer.
+	 * 
+	 * @see MessageAuthenticationCode
 	 */
 	private void initIntegrityKey() {
 		if (DEBUG_INTEGRITY)
@@ -827,7 +866,7 @@ public class Comms {
 			System.exit(1);
 		}
 		
-		/** Transmit our integrity key. */
+		/* Transmit our integrity key. */
 		if (DEBUG_AUTHENTICATION)
 			System.out.println("Sending integrity key to peer: " + integrityKeyString);
 		sendPacket(DecryptedPacket.CMD_INTEGRITYKEY, Base64.encodeBase64String(integrityKey.getEncoded()));
@@ -838,7 +877,9 @@ public class Comms {
 	/**
 	 * Continuously receives (and discards unrelated) packets until the
 	 * integrity key exchange has completed. This is acknowledged by a
-	 * <pre>CMD_NULL</pre> packet from the other peer.
+	 * <code>CMD_NULL</code> packet from the other peer.
+	 * 
+	 * @see MessageAuthenticationCode
 	 */
 	private void waitForIntegrityKey() {
 		if (DEBUG_INTEGRITY)
@@ -860,12 +901,11 @@ public class Comms {
 						if (DEBUG_INTEGRITY)
 							System.out.println("Received HMAC key: " + Utility.getHexValue(integrityKey.getEncoded()));
 						
-						/** Send acknowledgement. */
+						/* Send acknowledgement. */
 						if (DEBUG_INTEGRITY)
 							System.out.println("Sending acknowledgement of integrity key.");
 						sendPacket(DecryptedPacket.CMD_NULL);
 						
-						/** Done! */
 						done = true;
 						break;
 					
@@ -876,7 +916,7 @@ public class Comms {
 				}
 			} catch (final IOException e) {}
 		
-		/** Done. Enable integrity provision. */
+		/* Done. Enable integrity provision. */
 		try {
 			if (DEBUG_INTEGRITY)
 				System.out.println("Initiating hashed MAC provider with key: " + Utility.getHexValue(integrityKey.getEncoded()));
@@ -892,6 +932,8 @@ public class Comms {
 	/**
 	 * Initiates replay prevention. Generates a seeded pseudo-random number for
 	 * nonce generation, and then transmits the seed to the peer.
+	 * 
+	 * @see NonceGenerator
 	 */
 	private void initReplayPrevention() {
 		byte[] rxSeed = null;
@@ -912,7 +954,7 @@ public class Comms {
 			System.exit(1);
 		}
 		
-		/** Transmit our replay prevention seed. */
+		/* Transmit our replay prevention seed. */
 		if (DEBUG_REPLAY_PREVENTION)
 			System.out.println("Sending replay prevention seed to peer: " + Utility.getHexValue(rxSeed));
 		sendPacket(DecryptedPacket.CMD_NONCESEED, rxSeed);
@@ -923,6 +965,8 @@ public class Comms {
 	/**
 	 * Continuously receives (and discards unrelated) packets until the
 	 * pseudo-random number generation seed exchange has completed.
+	 * 
+	 * @see NonceGenerator
 	 */
 	private void waitForReplayPreventionSeed() {
 		if (DEBUG_REPLAY_PREVENTION)
@@ -955,7 +999,6 @@ public class Comms {
 						if (replayPreventionRX == null)
 							initReplayPrevention();
 						
-						/** Done! */
 						done = true;
 						break;
 				}
@@ -963,9 +1006,9 @@ public class Comms {
 	}
 	
 	/**
-	 * Get the public key of the peer that we are communicating with.
+	 * Get the {@link PublicKey} of the peer that we are communicating with.
 	 * 
-	 * @return The public key of our peer.
+	 * @return The {@link PublicKey} of our peer.
 	 */
 	public PublicKey getPeerPublicKey() {
 		if (asymmetricEncryptionProvider == null)

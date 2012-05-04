@@ -24,22 +24,24 @@ import java.net.Socket;
 /* StealthNet.Server Class Definition ************************************** */
 
 /**
- * A server process for StealthNet communications. Opens a server socket,
+ * A server process for StealthNet communications. Opens a {@link ServerSocket},
  * listening on the specified listening port. For each incoming connection on
- * this port, a new ServerThread is created. The ServerThread class is
- * responsible for communicating with that client.
+ * this port, a new {@link ServerThread} is created. The {@link ServerThread}
+ * class is responsible for communicating with that {@link Client}.
  * 
  * The server is responsible for maintaining a list of users, as well as a list
  * of secrets. Whenever the server is sent a command, the server needs only to
- * pass some other command to the intended target client, enabling the two
- * clients to communicate with each other.
+ * pass some other command to the intended target {@link Client}, enabling the
+ * two {@link Client}s to communicate with each other.
  * 
  * @author Matt Barrie
  * @author Stephen Gould
  * @author Joshua Spence
+ * 
+ * @see ServerThread
  */
 public class Server {
-	/** Debug options. */
+	/* Debug options. */
 	private static final boolean DEBUG_GENERAL = Debug.isDebug("StealthNet.Server.General");
 	private static final boolean DEBUG_ERROR_TRACE = Debug.isDebug("StealthNet.Server.ErrorTrace") || Debug.isDebug("ErrorTrace");
 	
@@ -50,15 +52,15 @@ public class Server {
 	 * @throws IOException
 	 */
 	public static void main(final String[] args) throws IOException {
-		/** Port that the server is listening on. */
+		/* Port that the server is listening on. */
 		int port = Comms.DEFAULT_SERVERPORT;
 		
-		/** Check if a port number was specified at the command line. */
+		/* Check if a port number was specified at the command line. */
 		if (args.length > 0)
 			try {
 				port = Integer.parseInt(args[0]);
 				
-				/** Check for a valid port number. */
+				/* Check for a valid port number. */
 				if (port <= 0 || port > 65535)
 					throw new NumberFormatException("Invalid port number: " + port);
 			} catch (final NumberFormatException e) {
@@ -68,7 +70,7 @@ public class Server {
 				System.exit(1);
 			}
 		
-		/** Try to create a server socket listening on a specified port. */
+		/* Try to create a server socket listening on a specified port. */
 		ServerSocket svrSocket = null;
 		try {
 			svrSocket = new ServerSocket(port);
@@ -83,10 +85,9 @@ public class Server {
 			System.out.println("Server is listening on port " + port + ".");
 		System.out.println("Server online...");
 		
-		/**
-		 * Wait for and accept connections on the server socket. Create a new
-		 * thread for each connection. For each connection, create a new
-		 * AsymmetricEncryption instance for asymmetric encryption.
+		/*
+		 * Wait for and accept connections on the server socket (from the
+		 * clients). Create a new thread for each connection.
 		 */
 		while (true)
 			try {

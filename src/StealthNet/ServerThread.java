@@ -22,6 +22,7 @@ import java.net.Socket;
 import java.security.InvalidKeyException;
 import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.util.Enumeration;
 import java.util.Hashtable;
@@ -37,20 +38,23 @@ import StealthNet.Security.RSAAsymmetricEncryption;
 /* StealthNet.ServerThread Class Definition ******************************** */
 
 /**
- * Represents a thread within the operating system for communications between
- * the StealthNet server and a client.
+ * Represents a {@link Thread} within the operating system for communications
+ * between the StealthNet {@link Server} and a {@link Client}.
  * 
- * A new instance is created for each client such that multiple clients can be
- * active concurrently. This class handles packets and deals with them
- * accordingly.
+ * A new instance is created for each {@link Client} such that multiple
+ * {@link Client} can be active concurrently. This class handles
+ * {@link DecryptedPacket} and deals with them accordingly.
  * 
  * @author Stephen Gould
  * @author Matt Barrie
  * @author Ryan Junee
  * @author Joshua Spence
+ * 
+ * @see Server
+ * @see Thread
  */
 public class ServerThread extends Thread {
-	/** Debug options. */
+	/* Debug options. */
 	private static final boolean DEBUG_GENERAL = Debug.isDebug("StealthNet.ServerThread.General");
 	private static final boolean DEBUG_ERROR_TRACE = Debug.isDebug("StealthNet.ServerThread.ErrorTrace") || Debug.isDebug("ErrorTrace");
 	private static final boolean DEBUG_COMMANDS_NULL = Debug.isDebug("StealthNet.ServerThread.Commands.Null");
@@ -70,6 +74,7 @@ public class ServerThread extends Thread {
 	private class UserData {
 		ServerThread userThread = null;
 		PublicKey publicKey = null;
+		int accountBalance = 0;
 	}
 	
 	/** Used to store client secret data. */
@@ -89,18 +94,24 @@ public class ServerThread extends Thread {
 	/** A list of secret data, indexed by the SecretData.name field. */
 	private static final Hashtable<String, SecretData> secretList = new Hashtable<String, SecretData>();
 	
-	/** The user ID for the user owning the thread. */
+	/** The user ID for the user owning this {@link Thread}. */
 	private String userID = null;
 	
-	/** Public-private keypair options. */
+	/** The public-private {@link KeyPair} for this server. */
 	private static KeyPair serverKeys = null;
+	
+	/** The location of the server's {@link PublicKey} file. */
 	private static final String PUBLIC_KEY_FILE = "keys/server/public.key";
+	
+	/** The location of the server's {@link PrivateKey} file. */
 	private static final String PRIVATE_KEY_FILE = "keys/server/private.key";
+	
+	/** The password to decrypt the server's {@link PrivateKey} file. */
 	private static final String PRIVATE_KEY_FILE_PASSWORD = "server";
 	
-	/** Initialise the server public-private keys. */
+	/* Initialise the server public-private {@link KeyPair}. */
 	static {
-		/**
+		/*
 		 * Try to read keys from the JAR file first. If that doesn't work, then
 		 * try to read keys from the file system. If that doesn't work, then
 		 * create new keys.
@@ -118,7 +129,7 @@ public class ServerThread extends Thread {
 			System.exit(1);
 		}
 		
-		/** Debug information. */
+		/* Debug information. */
 		if (DEBUG_ASYMMETRIC_ENCRYPTION) {
 			final String publicKeyString = Utility.getHexValue(serverKeys.getPublic().getEncoded());
 			final String privateKeyString = Utility.getHexValue(serverKeys.getPrivate().getEncoded());
@@ -127,16 +138,26 @@ public class ServerThread extends Thread {
 		}
 	}
 	
-	/** A StealthNetComms class to handle communications for this client. */
+	/** A {@link Comms} class to handle communications for this client. */
 	private Comms clientComms = null;
 	
-	/** StealthNet bank options. */
+	/** The hostname on which to connect to the StealthNet {@link Bank}. */
 	private final static String bankHostname = Comms.DEFAULT_BANKNAME;
+	
+	/** The port number on which to connect to the StealthNet {@link Bank}. */
 	private final static int bankPort = Comms.DEFAULT_BANKPORT;
+	
+	/**
+	 * A {@link Comms} class to handle communications to the {@link Bank}. Note
+	 * that we need only a single connection to the {@link Bank}, not a separate
+	 * connection for each {@link Client} connection.
+	 */
 	private static Comms bankComms = null;
+	
+	/** The loocation of the {@link PublicKey} file of the {@link Bank}. */
 	private static final String BANK_PUBLIC_KEY_FILE = "keys/bank/public.key";
 	
-	/** Initialise the bank comms. */
+	/* Initialise the bank communications. */
 	static {
 		AsymmetricEncryption bankEncryption = null;
 		try {
@@ -148,9 +169,7 @@ public class ServerThread extends Thread {
 			System.exit(1);
 		}
 		
-		/**
-		 * Set up asymmetric encryption. Get bank public key from JAR file.
-		 */
+		/* Set up asymmetric encryption. Get bank public key from JAR file. */
 		try {
 			final PublicKey bankPublicKey = Utility.getPublicKey(BANK_PUBLIC_KEY_FILE);
 			if (bankPublicKey == null) {
@@ -166,8 +185,8 @@ public class ServerThread extends Thread {
 			System.exit(1);
 		}
 		
-		/** Initiate a connection with the StealthNet bank. */
-		/** TODO: Probably want a timeout on this. */
+		/* Initiate a connection with the StealthNet bank. */
+		/* TODO: Probably want a timeout on this. */
 		try {
 			if (DEBUG_GENERAL)
 				System.out.println("Initiating a connection with StealthNet bank '" + bankHostname + "' on port " + bankPort + ".");
@@ -184,23 +203,24 @@ public class ServerThread extends Thread {
 	/**
 	 * Constructor.
 	 * 
-	 * @param socket The socket that the server is listening on.
+	 * @param socket The {@link Socket} on which the {@link Server} has accepted
+	 *        a connection.
 	 * 
 	 * @throws NoSuchPaddingException
 	 * @throws NoSuchAlgorithmException
 	 * @throws InvalidKeyException
 	 */
 	public ServerThread(final Socket socket) throws InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException {
-		/** Thread constructor. */
+		/* Thread constructor. */
 		super("StealthNet.ServerThread");
 		
 		if (DEBUG_GENERAL)
 			System.out.println("Creating a ServerThread.");
 		
-		/**
-		 * Create a new StealthNet.Comms instance and accept sessions. Note that
-		 * the client already has our public key and can hence encrypt messages
-		 * destined for us.
+		/*
+		 * Create a new Comms instance and accept sessions. Note that the client
+		 * already has our public key and can hence encrypt messages destined
+		 * for us.
 		 */
 		clientComms = new Comms(new RSAAsymmetricEncryption(serverKeys), true);
 		clientComms.acceptSession(socket);
@@ -226,13 +246,13 @@ public class ServerThread extends Thread {
 	 *         already exists in the user list.
 	 */
 	private synchronized boolean addUser(final String id) {
-		/** Make sure the specified user doesn't already exist in the user list. */
+		/* Make sure the specified user doesn't already exist in the user list. */
 		UserData userInfo = userList.get(id);
 		
 		if (userInfo != null && userInfo.userThread != null)
 			return false;
 		else {
-			/** Create new user data for the specified user. */
+			/* Create new user data for the specified user. */
 			userInfo = new UserData();
 			userInfo.userThread = this;
 			userInfo.publicKey = clientComms.getPeerPublicKey();
@@ -252,13 +272,13 @@ public class ServerThread extends Thread {
 	 *         exists in the secret list.
 	 */
 	private synchronized boolean addSecret(final SecretData t) {
-		/** Make sure the secret doesn't already exist in the secret list. */
+		/* Make sure the secret doesn't already exist in the secret list. */
 		final SecretData secretInfo = secretList.get(t.name);
 		
 		if (secretInfo != null)
 			return false;
 		else {
-			/** Add the secret data to the secret list. */
+			/* Add the secret data to the secret list. */
 			secretList.put(t.name, t);
 			if (DEBUG_GENERAL)
 				System.out.println("User '" + userID + "' added secret \"" + t.name + "\" to the secret list.");
@@ -299,11 +319,11 @@ public class ServerThread extends Thread {
 	}
 	
 	/**
-	 * Convert the user list to a String. Used to distribute the user list in a
-	 * packet.
+	 * Convert the user list to a String. Used to distribute the user list to
+	 * all users in a {@link DecryptedPacket}.
 	 * 
-	 * @return A String representing the user list. The output string is of the
-	 *         form "user;loggedOn\n..."
+	 * @return A {@link String} representing the user list. The output string is
+	 *         of the form "user;loggedOn\n..."
 	 */
 	private synchronized String userListAsString() {
 		String userTable = "";
@@ -326,11 +346,11 @@ public class ServerThread extends Thread {
 	}
 	
 	/**
-	 * Convert the secret list to a String. Used to distribute the secret list
-	 * in a packet.
+	 * Convert the secret list to a {@link String}. Used to distribute the
+	 * secret list to all users in a {link DecryptedPacket}.
 	 * 
-	 * @return A String representing the secret list. The output string is of
-	 *         the form "secretKey;cost;description;filename\n..."
+	 * @return A {@link String} representing the secret list. The output string
+	 *         is of the form "secretKey;cost;description;filename\n..."
 	 */
 	private synchronized String secretListAsString() {
 		String secretTable = "";
@@ -354,8 +374,9 @@ public class ServerThread extends Thread {
 	}
 	
 	/**
-	 * Send the user list (as a String) to all current users. Sent to all logged
-	 * in users (including the new user) whenever a new user logs on.
+	 * Send the user list (as a {@link String}) to all users. Sent to all
+	 * logged-in users (including the new user) whenever a new user logs on or
+	 * whenever a user logs off.
 	 */
 	private synchronized void sendUserList() {
 		final Enumeration<String> i = userList.keys();
@@ -369,7 +390,7 @@ public class ServerThread extends Thread {
 				if (userInfo.userThread.clientComms == null)
 					userInfo.userThread = null;
 				else {
-					/** Send this user the user list in a packet. */
+					/* Send this user the user list in a packet. */
 					if (DEBUG_GENERAL)
 						System.out.println("Sending the user list to user \"" + userKey + "\".");
 					userInfo.userThread.clientComms.sendPacket(DecryptedPacket.CMD_LIST, userTable);
@@ -378,8 +399,9 @@ public class ServerThread extends Thread {
 	}
 	
 	/**
-	 * Send the secret list (as a String) to all current users. Sent to all
-	 * logged in users (including the new user) whenever a new user logs on.
+	 * Send the secret list (as a String) to all users. Sent to all logged in
+	 * users (including the new user) whenever a secret is added or removed from
+	 * the secret list.
 	 */
 	private synchronized void sendSecretList() {
 		final Enumeration<String> i = userList.keys();
@@ -393,7 +415,7 @@ public class ServerThread extends Thread {
 				if (userInfo.userThread.clientComms == null)
 					userInfo.userThread = null;
 				else {
-					/** Send this user the secret list in a packet. */
+					/* Send this user the secret list in a packet. */
 					if (DEBUG_GENERAL)
 						System.out.println("Sending the secret list to user \"" + userKey + "\".");
 					userInfo.userThread.clientComms.sendPacket(DecryptedPacket.CMD_SECRETLIST, secretTable);
@@ -403,27 +425,34 @@ public class ServerThread extends Thread {
 	
 	/**
 	 * The main function for the class. This function handles all type of
-	 * StealthNet packets.
+	 * {@link DecryptedPacket}s.
 	 * 
-	 * If the packet contains the login command, then we attempt to log the user
-	 * into StealthNet. If successful, then we send all users a list of users
-	 * and secrets.
+	 * If the packet contains the <code>CMD_LOGIN</code> command, then we
+	 * attempt to log the user into StealthNet. If successful, then we send all
+	 * users an updated list of users and secrets.
 	 * 
-	 * If the packet contains the logout command, then the user is logged out of
-	 * StealthNet, and this thread is terminated.
+	 * If the packet contains the <code>CMD_LOGOUT</code> command, then the user
+	 * is logged out of StealthNet, and this thread is terminated.
 	 * 
-	 * If the packet contains the message command, then the chat message
-	 * contained in the packet data is sent to the destined user.
+	 * If the packet contains the <code>CMD_MSG</code> command, then the chat
+	 * message contained in the packet data is sent to the destined user.
 	 * 
-	 * If the packet contains the chat command, then a chat session is started
-	 * between the specified users.
+	 * If the packet contains the <code>CMD_CHAT</code> command, then a chat
+	 * session is started between the specified users.
 	 * 
-	 * If the packet contains the FTP command, then a file transfer session is
-	 * started between the specified users.
+	 * If the packet contains the <code>CMD_FTP</code> command, then a file
+	 * transfer session is started between the specified users.
 	 * 
-	 * If the packet contains the create secret command, then we create secret
-	 * data from the StealthNet.Packet data, and retransmit the list of secrets
-	 * to all currently logged in users.
+	 * If the packet contains the <code>CMD_CREATESECRET</code> command, then we
+	 * create secret data from the packet data, and retransmit the list of
+	 * secrets to all currently logged in users.
+	 * 
+	 * If the packet contains the <code>CMD_GETSECRET</code> command, then we
+	 * deduct the necessary credit from the user's account, and then establish
+	 * the transfer of the secret file.
+	 * 
+	 * If the packet contains the <code>CMD_GETPUBLICKEY</code> command, then we
+	 * send the user the encoded {@link PublicKey} of the requested user.
 	 */
 	@Override
 	public void run() {
@@ -466,19 +495,19 @@ public class ServerThread extends Thread {
 							System.out.println("Received login command.");
 						
 						if (userID != null) {
-							/** A user is already logged in. */
+							/* A user is already logged in. */
 							System.err.println("User \"" + userID + "\" trying to log in twice.");
 							break;
 						}
 						
-						/** Extract the user ID from the packet data. */
+						/* Extract the user ID from the packet data. */
 						userID = new String(pckt.data);
 						
-						/** Log the user in. */
+						/* Log the user in. */
 						if (!addUser(userID)) {
 							System.out.println("User \"" + userID + "\" is already logged in.");
 							
-							/** Cancel the current login attempt. */
+							/* Cancel the current login attempt. */
 							pckt.command = DecryptedPacket.CMD_LOGOUT;
 							userID = null;
 						} else {
@@ -508,7 +537,7 @@ public class ServerThread extends Thread {
 						else
 							System.out.println("User \"" + userID + "\" has logged out.");
 						
-						/** The code will now break out of the while loop. */
+						/* The code will now break out of the while loop. */
 						break;
 					}
 					
@@ -522,7 +551,7 @@ public class ServerThread extends Thread {
 						} else if (DEBUG_COMMANDS_MSG)
 							System.out.println("User '" + userID + "' sent message command.");
 						
-						/** Send the message to all users. */
+						/* Send the message to all users. */
 						final String msg = "[" + userID + "] " + new String(pckt.data);
 						final Enumeration<String> i = userList.keys();
 						while (i.hasMoreElements()) {
@@ -548,7 +577,7 @@ public class ServerThread extends Thread {
 						} else if (DEBUG_COMMANDS_CHAT)
 							System.out.println("User '" + userID + "' sent chat command.");
 						
-						/**
+						/*
 						 * NOTE: Data will be of the form "user@host:port".
 						 */
 						final String data = new String(pckt.data);
@@ -592,7 +621,7 @@ public class ServerThread extends Thread {
 						} else if (DEBUG_COMMANDS_FTP)
 							System.out.println("User '" + userID + "' sent FTP command.");
 						
-						/**
+						/*
 						 * NOTE: Data will be of the form "user@host:port".
 						 */
 						final String data = new String(pckt.data);
@@ -635,7 +664,7 @@ public class ServerThread extends Thread {
 						} else if (DEBUG_COMMANDS_CREATESECRET)
 							System.out.println("User '" + userID + "' sent create secret command.");
 						
-						/** Depacketise the create secret command. */
+						/* Depacketise the create secret command. */
 						final SecretData t = new SecretData();
 						t.owner = userID;
 						t.name = "";
@@ -674,7 +703,7 @@ public class ServerThread extends Thread {
 						} else if (DEBUG_COMMANDS_GETSECRET)
 							System.out.println("User '" + userID + "' sent Get Secret command.");
 						
-						/**
+						/*
 						 * NOTE: Data will be of the form "name@address".
 						 */
 						final String data = new String(pckt.data);
@@ -708,11 +737,32 @@ public class ServerThread extends Thread {
 									System.out.println("Returning error message \"" + msg + "\" to user '" + userID + "'.");
 								clientComms.sendPacket(msg_type, msg);
 							} else {
-								/** Wait for the signed purchase. */
-								
-								/** Get the bank to verify the signed purchase. */
-								
-								/** Send an acknowledgement. */
+								/* @formatter:off */
+								/*
+								 * Check the client's account.
+								 * 
+								 * while accountBalance < cost:
+								 * 		send client a CMD_REQUESTPAYMENT(cost - accountBalance)
+								 * 
+								 * 		(credits, hash) = wait for client to send a CMD_PAYMENT;
+								 * 		if hash == null:
+								 * 			client gave up
+								 * 			continue (forget about the CMD_GETSECRET)		
+								 * 		else
+								 * 			// need to verify hash chain first
+								 * 			Apply hashFunction to the 'hash' 'credit' number of times.
+								 * 			if the result == top of clients hash chain:
+								 * 				// valid payment
+								 * 				accountBalance += credits 
+								 * 			end if
+								 * end while
+								 * 
+								 * accountBalance -= cost
+								 * continue... transfer file
+								 * 	
+								 *
+								 */
+								/* @formatter:on */
 								
 								final String fileName = secretInfo.dirname + secretInfo.filename;
 								final byte msg_type = DecryptedPacket.CMD_GETSECRET;
@@ -722,13 +772,13 @@ public class ServerThread extends Thread {
 									System.out.println("Sending get secret message \"" + msg + "\" to user \"" + user + "\".");
 								userInfo.userThread.clientComms.sendPacket(msg_type, msg);
 								
-								/**
+								/*
 								 * Send public key of receiving user to sending
 								 * user. Note that the receiving user does not
 								 * know the public key of the sending user.
 								 */
 								
-								/** Send the public key back to the client. */
+								/* Send the public key back to the client. */
 								if (DEBUG_COMMANDS_GETPUBLICKEY)
 									System.out.println("Sending user '" + name + "' the public key of user '" + userID + "'.");
 								userInfo.userThread.clientComms.sendPacket(DecryptedPacket.CMD_GETPUBLICKEY, Base64.encodeBase64String(clientComms.getPeerPublicKey().getEncoded()));
@@ -748,15 +798,15 @@ public class ServerThread extends Thread {
 						} else if (DEBUG_COMMANDS_GETPUBLICKEY)
 							System.out.println("User '" + userID + "' sent get public key command.");
 						
-						/** Extract the user ID from the packet data. */
+						/* Extract the user ID from the packet data. */
 						final String requestedUserID = new String(pckt.data);
 						if (DEBUG_COMMANDS_GETPUBLICKEY)
 							System.out.println("User '" + userID + "' is requesting the public key of user '" + requestedUserID + "'.");
 						
-						/** Get the public key of the requested user. */
+						/* Get the public key of the requested user. */
 						final PublicKey key = userList.get(requestedUserID).publicKey;
 						
-						/** Send the public key back to the client. */
+						/* Send the public key back to the client. */
 						if (DEBUG_COMMANDS_GETPUBLICKEY)
 							System.out.println("Sending user '" + userID + "' the public key of user '" + requestedUserID + "'.");
 						clientComms.sendPacket(DecryptedPacket.CMD_GETPUBLICKEY, Base64.encodeBase64String(key.getEncoded()));
@@ -780,14 +830,14 @@ public class ServerThread extends Thread {
 				e.printStackTrace();
 		}
 		
-		/**
+		/*
 		 * We only reach this code when a user is logging out, so lets remove
 		 * the logged out user from the user list.
 		 */
 		if (userID != null)
 			removeUser(userID);
 		
-		/**
+		/*
 		 * Now that a user has logged out, re-transmit the user list to all
 		 * currently logged in users.
 		 */
@@ -797,7 +847,7 @@ public class ServerThread extends Thread {
 			System.out.println("Distributing user list.\n");
 		sendUserList();
 		
-		/** Clean up. */
+		/* Clean up. */
 		if (clientComms != null) {
 			clientComms.terminateSession();
 			clientComms = null;
