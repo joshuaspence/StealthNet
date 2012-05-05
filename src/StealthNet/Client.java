@@ -1375,11 +1375,13 @@ public class Client {
 						/* Convert packet contents to public key. */
 						return RSAAsymmetricEncryption.stringToPublicKey(new String(pckt.data));
 						
-						/***********************************************************
-						 * Unknown command
-						 **********************************************************/
+/* @formatter:off */
+					/***********************************************************
+					 * Unexpected command
+					 **********************************************************/
+/* @formatter:on */
 					default:
-						System.err.println("Unrecognised command received from server.");
+						System.err.println("Unexpected command received from server.");
 				}
 			} catch (final Exception e) {
 				System.err.println("Error running client thread.");

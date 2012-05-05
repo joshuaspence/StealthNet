@@ -18,6 +18,7 @@ package StealthNet;
 
 import java.security.MessageDigest;
 import java.security.SecureRandom;
+import java.util.Arrays;
 import java.util.Stack;
 
 /* StealthNet.CryptoCredit Class Definition ******************************** */
@@ -112,6 +113,31 @@ public class CryptoCredit {
 			cryptoCredits--;
 		}
 		return topCredit;
+	}
+	
+	/**
+	 * TODO
+	 * 
+	 * @param topHash
+	 * @param hash
+	 * @return
+	 */
+	public static boolean verify(final byte[] topHash, final int credits, byte[] hash) {
+		MessageDigest mdb = null;
+		try {
+			mdb = MessageDigest.getInstance(HASH_ALGORITHM);
+		} catch (final Exception e) {
+			System.err.println("Unable to verify hash chain.");
+			return false;
+		}
+		
+		for (int i = 1; i < credits; i++)
+			hash = mdb.digest(hash);
+		
+		if (Arrays.equals(topHash, hash))
+			return true;
+		else
+			return false;
 	}
 }
 

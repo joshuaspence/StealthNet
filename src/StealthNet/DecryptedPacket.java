@@ -97,6 +97,13 @@ public class DecryptedPacket {
 	 */
 	public static final byte CMD_GETBALANCE = 0x43;
 	
+	/**
+	 * The {@link Client} sends a <code>CMD_HASHCHAIN</code> packet to the
+	 * {@link Server} when the {@link Client} has depleted its current hash
+	 * chain and has generated a new chain.
+	 */
+	public static final byte CMD_HASHCHAIN = 0x44;
+	
 	/*
 	 * Security-specific commands - these should never be returned to a client
 	 * or server, but rather should always be handled within the Comms class.
