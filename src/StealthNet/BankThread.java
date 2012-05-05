@@ -34,9 +34,18 @@ import StealthNet.Security.SHA1withRSAAsymmetricVerification;
 /* StealthNet.BankThread Class Definition ********************************** */
 
 /**
- * TODO
+ * Represents a {@link Thread} within the operating system for communications
+ * between the StealthNet {@link Bank} and a peer (either a {@link Client} or a
+ * {@link Server}).
+ * 
+ * A new instance is created for each peer such that multiple pper can be active
+ * concurrently. This class handles {@link DecryptedPacket} and deals with them
+ * accordingly.
  * 
  * @author Joshua Spence
+ * 
+ * @see Bank
+ * @see Thread
  */
 public class BankThread extends Thread {
 	/* Debug options. */

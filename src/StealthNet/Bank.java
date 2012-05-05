@@ -24,9 +24,20 @@ import java.net.Socket;
 /* StealthNet.Bank Class Definition **************************************** */
 
 /**
- * TODO
+ * A bank for the StealthNet communications system. Opens a {@link ServerSocket}
+ * , listening on the specified listening port. For each incoming connection on
+ * this port, a new {@link BankThread} is created. The {@link BankThread} class
+ * is responsible for communicating with that peer (either a {@link Client} or a
+ * {@link Server}).
+ * 
+ * The bank is responsible for maintaining account information (such as current
+ * account balances) for all logged in users. The bank is responsible for
+ * signing {@link CryptoCredit}s belonging to a {@link Client} so that the
+ * {@link Server} can verify the validity of the purchase.
  * 
  * @author Joshua Spence
+ * 
+ * @see BankThread
  */
 public class Bank {
 	/* Debug options. */
