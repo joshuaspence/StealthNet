@@ -69,6 +69,35 @@ public class DecryptedPacket {
 	public static final byte CMD_GETPUBLICKEY = 0x0A;
 	
 	/*
+	 * Payment-specific commands
+	 */
+	
+	/**
+	 * The {@link Client} sends a <code>CMD_PAYMENT</code> packet to the
+	 * {@link Server} to provide payment for a secret.
+	 */
+	public static final byte CMD_PAYMENT = 0x40;
+	
+	/**
+	 * The {@link Server} sends a <code>CMD_REQUESTPAYMENT</code> packet to the
+	 * {@link Client} to request additional payment for a secret.
+	 */
+	public static final byte CMD_REQUESTPAYMENT = 0x41;
+	
+	/**
+	 * The {@link Client} sends a <code>CMD_SIGNPAYMENT</code> packet to the
+	 * {@link Bank} to request that the bank sign a hash chain.
+	 */
+	public static final byte CMD_SIGNPAYMENT = 0x42;
+	
+	/**
+	 * The {@link Client} sends a <code>CMD_GETBALANCE</code> packet to either
+	 * the {@link Bank} or the {@link Server} to request the client's account
+	 * balance.
+	 */
+	public static final byte CMD_GETBALANCE = 0x43;
+	
+	/*
 	 * Security-specific commands - these should never be returned to a client
 	 * or server, but rather should always be handled within the Comms class.
 	 */
