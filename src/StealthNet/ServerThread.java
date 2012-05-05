@@ -66,12 +66,14 @@ public class ServerThread extends Thread {
 	private static final boolean DEBUG_COMMANDS_GETSECRET = Debug.isDebug("StealthNet.ServerThread.Commands.GetSecret");
 	private static final boolean DEBUG_COMMANDS_GETPUBLICKEY = Debug.isDebug("StealthNet.ServerThread.Commands.GetPublicKey");
 	private static final boolean DEBUG_ASYMMETRIC_ENCRYPTION = Debug.isDebug("StealthNet.ServerThread.AsymmetricEncryption");
+	private static final boolean DEBUG_PAYMENTS = Debug.isDebug("StealthNet.ServerThread.Payments");
 	
 	/**
 	 * Used to store details of other clients that this thread may want to
 	 * communicate with.
 	 */
 	private class UserData {
+		String name = null;
 		ServerThread userThread = null;
 		PublicKey publicKey = null;
 		
@@ -746,7 +748,7 @@ public class ServerThread extends Thread {
 							} else {
 								/* Charge the user for the secret. */
 								if (!chargeUserForSecret(secretInfo))
-									continue;d
+									continue;
 								
 								final String fileName = secretInfo.dirname + secretInfo.filename;
 								final byte msg_type = DecryptedPacket.CMD_GETSECRET;
@@ -797,6 +799,13 @@ public class ServerThread extends Thread {
 						break;
 					}
 					
+					/*******************************************************
+					 * Hashchain command
+					 ******************************************************/
+					case DecryptedPacket.CMD_HASHCHAIN:
+						/* TODO */
+						break;
+					
 					/***********************************************************
 					 * Unknown command
 					 **********************************************************/
@@ -839,7 +848,8 @@ public class ServerThread extends Thread {
 	}
 	
 	/**
-	 * TODO
+	 * Verify the supplied {@link CryptoCredit} hash and, if valid, credit the
+	 * user's account.
 	 * 
 	 * @param creditsSent
 	 * @param cryptoCreditHash
@@ -852,11 +862,21 @@ public class ServerThread extends Thread {
 	}
 	
 	/**
-	 * TODO
+	 * Receives the top of a new hash chain from the user. Checks the signature
+	 * of the hash chain to ensure that the bank signed the hash chain. If the
+	 * signature verification passses, then the user's last hash value is
+	 * updated to the head of the new hash chain.
+	 */
+	public static synchronized void processHashchain() {
+		
+	}
+	
+	/**
+	 * Charge the user for the purchase of a secret. Also credits the account of
+	 * the owner of the secret.
 	 * 
-	 * @param user
-	 * @param secret
-	 * @return
+	 * @param secret The secret that the user wishes to purchase.
+	 * @return True if the purchase should proceed, otherwise false.
 	 */
 	private synchronized boolean chargeUserForSecret(final SecretData secret) {
 		final UserData user = userList.get(userID);
@@ -865,6 +885,8 @@ public class ServerThread extends Thread {
 		
 		while ((amountOwing = secret.cost - user.accountBalance) > 0) {
 			/* Request payment from the client. */
+			if (DEBUG_PAYMENTS)
+				System.out.println("Requesting additional payment of " + amountOwing + " credits from user '" + user.name + "' for purchase of secret \"" + secret.name + "\".");
 			clientComms.sendPacket(DecryptedPacket.CMD_REQUESTPAYMENT, Integer.toString(amountOwing));
 			
 			/* Wait for the client to send payment. */
@@ -874,6 +896,11 @@ public class ServerThread extends Thread {
 					pckt = clientComms.recvPacket();
 					
 					switch (pckt.command) {
+/* @formatter:off */
+						/*******************************************************
+						 * Payment command
+						 ******************************************************/
+/* @formatter:on */
 						case DecryptedPacket.CMD_PAYMENT:
 							/*
 							 * NOTE: Data will be of the form "credits;hash"
@@ -895,15 +922,16 @@ public class ServerThread extends Thread {
 							
 							break;
 						
+						/*******************************************************
+						 * Hashchain command
+						 ******************************************************/
 						case DecryptedPacket.CMD_HASHCHAIN:
 							/* TODO */
 							break;
 						
-/* @formatter:off */
-						/***********************************************************
+						/*******************************************************
 						 * Unexpected command
-						 **********************************************************/
-/* @formatter:on */
+						 ******************************************************/
 						default:
 							System.err.println("Unexpected command received from server.");
 					}
@@ -914,12 +942,21 @@ public class ServerThread extends Thread {
 				}
 		}
 		
-		/* Deduct the funds from the users account. */
+		/*
+		 * Deduct the funds from the users account and add the funds to the
+		 * owner's account.
+		 */
+		user.accountBalance -= secret.cost;
 		secretOwner.accountBalance += secret.cost;
-		userList.get(userID).accountBalance -= secret.cost;
+		if (DEBUG_PAYMENTS) {
+			System.out.println("Subtracted " + secret.cost + " credits from '" + user.name + "' account.");
+			System.out.println("Added " + secret.cost + " credits to '" + secret.owner + "' account.");
+		}
 		
 		/* Let the user know that they don't owe any more money. */
 		clientComms.sendPacket(DecryptedPacket.CMD_REQUESTPAYMENT, Integer.toString(0));
+		if (DEBUG_PAYMENTS)
+			System.out.println("Informing user '" + user.name + "' that no additional payment is required for purchase of secret \"" + secret.name + "\".");
 		
 		/* Success. */
 		return true;
