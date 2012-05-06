@@ -5,9 +5,10 @@
  * Copyright (C) 2002-2004, Matt Barrie, Stephen Gould and Ryan Junee
  *
  * PACKAGE:         StealthNet
- * FILENAME:        CryptoCredit.java
+ * FILENAME:        CryptoCreditHashChain.java
  * AUTHORS:         Joshua Spence and James Dimitrios Moutafidis
- * DESCRIPTION:     Implementation of the StealthNet CryptoCredit class.
+ * DESCRIPTION:     Implementation of the StealthNet CryptoCreditHashChain 
+ * 					class.
  *
  *****************************************************************************/
 /* @formatter:on */
@@ -21,16 +22,18 @@ import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.Stack;
 
-/* StealthNet.CryptoCredit Class Definition ******************************** */
+/* StealthNet.CryptoCreditHashChain Class Definition *********************** */
 
 /**
- * TODO
+ * A class to provide a currency system for the StealthNet system. A
+ * CryptoCredit is a hash, produced by a {@link MessageDigest} algorithm, and a
+ * {@link Stack} of CryptoCredits forms a CryptoCreditHashChain.
  * 
  * @author Joshua Spence
  * @author James Dimitrios Moutafidis
  */
-public class CryptoCredit {
-	/** Constants. */
+public class CryptoCreditHashChain {
+	/** Algorithm to use for the hashchain {@link MessageDigest}. */
 	private static final String HASH_ALGORITHM = "MD5";
 	
 	/** Stack to store the hash chain. */
@@ -47,7 +50,7 @@ public class CryptoCredit {
 	 * 
 	 * @param c An integer indicating the starting amount of credits.
 	 */
-	public CryptoCredit(final int c) {
+	public CryptoCreditHashChain(final int c) {
 		cryptoCredits = c;
 		createNewHashChain();
 	}
@@ -142,5 +145,5 @@ public class CryptoCredit {
 }
 
 /******************************************************************************
- * END OF FILE: CryptoCredit.java
+ * END OF FILE: CryptoCreditHashChain.java
  *****************************************************************************/

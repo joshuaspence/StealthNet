@@ -898,18 +898,18 @@ public class ServerThread extends Thread {
 	}
 	
 	/**
-	 * Verify the supplied {@link CryptoCredit} hash and, if valid, credit the
+	 * Verify the supplied {@link CryptoCreditHashChain} hash and, if valid, credit the
 	 * user's account.
 	 * 
 	 * @param user The user whose account should be credited.
 	 * @param creditsSent The number of credits declared by the {@link Client}.
-	 * @param cryptoCreditHash The hash of the {@link CryptoCredit} supplied by
+	 * @param cryptoCreditHash The hash of the {@link CryptoCreditHashChain} supplied by
 	 *        the {@link Client}.
 	 * @return True if the credits were added to the user's account, otherwise
 	 *         false.
 	 */
 	public static synchronized boolean addCredits(final UserData user, final int creditsSent, final byte[] cryptoCreditHash) {
-		if (CryptoCredit.verify(user.lastHash, creditsSent, cryptoCreditHash)) {
+		if (CryptoCreditHashChain.verify(user.lastHash, creditsSent, cryptoCreditHash)) {
 			user.accountBalance += creditsSent;
 			user.lastHash = cryptoCreditHash;
 			return true;

@@ -32,7 +32,7 @@ import java.net.Socket;
  * 
  * The bank is responsible for maintaining account information (such as current
  * account balances) for all logged in users. The bank is responsible for
- * signing {@link CryptoCredit}s belonging to a {@link Client} so that the
+ * signing {@link CryptoCreditHashChain}s belonging to a {@link Client} so that the
  * {@link Server} can verify the validity of the purchase.
  * 
  * @author Joshua Spence
