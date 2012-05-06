@@ -74,7 +74,7 @@ public class DecryptedPacket {
 	
 	/**
 	 * The {@link Client} sends a <code>CMD_PAYMENT</code> packet to the
-	 * {@link Server} to provide payment for a secret.
+	 * {@link Server} to add credit to their account.
 	 */
 	public static final byte CMD_PAYMENT = 0x40;
 	

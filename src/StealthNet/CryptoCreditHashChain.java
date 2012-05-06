@@ -33,6 +33,8 @@ import java.util.Stack;
  * CryptoCredit is a hash, produced by a {@link MessageDigest} algorithm, and a
  * {@link Stack} of CryptoCredits forms a CryptoCreditHashChain.
  * 
+ * TODO: Write more detail here.
+ * 
  * @author Joshua Spence
  * @author James Dimitrios Moutafidis
  */
@@ -52,7 +54,8 @@ public class CryptoCreditHashChain {
 	private final Stack<CryptoCredit> hashChain;
 	
 	/**
-	 * The tuple that the {@link Bank} needs to sign. Data is of the form "
+	 * The tuple that the {@link Bank} needs to sign to validate this hash
+	 * chain.
 	 */
 	private final byte[] bankIdentifier;
 	
@@ -67,7 +70,7 @@ public class CryptoCreditHashChain {
 	 *        hash chain.
 	 */
 	public CryptoCreditHashChain(final String username, final int credits) {
-		hashChain = generateHashChain(credits);
+		hashChain = generateHashChain(credits + 1);
 		
 		/* Construct the identifying tuple that the bank will need to sign. */
 		final Stack<byte[]> topOfStack = getNextCredits(1);
@@ -113,7 +116,8 @@ public class CryptoCreditHashChain {
 	}
 	
 	/**
-	 * Get the length of the hash chain.
+	 * Get the length of the hash chain. This is equal to the number of credits
+	 * represented by the hash chain.
 	 * 
 	 * @return The length of the hash chain.
 	 */
@@ -122,8 +126,7 @@ public class CryptoCreditHashChain {
 	}
 	
 	/**
-	 * Create a new hash chain. The old chain is deleted and a new one is
-	 * generated.
+	 * Create a new hash chain of the desired length.
 	 * 
 	 * @param length The length of the hash chain to generate.
 	 * @return A hash chain of the specified length.
@@ -156,8 +159,8 @@ public class CryptoCreditHashChain {
 	
 	/**
 	 * Generates a tuple of the form (username, credits, top hash of hash
-	 * chain). The bank signs this tuple to verify to the server that the hash
-	 * chain is valid.
+	 * chain). The bank will later sign this tuple to verify to the server that
+	 * the hash chain is valid.
 	 * 
 	 * @param username The username of the user that generated the hash chain.
 	 * @param credits The number of credits represented by the hash chain.
@@ -189,6 +192,8 @@ public class CryptoCreditHashChain {
 			dataOutput.flush();
 			byteArrayOutput.flush();
 			identifyingTuple = byteArrayOutput.toByteArray();
+			
+			/* Clean up. */
 			dataOutput.close();
 			byteArrayOutput.close();
 		} catch (final Exception e) {
@@ -199,7 +204,10 @@ public class CryptoCreditHashChain {
 	}
 	
 	/**
-	 * TODO
+	 * Parse identifier and return the user ID.
+	 * 
+	 * @param data The identifier data.
+	 * @return The user ID stored within the identifier.
 	 */
 	public static String getUserFromIdentifier(final byte[] data) {
 		final ByteArrayInputStream byteArrayInput = new ByteArrayInputStream(data);
@@ -215,6 +223,7 @@ public class CryptoCreditHashChain {
 			dataInput.read(userName);
 			result = new String(userName);
 			
+			/* Clean up. */
 			dataInput.close();
 			byteArrayInput.close();
 		} catch (final Exception e) {
@@ -225,7 +234,11 @@ public class CryptoCreditHashChain {
 	}
 	
 	/**
-	 * TODO
+	 * Parse identifier and return the number of credits contained in the hash
+	 * chain.
+	 * 
+	 * @param data The identifier data.
+	 * @return The number of credits contained with the hash chain.
 	 */
 	public static Integer getCreditsFromIdentifier(final byte[] data) {
 		final ByteArrayInputStream byteArrayInput = new ByteArrayInputStream(data);
@@ -243,6 +256,7 @@ public class CryptoCreditHashChain {
 			/* Credits. */
 			result = new Integer(dataInput.readInt());
 			
+			/* Clean up. */
 			dataInput.close();
 			byteArrayInput.close();
 		} catch (final Exception e) {
@@ -253,9 +267,13 @@ public class CryptoCreditHashChain {
 	}
 	
 	/**
-	 * TODO
+	 * Parse identifier and return the {@link CryptoCredit} hash from the top of
+	 * the hash chain.
+	 * 
+	 * @param data The identifier data.
+	 * @return The {@link CryptoCredit} hash from the top of the hash chain.
 	 */
-	public static byte[] getHashFromIdentifier(final byte[] data) {
+	public static byte[] getTopHashFromIdentifier(final byte[] data) {
 		final ByteArrayInputStream byteArrayInput = new ByteArrayInputStream(data);
 		final DataInputStream dataInput = new DataInputStream(byteArrayInput);
 		byte[] result = null;
@@ -279,6 +297,7 @@ public class CryptoCreditHashChain {
 			dataInput.read(topOfChain);
 			result = topOfChain;
 			
+			/* Clean up. */
 			dataInput.close();
 			byteArrayInput.close();
 		} catch (final Exception e) {
@@ -317,26 +336,23 @@ public class CryptoCreditHashChain {
 						
 /* @formatter:off*/
 					/***********************************************************
-					 * Unknown command
+					 * Other
 					 **********************************************************/
 /* @formatter:on */
 					default:
-						System.err.println("Unrecognised or unexpected command received from server.");
+						System.err.println("Unrecognised or unexpected command received from bank.");
 				}
 			} catch (final Exception e) {}
 	}
 	
 	/**
-	 * Get the next {@link CryptoCredit}s from the hash chain, without removing
-	 * them from the hash chain. The number of credits retrieved from the hash
-	 * chain will be equal to (or less than) the <code>credits</code> parameter.
-	 * If the size of the hash chain is less than <code>credits</code>, then the
-	 * bottom hash from the hash chain will be stored in the <code>hash</code>
-	 * parameter and the number of credits represented by the hash will be the
-	 * return value.
+	 * Get the next <code>credits</code> number of {@link CryptoCredit}s from
+	 * the hash chain, without removing them from the hash chain. The number of
+	 * credits retrieved from the hash chain will be equal to (or less than) the
+	 * <code>credits</code> parameter. If the size of the hash chain is less
+	 * than <code>credits</code>, then the complete hash chain will be returned.
 	 * 
 	 * @param credits The number of {@link CryptoCredit}s to retrieve.
-	 * 
 	 * @return A stack of size <code>credits</code> (or possibly less), with the
 	 *         top element of the stack being the credit to be spent.
 	 */
@@ -359,7 +375,6 @@ public class CryptoCreditHashChain {
 	 * number of credits represented by the hash will be the return value.
 	 * 
 	 * @param credits The number of {@link CryptoCredit}s to remove.
-	 * 
 	 * @return The number of credits removed from the hash chain.
 	 */
 	public int spendNextCredits(final int credits) {
@@ -383,7 +398,8 @@ public class CryptoCreditHashChain {
 	 * @param credits The number of credits that the <code>suppliedHash</code>
 	 *        is claimed to be worth.
 	 * @param lastHash The last {@link CryptoCredit} that was processed.
-	 * @return
+	 * @return True if the {@link CryptoCredit} passes verification, otherwise
+	 *         false.
 	 */
 	public static boolean verify(byte[] hash, final int credits, final byte[] lastHash) {
 		final MessageDigest mdb;
@@ -394,6 +410,7 @@ public class CryptoCreditHashChain {
 			return false;
 		}
 		
+		/* Apply the hash function 'credits' times. */
 		for (int i = 1; i < credits; i++)
 			hash = mdb.digest(hash);
 		
