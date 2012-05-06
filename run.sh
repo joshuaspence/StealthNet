@@ -48,6 +48,7 @@ DEBUG="\
 -Ddebug.StealthNet.BankThread.Commands.Null=true \
 -Ddebug.StealthNet.BankThread.Commands.Login=true \
 -Ddebug.StealthNet.BankThread.Commands.Logout=true \
+-Ddebug.StealthNet.BankThread.Commands.GetBalance=true \
 -Ddebug.StealthNet.BankThread.AsymmetricEncryption=true \
 \
 -Ddebug.StealthNet.Chat=false \
@@ -119,6 +120,7 @@ DEBUG="\
 -Ddebug.StealthNet.ServerThread.Commands.FTP=true \
 -Ddebug.StealthNet.ServerThread.Commands.CreateSecret=true \
 -Ddebug.StealthNet.ServerThread.Commands.GetSecret=true \
+-Ddebug.StealthNet.ServerThread.Commands.GetBalance=true \
 -Ddebug.StealthNet.ServerThread.Commands.GetPublicKey=true \
 -Ddebug.StealthNet.ServerThread.AsymmetricEncryption=true \
 -Ddebug.StealthNet.ServerThread.Payments=true \

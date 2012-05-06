@@ -54,6 +54,7 @@ public class BankThread extends Thread {
 	private static final boolean DEBUG_COMMANDS_NULL = Debug.isDebug("StealthNet.BankThread.Commands.Null");
 	private static final boolean DEBUG_COMMANDS_LOGIN = Debug.isDebug("StealthNet.BankThread.Commands.Login");
 	private static final boolean DEBUG_COMMANDS_LOGOUT = Debug.isDebug("StealthNet.BankThread.Commands.Logout");
+	private static final boolean DEBUG_COMMANDS_GETBALANCE = Debug.isDebug("StealthNet.BankThread.Commands.GetBalance");
 	private static final boolean DEBUG_ASYMMETRIC_ENCRYPTION = Debug.isDebug("StealthNet.BankThread.AsymmetricEncryption");
 	
 	/* Constants. */
@@ -290,6 +291,18 @@ public class BankThread extends Thread {
 							System.out.println("User \"" + userID + "\" has logged out.");
 						
 						/* The code will now break out of the while loop. */
+						break;
+					}
+					
+					/***********************************************************
+					 * Get Balance command
+					 **********************************************************/
+					case DecryptedPacket.CMD_GETBALANCE: {
+						if (DEBUG_COMMANDS_GETBALANCE)
+							System.out.println("Received get balance command.");
+						
+						/* TODO */
+						stealthComms.sendPacket(DecryptedPacket.CMD_GETBALANCE, Integer.toString(0));
 						break;
 					}
 					

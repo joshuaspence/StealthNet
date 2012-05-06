@@ -67,6 +67,7 @@ public class ServerThread extends Thread {
 	private static final boolean DEBUG_COMMANDS_CREATESECRET = Debug.isDebug("StealthNet.ServerThread.Commands.CreateSecret");
 	private static final boolean DEBUG_COMMANDS_GETSECRET = Debug.isDebug("StealthNet.ServerThread.Commands.GetSecret");
 	private static final boolean DEBUG_COMMANDS_GETPUBLICKEY = Debug.isDebug("StealthNet.ServerThread.Commands.GetPublicKey");
+	private static final boolean DEBUG_COMMANDS_GETBALANCE = Debug.isDebug("StealthNet.ServerThread.Commands.GetBalance");
 	private static final boolean DEBUG_ASYMMETRIC_ENCRYPTION = Debug.isDebug("StealthNet.ServerThread.AsymmetricEncryption");
 	private static final boolean DEBUG_PAYMENTS = Debug.isDebug("StealthNet.ServerThread.Payments");
 	
@@ -858,6 +859,20 @@ public class ServerThread extends Thread {
 						processHashChain(pckt.data);
 						break;
 					
+					/*******************************************************
+					 * Get Balance command
+					 ******************************************************/
+					case DecryptedPacket.CMD_GETBALANCE: {
+						if (userID == null) {
+							System.err.println("Unknown user trying to get balance.");
+							break;
+						} else if (DEBUG_COMMANDS_GETBALANCE)
+							System.out.println("User '" + userID + "' sent Get Balance command.");
+						
+						clientComms.sendPacket(DecryptedPacket.CMD_GETBALANCE, Integer.toString(getUser(userID).accountBalance));
+						break;
+					}
+					
 					/***********************************************************
 					 * Unknown command
 					 **********************************************************/
@@ -1068,6 +1083,20 @@ public class ServerThread extends Thread {
 						 ******************************************************/
 						case DecryptedPacket.CMD_HASHCHAIN: {
 							processHashChain(pckt.data);
+							break;
+						}
+						
+						/*******************************************************
+						 * Get Balance command
+						 ******************************************************/
+						case DecryptedPacket.CMD_GETBALANCE: {
+							if (userID == null) {
+								System.err.println("Unknown user trying to get balance.");
+								break;
+							} else if (DEBUG_COMMANDS_GETBALANCE)
+								System.out.println("User '" + userID + "' sent Get Balance command.");
+							
+							clientComms.sendPacket(DecryptedPacket.CMD_GETBALANCE, Integer.toString(getUser(userID).accountBalance));
 							break;
 						}
 						

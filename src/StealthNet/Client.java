@@ -163,9 +163,11 @@ public class Client {
 	/** Field to show the remaining number of credits. */
 	JTextField creditsBox;
 	
-	/** Number of credits. */
-	/* TODO: remove. */
-	private static final int credits = 100;
+	/** Field to show the {@link Server} credit balance. */
+	JTextField serverBalanceBox;
+	
+	/** Field to show the {@link Bank} credit balance. */
+	JTextField bankBalanceBox;
 	
 	/** The current {@link CryptoCreditHashChain} in use. */
 	private CryptoCreditHashChain hashChain = null;
@@ -400,13 +402,37 @@ public class Client {
 		
 		/* Credits display. */
 		final JPanel creditsPane = new JPanel();
-		creditsPane.setLayout(new GridLayout(1, 0));
-		creditsPane.setPreferredSize(new Dimension(180, 30));
-		creditsPane.setBorder(BorderFactory.createEmptyBorder(10, 0, 0, 0));
-		creditsPane.add(new JLabel("Credits:  ", SwingConstants.RIGHT));
-		creditsBox = new JTextField(new Integer(credits).toString());
+		creditsPane.setLayout(new GridLayout(3, 0));
+		
+		final JPanel bankBalanceSubpane = new JPanel();
+		bankBalanceSubpane.setLayout(new GridLayout(1, 0));
+		bankBalanceSubpane.setPreferredSize(new Dimension(180, 30));
+		bankBalanceSubpane.setBorder(BorderFactory.createEmptyBorder(10, 10, 0, 0));
+		bankBalanceSubpane.add(new JLabel("Bank:  ", SwingConstants.RIGHT));
+		bankBalanceBox = new JTextField(new Integer(0).toString());
+		bankBalanceBox.setEditable(false);
+		bankBalanceSubpane.add(bankBalanceBox);
+		creditsPane.add(bankBalanceSubpane);
+		
+		final JPanel creditsSubpane = new JPanel();
+		creditsSubpane.setLayout(new GridLayout(1, 0));
+		creditsSubpane.setPreferredSize(new Dimension(180, 30));
+		creditsSubpane.setBorder(BorderFactory.createEmptyBorder(10, 10, 0, 0));
+		creditsSubpane.add(new JLabel("Credits:  ", SwingConstants.RIGHT));
+		creditsBox = new JTextField(new Integer(0).toString());
 		creditsBox.setEditable(false);
-		creditsPane.add(creditsBox);
+		creditsSubpane.add(creditsBox);
+		creditsPane.add(creditsSubpane);
+		
+		final JPanel serverBalanceSubpane = new JPanel();
+		serverBalanceSubpane.setLayout(new GridLayout(1, 0));
+		serverBalanceSubpane.setPreferredSize(new Dimension(180, 30));
+		serverBalanceSubpane.setBorder(BorderFactory.createEmptyBorder(10, 10, 0, 0));
+		serverBalanceSubpane.add(new JLabel("Server:  ", SwingConstants.RIGHT));
+		serverBalanceBox = new JTextField(new Integer(0).toString());
+		serverBalanceBox.setEditable(false);
+		serverBalanceSubpane.add(serverBalanceBox);
+		creditsPane.add(serverBalanceSubpane);
 		
 		/* Create buttons (login, send message, chat, ftp) */
 		loginBtn = new JButton(new ImageIcon(this.getClass().getClassLoader().getResource("img/login.gif")));
@@ -576,6 +602,9 @@ public class Client {
 			if (DEBUG_GENERAL)
 				System.out.println("Sending the bank a login packet for user \"" + userID + "\".");
 			bankComms.sendPacket(DecryptedPacket.CMD_LOGIN, userID);
+			
+			/* Update balances. */
+			updateCreditsBoxes(true);
 			
 			/* Start periodically checking for packets. */
 			stealthTimer.start();
@@ -788,6 +817,9 @@ public class Client {
 				if (DEBUG_ERROR_TRACE)
 					e.printStackTrace();
 			}
+		
+		/** Update credits displays. */
+		updateCreditsBoxes(true);
 		
 		/* Choose where to save the secret file. */
 		final FileDialog fileSave = new FileDialog(clientFrame, "Save As...", FileDialog.SAVE);
@@ -1024,9 +1056,6 @@ public class Client {
 	
 	/** Process incoming packets. */
 	private void processPackets() {
-		/* Update credits box, stick it here for convenience. */
-		creditsBox.setText(new Integer(credits).toString());
-		
 		try {
 			if (serverComms == null || !serverComms.recvReady())
 				return;
@@ -1258,6 +1287,7 @@ public class Client {
 							System.out.println("Starting file transfer.");
 						final FileTransfer ft = new FileTransfer(snComms, fileName, true);
 						ft.start();
+						updateCreditsBoxes(true);
 						break;
 					}
 					
@@ -1457,7 +1487,69 @@ public class Client {
 		}
 		
 		serverComms.sendPacket(DecryptedPacket.CMD_HASHCHAIN, Base64.encodeBase64(data));
+		updateCreditsBoxes(true);
 		
+	}
+	
+	/**
+	 * TODO
+	 * 
+	 * @param retrieve
+	 */
+	private void updateCreditsBoxes(final boolean retrieve) {
+		/* Update credits box, stick it here for convenience. */
+		if (hashChain != null)
+			creditsBox.setText(new Integer(hashChain.getLength()).toString());
+		else
+			creditsBox.setText(new Integer(0).toString());
+		
+		if (retrieve) {
+			if (DEBUG_PAYMENTS)
+				System.out.println("Requesting balance from bank.");
+			final int bankBalance = getBalance(bankComms);
+			bankBalanceBox.setText(new Integer(bankBalance).toString());
+			
+			if (DEBUG_PAYMENTS)
+				System.out.println("Requesting balance from server.");
+			final int serverBalance = getBalance(serverComms);
+			serverBalanceBox.setText(new Integer(serverBalance).toString());
+		}
+	}
+	
+	/**
+	 * TODO
+	 */
+	private static int getBalance(final Comms comms) {
+		comms.sendPacket(DecryptedPacket.CMD_GETBALANCE);
+		
+		DecryptedPacket pckt = new DecryptedPacket();
+		while (true)
+			try {
+				pckt = comms.recvPacket();
+				
+				switch (pckt.command) {
+/* @formatter:off */
+					/***********************************************************
+					 * Get Balance command
+					 **********************************************************/
+/* @formatter:on */
+					case DecryptedPacket.CMD_GETBALANCE:
+						return Integer.parseInt(new String(pckt.data));
+						
+/* @formatter:off */
+					/***********************************************************
+					 * Unexpected command
+					 **********************************************************/
+/* @formatter:on */
+					default:
+						System.err.println("Unrecognised or unexpected command received from server.");
+						
+				}
+			} catch (final Exception e) {
+				System.err.println("Error running client thread.");
+				if (DEBUG_ERROR_TRACE)
+					e.printStackTrace();
+			}
 	}
 }
 
