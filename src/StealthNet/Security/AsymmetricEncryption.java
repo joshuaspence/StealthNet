@@ -1,3 +1,4 @@
+/* @formatter:off */
 /******************************************************************************
  * ELEC5616
  * Computer and Network Security, The University of Sydney
@@ -5,14 +6,15 @@
  * PACKAGE:         StealthNet.Security
  * FILENAME:        AsymmetricEncryption.java
  * AUTHORS:         Joshua Spence
- * DESCRIPTION:     An abstract class for key exchange protocols to implement
+ * DESCRIPTION:     A base class for key exchange protocols to implement 
  * 					asymmetric (public-private key) encryption.
  *
  *****************************************************************************/
+/* @formatter:on */
 
 package StealthNet.Security;
 
-/* Import Libraries **********************************************************/
+/* Import Libraries ******************************************************** */
 
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
@@ -25,6 +27,7 @@ import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.spec.InvalidKeySpecException;
 
@@ -35,28 +38,34 @@ import javax.management.InvalidAttributeValueException;
 
 import StealthNet.EncryptedFile;
 
-/* StealthNet.Security.AsymmetricEncryption Class Definition ****************/
+/* StealthNet.Security.AsymmetricEncryption Class Definition ************** */
 
 /**
- * An abstract class to provide public-private key (asymmetric) encryption.
- * Messages are encrypted with the peer's public key and decrypted with our
- * private key.
+ * A base class to provide public-private key (asymmetric) encryption. Messages
+ * are encrypted with the peer's {@link PublicKey} and decrypted with our
+ * {@link PrivateKey} In this way, only we should be able to decrypt messages
+ * sent to us and only the peer should be able to decrypt messages sent from us.
+ * <p> Asymmetric encryption is slow and should only be used until it is
+ * possible to securely use symmetric encryption.
  * 
- * Asymmetric encryption is slow and should only be used until it is possible to
- * securely use symmetric encryption.
- *
  * @author Joshua Spence
+ * @see Encryption
  */
-public abstract class AsymmetricEncryption extends Encryption {
-	/** Keys. */
+public class AsymmetricEncryption extends Encryption {
+	/** Our public-private {@link KeyPair}. */
 	protected final KeyPair ourKeys;
+	
+	/** The {@link PublicKey} of the peer that we are communicating with. */
 	protected PublicKey peerPublicKey;
-
+	
 	/**
-	 * Constructor.
+	 * Constructor to use a supplied public-private {@link KeyPair} for
+	 * asymmetric encryption.
 	 * 
-	 * @param algorithm The cipher algorithm to be used.
-	 * @param keys The public-private key pair to be used.
+	 * @param algorithm The cipher algorithm to be used for encryption and
+	 *        decryption.
+	 * @param keys The public-private {@link KeyPair} to be used. The
+	 *        {@link PrivateKey} will be used for decryption.
 	 * 
 	 * @throws NoSuchPaddingException
 	 * @throws NoSuchAlgorithmException
@@ -67,39 +76,40 @@ public abstract class AsymmetricEncryption extends Encryption {
 		ourKeys = keys;
 		super.setDecryption(ourKeys.getPrivate());
 	}
-
+	
 	/**
-	 * Get our public key.
+	 * Get our {@link PublicKey}.
 	 * 
-	 * @return Our public key.
+	 * @return Our {@link PublicKey}.
 	 */
 	public final PublicKey getPublicKey() {
 		return ourKeys.getPublic();
 	}
-
+	
 	/**
-	 * Get our public-private key pair.
+	 * Get our public-private {@link KeyPair}.
 	 * 
-	 * @return Our public-private key pair.
+	 * @return Our public-private {@link KeyPair}.
 	 */
 	public final KeyPair getKeys() {
 		return ourKeys;
 	}
-
-
+	
 	/**
-	 * Get the peer's public key. The peer's public key is used for encryption.
+	 * Get the peer's {@link PublicKey}. The peer's {@link PublicKey} is used
+	 * for encryption.
 	 * 
-	 * @return The peer's public key.
+	 * @return The peer's {@link PublicKey}.
 	 */
 	public final PublicKey getPeerPublicKey() {
 		return peerPublicKey;
 	}
-
+	
 	/**
-	 * Set the peer's public key. The peer's public key is used for encryption.
+	 * Set the peer's {@link PublicKey}. The peer's {@link PublicKey} is used
+	 * for encryption.
 	 * 
-	 * @param peer The peer's public key.
+	 * @param peer The peer's {@link PublicKey}.
 	 * 
 	 * @throws NoSuchPaddingException
 	 * @throws NoSuchAlgorithmException
@@ -109,7 +119,7 @@ public abstract class AsymmetricEncryption extends Encryption {
 		peerPublicKey = peer;
 		super.setEncryption(peerPublicKey);
 	}
-
+	
 	/**
 	 * A utility function to write the modulus and exponent of a key to a file
 	 * encrypted with a password.
@@ -133,15 +143,15 @@ public abstract class AsymmetricEncryption extends Encryption {
 		final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 		final BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(outputStream);
 		final DataOutputStream dataOutputStream = new DataOutputStream(bufferedOutputStream);
-
-		/** Write the modulus and exponent to a byte array. */
+		
+		/* Write the modulus and exponent to a byte array. */
 		try {
-			/** Write the modulus to the output byte array. */
+			/* Write the modulus to the output byte array. */
 			final byte[] modArray = mod.toByteArray();
 			dataOutputStream.writeInt(modArray.length);
 			dataOutputStream.write(modArray);
-
-			/** Write the exponent to a byte array. */
+			
+			/* Write the exponent to a byte array. */
 			final byte[] expArray = exp.toByteArray();
 			dataOutputStream.writeInt(expArray.length);
 			dataOutputStream.write(expArray);
@@ -154,14 +164,14 @@ public abstract class AsymmetricEncryption extends Encryption {
 			dataOutputStream.close();
 			bufferedOutputStream.close();
 		}
-
-		/** Write the byte array to an (un)encrypted file. */
+		
+		/* Write the byte array to an (un)encrypted file. */
 		if (password != null) {
 			final EncryptedFile file = new EncryptedFile(outputStream.toByteArray(), password);
 			file.writeToFile(new File(filename));
 		} else {
 			final FileOutputStream fileOutputStream = new FileOutputStream(filename);
-
+			
 			try {
 				fileOutputStream.write(outputStream.toByteArray());
 			} catch (final Exception e) {
@@ -171,12 +181,12 @@ public abstract class AsymmetricEncryption extends Encryption {
 				fileOutputStream.close();
 			}
 		}
-
-		/** Close the output stream. */
+		
+		/* Close the output stream. */
 		outputStream.close();
 	}
 }
 
 /******************************************************************************
- * END OF FILE:     AsymmetricEncryption.java
+ * END OF FILE: AsymmetricEncryption.java
  *****************************************************************************/

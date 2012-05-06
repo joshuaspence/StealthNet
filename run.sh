@@ -40,7 +40,6 @@ DEBUG="\
 -Ddebug.StealthNet.Bank=false \
 -Ddebug.StealthNet.Bank.General=true \
 -Ddebug.StealthNet.Bank.ErrorTrace=true \
--Ddebug.StealthNet.Bank.AsymmetricEncryption=true \
 \
 -Ddebug.StealthNet.BankThread=false \
 -Ddebug.StealthNet.BankThread.General=true \
@@ -49,6 +48,7 @@ DEBUG="\
 -Ddebug.StealthNet.BankThread.Commands.Null=true \
 -Ddebug.StealthNet.BankThread.Commands.Login=true \
 -Ddebug.StealthNet.BankThread.Commands.Logout=true \
+-Ddebug.StealthNet.BankThread.AsymmetricEncryption=true \
 \
 -Ddebug.StealthNet.Chat=false \
 -Ddebug.StealthNet.Chat.General=true \
@@ -113,12 +113,12 @@ DEBUG="\
 -Ddebug.StealthNet.ServerThread.Commands=false \
 -Ddebug.StealthNet.ServerThread.Commands.Null=true \
 -Ddebug.StealthNet.ServerThread.Commands.Login=true \
--Ddebug.StealthNet.ServerThread.Commands.Logout=true \
 -Ddebug.StealthNet.ServerThread.Commands.Message=true \
 -Ddebug.StealthNet.ServerThread.Commands.Chat=true \
 -Ddebug.StealthNet.ServerThread.Commands.FTP=true \
 -Ddebug.StealthNet.ServerThread.Commands.CreateSecret=true \
 -Ddebug.StealthNet.ServerThread.Commands.GetSecret=true \
+-Ddebug.StealthNet.ServerThread.Commands.GetPublicKey=true \
 -Ddebug.StealthNet.ServerThread.AsymmetricEncryption=true \
 "
 DEBUG_ARG=
