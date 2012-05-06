@@ -66,7 +66,12 @@ public class CryptoCreditHashChain {
 		hashChain = generateHashChain(credits);
 		
 		/* Construct the identifying tuple that the bank will need to sign. */
-		bankIdentifier = generateIdentifyingTuple(username, credits, getNextCredit());
+		final byte[] topOfStack = null;
+		getNextCredits(1, topOfStack);
+		bankIdentifier = generateIdentifyingTuple(username, credits, topOfStack);
+		
+		/* Remove the top element from the hash chain. */
+		spendNextCredits(1);
 	}
 	
 	/**
@@ -102,6 +107,15 @@ public class CryptoCreditHashChain {
 	 */
 	public byte[] getSignature() {
 		return bankSignature;
+	}
+	
+	/**
+	 * Get the length of the hash chain.
+	 * 
+	 * @return The length of the hash chain.
+	 */
+	public int getLength() {
+		return hashChain.size();
 	}
 	
 	/**
@@ -217,23 +231,57 @@ public class CryptoCreditHashChain {
 	}
 	
 	/**
-	 * Get the next {@link CryptoCredit} from the hash chain, without removing
-	 * it from the hash chain.
+	 * Get the next {@link CryptoCredit}s from the hash chain, without removing
+	 * them from the hash chain. The number of credits retrieved from the hash
+	 * chain will be equal to (or less than) the <code>credits</code> parameter.
+	 * If the size of the hash chain is less than <code>credits</code>, then the
+	 * bottom hash from the hash chain will be stored in the <code>hash</code>
+	 * parameter and the number of credits represented by the hash will be the
+	 * return value.
 	 * 
-	 * @return The next {@link CryptoCredit} hash from the hash chain.
+	 * @param credits The number of {@link CryptoCredit}s to retrieve.
+	 * @param hash The byte array where the {@link CryptoCredit} hash will be
+	 *        stored. Used only as an output parameter.
+	 * 
+	 * @return The number of credits retrieved from the hash chain.
 	 */
-	public byte[] getNextCredit() {
-		return hashChain.peek().hash;
+	public int getNextCredits(final int credits, byte[] hash) {
+		if (credits > 0)
+			if (credits <= hashChain.size()) {
+				hash = hashChain.get(credits - 1).hash;
+				return credits;
+			} else {
+				hash = hashChain.get(hashChain.size() - 1).hash;
+				return hashChain.size() - 1;
+			}
+		else {
+			hash = null;
+			return 0;
+		}
 	}
 	
 	/**
-	 * Get the next {@link CryptoCredit} from the hash chain, removing it from
-	 * the hash chain.
+	 * Remove the next <code>credits</code> {@link CryptoCredit}s from the hash
+	 * chain. The number of credits removed from the hash chain will be equal to
+	 * (or less than) the <code>credits</code> parameter. If the size of the
+	 * hash chain is less than <code>credits</code>, then the bottom hash from
+	 * the hash chain will be stored in the <code>hash</code> parameter and the
+	 * number of credits represented by the hash will be the return value.
 	 * 
-	 * @return The next {@link CryptoCredit} hash from the hash chain.
+	 * @param credits The number of {@link CryptoCredit}s to remove.
+	 * 
+	 * @return The number of credits removed from the hash chain.
 	 */
-	public byte[] spendNextCredit() {
-		return hashChain.pop().hash;
+	public int spendNextCredits(final int credits) {
+		if (credits > 0) {
+			int count = 0;
+			while (hashChain.size() > 0 && count < credits) {
+				hashChain.pop();
+				count++;
+			}
+			return count;
+		} else
+			return 0;
 	}
 	
 	/**
