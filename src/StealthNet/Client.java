@@ -62,6 +62,8 @@ import javax.swing.Timer;
 import javax.swing.UIManager;
 import javax.swing.table.DefaultTableModel;
 
+import org.apache.commons.codec.binary.Base64;
+
 import StealthNet.Security.AsymmetricEncryption;
 import StealthNet.Security.EncryptedFileException;
 import StealthNet.Security.RSAAsymmetricEncryption;
@@ -102,6 +104,7 @@ public class Client {
 	private static final boolean DEBUG_COMMANDS_SECRETLIST = Debug.isDebug("StealthNet.Client.Commands.SecretList");
 	private static final boolean DEBUG_COMMANDS_GETSECRET = Debug.isDebug("StealthNet.Client.Commands.GetSecret");
 	private static final boolean DEBUG_ASYMMETRIC_ENCRYPTION = Debug.isDebug("StealthNet.Client.AsymmetricEncryption");
+	private static final boolean DEBUG_PAYMENTS = Debug.isDebug("StealthNet.Client.Payments");
 	
 	/** The hostname of the StealthNet {@link Server}. */
 	private final String serverHostname;
@@ -162,10 +165,14 @@ public class Client {
 	/* TODO: remove. */
 	private static final int credits = 100;
 	
-	/** Default requested hash chain length. */
-	private static final int DEFAULT_HASH_CHAIN_LENGTH = 100;
+	/** The current {@link CryptoCreditHashChain} in use. */
+	private CryptoCreditHashChain hashChain = null;
 	
-	CryptoCreditHashChain cryptoCreditHashChain = new CryptoCreditHashChain(100);
+	/**
+	 * The number of credits to request from the {@link Bank} when generating a
+	 * new {@link CryptoCreditHashChain}.
+	 */
+	private static final int DEFAULT_HASHCHAIN_LENGTH = 100;
 	
 	/** Secret data. */
 	private class SecretData {
@@ -726,28 +733,50 @@ public class Client {
 			System.out.println("Sending get secret message to server. Target client should connect on '" + iAddr + ":" + ftpSocket.getLocalPort() + "'.");
 		serverComms.sendPacket(DecryptedPacket.CMD_GETSECRET, name + "@" + iAddr);
 		
+		/*
+		 * Wait for the server to respond with the payment required to purchase
+		 * the secret.
+		 */
+		if (DEBUG_PAYMENTS)
+			System.out.println("Waiting for server to respond with payment required to purchase the secret.");
 		DecryptedPacket pckt = new DecryptedPacket();
-		boolean receivedRequestPaymentOfZero = false;
-		while (!receivedRequestPaymentOfZero)
+		boolean sufficientCredit = false;
+		while (!sufficientCredit)
 			try {
 				pckt = serverComms.recvPacket();
+				
 				switch (pckt.command) {
 					case DecryptedPacket.CMD_REQUESTPAYMENT:
-						final String pcktdata = new String(pckt.data);
-						final int amountOwing = Integer.parseInt(pcktdata);
+						final String pcktData = new String(pckt.data);
+						final int amountOwing = Integer.parseInt(pcktData);
+						
 						if (amountOwing <= 0) {
-							receivedRequestPaymentOfZero = true;
+							if (DEBUG_PAYMENTS)
+								System.out.println("There is sufficient credit on the server to pay for the purchase of the secret.");
+							sufficientCredit = true;
 							break;
 						} else {
+							if (DEBUG_PAYMENTS)
+								System.out.println("The server requested a payment of " + amountOwing + " credits.");
+							
 							boolean sentPayment = false;
 							while (!sentPayment) {
-								final Stack<byte[]> payment = cryptoCreditHashChain.getHashChain();
-								final int paymentCredits = payment.size();
-								if (payment != null) {
-									serverComms.sendPacket(DecryptedPacket.CMD_PAYMENT, paymentCredits + ";" + payment.toString());
+								if (hashChain == null) {
+									if (DEBUG_PAYMENTS)
+										System.out.println("No hash chain found. Generating a new hash chain.");
+									getNewHashChain(DEFAULT_HASHCHAIN_LENGTH);
+								}
+								
+								final Stack<byte[]> payment = hashChain.getNextCredits(amountOwing);
+								if (payment != null && payment.size() > 0) {
+									if (DEBUG_PAYMENTS)
+										System.out.println("Sending a payment of " + payment.size() + " credits to the server.");
+									serverComms.sendPacket(DecryptedPacket.CMD_PAYMENT, payment.size() + ";" + Base64.encodeBase64String(payment.peek()));
 									sentPayment = true;
 								} else {
-									//Get Credits from Bank.
+									if (DEBUG_PAYMENTS)
+										System.out.println("CryptoCredit hash chain is empty. Generating a new hash chain.");
+									getNewHashChain(DEFAULT_HASHCHAIN_LENGTH);
 								}
 							}
 						}
@@ -757,39 +786,6 @@ public class Client {
 				if (DEBUG_ERROR_TRACE)
 					e.printStackTrace();
 			}
-/* @formatter:off */
-		/*
-		 * while loop to send partial payments:
-		 * 		Wait for the server to send a CMD_REQUESTPAYMENT packet.
-		 * 
-		 * 		if REQUESTEDPAYMENT == 0 then
-		 * 			break
-		 * 		else
-		 * 			boolean sent_payment = false
-		 * 			while !sent_payment:
-		 * 				Hash payment = getCreditsFromHashChain(REQUESTEDPAYMENT)
-		 * 				int paymentCredits from above
-		 * 
-		 * 				if payment != null
-		 * 					send CMD_PAYMENT to server(paymentCredits, payment)
-		 * 					sent_payment = true
-		 * 					break
-		 * 				else
-		 * 					getCreditsFromBank(100)
-		 * 
-		 * 					if our hash chain is null
-		 * 						send CMD_PAYMENT (null)
-		 * 						exit function... not enough credits for purchase
-		 * 					end if
-		 * 				end if
-		 * 			end while
-		 * end loop
-		 * 
-		 * Methods we will need in client:
-		 * 		- Hash getCreditsFromHashChain(int credits)
-		 * 		- void getCreditsFromBank(int credits)
-		 */
-/* @formatter:on */
 		
 		/* Choose where to save the secret file. */
 		final FileDialog fileSave = new FileDialog(clientFrame, "Save As...", FileDialog.SAVE);
@@ -1224,6 +1220,7 @@ public class Client {
 							data.filename = values[3];
 							secretDescriptions.put(values[0], data);
 						}
+						break;
 					}
 					
 					/***********************************************************
@@ -1418,6 +1415,22 @@ public class Client {
 				if (DEBUG_ERROR_TRACE)
 					e.printStackTrace();
 			}
+	}
+	
+	/**
+	 * TODO
+	 * 
+	 * @param credits
+	 */
+	private void getNewHashChain(final int credits) {
+		if (DEBUG_PAYMENTS)
+			System.out.println("Generating a new hash chain of size " + credits + ".");
+		
+		hashChain = new CryptoCreditHashChain(userID, credits);
+		
+		/* Get the bank to sign the hash chain. */
+		
+		/* Send the signature of the hash chain to the server. */
 	}
 }
 

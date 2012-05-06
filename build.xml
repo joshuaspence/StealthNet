@@ -306,6 +306,7 @@
                 <include name="StealthNet/Chat**" />
         		<include name="StealthNet/Client**" />
                 <include name="StealthNet/Comms**" />
+        		<include name="StealthNet/CryptoCreditHashChain**" />
         		<include name="StealthNet/Debug**" />
         		<include name="StealthNet/DecryptedPacket**" />
         		<include name="StealthNet/EncryptedFile**" />
@@ -362,6 +363,7 @@
             <fileset dir="${path.classes}">
                 <!-- NOTE: Must list the files to be included in the server JAR file here!!! -->                
                 <include name="StealthNet/Comms**" />
+            	<include name="StealthNet/CryptoCreditHashChain**" />
                 <include name="StealthNet/Debug**" />
                 <include name="StealthNet/DecryptedPacket**" />
             	<include name="StealthNet/EncryptedFile**" />

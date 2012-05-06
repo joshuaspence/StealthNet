@@ -65,6 +65,7 @@ DEBUG="\
 -Ddebug.StealthNet.Client.Commands.SecretList=true \
 -Ddebug.StealthNet.Client.Commands.GetSecret=true \
 -Ddebug.StealthNet.Client.AsymmetricEncryption=true \
+-Ddebug.StealthNet.Client.Payments=true \
 \
 -Ddebug.StealthNet.Comms=false \
 -Ddebug.StealthNet.Comms.General=true \
@@ -120,6 +121,7 @@ DEBUG="\
 -Ddebug.StealthNet.ServerThread.Commands.GetSecret=true \
 -Ddebug.StealthNet.ServerThread.Commands.GetPublicKey=true \
 -Ddebug.StealthNet.ServerThread.AsymmetricEncryption=true \
+-Ddebug.StealthNet.ServerThread.Payments=true \
 "
 DEBUG_ARG=
 ADDITIONAL_ARG=

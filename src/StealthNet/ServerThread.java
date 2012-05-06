@@ -898,24 +898,24 @@ public class ServerThread extends Thread {
 	}
 	
 	/**
-	 * Verify the supplied {@link CryptoCreditHashChain} hash and, if valid, credit the
-	 * user's account.
+	 * Verify the supplied {@link CryptoCreditHashChain} hash and, if valid,
+	 * credit the user's account.
 	 * 
 	 * @param user The user whose account should be credited.
 	 * @param creditsSent The number of credits declared by the {@link Client}.
-	 * @param cryptoCreditHash The hash of the {@link CryptoCreditHashChain} supplied by
-	 *        the {@link Client}.
+	 * @param cryptoCreditHash The hash of the {@link CryptoCreditHashChain}
+	 *        supplied by the {@link Client}.
 	 * @return True if the credits were added to the user's account, otherwise
 	 *         false.
 	 */
 	public static synchronized boolean addCredits(final UserData user, final int creditsSent, final byte[] cryptoCreditHash) {
-		if (CryptoCreditHashChain.verify(user.lastHash, creditsSent, cryptoCreditHash)) {
-			user.accountBalance += creditsSent;
-			user.lastHash = cryptoCreditHash;
-			return true;
-		}
+		//if (CryptoCreditHashChain.verify(user.lastHash, creditsSent, cryptoCreditHash)) {
+		user.accountBalance += creditsSent;
+		user.lastHash = cryptoCreditHash;
+		return true;
+		//}
 		
-		return false;
+		//return false;
 	}
 	
 	/**
@@ -1022,7 +1022,10 @@ public class ServerThread extends Thread {
 							final String data = new String(pckt.data);
 							
 							final int creditsSent = Integer.parseInt(data.split(";")[0]);
-							final byte[] cryptoCreditHash = data.split(";")[1].getBytes();
+							final byte[] cryptoCreditHash = Base64.decodeBase64(data.split(";")[1].getBytes());
+							
+							if (DEBUG_PAYMENTS)
+								System.out.println("Received payment of " + creditsSent + " credits.");
 							
 							/*
 							 * If the client sends a null cryptoCreditHash, then

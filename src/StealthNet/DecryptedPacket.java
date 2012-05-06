@@ -341,6 +341,16 @@ public class DecryptedPacket {
 				return "CMD_GETSECRET";
 			case CMD_GETPUBLICKEY:
 				return "CMD_GETPUBLICKEY";
+			case CMD_PAYMENT:
+				return "CMD_PAYMENT";
+			case CMD_REQUESTPAYMENT:
+				return "CMD_REQUESTPAYMENT";
+			case CMD_SIGNHASHCHAIN:
+				return "CMD_SIGNHASHCHAIN";
+			case CMD_GETBALANCE:
+				return "CMD_GETBALANCE";
+			case CMD_HASHCHAIN:
+				return "CMD_HASHCHAIN";
 			case CMD_AUTHENTICATIONKEY:
 				return "CMD_AUTHENTICATIONKEY";
 			case CMD_INTEGRITYKEY:

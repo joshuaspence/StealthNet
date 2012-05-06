@@ -66,9 +66,8 @@ public class CryptoCreditHashChain {
 		hashChain = generateHashChain(credits);
 		
 		/* Construct the identifying tuple that the bank will need to sign. */
-		final byte[] topOfStack = null;
-		getNextCredits(1, topOfStack);
-		bankIdentifier = generateIdentifyingTuple(username, credits, topOfStack);
+		final Stack<byte[]> topOfStack = getNextCredits(1);
+		bankIdentifier = generateIdentifyingTuple(username, credits, topOfStack.peek());
 		
 		/* Remove the top element from the hash chain. */
 		spendNextCredits(1);
@@ -240,24 +239,18 @@ public class CryptoCreditHashChain {
 	 * return value.
 	 * 
 	 * @param credits The number of {@link CryptoCredit}s to retrieve.
-	 * @param hash The byte array where the {@link CryptoCredit} hash will be
-	 *        stored. Used only as an output parameter.
 	 * 
-	 * @return The number of credits retrieved from the hash chain.
+	 * @return A stack of size <code>credits</code> (or possibly less), with the
+	 *         top element of the stack being the credit to be spent.
 	 */
-	public int getNextCredits(final int credits, byte[] hash) {
+	public Stack<byte[]> getNextCredits(final int credits) {
+		final Stack<byte[]> result = new Stack<byte[]>();
+		
 		if (credits > 0)
-			if (credits <= hashChain.size()) {
-				hash = hashChain.get(credits - 1).hash;
-				return credits;
-			} else {
-				hash = hashChain.get(hashChain.size() - 1).hash;
-				return hashChain.size() - 1;
-			}
-		else {
-			hash = null;
-			return 0;
-		}
+			for (int i = 0; i < credits && i < hashChain.size(); i++)
+				result.push(hashChain.get(i).hash);
+		
+		return result;
 	}
 	
 	/**
