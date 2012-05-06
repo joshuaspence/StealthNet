@@ -66,7 +66,7 @@ public class CryptoCreditHashChain {
 		hashChain = generateHashChain(credits);
 		
 		/* Construct the identifying tuple that the bank will need to sign. */
-		bankIdentifier = generateIdentifyingTuple(username, credits, getTopElement());
+		bankIdentifier = generateIdentifyingTuple(username, credits, getNextCredit());
 	}
 	
 	/**
@@ -148,7 +148,7 @@ public class CryptoCreditHashChain {
 	 * @return A byte array that can be used to identify the hash chain to the
 	 *         {@link Bank}.
 	 */
-	private static byte[] generateIdentifyingTuple(final String username, final int credits, final CryptoCredit topOfChain) {
+	private static byte[] generateIdentifyingTuple(final String username, final int credits, final byte[] topOfChain) {
 		final ByteArrayOutputStream byteArrayOutput = new ByteArrayOutputStream();
 		final DataOutputStream dataOutput = new DataOutputStream(byteArrayOutput);
 		byte[] identifyingTuple = null;
@@ -164,7 +164,7 @@ public class CryptoCreditHashChain {
 			dataOutput.writeInt(credits);
 			
 			/* Top of hash chain. */
-			dataOutput.write(topOfChain.hash);
+			dataOutput.write(topOfChain);
 			
 			dataOutput.flush();
 			byteArrayOutput.flush();
@@ -217,50 +217,49 @@ public class CryptoCreditHashChain {
 	}
 	
 	/**
-	 * TODO
+	 * Get the next {@link CryptoCredit} from the hash chain, without removing
+	 * it from the hash chain.
 	 * 
-	 * @return
+	 * @return The next {@link CryptoCredit} hash from the hash chain.
 	 */
-	private CryptoCredit getTopElement() {
+	public byte[] getNextCredit() {
 		return hashChain.peek().hash;
 	}
 	
 	/**
-	 * Spends a credit from the hash chain. If the chain is not empty, the top
-	 * credit is removed from the stack and the hash of the credit is returned.
-	 * If the chain is empty, the function returns null.
+	 * Get the next {@link CryptoCredit} from the hash chain, removing it from
+	 * the hash chain.
 	 * 
-	 * @return The top credit in the stack.
+	 * @return The next {@link CryptoCredit} hash from the hash chain.
 	 */
-	public byte[] spend() {
-		byte[] topCredit = null;
-		if (!hashChain.isEmpty()) {
-			topCredit = hashChain.pop();
-			cryptoCredits--;
-		}
-		return topCredit;
+	public byte[] spendNextCredit() {
+		return hashChain.pop().hash;
 	}
 	
 	/**
-	 * TODO
+	 * Verifies a {@link CryptoCredit} by checking that hashing the
+	 * <code>suppliedHash</code> <code>credits</code> times gives the
+	 * <code>lastHash</code>.
 	 * 
-	 * @param topHash
-	 * @param hash
+	 * @param hash The {@link CryptoCredit} hash corresponding to the payment.
+	 * @param credits The number of credits that the <code>suppliedHash</code>
+	 *        is claimed to be worth.
+	 * @param lastHash The last {@link CryptoCredit} that was processed.
 	 * @return
 	 */
-	public static boolean verify(final byte[] topHash, final int credits, byte[] hash) {
-		MessageDigest mdb = null;
+	public static boolean verify(byte[] hash, final int credits, final byte[] lastHash) {
+		final MessageDigest mdb;
 		try {
 			mdb = MessageDigest.getInstance(HASH_ALGORITHM);
 		} catch (final Exception e) {
-			System.err.println("Unable to verify hash chain.");
+			System.err.println("Unable to verify CryptoCredit hash.");
 			return false;
 		}
 		
 		for (int i = 1; i < credits; i++)
 			hash = mdb.digest(hash);
 		
-		if (Arrays.equals(topHash, hash))
+		if (Arrays.equals(lastHash, hash))
 			return true;
 		else
 			return false;
