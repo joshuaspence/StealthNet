@@ -39,6 +39,7 @@ import java.net.UnknownHostException;
 import java.security.KeyPair;
 import java.security.PublicKey;
 import java.util.Hashtable;
+import java.util.Stack;
 
 import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
@@ -101,81 +102,80 @@ public class Client {
 	private static final boolean DEBUG_COMMANDS_SECRETLIST = Debug.isDebug("StealthNet.Client.Commands.SecretList");
 	private static final boolean DEBUG_COMMANDS_GETSECRET = Debug.isDebug("StealthNet.Client.Commands.GetSecret");
 	private static final boolean DEBUG_ASYMMETRIC_ENCRYPTION = Debug.isDebug("StealthNet.Client.AsymmetricEncryption");
-	
+
 	/** The hostname of the StealthNet {@link Server}. */
 	private final String serverHostname;
-	
+
 	/** The port number of the StealthNet {@link Server}. */
 	private final int serverPort;
-	
+
 	/** The location of the server's {@link PublicKey} file. */
 	private static final String SERVER_PUBLIC_KEY_FILE = "keys/server/public.key";
-	
+
 	/** The hostname of the StealthNet {@link Bank}. */
 	private final String bankHostname;
-	
+
 	/** The port number of the StealthNet {@link Bank}. */
 	private final int bankPort;
-	
+
 	/** The location of the bank's {@link PublicKey} file. */
 	private static final String BANK_PUBLIC_KEY_FILE = "keys/bank/public.key";
-	
+
 	/** The main frame for this client. */
 	private static JFrame clientFrame;
-	
+
 	/** A text box used to display messages to the user. */
 	private JTextArea msgTextBox;
-	
+
 	/** A button to log into StealthNet. */
 	private JButton loginBtn;
-	
+
 	/** To communicate with the StealthNet {@link Server}. */
 	private Comms serverComms = null;
-	
+
 	/** To communicate with the StealthNet {@link Bank}. */
 	private Comms bankComms = null;
-	
+
 	/** Public-private {@link KeyPair} to identify this client. */
 	private KeyPair clientKeys;
-	
+
 	/** A {@link Timer} to periodically process incoming packets. */
 	private final Timer stealthTimer;
-	
+
 	/** The ID of this (client) user. */
 	private String userID = null;
-	
+
 	/* Buddy list. */
 	private JTable buddyTable = null;
 	private DefaultTableModel buddyListData = null;
-	
+
 	/** List of secrets. */
 	private DefaultTableModel secretListData = null;
-	
+
 	/** Graphical representation of the secret list. */
 	private JTable secretTable = null;
-	
+
 	/** Field to show the remaining number of credits. */
 	JTextField creditsBox;
-	
+
 	/** Number of credits. */
 	/* TODO: remove. */
 	private static final int credits = 100;
-	
+
 	/** Default requested hash chain length. */
 	private static final int DEFAULT_HASH_CHAIN_LENGTH = 100;
-	
-	// private CryptoCredit myCredits;
-	// The number of credits he has = CryptoCredit.size()
-	
+
+	CryptoCreditHashChain cryptoCreditHashChain = new CryptoCreditHashChain(100);
+
 	/** Secret data. */
 	private class SecretData {
 		String description = null;
 		String filename = null;
 	}
-	
+
 	/** A list of secret data, indexed by secret name. */
 	static private Hashtable<String, SecretData> secretDescriptions = new Hashtable<String, SecretData>();
-	
+
 	/** Constructor. */
 	public Client() {
 		/* Create a timer to process packets every 100ms. */
@@ -185,14 +185,14 @@ public class Client {
 				processPackets();
 			}
 		});
-		
+
 		serverHostname = Comms.DEFAULT_SERVERNAME;
 		serverPort = Comms.DEFAULT_SERVERPORT;
-		
+
 		bankHostname = Comms.DEFAULT_BANKNAME;
 		bankPort = Comms.DEFAULT_BANKPORT;
 	}
-	
+
 	/**
 	 * Constructor.
 	 * 
@@ -211,14 +211,14 @@ public class Client {
 				processPackets();
 			}
 		});
-		
+
 		serverHostname = server;
 		this.serverPort = serverPort;
-		
+
 		bankHostname = bank;
 		this.bankPort = bankPort;
 	}
-	
+
 	/**
 	 * Create the GUI for the client instance.
 	 * 
@@ -226,11 +226,11 @@ public class Client {
 	 */
 	public Component createGUI() {
 		final JPanel pane = new JPanel();
-		
+
 		/* Create user list. */
 		buddyListData = new DefaultTableModel() {
 			private static final long serialVersionUID = 1L;
-			
+
 			@Override
 			public boolean isCellEditable(final int row, final int col) {
 				return false;
@@ -241,40 +241,40 @@ public class Client {
 		buddyTable = new JTable(buddyListData);
 		buddyTable.setPreferredScrollableViewportSize(new Dimension(200, 100));
 		buddyTable.getColumnModel().getColumn(0).setPreferredWidth(180);
-		
+
 		final JScrollPane buddyScrollPane = new JScrollPane(buddyTable);
 		buddyScrollPane.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createCompoundBorder(BorderFactory.createTitledBorder("User List"), BorderFactory.createEmptyBorder(0, 0, 0, 0)), buddyScrollPane.getBorder()));
-		
+
 		/* Add mouse listen for popup windows. Act on JTable row right-click. */
 		MouseListener ml = new MouseAdapter() {
 			private JPopupMenu popup;
 			private int row;
-			
+
 			@Override
 			public void mousePressed(final MouseEvent e) {
 				if (SwingUtilities.isRightMouseButton(e))
 					mouseReleased(e);
 			}
-			
+
 			@Override
 			public void mouseClicked(final MouseEvent e) {
 				if (SwingUtilities.isRightMouseButton(e))
 					mouseReleased(e);
 			}
-			
+
 			@Override
 			public void mouseReleased(final MouseEvent e) {
 				if (e.isShiftDown() || e.isControlDown() || e.isAltDown())
 					return;
-				
+
 				if (e.isPopupTrigger()) {
 					JMenuItem item;
-					
+
 					row = buddyTable.rowAtPoint(e.getPoint());
-					
+
 					popup = new JPopupMenu("Action");
 					popup.setLabel("Action");
-					
+
 					item = new JMenuItem("Chat");
 					item.addActionListener(new ActionListener() {
 						@Override
@@ -283,7 +283,7 @@ public class Client {
 						}
 					});
 					popup.add(item);
-					
+
 					item = new JMenuItem("Send File");
 					item.addActionListener(new ActionListener() {
 						@Override
@@ -292,17 +292,17 @@ public class Client {
 						}
 					});
 					popup.add(item);
-					
+
 					popup.show(e.getComponent(), e.getX(), e.getY());
 				}
 			}
 		};
 		buddyTable.addMouseListener(ml);
-		
+
 		/* Create secret window. */
 		secretListData = new DefaultTableModel() {
 			private static final long serialVersionUID = 1L;
-			
+
 			@Override
 			public boolean isCellEditable(final int row, final int col) {
 				return false;
@@ -310,40 +310,40 @@ public class Client {
 		};
 		secretListData.addColumn("Secret");
 		secretListData.addColumn("Cost");
-		
+
 		secretTable = new JTable(secretListData);
 		secretTable.setPreferredScrollableViewportSize(new Dimension(200, 100));
 		secretTable.getColumnModel().getColumn(0).setPreferredWidth(180);
-		
+
 		ml = new MouseAdapter() {
 			private JPopupMenu popup;
 			private int row;
-			
+
 			@Override
 			public void mousePressed(final MouseEvent e) {
 				if (SwingUtilities.isRightMouseButton(e))
 					mouseReleased(e);
 			}
-			
+
 			@Override
 			public void mouseClicked(final MouseEvent e) {
 				if (SwingUtilities.isRightMouseButton(e))
 					mouseReleased(e);
 			}
-			
+
 			@Override
 			public void mouseReleased(final MouseEvent e) {
 				if (e.isShiftDown() || e.isControlDown() || e.isAltDown())
 					return;
-				
+
 				if (e.isPopupTrigger()) {
 					JMenuItem item;
-					
+
 					row = buddyTable.rowAtPoint(e.getPoint());
-					
+
 					popup = new JPopupMenu("Action");
 					popup.setLabel("Action");
-					
+
 					item = new JMenuItem("Details");
 					item.addActionListener(new ActionListener() {
 						@Override
@@ -352,7 +352,7 @@ public class Client {
 						}
 					});
 					popup.add(item);
-					
+
 					item = new JMenuItem("Purchase");
 					item.addActionListener(new ActionListener() {
 						@Override
@@ -361,16 +361,16 @@ public class Client {
 						}
 					});
 					popup.add(item);
-					
+
 					popup.show(e.getComponent(), e.getX(), e.getY());
 				}
 			}
 		};
 		secretTable.addMouseListener(ml);
-		
+
 		final JScrollPane secretScrollPane = new JScrollPane(secretTable);
 		secretScrollPane.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createCompoundBorder(BorderFactory.createTitledBorder("Secrets List"), BorderFactory.createEmptyBorder(0, 0, 0, 0)), secretScrollPane.getBorder()));
-		
+
 		/* Create instant message window. */
 		msgTextBox = new JTextArea("Authentication required.\n");
 		msgTextBox.setLineWrap(true);
@@ -380,15 +380,15 @@ public class Client {
 		msgScrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
 		msgScrollPane.setPreferredSize(new Dimension(200, 100));
 		msgScrollPane.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createCompoundBorder(BorderFactory.createTitledBorder("Console"), BorderFactory.createEmptyBorder(0, 0, 0, 0)), msgScrollPane.getBorder()));
-		
+
 		/** Create split pane for buddy list and messages. */
 		final JSplitPane splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, buddyScrollPane, secretScrollPane);
 		splitPane.setOneTouchExpandable(true);
 		splitPane.setDividerLocation(150);
-		
+
 		final JSplitPane topPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, splitPane, msgScrollPane);
 		topPane.setOneTouchExpandable(true);
-		
+
 		/* Credits display. */
 		final JPanel creditsPane = new JPanel();
 		creditsPane.setLayout(new GridLayout(1, 0));
@@ -398,7 +398,7 @@ public class Client {
 		creditsBox = new JTextField(new Integer(credits).toString());
 		creditsBox.setEditable(false);
 		creditsPane.add(creditsBox);
-		
+
 		/* Create buttons (login, send message, chat, ftp) */
 		loginBtn = new JButton(new ImageIcon(this.getClass().getClassLoader().getResource("img/login.gif")));
 		loginBtn.setVerticalTextPosition(SwingConstants.BOTTOM);
@@ -414,7 +414,7 @@ public class Client {
 					logout();
 			}
 		});
-		
+
 		final JButton msgBtn = new JButton(new ImageIcon(this.getClass().getClassLoader().getResource("img/msg.gif")));
 		msgBtn.setVerticalTextPosition(SwingConstants.BOTTOM);
 		msgBtn.setHorizontalTextPosition(SwingConstants.CENTER);
@@ -426,28 +426,28 @@ public class Client {
 				createSecret();
 			}
 		});
-		
+
 		final JPanel btnPane = new JPanel();
 		btnPane.setLayout(new GridLayout(1, 0));
 		btnPane.setPreferredSize(new Dimension(180, 40));
 		btnPane.setBorder(BorderFactory.createEmptyBorder(10, 0, 0, 0));
 		btnPane.add(loginBtn);
 		btnPane.add(msgBtn);
-		
+
 		final JPanel bottomPane = new JPanel();
 		bottomPane.setLayout(new BorderLayout());
 		bottomPane.add(creditsPane, BorderLayout.NORTH);
 		bottomPane.add(btnPane, BorderLayout.SOUTH);
-		
+
 		/* Create top-level panel and add components. */
 		pane.setBorder(BorderFactory.createEmptyBorder(10, 10, 5, 10));
 		pane.setLayout(new BorderLayout());
 		pane.add(topPane, BorderLayout.NORTH);
 		pane.add(bottomPane, BorderLayout.SOUTH);
-		
+
 		return pane;
 	}
-	
+
 	/**
 	 * Login to StealthNet. This will establish {@link Comms} to the StealthNet
 	 * {@link Server} and to the StealthNet {@link Bank}. The communications
@@ -459,32 +459,32 @@ public class Client {
 	private synchronized void login() {
 		if (DEBUG_GENERAL)
 			System.out.println("Logging in to StealthNet.");
-		
+
 		if (serverComms != null && bankComms != null) {
 			System.err.println("Already logged in!");
 			msgTextBox.append("[*ERR*] Already logged in.\n");
 			return;
 		}
-		
+
 		try {
 			AsymmetricEncryption serverEncryption = null;
 			AsymmetricEncryption bankEncryption = null;
-			
+
 			/* Get the user ID. */
 			userID = JOptionPane.showInputDialog("Login:", userID);
 			if (userID == null)
 				return;
-			
+
 			final String publicKeyPath = "keys/clients/" + userID + "/public.key";
 			final String privateKeyPath = "keys/clients/" + userID + "/private.key";
-			
+
 			do {
 				/* Get the password for the private key. */
 				String password = null;
 				password = JOptionPane.showInputDialog("Password:", password);
 				if (password == null)
 					return;
-				
+
 				try {
 					clientKeys = Utility.getPublicPrivateKeys(publicKeyPath, privateKeyPath, password);
 					serverEncryption = new RSAAsymmetricEncryption(clientKeys);
@@ -499,14 +499,14 @@ public class Client {
 					System.exit(1);
 				}
 			} while (clientKeys == null);
-			
+
 			if (DEBUG_ASYMMETRIC_ENCRYPTION) {
 				final String publicKeyString = Utility.getHexValue(clientKeys.getPublic().getEncoded());
 				final String privateKeyString = Utility.getHexValue(clientKeys.getPrivate().getEncoded());
 				System.out.println("Public key: " + publicKeyString);
 				System.out.println("Private key: " + privateKeyString);
 			}
-			
+
 			/*
 			 * Set up asymmetric encryption. Get server public key from JAR
 			 * file.
@@ -517,7 +517,7 @@ public class Client {
 					System.err.println("Unable to determine server public key.");
 					System.exit(1);
 				}
-				
+
 				serverEncryption.setPeerPublicKey(serverPublicKey);
 			} catch (final Exception e) {
 				System.err.println("Unable to set peer public key.");
@@ -525,7 +525,7 @@ public class Client {
 					e.printStackTrace();
 				System.exit(1);
 			}
-			
+
 			/*
 			 * Set up asymmetric encryption. Get bank public key from JAR file.
 			 */
@@ -535,7 +535,7 @@ public class Client {
 					System.err.println("Unable to determine bank public key.");
 					System.exit(1);
 				}
-				
+
 				bankEncryption.setPeerPublicKey(bankPublicKey);
 			} catch (final Exception e) {
 				System.err.println("Unable to set peer public key.");
@@ -543,31 +543,31 @@ public class Client {
 					e.printStackTrace();
 				System.exit(1);
 			}
-			
+
 			/* Initiate a connection with the StealthNet server. */
 			/* TODO: Probably want a timeout on this. */
 			if (DEBUG_GENERAL)
 				System.out.println("Initiating a connection with StealthNet server '" + serverHostname + "' on port " + serverPort + ".");
 			serverComms = new Comms(serverEncryption);
 			serverComms.initiateSession(new Socket(serverHostname, serverPort));
-			
+
 			/* Initiate a connection with the StealthNet bank. */
 			/* TODO: Probably want a timeout on this. */
 			if (DEBUG_GENERAL)
 				System.out.println("Initiating a connection with StealthNet bank '" + bankHostname + "' on port " + bankPort + ".");
 			bankComms = new Comms(bankEncryption);
 			bankComms.initiateSession(new Socket(bankHostname, bankPort));
-			
+
 			/** Send the server a login command. */
 			if (DEBUG_GENERAL)
 				System.out.println("Sending the server a login packet for user \"" + userID + "\".");
 			serverComms.sendPacket(DecryptedPacket.CMD_LOGIN, userID);
-			
+
 			/* Send the bank a login command. */
 			if (DEBUG_GENERAL)
 				System.out.println("Sending the bank a login packet for user \"" + userID + "\".");
 			bankComms.sendPacket(DecryptedPacket.CMD_LOGIN, userID);
-			
+
 			/* Start periodically checking for packets. */
 			stealthTimer.start();
 		} catch (final UnknownHostException e) {
@@ -583,21 +583,21 @@ public class Client {
 				e.printStackTrace();
 			return;
 		}
-		
+
 		/* NOTE: We should now be connected to the StealthNet server. */
-		
+
 		msgTextBox.append("Connected to StealthNet.\n");
 		if (DEBUG_GENERAL)
 			System.out.println("Connected to StealthNet.");
-		
+
 		/* Set the frame title. */
 		clientFrame.setTitle("stealthnet [" + userID + "]");
-		
+
 		/* Change the login button to a logout button. */
 		loginBtn.setIcon(new ImageIcon(this.getClass().getClassLoader().getResource("img/logout.gif")));
 		loginBtn.setToolTipText("Logout");
 	}
-	
+
 	/**
 	 * Logout of StealthNet. This will send a <code>CMD_LOGOUT</code> packet to
 	 * both the StealthNet {@link Server} and the StealthNet {@link Bank}.
@@ -605,56 +605,56 @@ public class Client {
 	private synchronized void logout() {
 		if (DEBUG_GENERAL)
 			System.out.println("Logging out of StealthNet.");
-		
+
 		if (serverComms != null) {
 			/* Stop periodically checking for packets. */
 			stealthTimer.stop();
-			
+
 			/* Send the server and bank a logout command. */
 			serverComms.sendPacket(DecryptedPacket.CMD_LOGOUT);
 			bankComms.sendPacket(DecryptedPacket.CMD_LOGOUT);
-			
+
 			/* Terminate session. */
 			serverComms.terminateSession();
 			bankComms.terminateSession();
 			serverComms = null;
 			bankComms = null;
-			
+
 			/* Change the logout button back to a login button. */
 			loginBtn.setIcon(new ImageIcon(this.getClass().getClassLoader().getResource("img/login.gif")));
 			loginBtn.setToolTipText("Login");
-			
+
 			/* Hide user and secret list. */
 			buddyListData.setRowCount(0);
 			secretListData.setRowCount(0);
-			
+
 			msgTextBox.append("Disconnected.\n");
 			if (DEBUG_GENERAL)
 				System.out.println("Disconnected.");
 		}
 	}
-	
+
 	/** Create a secret on the {@link Server}. */
 	private void createSecret() {
 		if (DEBUG_GENERAL)
 			System.out.println("Creating secret.");
-		
+
 		if (serverComms == null)
 			msgTextBox.append("[*ERR*] Not logged in.\n");
 		else {
 			String name = "", description = "", cost = "";
-			
+
 			/* Prompt the user for the secret name, description and cost. */
 			name = JOptionPane.showInputDialog("Secret Name:", name);
 			description = JOptionPane.showInputDialog("Secret Description:", description);
 			cost = JOptionPane.showInputDialog("Secret Cost (credits):", cost);
-			
+
 			/* Prompt the user for the secret file. */
 			final FileDialog fileOpen = new FileDialog(clientFrame, "Select Secret File....", FileDialog.LOAD);
 			fileOpen.setVisible(true);
 			if (fileOpen.getFile().length() == 0)
 				return;
-			
+
 			final String userMsg = name + ";" + description + ";" + cost + ";" + fileOpen.getDirectory() + ";" + fileOpen.getFile();
 			if (userMsg != null) {
 				/* Create the secret on the server. */
@@ -664,7 +664,7 @@ public class Client {
 			}
 		}
 	}
-	
+
 	/**
 	 * Display details of a secret.
 	 * 
@@ -676,7 +676,7 @@ public class Client {
 		if (data != null)
 			JOptionPane.showMessageDialog(null, data.description, "Details of Secret: " + name, JOptionPane.PLAIN_MESSAGE);
 	}
-	
+
 	/**
 	 * Purchase the details of a secret.
 	 * 
@@ -685,13 +685,13 @@ public class Client {
 	private void purchaseSecret(final int row) {
 		final String name = (String) secretTable.getValueAt(row, 0);
 		final SecretData data = secretDescriptions.get(name);
-		
+
 		if (DEBUG_GENERAL)
 			System.out.println("Attempting to purchase secret \"" + name + "\".");
-		
+
 		if (data == null)
 			return;
-		
+
 		/* Set up socket on a free port for file transfer of the secret file. */
 		ServerSocket ftpSocket = null;
 		try {
@@ -703,10 +703,10 @@ public class Client {
 				e.printStackTrace();
 			return;
 		}
-		
+
 		if (DEBUG_GENERAL)
 			System.out.println("Set up socket on port " + ftpSocket.getLocalPort() + " for transfer of secret file \"" + name + "\".");
-		
+
 		/* Discover our own IP address. */
 		String iAddr;
 		try {
@@ -717,7 +717,7 @@ public class Client {
 			iAddr = "localhost";
 		}
 		iAddr += ":" + Integer.toString(ftpSocket.getLocalPort());
-		
+
 		/*
 		 * Send the server the name of the secret and the IP address and port
 		 * number for the file transfer.
@@ -725,7 +725,48 @@ public class Client {
 		if (DEBUG_GENERAL)
 			System.out.println("Sending get secret message to server. Target client should connect on '" + iAddr + ":" + ftpSocket.getLocalPort() + "'.");
 		serverComms.sendPacket(DecryptedPacket.CMD_GETSECRET, name + "@" + iAddr);
-		
+
+		DecryptedPacket pckt = new DecryptedPacket();
+		boolean receivedRequestPaymentOfZero = false;
+		while (!receivedRequestPaymentOfZero)
+			try	{
+				pckt = serverComms.recvPacket();
+				switch (pckt.command)
+				{
+				case DecryptedPacket.CMD_REQUESTPAYMENT:
+					final String pcktdata = new String(pckt.data);
+					final int amountOwing = Integer.parseInt(pcktdata);
+					if (amountOwing <= 0)
+					{
+						receivedRequestPaymentOfZero = true;
+						break;
+					}
+					else
+					{
+						boolean sentPayment = false;
+						while (!sentPayment)
+						{
+							final Stack<byte[]> payment = cryptoCreditHashChain.getHashChain();
+							final int paymentCredits = payment.size();
+							if (payment != null)
+							{
+								serverComms.sendPacket(DecryptedPacket.CMD_PAYMENT, paymentCredits + ";" + payment.toString());
+								sentPayment = true;
+							}
+							else
+							{
+								//Get Credits from Bank.
+							}
+						}
+					}
+				}
+			}
+		catch (final Exception e)
+		{
+			System.err.println("Error reading packet. Discarding...");
+			if (DEBUG_ERROR_TRACE)
+				e.printStackTrace();
+		}
 		/* @formatter:off */
 		/*
 		 * while loop to send partial payments:
@@ -759,33 +800,33 @@ public class Client {
 		 * 		- void getCreditsFromBank(int credits)
 		 */
 		/* @formatter:on */
-		
+
 		/* Choose where to save the secret file. */
 		final FileDialog fileSave = new FileDialog(clientFrame, "Save As...", FileDialog.SAVE);
 		fileSave.setFile(data.filename);
 		fileSave.setVisible(true);
-		
+
 		if (DEBUG_GENERAL)
 			System.out.println("Will save secret file \"" + name + "\" to \"" + fileSave.getDirectory() + fileSave.getFile() + "\".");
-		
+
 		/*
 		 * Note that we don't yet have the public key of the owner of the
 		 * secret. They will, however, have our public key and so can send us
 		 * their public key in encrypted form.
 		 */
-		
+
 		if (fileSave.getFile() != null && fileSave.getFile().length() > 0)
 			/* Wait for user to connect, then start file transfer. */
 			try {
 				if (DEBUG_GENERAL)
 					System.out.println("Waiting for target client to connect for file transfer.");
-				
+
 				/* Set a 2 second timeout on the socket. */
 				ftpSocket.setSoTimeout(2000);
 				final Comms snComms = new Comms(new RSAAsymmetricEncryption(clientKeys), true);
 				final Socket conn = ftpSocket.accept();
 				snComms.acceptSession(conn);
-				
+
 				if (DEBUG_GENERAL)
 					System.out.println("Accepted connection from '" + conn.getInetAddress() + ":" + conn.getPort() + "' for transfer of secret.");
 				final FileTransfer ft = new FileTransfer(snComms, fileSave.getDirectory() + fileSave.getFile(), false);
@@ -797,7 +838,7 @@ public class Client {
 					e.printStackTrace();
 			}
 	}
-	
+
 	/**
 	 * Check if we are able to send a message to a specified user.
 	 * 
@@ -808,23 +849,23 @@ public class Client {
 	private boolean isOKtoSendtoRow(final int row) {
 		final String myid = (String) buddyTable.getValueAt(row, 0);
 		final String mystatus = (String) buddyTable.getValueAt(row, 1);
-		
+
 		if (myid.equals(userID)) {
 			System.err.println("Can't send to self.");
 			msgTextBox.append("[*ERR*] Can't send to self.\n");
 			return false;
 		}
-		
+
 		/* Check if the user is logged in. */
 		if (mystatus.equals("false")) {
 			System.err.println("User \"" + myid + "\" is not online.");
 			msgTextBox.append("[*ERR*] User is not online.\n");
 			return false;
 		}
-		
+
 		return true;
 	}
-	
+
 	/**
 	 * Start a chat session with the selected user.
 	 * 
@@ -833,10 +874,10 @@ public class Client {
 	private void startChat(final int row) {
 		if (!isOKtoSendtoRow(row))
 			return;
-		
+
 		/* Get the ID of the target user. */
 		final String myid = buddyTable.getValueAt(row, 0).toString().trim();
-		
+
 		/* Set up socket on a free port for the chat session. */
 		ServerSocket chatSocket = null;
 		try {
@@ -848,10 +889,10 @@ public class Client {
 				e.printStackTrace();
 			return;
 		}
-		
+
 		if (DEBUG_GENERAL)
 			System.out.println("Set up socket on port " + chatSocket.getLocalPort() + " for chat session with \"" + myid + "\".");
-		
+
 		/*
 		 * Send message to server with target user and listening address and
 		 * port for the chat session.
@@ -865,26 +906,26 @@ public class Client {
 			iAddr = "localhost";
 		}
 		iAddr += ":" + Integer.toString(chatSocket.getLocalPort());
-		
+
 		/* Get the public key of the other client. */
 		final PublicKey peer = getPublicKey(myid);
 		if (peer == null) {
 			System.err.println("Unable to determine peer public key.");
 			return;
 		}
-		
+
 		if (DEBUG_GENERAL)
 			System.out.println("Sending chat message to server. Target client should connect on '" + iAddr + ":" + chatSocket.getLocalPort() + "'.");
 		serverComms.sendPacket(DecryptedPacket.CMD_CHAT, myid + "@" + iAddr);
-		
+
 		/* Wait for user to connect and open chat window. */
 		try {
 			if (DEBUG_GENERAL)
 				System.out.println("Waiting for target client to connect for chat session.");
-			
+
 			/* Set 2 second timeout on socket. */
 			chatSocket.setSoTimeout(2000);
-			
+
 			/*
 			 * Create communications to the peer. Note that the peer will have
 			 * our public key, and hence can encrypt the communications using
@@ -893,7 +934,7 @@ public class Client {
 			final Comms snComms = new Comms(new RSAAsymmetricEncryption(clientKeys, peer), true);
 			final Socket conn = chatSocket.accept();
 			snComms.acceptSession(conn);
-			
+
 			if (DEBUG_GENERAL)
 				System.out.println("Accepted connection from '" + conn.getInetAddress() + ":" + conn.getPort() + "' for chat session.");
 			final Chat chat = new Chat(userID, snComms);
@@ -905,7 +946,7 @@ public class Client {
 				e.printStackTrace();
 		}
 	}
-	
+
 	/**
 	 * Send a file to the selected user.
 	 * 
@@ -914,23 +955,23 @@ public class Client {
 	private void sendFile(final int row) {
 		if (!isOKtoSendtoRow(row))
 			return;
-		
+
 		/* Get the user ID. */
 		final String myid = (String) buddyTable.getValueAt(row, 0);
-		
+
 		/* Get the public key of the other client. */
 		final PublicKey peer = getPublicKey(myid);
 		if (peer == null) {
 			System.err.println("Unable to determine peer public key.");
 			return;
 		}
-		
+
 		/* Select the file to send. */
 		final FileDialog fileOpen = new FileDialog(clientFrame, "Open...", FileDialog.LOAD);
 		fileOpen.setVisible(true);
 		if (fileOpen.getFile().length() == 0)
 			return;
-		
+
 		/* Set up socket on a free port. */
 		ServerSocket ftpSocket = null;
 		try {
@@ -942,10 +983,10 @@ public class Client {
 				e.printStackTrace();
 			return;
 		}
-		
+
 		if (DEBUG_GENERAL)
 			System.out.println("Set up socket on port " + ftpSocket.getLocalPort() + " for transfer of file \"" + fileOpen.getFile() + "\" to \"" + myid + "\".");
-		
+
 		/*
 		 * Send message to server with target user and listening address and
 		 * port for file transfer.
@@ -959,19 +1000,19 @@ public class Client {
 			iAddr = "localhost";
 		}
 		iAddr += ":" + Integer.toString(ftpSocket.getLocalPort());
-		
+
 		if (DEBUG_GENERAL)
 			System.out.println("Sending FTP message to server. Target client should connect on '" + iAddr + ":" + ftpSocket.getLocalPort() + "'.");
 		serverComms.sendPacket(DecryptedPacket.CMD_FTP, myid + "@" + iAddr + "#" + fileOpen.getFile());
-		
+
 		/* Wait for user to connect, then start file transfer. */
 		try {
 			if (DEBUG_GENERAL)
 				System.out.println("Waiting for target client to connect for file transfer.");
-			
+
 			/* Set 2 second timeout on socket. */
 			ftpSocket.setSoTimeout(2000);
-			
+
 			/*
 			 * Create communications to the peer. Note that the peer will have
 			 * our public key, and hence can encrypt the communications using
@@ -980,7 +1021,7 @@ public class Client {
 			final Comms snComms = new Comms(new RSAAsymmetricEncryption(clientKeys, peer), true);
 			final Socket conn = ftpSocket.accept();
 			snComms.acceptSession(conn);
-			
+
 			if (DEBUG_GENERAL)
 				System.out.println("Accepted connection from '" + conn.getInetAddress() + ":" + conn.getPort() + "' for FTP transfer.");
 			final FileTransfer ft = new FileTransfer(snComms, fileOpen.getDirectory() + fileOpen.getFile(), true);
@@ -992,12 +1033,12 @@ public class Client {
 				e.printStackTrace();
 		}
 	}
-	
+
 	/** Process incoming packets. */
 	private void processPackets() {
 		/* Update credits box, stick it here for convenience. */
 		creditsBox.setText(new Integer(credits).toString());
-		
+
 		try {
 			if (serverComms == null || !serverComms.recvReady())
 				return;
@@ -1008,235 +1049,235 @@ public class Client {
 				e.printStackTrace();
 			return;
 		}
-		
+
 		DecryptedPacket pckt = new DecryptedPacket();
-		
+
 		/* No need to process packets while we are already processing packets. */
 		stealthTimer.stop();
-		
+
 		try {
 			/* Check for packets from the server. */
 			while (serverComms.recvReady()) {
 				pckt = serverComms.recvPacket();
-				
+
 				if (pckt == null)
 					break;
-				
+
 				if (DEBUG_GENERAL)
 					System.out.println("Received packet. Packet command: " + DecryptedPacket.getCommandName(pckt.command) + ". Packet data: \"" + new String(pckt.data).replaceAll("\n", ";") + "\".");
-				
+
 				switch (pckt.command) {
-/* @formatter:off */
-					/***********************************************************
-					 * Message command
-					 **********************************************************/
-/* @formatter:on */
-					case DecryptedPacket.CMD_MSG: {
-						final String msg = new String(pckt.data);
-						if (DEBUG_COMMANDS_MSG)
-							System.out.println("Received a message command. Message: \"" + msg + "\".");
-						msgTextBox.append(msg + "\n");
-						break;
+				/* @formatter:off */
+				/***********************************************************
+				 * Message command
+				 **********************************************************/
+				/* @formatter:on */
+				case DecryptedPacket.CMD_MSG: {
+					final String msg = new String(pckt.data);
+					if (DEBUG_COMMANDS_MSG)
+						System.out.println("Received a message command. Message: \"" + msg + "\".");
+					msgTextBox.append(msg + "\n");
+					break;
+				}
+
+				/***********************************************************
+				 * Chat command
+				 **********************************************************/
+				case DecryptedPacket.CMD_CHAT: {
+					/*
+					 * NOTE: Data will be of the form "user@host:port".
+					 */
+					final String data = new String(pckt.data);
+
+					final String iAddr = data.split("@")[1].split(":")[0];
+					final int iPort = Integer.parseInt(data.split("@")[1].split(":")[1]);
+
+					/* Get the peer public key. */
+					final String sourceUser = data.split("@")[0];
+
+					/* Get the public key of the other client. */
+					final PublicKey peer = getPublicKey(sourceUser);
+					if (peer == null) {
+						System.err.println("Unable to determine peer public key.");
+						return;
 					}
-					
-					/***********************************************************
-					 * Chat command
-					 **********************************************************/
-					case DecryptedPacket.CMD_CHAT: {
-						/*
-						 * NOTE: Data will be of the form "user@host:port".
-						 */
-						final String data = new String(pckt.data);
-						
-						final String iAddr = data.split("@")[1].split(":")[0];
-						final int iPort = Integer.parseInt(data.split("@")[1].split(":")[1]);
-						
-						/* Get the peer public key. */
-						final String sourceUser = data.split("@")[0];
-						
-						/* Get the public key of the other client. */
-						final PublicKey peer = getPublicKey(sourceUser);
-						if (peer == null) {
-							System.err.println("Unable to determine peer public key.");
-							return;
-						}
-						
-						if (DEBUG_COMMANDS_CHAT)
-							System.out.println("Received a chat command. Target host: '" + iAddr + ":" + iPort + "'.");
-						
-						/*
-						 * Create communications to the peer. Note that the peer
-						 * will have our public key, and hence can encrypt the
-						 * communications using asymmetric encryption
-						 * immediately.
-						 */
-						final Comms snComms = new Comms(new RSAAsymmetricEncryption(clientKeys, peer), true);
-						snComms.initiateSession(new Socket(iAddr, iPort));
-						if (DEBUG_GENERAL)
-							System.out.println("Opened a communications session with '" + iAddr + "'.");
-						
-						final Chat chat = new Chat(userID, snComms);
-						chat.start();
-						if (DEBUG_GENERAL)
-							System.out.println("Started a chat session with '" + iAddr + "'.");
-						break;
+
+					if (DEBUG_COMMANDS_CHAT)
+						System.out.println("Received a chat command. Target host: '" + iAddr + ":" + iPort + "'.");
+
+					/*
+					 * Create communications to the peer. Note that the peer
+					 * will have our public key, and hence can encrypt the
+					 * communications using asymmetric encryption
+					 * immediately.
+					 */
+					final Comms snComms = new Comms(new RSAAsymmetricEncryption(clientKeys, peer), true);
+					snComms.initiateSession(new Socket(iAddr, iPort));
+					if (DEBUG_GENERAL)
+						System.out.println("Opened a communications session with '" + iAddr + "'.");
+
+					final Chat chat = new Chat(userID, snComms);
+					chat.start();
+					if (DEBUG_GENERAL)
+						System.out.println("Started a chat session with '" + iAddr + "'.");
+					break;
+				}
+
+				/***********************************************************
+				 * FTP command
+				 **********************************************************/
+				case DecryptedPacket.CMD_FTP: {
+					/*
+					 * NOTE: Data will be of the form
+					 * "user@host:port#filename".
+					 */
+					final String data = new String(pckt.data);
+					final String fName = data.split("@")[1].split("#")[1];
+					final String iAddr = data.split("@")[1].split("#")[0].split(":")[0];
+					final int iPort = Integer.parseInt(data.split("@")[1].split("#")[0].split(":")[1]);
+
+					/* Get the peer public key. */
+					final String sourceUser = data.split("@")[0];
+
+					/* Get the public key of the other client. */
+					final PublicKey peer = getPublicKey(sourceUser);
+					if (peer == null) {
+						System.err.println("Unable to determine peer public key.");
+						return;
 					}
-					
-					/***********************************************************
-					 * FTP command
-					 **********************************************************/
-					case DecryptedPacket.CMD_FTP: {
-						/*
-						 * NOTE: Data will be of the form
-						 * "user@host:port#filename".
-						 */
-						final String data = new String(pckt.data);
-						final String fName = data.split("@")[1].split("#")[1];
-						final String iAddr = data.split("@")[1].split("#")[0].split(":")[0];
-						final int iPort = Integer.parseInt(data.split("@")[1].split("#")[0].split(":")[1]);
-						
-						/* Get the peer public key. */
-						final String sourceUser = data.split("@")[0];
-						
-						/* Get the public key of the other client. */
-						final PublicKey peer = getPublicKey(sourceUser);
-						if (peer == null) {
-							System.err.println("Unable to determine peer public key.");
-							return;
-						}
-						
-						if (DEBUG_COMMANDS_FTP)
-							System.out.println("Received a file transfer command. Target host: '" + iAddr + ":" + iPort + "'.");
-						
-						/*
-						 * Create communications to the peer. Note that the peer
-						 * will have our public key, and hence can encrypt the
-						 * communications using asymmetric encryption
-						 * immediately.
-						 */
-						final Comms snComms = new Comms(new RSAAsymmetricEncryption(clientKeys, peer), true);
-						snComms.initiateSession(new Socket(iAddr, iPort));
+
+					if (DEBUG_COMMANDS_FTP)
+						System.out.println("Received a file transfer command. Target host: '" + iAddr + ":" + iPort + "'.");
+
+					/*
+					 * Create communications to the peer. Note that the peer
+					 * will have our public key, and hence can encrypt the
+					 * communications using asymmetric encryption
+					 * immediately.
+					 */
+					final Comms snComms = new Comms(new RSAAsymmetricEncryption(clientKeys, peer), true);
+					snComms.initiateSession(new Socket(iAddr, iPort));
+					if (DEBUG_GENERAL)
+						System.out.println("Opened a communications session with '" + iAddr + "'.");
+
+					final FileDialog fileSave = new FileDialog(clientFrame, "Save As...", FileDialog.SAVE);
+					fileSave.setFile(fName);
+					fileSave.setVisible(true);
+					if (fileSave.getFile() != null && fileSave.getFile().length() > 0) {
 						if (DEBUG_GENERAL)
-							System.out.println("Opened a communications session with '" + iAddr + "'.");
-						
-						final FileDialog fileSave = new FileDialog(clientFrame, "Save As...", FileDialog.SAVE);
-						fileSave.setFile(fName);
-						fileSave.setVisible(true);
-						if (fileSave.getFile() != null && fileSave.getFile().length() > 0) {
-							if (DEBUG_GENERAL)
-								System.out.println("File will be saved to \"" + fileSave.getDirectory() + fileSave.getFile() + "\". Starting file transfer.");
-							final FileTransfer ft = new FileTransfer(snComms, fileSave.getDirectory() + fileSave.getFile(), false);
-							ft.start();
-						}
-						break;
-					}
-					
-					/***********************************************************
-					 * List command
-					 **********************************************************/
-					case DecryptedPacket.CMD_LIST: {
-						String userTable = new String(pckt.data);
-						buddyListData.setRowCount(0);
-						
-						if (DEBUG_COMMANDS_LIST)
-							System.out.println("Received a user list: \"" + userTable.replaceAll("\n", "; ") + "\".");
-						
-						while (userTable.length() > 0) {
-							final int indx = userTable.indexOf("\n");
-							String row;
-							
-							if (indx > 0) {
-								row = userTable.substring(0, indx);
-								userTable = userTable.substring(indx + 1);
-							} else {
-								row = userTable;
-								userTable = "";
-							}
-							
-							/* Add the user to the user list. */
-							final String userID = row.split(";")[0].trim();
-							final boolean online = row.split(";")[1].trim().compareTo("true") == 0;
-							
-							/* Add the user to the GUI list. */
-							buddyListData.addRow(new Object[] { userID, online ? "true" : "false" });
-						}
-						break;
-					}
-					
-					/***********************************************************
-					 * Secret List command
-					 **********************************************************/
-					case DecryptedPacket.CMD_SECRETLIST: {
-						String secretTable = new String(pckt.data);
-						secretListData.setRowCount(0);
-						
-						if (DEBUG_COMMANDS_SECRETLIST)
-							System.out.println("Received a secret list: \"" + secretTable.replaceAll("\n", "; ") + "\".");
-						
-						while (secretTable.length() > 0) {
-							final int indx = secretTable.indexOf("\n");
-							String row;
-							
-							if (indx > 0) {
-								row = secretTable.substring(0, indx);
-								secretTable = secretTable.substring(indx + 1);
-							} else {
-								row = secretTable;
-								secretTable = "";
-							}
-							
-							final String values[] = row.split(";");
-							secretListData.addRow(values);
-							
-							final SecretData data = new SecretData();
-							data.description = values[2];
-							data.filename = values[3];
-							secretDescriptions.put(values[0], data);
-						}
-						break;
-					}
-					
-					/***********************************************************
-					 * Get Secret command
-					 **********************************************************/
-					case DecryptedPacket.CMD_GETSECRET: {
-						/*
-						 * NOTE: Data will be of the form "name@address".
-						 */
-						final String data = new String(pckt.data);
-						final String fileName = data.split("@")[0];
-						final String iAddr = data.split("@")[1].split(":")[0];
-						final int iPort = Integer.parseInt(data.split("@")[1].split(":")[1]);
-						
-						if (DEBUG_COMMANDS_GETSECRET)
-							System.out.println("Received a get secret command. Target host: '" + iAddr + ":" + iPort + "'. The filename is \"" + fileName + "\".");
-						
-						/*
-						 * Note that we don't yet have the public key of the
-						 * owner of the secret. They will, however, have our
-						 * public key and so can send us their public key in
-						 * encrypted form.
-						 */
-						final PublicKey receiver = waitForPublicKey();
-						
-						final Comms snComms = new Comms(new RSAAsymmetricEncryption(clientKeys, receiver), false);
-						snComms.initiateSession(new Socket(iAddr, iPort));
-						if (DEBUG_GENERAL)
-							System.out.println("Opened a communications session with '" + iAddr + "'.");
-						
-						msgTextBox.append("[INFO] Sending out a secret.\n");
-						if (DEBUG_GENERAL)
-							System.out.println("Starting file transfer.");
-						final FileTransfer ft = new FileTransfer(snComms, fileName, true);
+							System.out.println("File will be saved to \"" + fileSave.getDirectory() + fileSave.getFile() + "\". Starting file transfer.");
+						final FileTransfer ft = new FileTransfer(snComms, fileSave.getDirectory() + fileSave.getFile(), false);
 						ft.start();
-						break;
 					}
-					
-					/***********************************************************
-					 * Unknown command
-					 **********************************************************/
-					default:
-						System.err.println("Unrecognised command received from server.");
+					break;
+				}
+
+				/***********************************************************
+				 * List command
+				 **********************************************************/
+				case DecryptedPacket.CMD_LIST: {
+					String userTable = new String(pckt.data);
+					buddyListData.setRowCount(0);
+
+					if (DEBUG_COMMANDS_LIST)
+						System.out.println("Received a user list: \"" + userTable.replaceAll("\n", "; ") + "\".");
+
+					while (userTable.length() > 0) {
+						final int indx = userTable.indexOf("\n");
+						String row;
+
+						if (indx > 0) {
+							row = userTable.substring(0, indx);
+							userTable = userTable.substring(indx + 1);
+						} else {
+							row = userTable;
+							userTable = "";
+						}
+
+						/* Add the user to the user list. */
+						final String userID = row.split(";")[0].trim();
+						final boolean online = row.split(";")[1].trim().compareTo("true") == 0;
+
+						/* Add the user to the GUI list. */
+						buddyListData.addRow(new Object[] { userID, online ? "true" : "false" });
+					}
+					break;
+				}
+
+				/***********************************************************
+				 * Secret List command
+				 **********************************************************/
+				case DecryptedPacket.CMD_SECRETLIST: {
+					String secretTable = new String(pckt.data);
+					secretListData.setRowCount(0);
+
+					if (DEBUG_COMMANDS_SECRETLIST)
+						System.out.println("Received a secret list: \"" + secretTable.replaceAll("\n", "; ") + "\".");
+
+					while (secretTable.length() > 0) {
+						final int indx = secretTable.indexOf("\n");
+						String row;
+
+						if (indx > 0) {
+							row = secretTable.substring(0, indx);
+							secretTable = secretTable.substring(indx + 1);
+						} else {
+							row = secretTable;
+							secretTable = "";
+						}
+
+						final String values[] = row.split(";");
+						secretListData.addRow(values);
+
+						final SecretData data = new SecretData();
+						data.description = values[2];
+						data.filename = values[3];
+						secretDescriptions.put(values[0], data);
+					}
+					break;
+				}
+
+				/***********************************************************
+				 * Get Secret command
+				 **********************************************************/
+				case DecryptedPacket.CMD_GETSECRET: {
+					/*
+					 * NOTE: Data will be of the form "name@address".
+					 */
+					final String data = new String(pckt.data);
+					final String fileName = data.split("@")[0];
+					final String iAddr = data.split("@")[1].split(":")[0];
+					final int iPort = Integer.parseInt(data.split("@")[1].split(":")[1]);
+
+					if (DEBUG_COMMANDS_GETSECRET)
+						System.out.println("Received a get secret command. Target host: '" + iAddr + ":" + iPort + "'. The filename is \"" + fileName + "\".");
+
+					/*
+					 * Note that we don't yet have the public key of the
+					 * owner of the secret. They will, however, have our
+					 * public key and so can send us their public key in
+					 * encrypted form.
+					 */
+					final PublicKey receiver = waitForPublicKey();
+
+					final Comms snComms = new Comms(new RSAAsymmetricEncryption(clientKeys, receiver), false);
+					snComms.initiateSession(new Socket(iAddr, iPort));
+					if (DEBUG_GENERAL)
+						System.out.println("Opened a communications session with '" + iAddr + "'.");
+
+					msgTextBox.append("[INFO] Sending out a secret.\n");
+					if (DEBUG_GENERAL)
+						System.out.println("Starting file transfer.");
+					final FileTransfer ft = new FileTransfer(snComms, fileName, true);
+					ft.start();
+					break;
+				}
+
+				/***********************************************************
+				 * Unknown command
+				 **********************************************************/
+				default:
+					System.err.println("Unrecognised command received from server.");
 				}
 			}
 		} catch (final Exception e) {
@@ -1244,11 +1285,11 @@ public class Client {
 			if (DEBUG_ERROR_TRACE)
 				e.printStackTrace();
 		}
-		
+
 		/* Start processing packets again. */
 		stealthTimer.start();
 	}
-	
+
 	/**
 	 * Main client function to execute.
 	 * 
@@ -1258,20 +1299,20 @@ public class Client {
 		/* The server. */
 		String serverHostname = Comms.DEFAULT_SERVERNAME;
 		int serverPort = Comms.DEFAULT_SERVERPORT;
-		
+
 		/* The bank. */
 		String bankHostname = Comms.DEFAULT_BANKNAME;
 		int bankPort = Comms.DEFAULT_BANKPORT;
-		
+
 		/* Check if a host and port was specified at the command line. */
 		if (args.length > 0) {
 			try {
 				final String[] input = args[0].split(":", 2);
-				
+
 				serverHostname = input[0];
 				if (input.length > 1)
 					serverPort = Integer.parseInt(input[1]);
-				
+
 				if (serverPort <= 0 || serverPort > 65535)
 					throw new NumberFormatException("Invalid port number: " + serverPort);
 			} catch (final NumberFormatException e) {
@@ -1280,15 +1321,15 @@ public class Client {
 					e.printStackTrace();
 				System.exit(1);
 			}
-			
+
 			if (args.length > 1)
 				try {
 					final String[] input = args[1].split(":", 2);
-					
+
 					bankHostname = input[0];
 					if (input.length > 1)
 						bankPort = Integer.parseInt(input[1]);
-					
+
 					if (bankPort <= 0 || bankPort > 65535)
 						throw new NumberFormatException("Invalid port number: " + bankPort);
 				} catch (final NumberFormatException e) {
@@ -1298,11 +1339,11 @@ public class Client {
 					System.exit(1);
 				}
 		}
-		
+
 		try {
 			UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
 		} catch (final Exception e) {}
-		
+
 		/* Create the top-level container and contents. */
 		clientFrame = new JFrame("stealthnet");
 		Client app = null;
@@ -1316,7 +1357,7 @@ public class Client {
 		}
 		final Component contents = app.createGUI();
 		clientFrame.getContentPane().add(contents, BorderLayout.CENTER);
-		
+
 		/*
 		 * Finish setting up the GUI - add a window listener such that closing
 		 * the GUI closes the application properly.
@@ -1330,7 +1371,7 @@ public class Client {
 		clientFrame.pack();
 		clientFrame.setVisible(true);
 	}
-	
+
 	/**
 	 * Get the {@link PublicKey} of a peer client. Blocks until the server
 	 * responds.
@@ -1344,11 +1385,11 @@ public class Client {
 		if (DEBUG_GENERAL)
 			System.out.println("Asking server for the public key of user '" + id + "'");
 		serverComms.sendPacket(DecryptedPacket.CMD_GETPUBLICKEY, id);
-		
+
 		/* Wait for server to send the public key of the other party. */
 		return waitForPublicKey();
 	}
-	
+
 	/**
 	 * Wait for the {@link Server} to send a {@link PublicKey}.
 	 * 
@@ -1361,27 +1402,27 @@ public class Client {
 		while (true)
 			try {
 				pckt = serverComms.recvPacket();
-				
+
 				if (pckt == null)
 					return null;
-				
+
 				switch (pckt.command) {
-/* @formatter:off */
-					/***********************************************************
-					 * Get public key command
-					 **********************************************************/
-/* @formatter:on */
-					case DecryptedPacket.CMD_GETPUBLICKEY:
-						/* Convert packet contents to public key. */
-						return RSAAsymmetricEncryption.stringToPublicKey(new String(pckt.data));
-						
-/* @formatter:off */
+				/* @formatter:off */
+				/***********************************************************
+				 * Get public key command
+				 **********************************************************/
+				/* @formatter:on */
+				case DecryptedPacket.CMD_GETPUBLICKEY:
+					/* Convert packet contents to public key. */
+					return RSAAsymmetricEncryption.stringToPublicKey(new String(pckt.data));
+
+					/* @formatter:off */
 					/***********************************************************
 					 * Unexpected command
 					 **********************************************************/
-/* @formatter:on */
-					default:
-						System.err.println("Unexpected command received from server.");
+					/* @formatter:on */
+				default:
+					System.err.println("Unexpected command received from server.");
 				}
 			} catch (final Exception e) {
 				System.err.println("Error running client thread.");
