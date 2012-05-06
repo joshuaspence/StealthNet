@@ -88,7 +88,7 @@ public class DecryptedPacket {
 	 * The {@link Client} sends a <code>CMD_SIGNPAYMENT</code> packet to the
 	 * {@link Bank} to request that the bank sign a hash chain.
 	 */
-	public static final byte CMD_SIGNPAYMENT = 0x42;
+	public static final byte CMD_SIGNHASHCHAIN = 0x42;
 	
 	/**
 	 * The {@link Client} sends a <code>CMD_GETBALANCE</code> packet to either

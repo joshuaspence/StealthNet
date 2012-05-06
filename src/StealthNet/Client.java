@@ -1236,7 +1236,7 @@ public class Client {
 					 * Unknown command
 					 **********************************************************/
 					default:
-						System.err.println("Unrecognised command received from server.");
+						System.err.println("Unrecognised or unexpected command received from server.");
 				}
 			}
 		} catch (final Exception e) {
@@ -1381,7 +1381,7 @@ public class Client {
 					 **********************************************************/
 /* @formatter:on */
 					default:
-						System.err.println("Unexpected command received from server.");
+						System.err.println("Unrecognised or unexpected command received from server.");
 				}
 			} catch (final Exception e) {
 				System.err.println("Error running client thread.");

@@ -17,6 +17,8 @@ package StealthNet;
 
 /* Import Libraries ******************************************************** */
 
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
 import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.util.Arrays;
@@ -36,70 +38,191 @@ public class CryptoCreditHashChain {
 	/** Algorithm to use for the hashchain {@link MessageDigest}. */
 	private static final String HASH_ALGORITHM = "MD5";
 	
+	/** The number of (random) bytes to use as a seed for the hash chain. */
+	private static final int HASHCHAIN_SEED_BYTES = 8;
+	
+	/** Class to represent individual CryptoCredits. */
+	private class CryptoCredit {
+		byte[] hash = null;
+	}
+	
 	/** Stack to store the hash chain. */
-	private static final Stack<byte[]> hashChain = new Stack<byte[]>();
+	private final Stack<CryptoCredit> hashChain;
 	
-	/** The starting credit of the hash chain **/
-	private int startingCredit = 0;
+	/** The tuple that the {@link Bank} needs to sign. */
+	private final byte[] bankIdentifier;
 	
-	/** The amount of credits **/
-	private int cryptoCredits = 0;
+	/** The signature provided by the {@link Bank} for the hash chain. */
+	private byte[] bankSignature = null;
 	
 	/**
-	 * Constructor. Calls the function to generate a new hash chain.
+	 * Constructor to generate a new hash chain.
 	 * 
-	 * @param c An integer indicating the starting amount of credits.
+	 * @param username The username of the user that generated the hash chain.
+	 * @param credits An integer indicating the number of credits stored in the
+	 *        hash chain.
 	 */
-	public CryptoCreditHashChain(final int c) {
-		cryptoCredits = c;
-		createNewHashChain();
+	public CryptoCreditHashChain(final String username, final int credits) {
+		hashChain = generateHashChain(credits);
+		
+		/* Construct the identifying tuple that the bank will need to sign. */
+		bankIdentifier = generateIdentifyingTuple(username, credits, getTopElement());
+	}
+	
+	/**
+	 * Request that the bank signs this hash chain, storing the signature for
+	 * later use.
+	 * 
+	 * @param bankComms The {@link Comms} class to communicate with the
+	 *        {@link Bank}.
+	 * @return True if the {@link Bank} signed the hash chain, otherwise false.
+	 */
+	public boolean getSigned(final Comms bankComms) {
+		bankSignature = getBankSignature(bankComms, bankIdentifier);
+		return bankSignature != null;
+	}
+	
+	/**
+	 * Retrieves the identifier used by the {@link Bank} to identify the hash
+	 * chain.
+	 * 
+	 * @return The identifier used by the {@link Bank}.
+	 */
+	public byte[] getIdentifier() {
+		return bankIdentifier;
+	}
+	
+	/**
+	 * Retrieves the signature provided by the bank. The
+	 * <code>getSigned(Comms)</code> function must be called before this
+	 * function.
+	 * 
+	 * @return The signature provided by the {@link Bank}, or null if no such
+	 *         signature exists.
+	 */
+	public byte[] getSignature() {
+		return bankSignature;
 	}
 	
 	/**
 	 * Create a new hash chain. The old chain is deleted and a new one is
 	 * generated.
+	 * 
+	 * @param length The length of the hash chain to generate.
+	 * @return A hash chain of the specified length.
 	 */
-	public void createNewHashChain() {
+	private Stack<CryptoCredit> generateHashChain(final int length) {
+		final Stack<CryptoCredit> hashchain = new Stack<CryptoCredit>();
+		
 		final MessageDigest mdb;
 		try {
 			mdb = MessageDigest.getInstance(HASH_ALGORITHM);
 		} catch (final Exception e) {
 			System.err.println("Unable to create hash chain.");
-			return;
-		}
-		final SecureRandom secureRandom = new SecureRandom();
-		startingCredit = secureRandom.nextInt();
-		
-		final String startingCreditString = startingCredit + "";
-		
-		byte[] creditHash = mdb.digest(startingCreditString.getBytes());
-		hashChain.clear();
-		hashChain.push(creditHash);
-		
-		for (int i = 1; i < cryptoCredits; i++) {
-			creditHash = mdb.digest(hashChain.peek().toString().getBytes());
-			hashChain.push(creditHash);
+			return null;
 		}
 		
-		cryptoCredits = hashChain.size();
+		new SecureRandom();
+		final byte[] hashChainSeed = new byte[HASHCHAIN_SEED_BYTES];
+		byte[] nextValueToHash = hashChainSeed;
+		
+		while (hashchain.size() < length) {
+			final CryptoCredit nextCredit = new CryptoCredit();
+			nextCredit.hash = mdb.digest(nextValueToHash);
+			nextValueToHash = nextCredit.hash;
+			
+			hashchain.push(nextCredit);
+		}
+		
+		return hashchain;
 	}
 	
 	/**
-	 * Returns the starting credit of the hash chain.
+	 * Generates a tuple of the form (username, credits, top hash of hash
+	 * chain). The bank signs this tuple to verify to the server that the hash
+	 * chain is valid.
 	 * 
-	 * @return The starting credit.
+	 * @param username The username of the user that generated the hash chain.
+	 * @param credits The number of credits represented by the hash chain.
+	 * @param topOfChain The {@link CryptoCredit} at the top of the hash chain.
+	 * @return A byte array that can be used to identify the hash chain to the
+	 *         {@link Bank}.
 	 */
-	public int getStartingCredit() {
-		return startingCredit;
+	private static byte[] generateIdentifyingTuple(final String username, final int credits, final CryptoCredit topOfChain) {
+		final ByteArrayOutputStream byteArrayOutput = new ByteArrayOutputStream();
+		final DataOutputStream dataOutput = new DataOutputStream(byteArrayOutput);
+		byte[] identifyingTuple = null;
+		
+		try {
+			/* Username length. */
+			dataOutput.writeInt(username.length());
+			
+			/* Username. */
+			dataOutput.writeChars(username);
+			
+			/* Credits */
+			dataOutput.writeInt(credits);
+			
+			/* Top of hash chain. */
+			dataOutput.write(topOfChain.hash);
+			
+			dataOutput.flush();
+			byteArrayOutput.flush();
+			identifyingTuple = byteArrayOutput.toByteArray();
+			dataOutput.close();
+			byteArrayOutput.close();
+		} catch (final Exception e) {
+			System.err.println("Error generating identifying tuple for hash chain.");
+		}
+		
+		return identifyingTuple;
 	}
 	
 	/**
-	 * Returns the entire hash chain.
+	 * Requests that the bank signs a hash chain identifier. If the bank refuses
+	 * to sign the identifier then this function will return null.
 	 * 
-	 * @return The stack of hashes.
+	 * @param bankComms The {@link Comms} class to communicate with the bank.
+	 * @param identifier The identifying tuple for the hash chain, that is sent
+	 *        to the bank to be signed.
+	 * @return The signature provided by the {@link Bank} for the hash chain, or
+	 *         null if the bank refuses to sign the hash chain.
 	 */
-	public Stack<byte[]> getHashChain() {
-		return hashChain;
+	private static byte[] getBankSignature(final Comms bankComms, final byte[] identifier) {
+		bankComms.sendPacket(DecryptedPacket.CMD_SIGNHASHCHAIN, identifier);
+		DecryptedPacket pckt = new DecryptedPacket();
+		
+		while (true)
+			try {
+				pckt = bankComms.recvPacket();
+				
+				switch (pckt.command) {
+/* @formatter:off */
+					/***********************************************************
+					 * Sign hash chain command
+					 **********************************************************/
+/* @formatter:on */
+					case DecryptedPacket.CMD_SIGNHASHCHAIN:
+						return pckt.data;
+						
+/* @formatter:off*/
+					/***********************************************************
+					 * Unknown command
+					 **********************************************************/
+/* @formatter:on */
+					default:
+						System.err.println("Unrecognised or unexpected command received from server.");
+				}
+			} catch (final Exception e) {}
+	}
+	
+	/**
+	 * TODO
+	 * 
+	 * @return
+	 */
+	private CryptoCredit getTopElement() {
+		return hashChain.peek().hash;
 	}
 	
 	/**
