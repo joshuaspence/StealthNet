@@ -17,7 +17,9 @@ package StealthNet;
 
 /* Import Libraries ******************************************************** */
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.security.MessageDigest;
 import java.security.SecureRandom;
@@ -49,7 +51,9 @@ public class CryptoCreditHashChain {
 	/** Stack to store the hash chain. */
 	private final Stack<CryptoCredit> hashChain;
 	
-	/** The tuple that the {@link Bank} needs to sign. */
+	/**
+	 * The tuple that the {@link Bank} needs to sign. Data is of the form "
+	 */
 	private final byte[] bankIdentifier;
 	
 	/** The signature provided by the {@link Bank} for the hash chain. */
@@ -171,10 +175,13 @@ public class CryptoCreditHashChain {
 			dataOutput.writeInt(username.length());
 			
 			/* Username. */
-			dataOutput.writeChars(username);
+			dataOutput.write(username.getBytes());
 			
 			/* Credits */
 			dataOutput.writeInt(credits);
+			
+			/* Length of top of hash chain. */
+			dataOutput.writeInt(topOfChain.length);
 			
 			/* Top of hash chain. */
 			dataOutput.write(topOfChain);
@@ -189,6 +196,96 @@ public class CryptoCreditHashChain {
 		}
 		
 		return identifyingTuple;
+	}
+	
+	/**
+	 * TODO
+	 */
+	public static String getUserFromIdentifier(final byte[] data) {
+		final ByteArrayInputStream byteArrayInput = new ByteArrayInputStream(data);
+		final DataInputStream dataInput = new DataInputStream(byteArrayInput);
+		String result = null;
+		
+		try {
+			/* Username length. */
+			final int userNameLength = dataInput.readInt();
+			
+			/* Username. */
+			final byte[] userName = new byte[userNameLength];
+			dataInput.read(userName);
+			result = new String(userName);
+			
+			dataInput.close();
+			byteArrayInput.close();
+		} catch (final Exception e) {
+			System.err.println("Error parsing username from hash chain identifier.");
+		}
+		
+		return result;
+	}
+	
+	/**
+	 * TODO
+	 */
+	public static Integer getCreditsFromIdentifier(final byte[] data) {
+		final ByteArrayInputStream byteArrayInput = new ByteArrayInputStream(data);
+		final DataInputStream dataInput = new DataInputStream(byteArrayInput);
+		Integer result = null;
+		
+		try {
+			/* Username length. */
+			final int userNameLength = dataInput.readInt();
+			
+			/* Username. */
+			final byte[] userName = new byte[userNameLength];
+			dataInput.read(userName);
+			
+			/* Credits. */
+			result = new Integer(dataInput.readInt());
+			
+			dataInput.close();
+			byteArrayInput.close();
+		} catch (final Exception e) {
+			System.err.println("Error parsing credits from hash chain identifier.");
+		}
+		
+		return result;
+	}
+	
+	/**
+	 * TODO
+	 */
+	public static byte[] getHashFromIdentifier(final byte[] data) {
+		final ByteArrayInputStream byteArrayInput = new ByteArrayInputStream(data);
+		final DataInputStream dataInput = new DataInputStream(byteArrayInput);
+		byte[] result = null;
+		
+		try {
+			/* Username length. */
+			final int userNameLength = dataInput.readInt();
+			
+			/* Username. */
+			final byte[] userName = new byte[userNameLength];
+			dataInput.read(userName);
+			
+			/* Credits. */
+			dataInput.readInt();
+			
+			/* Length of top of hash chain. */
+			final int topOfChainLength = dataInput.readInt();
+			
+			/* Top of hash chain. */
+			final byte[] topOfChain = new byte[topOfChainLength];
+			dataInput.read(topOfChain);
+			result = topOfChain;
+			
+			dataInput.close();
+			byteArrayInput.close();
+		} catch (final Exception e) {
+			System.err.println("Error parsing top of hash chain from hash chain identifier.");
+		}
+		
+		return result;
 	}
 	
 	/**

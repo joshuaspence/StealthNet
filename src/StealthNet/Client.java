@@ -31,6 +31,8 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
@@ -1429,8 +1431,33 @@ public class Client {
 		hashChain = new CryptoCreditHashChain(userID, credits);
 		
 		/* Get the bank to sign the hash chain. */
+		final byte[] identification = hashChain.getIdentifier();
+		final byte[] signature = new byte[0];
 		
 		/* Send the signature of the hash chain to the server. */
+		byte[] data = null;
+		final ByteArrayOutputStream output = new ByteArrayOutputStream();
+		final DataOutputStream dataOutput = new DataOutputStream(output);
+		try {
+			dataOutput.writeInt(identification.length);
+			dataOutput.write(identification);
+			dataOutput.writeInt(signature.length);
+			dataOutput.write(signature);
+			
+			dataOutput.flush();
+			output.flush();
+			data = output.toByteArray();
+			dataOutput.close();
+			output.close();
+		} catch (final Exception e) {
+			System.err.println("Failed to send hash chain signature to server.");
+			if (DEBUG_ERROR_TRACE)
+				e.printStackTrace();
+			return;
+		}
+		
+		serverComms.sendPacket(DecryptedPacket.CMD_HASHCHAIN, Base64.encodeBase64(data));
+		
 	}
 }
 

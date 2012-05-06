@@ -17,6 +17,8 @@ package StealthNet;
 
 /* Import Libraries ******************************************************** */
 
+import java.io.ByteArrayInputStream;
+import java.io.DataInputStream;
 import java.io.IOException;
 import java.net.Socket;
 import java.security.InvalidKeyException;
@@ -853,7 +855,7 @@ public class ServerThread extends Thread {
 					 * Hashchain command
 					 ******************************************************/
 					case DecryptedPacket.CMD_HASHCHAIN:
-						/* TODO */
+						processHashChain(pckt.data);
 						break;
 					
 					/***********************************************************
@@ -909,13 +911,13 @@ public class ServerThread extends Thread {
 	 *         false.
 	 */
 	public static synchronized boolean addCredits(final UserData user, final int creditsSent, final byte[] cryptoCreditHash) {
-		//if (CryptoCreditHashChain.verify(user.lastHash, creditsSent, cryptoCreditHash)) {
-		user.accountBalance += creditsSent;
-		user.lastHash = cryptoCreditHash;
-		return true;
-		//}
+		if (CryptoCreditHashChain.verify(user.lastHash, creditsSent, cryptoCreditHash)) {
+			user.accountBalance += creditsSent;
+			user.lastHash = cryptoCreditHash;
+			return true;
+		}
 		
-		//return false;
+		return false;
 	}
 	
 	/**
@@ -968,18 +970,40 @@ public class ServerThread extends Thread {
 	 * of the hash chain to ensure that the bank signed the hash chain. If the
 	 * signature verification passses, then the user's last hash value is
 	 * updated to the head of the new hash chain.
+	 * 
+	 * TODO
 	 */
-	public synchronized void processHashchain(final byte[] name, final byte[] credits, final byte[] topOfHashchain, final byte[] signature) {
-		/* TODO */
-/* @formatter:off */
-		/*
-		 * if the bank did sign the hash chain
-		 * 		UserData thisUser = getUser(userID)
-		 * 		addCredits(thisUser, credits);
-		 * 		thisUser.lastHash = received top of hashchain
-		 * end if
-		 */
-/* @formatter: on */
+	public synchronized void processHashChain(final byte[] packetData) {
+		final ByteArrayInputStream input = new ByteArrayInputStream(Base64.decodeBase64(packetData));
+		final DataInputStream dataInput = new DataInputStream(input);
+		byte[] identifier = null;
+		byte[] signature = null;
+		
+		try {
+			final int identifierSize = dataInput.readInt();
+			identifier = new byte[identifierSize];
+			dataInput.read(identifier);
+			
+			final int signatureSize = dataInput.readInt();
+			signature = new byte[signatureSize];
+			dataInput.read(signature);
+		} catch (final Exception e) {
+			System.err.println("Failed to parse hash chain.");
+			if (DEBUG_ERROR_TRACE)
+				e.printStackTrace();
+			return;
+		}
+		
+		/* Check that the bank signed the identifier. */
+		
+		/* Update the user's account info. */
+		final String userID = CryptoCreditHashChain.getUserFromIdentifier(identifier);
+		final int credits = CryptoCreditHashChain.getCreditsFromIdentifier(identifier).intValue();
+		final byte[] topHash = CryptoCreditHashChain.getHashFromIdentifier(identifier);
+		
+		final UserData userInfo = getUser(userID);
+		addCredits(userInfo, credits);
+		userInfo.lastHash = topHash;
 	}
 	
 	/**
@@ -1042,9 +1066,10 @@ public class ServerThread extends Thread {
 						/*******************************************************
 						 * Hashchain command
 						 ******************************************************/
-						case DecryptedPacket.CMD_HASHCHAIN:
-							/* TODO */
+						case DecryptedPacket.CMD_HASHCHAIN: {
+							processHashChain(pckt.data);
 							break;
+						}
 						
 						/*******************************************************
 						 * Unexpected command
