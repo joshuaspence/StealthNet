@@ -39,6 +39,7 @@ import java.net.UnknownHostException;
 import java.security.KeyPair;
 import java.security.PublicKey;
 import java.util.Hashtable;
+import java.util.Stack;
 
 import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
@@ -164,8 +165,7 @@ public class Client {
 	/** Default requested hash chain length. */
 	private static final int DEFAULT_HASH_CHAIN_LENGTH = 100;
 	
-	// private CryptoCredit myCredits;
-	// The number of credits he has = CryptoCredit.size()
+	CryptoCreditHashChain cryptoCreditHashChain = new CryptoCreditHashChain(100);
 	
 	/** Secret data. */
 	private class SecretData {
@@ -726,7 +726,38 @@ public class Client {
 			System.out.println("Sending get secret message to server. Target client should connect on '" + iAddr + ":" + ftpSocket.getLocalPort() + "'.");
 		serverComms.sendPacket(DecryptedPacket.CMD_GETSECRET, name + "@" + iAddr);
 		
-		/* @formatter:off */
+		DecryptedPacket pckt = new DecryptedPacket();
+		boolean receivedRequestPaymentOfZero = false;
+		while (!receivedRequestPaymentOfZero)
+			try {
+				pckt = serverComms.recvPacket();
+				switch (pckt.command) {
+					case DecryptedPacket.CMD_REQUESTPAYMENT:
+						final String pcktdata = new String(pckt.data);
+						final int amountOwing = Integer.parseInt(pcktdata);
+						if (amountOwing <= 0) {
+							receivedRequestPaymentOfZero = true;
+							break;
+						} else {
+							boolean sentPayment = false;
+							while (!sentPayment) {
+								final Stack<byte[]> payment = cryptoCreditHashChain.getHashChain();
+								final int paymentCredits = payment.size();
+								if (payment != null) {
+									serverComms.sendPacket(DecryptedPacket.CMD_PAYMENT, paymentCredits + ";" + payment.toString());
+									sentPayment = true;
+								} else {
+									//Get Credits from Bank.
+								}
+							}
+						}
+				}
+			} catch (final Exception e) {
+				System.err.println("Error reading packet. Discarding...");
+				if (DEBUG_ERROR_TRACE)
+					e.printStackTrace();
+			}
+/* @formatter:off */
 		/*
 		 * while loop to send partial payments:
 		 * 		Wait for the server to send a CMD_REQUESTPAYMENT packet.
@@ -758,7 +789,7 @@ public class Client {
 		 * 		- Hash getCreditsFromHashChain(int credits)
 		 * 		- void getCreditsFromBank(int credits)
 		 */
-		/* @formatter:on */
+/* @formatter:on */
 		
 		/* Choose where to save the secret file. */
 		final FileDialog fileSave = new FileDialog(clientFrame, "Save As...", FileDialog.SAVE);
@@ -1027,9 +1058,9 @@ public class Client {
 				
 				switch (pckt.command) {
 /* @formatter:off */
-					/***********************************************************
-					 * Message command
-					 **********************************************************/
+				/***********************************************************
+				 * Message command
+				 **********************************************************/
 /* @formatter:on */
 					case DecryptedPacket.CMD_MSG: {
 						final String msg = new String(pckt.data);
@@ -1193,7 +1224,6 @@ public class Client {
 							data.filename = values[3];
 							secretDescriptions.put(values[0], data);
 						}
-						break;
 					}
 					
 					/***********************************************************
@@ -1236,7 +1266,7 @@ public class Client {
 					 * Unknown command
 					 **********************************************************/
 					default:
-						System.err.println("Unrecognised or unexpected command received from server.");
+						System.err.println("Unrecognised command received from server.");
 				}
 			}
 		} catch (final Exception e) {
