@@ -64,6 +64,7 @@ import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 import javax.swing.UIManager;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.text.DefaultCaret;
 
 import org.apache.commons.codec.binary.Base64;
 
@@ -395,6 +396,8 @@ public class Client {
 		msgTextBox.setLineWrap(true);
 		msgTextBox.setWrapStyleWord(true);
 		msgTextBox.setEditable(false);
+		final DefaultCaret caret = (DefaultCaret) msgTextBox.getCaret();
+		caret.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
 		final JScrollPane msgScrollPane = new JScrollPane(msgTextBox);
 		msgScrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
 		msgScrollPane.setPreferredSize(new Dimension(200, 100));
