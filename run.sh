@@ -49,6 +49,7 @@ DEBUG="\
 -Ddebug.StealthNet.BankThread.Commands.Login=true \
 -Ddebug.StealthNet.BankThread.Commands.Logout=true \
 -Ddebug.StealthNet.BankThread.Commands.GetBalance=true \
+-Ddebug.StealthNet.BankThread.Commands.SignHashChain=true \
 -Ddebug.StealthNet.BankThread.AsymmetricEncryption=true \
 \
 -Ddebug.StealthNet.Chat=false \

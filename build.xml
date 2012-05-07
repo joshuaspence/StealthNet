@@ -275,6 +275,7 @@
             	<include name="StealthNet/Bank**" />
                 <include name="StealthNet/BankThread**" />
                 <include name="StealthNet/Comms**" />
+            	<include name="StealthNet/CryptoCreditHashChain**" />
                 <include name="StealthNet/Debug**" />
                 <include name="StealthNet/DecryptedPacket**" />
             	<include name="StealthNet/EncryptedFile**" />

@@ -23,9 +23,12 @@ import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.util.Enumeration;
 import java.util.Hashtable;
 
 import javax.crypto.NoSuchPaddingException;
+
+import org.apache.commons.codec.binary.Base64;
 
 import StealthNet.Security.AsymmetricVerification;
 import StealthNet.Security.RSAAsymmetricEncryption;
@@ -38,9 +41,9 @@ import StealthNet.Security.SHA1withRSAAsymmetricVerification;
  * between the StealthNet {@link Bank} and a peer (either a {@link Client} or a
  * {@link Server}).
  * 
- * A new instance is created for each peer such that multiple pper can be active
- * concurrently. This class handles {@link DecryptedPacket} and deals with them
- * accordingly.
+ * A new instance is created for each peer such that multiple peers can be
+ * active concurrently. This class handles {@link DecryptedPacket} and deals
+ * with them accordingly.
  * 
  * @author Joshua Spence
  * 
@@ -55,6 +58,7 @@ public class BankThread extends Thread {
 	private static final boolean DEBUG_COMMANDS_LOGIN = Debug.isDebug("StealthNet.BankThread.Commands.Login");
 	private static final boolean DEBUG_COMMANDS_LOGOUT = Debug.isDebug("StealthNet.BankThread.Commands.Logout");
 	private static final boolean DEBUG_COMMANDS_GETBALANCE = Debug.isDebug("StealthNet.BankThread.Commands.GetBalance");
+	private static final boolean DEBUG_COMMANDS_SIGNHASHCHAIN = Debug.isDebug("StealthNet.BankThread.Commands.SignHashChain");
 	private static final boolean DEBUG_ASYMMETRIC_ENCRYPTION = Debug.isDebug("StealthNet.BankThread.AsymmetricEncryption");
 	
 	/* Constants. */
@@ -67,7 +71,7 @@ public class BankThread extends Thread {
 	}
 	
 	/** A list of users, indexed by their ID. */
-	private static final Hashtable<String, UserData> userAccounts = new Hashtable<String, UserData>();
+	private static final Hashtable<String, UserData> userList = new Hashtable<String, UserData>();
 	
 	/** The user ID for the user owning the thread. */
 	private String userID = null;
@@ -139,7 +143,8 @@ public class BankThread extends Thread {
 	/**
 	 * Constructor.
 	 * 
-	 * @param socket The {@link Socket} that the bank is listening on.
+	 * @param socket The {@link Socket} on which the {@link Bank} has accepted a
+	 *        connection.
 	 * 
 	 * @throws NoSuchPaddingException
 	 * @throws NoSuchAlgorithmException
@@ -173,8 +178,8 @@ public class BankThread extends Thread {
 	}
 	
 	/**
-	 * Add a user to the user list. Used to log the specified user into the
-	 * StealthNet bank.
+	 * Add a user to the user list. Used to log the specified user into
+	 * StealthNet.
 	 * 
 	 * @param id The ID of the user to add.
 	 * @return True on success, false on failure or if the specified user
@@ -182,7 +187,7 @@ public class BankThread extends Thread {
 	 */
 	private synchronized boolean addUser(final String id) {
 		/* Make sure the specified user doesn't already exist in the user list. */
-		UserData userInfo = userAccounts.get(id);
+		UserData userInfo = getUser(id);
 		
 		if (userInfo != null && userInfo.userThread != null)
 			return false;
@@ -190,7 +195,7 @@ public class BankThread extends Thread {
 			/* Create new user data for the specified user. */
 			userInfo = new UserData();
 			userInfo.userThread = this;
-			userAccounts.put(id, userInfo);
+			userList.put(id, userInfo);
 			
 			if (DEBUG_GENERAL)
 				System.out.println("Added user \"" + id + "\" to the user list.");
@@ -205,7 +210,7 @@ public class BankThread extends Thread {
 	 * @return The {@link UserData} corresponding to the specified ID.
 	 */
 	private static synchronized UserData getUser(final String id) {
-		return userAccounts.get(id);
+		return userList.get(id);
 	}
 	
 	/**
@@ -214,7 +219,7 @@ public class BankThread extends Thread {
 	 * @return The user list.
 	 */
 	private static synchronized Hashtable<String, UserData> getUsers() {
-		return userAccounts;
+		return userList;
 	}
 	
 	/**
@@ -233,6 +238,138 @@ public class BankThread extends Thread {
 			return true;
 		} else
 			return false;
+	}
+	
+	/**
+	 * Credit the user's account. Also sends the user their updated account
+	 * balance.
+	 * 
+	 * @param userID The user whose account should be credited.
+	 * @param credits The number of credits to transfer between the accounts.
+	 * @return True if the credits were added to the user's account, otherwise
+	 *         false.
+	 */
+	public static synchronized boolean addCredits(final String userID, final int credits) {
+		final UserData user = getUser(userID);
+		boolean result = false;
+		
+		if (credits > 0) {
+			user.accountBalance += credits;
+			result = true;
+		}
+		
+		/* Send the user their (possibly updated) account balance. */
+		user.userThread.stealthComms.sendPacket(DecryptedPacket.CMD_GETBALANCE, Integer.toString(user.accountBalance));
+		
+		return result;
+	}
+	
+	/**
+	 * Transfer credits from one user's account to another user's account. Also
+	 * sends both users their updated account balances.
+	 * 
+	 * @param fromUserID The ID of user whose account should be deducted.
+	 * @param toUserID The ID of the user whose account should be credited.
+	 * @param credits The number of credits to add to the user's account.
+	 * @return True if the credits were added to the user's account, otherwise
+	 *         false.
+	 */
+	public static synchronized boolean transferCredits(final String fromUserID, final String toUserID, final int credits) {
+		final UserData fromUser = getUser(fromUserID);
+		final UserData toUser = getUser(toUserID);
+		boolean result = false;
+		
+		if (credits > 0 && fromUser.accountBalance >= credits) {
+			fromUser.accountBalance -= credits;
+			toUser.accountBalance += credits;
+			result = true;
+		}
+		
+		/* Send the users their (possibly updated) account balances. */
+		fromUser.userThread.stealthComms.sendPacket(DecryptedPacket.CMD_GETBALANCE, Integer.toString(fromUser.accountBalance));
+		toUser.userThread.stealthComms.sendPacket(DecryptedPacket.CMD_GETBALANCE, Integer.toString(toUser.accountBalance));
+		
+		return result;
+	}
+	
+	/**
+	 * Deduct credits from the user's account. Also sends the user their updated
+	 * account balance.
+	 * 
+	 * @param userID The ID of the user whose account should be deducted.
+	 * @param credits The number of credits to deduct from the user's account.
+	 * @return True if the credits were deducted from the user's account,
+	 *         otherwise false.
+	 */
+	public static synchronized boolean deductCredits(final String userID, final int credits) {
+		final UserData user = getUser(userID);
+		boolean result = false;
+		
+		if (credits > 0) {
+			user.accountBalance -= credits;
+			result = true;
+		}
+		
+		/* Send the user their (possibly updated) account balance. */
+		user.userThread.stealthComms.sendPacket(DecryptedPacket.CMD_GETBALANCE, Integer.toString(user.accountBalance));
+		
+		return result;
+	}
+	
+	/**
+	 * TODO
+	 */
+	public static synchronized void processHashChain(final byte[] identifier) {
+		/* Extract fields from identifier. */
+		final String userID = CryptoCreditHashChain.getUserFromIdentifier(identifier);
+		final int credits = CryptoCreditHashChain.getCreditsFromIdentifier(identifier).intValue();
+		final byte[] topHash = CryptoCreditHashChain.getTopHashFromIdentifier(identifier);
+		
+		if (DEBUG_COMMANDS_SIGNHASHCHAIN)
+			System.out.println("Processing a hash chain for user '" + userID + "' for " + credits + " credits with top hash \"" + Utility.getHexValue(topHash) + "\".");
+		
+		/* Update the user's account info and sign the hash chain. */
+		byte[] signature = new byte[0];
+		if (deductCredits(userID, credits))
+			/* The user's account has been deducted. Sign the hash chain. */
+			try {
+				signature = asymmetricVerificationProvider.sign(identifier);
+				
+				if (DEBUG_COMMANDS_SIGNHASHCHAIN)
+					System.out.println("Signed hash chain with identifier \"" + Utility.getHexValue(identifier) + "\". Signature is \"" + Utility.getHexValue(signature) + "\".");
+			} catch (final Exception e) {
+				System.err.println("Failed to sign hash chain.");
+				if (DEBUG_ERROR_TRACE)
+					e.printStackTrace();
+			}
+		
+		/* Send the user the signature. */
+		getUser(userID).userThread.stealthComms.sendPacket(DecryptedPacket.CMD_SIGNHASHCHAIN, signature);
+		
+		/* Send the user their (possibly updated) account balance. */
+		getUser(userID).userThread.stealthComms.sendPacket(DecryptedPacket.CMD_GETBALANCE, Integer.toString(getUser(userID).accountBalance));
+	}
+	
+	/**
+	 * Get a {@link String} containing all users and their current account
+	 * balances.
+	 * 
+	 * @return A {@link String} containing all users and their current account
+	 *         balances.
+	 */
+	private static synchronized String getUserBalances() {
+		String result = "";
+		final Enumeration<String> i = getUsers().keys();
+		
+		while (i.hasMoreElements()) {
+			final String userID = i.nextElement();
+			final UserData userInfo = getUser(userID);
+			
+			result += userID + ":\t" + userInfo.accountBalance + "\n";
+		}
+		
+		result = result.substring(0, result.length() - 1);
+		return result;
 	}
 	
 	/**
@@ -328,6 +465,15 @@ public class BankThread extends Thread {
 						
 						/* TODO */
 						stealthComms.sendPacket(DecryptedPacket.CMD_GETBALANCE, Integer.toString(0));
+						break;
+					}
+					
+					/***********************************************************
+					 * Sign Hashchain command
+					 **********************************************************/
+					case DecryptedPacket.CMD_SIGNHASHCHAIN: {
+						processHashChain(Base64.decodeBase64(pckt.data));
+						System.out.println(getUserBalances());
 						break;
 					}
 					

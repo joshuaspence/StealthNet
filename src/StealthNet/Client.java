@@ -1288,7 +1288,11 @@ public class Client {
 		
 		/* TODO: Get the bank to sign the hash chain. */
 		final byte[] identification = hashChain.getIdentifier();
-		final byte[] signature = new byte[0];
+		hashChain.getSigned(bankComms);
+		final byte[] signature = hashChain.getSignature();
+		
+		/* Receive new balance from bank. */
+		bankBalance = waitForBalance(bankComms);
 		
 		if (DEBUG_PAYMENTS) {
 			System.out.println("Generated new hash chain of length " + length + ".");

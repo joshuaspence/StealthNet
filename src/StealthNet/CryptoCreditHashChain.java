@@ -28,6 +28,8 @@ import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.Stack;
 
+import org.apache.commons.codec.binary.Base64;
+
 /* StealthNet.CryptoCreditHashChain Class Definition *********************** */
 
 /**
@@ -99,7 +101,7 @@ public class CryptoCreditHashChain {
 	 * @return True if the {@link Bank} signed the hash chain, otherwise false.
 	 */
 	public boolean getSigned(final Comms bankComms) {
-		bankSignature = getBankSignature(bankComms, bankIdentifier);
+		bankSignature = getBankSignature(bankComms, Base64.encodeBase64(bankIdentifier));
 		return bankSignature != null;
 	}
 	
@@ -350,9 +352,10 @@ public class CryptoCreditHashChain {
 	 * 
 	 * @param bankComms The {@link Comms} class to communicate with the bank.
 	 * @param identifier The identifying tuple for the hash chain, that is sent
-	 *        to the bank to be signed.
+	 *        to the bank to be signed. Assumed to be encoded in base-64.
 	 * @return The signature provided by the {@link Bank} for the hash chain, or
 	 *         null if the bank refuses to sign the hash chain.
+	 * @see Base64
 	 */
 	private static byte[] getBankSignature(final Comms bankComms, final byte[] identifier) {
 		bankComms.sendPacket(DecryptedPacket.CMD_SIGNHASHCHAIN, identifier);

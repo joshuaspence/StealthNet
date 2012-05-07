@@ -36,7 +36,9 @@ import javax.crypto.NoSuchPaddingException;
 import org.apache.commons.codec.binary.Base64;
 
 import StealthNet.Security.AsymmetricEncryption;
+import StealthNet.Security.AsymmetricVerification;
 import StealthNet.Security.RSAAsymmetricEncryption;
+import StealthNet.Security.SHA1withRSAAsymmetricVerification;
 
 /* StealthNet.ServerThread Class Definition ******************************** */
 
@@ -168,6 +170,9 @@ public class ServerThread extends Thread {
 	 */
 	private static Comms bankComms = null;
 	
+	/** TODO */
+	private static AsymmetricVerification bankVerification = null;
+	
 	/** The location of the {@link PublicKey} file of the {@link Bank}. */
 	private static final String BANK_PUBLIC_KEY_FILE = "keys/bank/public.key";
 	
@@ -192,6 +197,7 @@ public class ServerThread extends Thread {
 			}
 			
 			bankEncryption.setPeerPublicKey(bankPublicKey);
+			bankVerification = new SHA1withRSAAsymmetricVerification(serverKeys, bankPublicKey);
 		} catch (final Exception e) {
 			System.err.println("Unable to set peer public key for bank connection.");
 			if (DEBUG_ERROR_TRACE)
@@ -479,7 +485,7 @@ public class ServerThread extends Thread {
 	 * credit the user's account. Also sends the user their updated account
 	 * balance.
 	 * 
-	 * @param userID The ID of user whose account should be credited.
+	 * @param userIDna The ID of user whose account should be credited.
 	 * @param credits The number of credits declared by the {@link Client}.
 	 * @param hash The hash of the {@link CryptoCreditHashChain} supplied by the
 	 *        {@link Client}.
@@ -622,7 +628,19 @@ public class ServerThread extends Thread {
 			System.out.println("Processing a hash chain for user '" + userID + "' for " + credits + " credits with top hash \"" + Utility.getHexValue(topHash) + "\".");
 		
 		/* Check that the bank signed the identifier. */
-		/* TODO */
+		try {
+			if (!bankVerification.verify(identifier, signature)) {
+				System.err.println("Hash chain failed verification.");
+				return;
+			}
+		} catch (final Exception e) {
+			System.err.println("Failed to verify hashchain.");
+			if (DEBUG_ERROR_TRACE)
+				e.printStackTrace();
+			return;
+		}
+		if (DEBUG_PAYMENTS)
+			System.out.println("Hash chain passed verification.");
 		
 		/* Update the user's account info. */
 		final UserData userInfo = getUser(userID);
