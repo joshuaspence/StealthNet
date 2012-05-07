@@ -490,7 +490,7 @@ public class ServerThread extends Thread {
 		final UserData user = getUser(userID);
 		boolean result = false;
 		
-		if (credits > 0 && CryptoCreditHashChain.validate(user.lastHash, credits, hash)) {
+		if (credits > 0 && CryptoCreditHashChain.validate(hash, credits, user.lastHash)) {
 			user.accountBalance += credits;
 			user.lastHash = hash;
 			result = true;
@@ -667,7 +667,7 @@ public class ServerThread extends Thread {
 							final String data = new String(pckt.data);
 							
 							final int creditsSent = Integer.parseInt(data.split(";")[0]);
-							final byte[] cryptoCreditHash = data.split(";")[1].getBytes();
+							final byte[] cryptoCreditHash = Base64.decodeBase64(data.split(";")[1]);
 							
 							if (DEBUG_PAYMENTS)
 								System.out.println("Received payment of " + creditsSent + " credits from user '" + userID + "' with hash \"" + Utility.getHexValue(cryptoCreditHash) + "\".");

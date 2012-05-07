@@ -168,7 +168,6 @@ public class CryptoCreditHashChain {
 			final CryptoCredit nextCredit = new CryptoCredit();
 			nextCredit.hash = mdb.digest(nextValueToHash);
 			nextValueToHash = nextCredit.hash;
-			
 			hashchain.push(nextCredit);
 		}
 		
@@ -400,9 +399,8 @@ public class CryptoCreditHashChain {
 	public Stack<byte[]> getNextCredits(final int credits) {
 		final Stack<byte[]> result = new Stack<byte[]>();
 		
-		if (credits > 0)
-			while (!hashChain.isEmpty() && result.size() < credits)
-				result.push(hashChain.pop().hash);
+		while (!hashChain.isEmpty() && result.size() < credits)
+			result.push(hashChain.pop().hash);
 		
 		return result;
 	}
@@ -420,38 +418,34 @@ public class CryptoCreditHashChain {
 	 *         false.
 	 */
 	public static boolean validate(final byte[] hash, final int credits, final byte[] lastHash) {
-		/* TODO: not working. */
-		if (false) {
-			if (hash == null) {
-				System.err.println("Cannot validate CryptoCredit without a lash hash value.");
-				return false;
-			}
-			
-			final MessageDigest mdb;
-			try {
-				mdb = MessageDigest.getInstance(HASH_ALGORITHM);
-			} catch (final Exception e) {
-				System.err.println("Unable to verify CryptoCredit hash.");
-				return false;
-			}
-			
-			/* Apply the hash function 'credits' times. */
-			byte[] hashedHash = new byte[hash.length];
-			System.arraycopy(hash, 0, hashedHash, 0, hash.length);
-			for (int i = 1; i < credits; i++)
-				hashedHash = mdb.digest(hashedHash);
-			
-			if (Arrays.equals(lastHash, hashedHash)) {
-				if (DEBUG_GENERAL)
-					System.out.println("Validation of CryptoCredit passed. \"" + Utility.getHexValue(hash) + "\" => \"" + Utility.getHexValue(lastHash) + "\".");
-				return true;
-			} else {
-				if (DEBUG_GENERAL)
-					System.out.println("Validation of CryptoCredit failed. \"" + Utility.getHexValue(hash) + "\" => \"" + Utility.getHexValue(hashedHash) + "\". Expected \"" + Utility.getHexValue(lastHash) + "\".");
-				return false;
-			}
+		if (hash == null) {
+			System.err.println("Cannot validate CryptoCredit without a lash hash value.");
+			return false;
 		}
-		return true;
+		
+		final MessageDigest mdb;
+		try {
+			mdb = MessageDigest.getInstance(HASH_ALGORITHM);
+		} catch (final Exception e) {
+			System.err.println("Unable to verify CryptoCredit hash.");
+			return false;
+		}
+		
+		/* Apply the hash function 'credits' times. */
+		byte[] hashedHash = new byte[hash.length];
+		System.arraycopy(hash, 0, hashedHash, 0, hash.length);
+		for (int i = 0; i < credits; i++)
+			hashedHash = mdb.digest(hashedHash);
+		
+		if (Arrays.equals(lastHash, hashedHash)) {
+			if (DEBUG_GENERAL)
+				System.out.println("Validation of CryptoCredit passed. \"" + Utility.getHexValue(hash) + "\" => \"" + Utility.getHexValue(lastHash) + "\".");
+			return true;
+		} else {
+			if (DEBUG_GENERAL)
+				System.out.println("Validation of CryptoCredit failed. \"" + Utility.getHexValue(hash) + "\" => \"" + Utility.getHexValue(hashedHash) + "\". Expected \"" + Utility.getHexValue(lastHash) + "\".");
+			return false;
+		}
 	}
 }
 

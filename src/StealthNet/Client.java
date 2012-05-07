@@ -900,8 +900,8 @@ public class Client {
 								final Stack<byte[]> payment = hashChain.getNextCredits(amountRequested);
 								if (payment != null && payment.size() > 0) {
 									if (DEBUG_PAYMENTS)
-										System.out.println("Sending a payment of " + payment.size() + " credits to the server with hash \"" + payment.peek() + "\".");
-									serverComms.sendPacket(DecryptedPacket.CMD_PAYMENT, payment.size() + ";" + payment.peek());
+										System.out.println("Sending a payment of " + payment.size() + " credits to the server with hash \"" + Utility.getHexValue(payment.peek()) + "\".");
+									serverComms.sendPacket(DecryptedPacket.CMD_PAYMENT, payment.size() + ";" + Base64.encodeBase64String(payment.peek()));
 									sentPayment = true;
 								} else {
 									if (DEBUG_PAYMENTS)
