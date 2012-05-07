@@ -25,6 +25,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.security.MessageDigest;
 import java.security.SecureRandom;
+import java.util.Arrays;
 import java.util.Stack;
 
 /* StealthNet.CryptoCreditHashChain Class Definition *********************** */
@@ -40,6 +41,10 @@ import java.util.Stack;
  * @author James Dimitrios Moutafidis
  */
 public class CryptoCreditHashChain {
+	/* Debug options. */
+	private static final boolean DEBUG_GENERAL = Debug.isDebug("StealthNet.CryptoCreditHashChain.General");
+	private static final boolean DEBUG_ERROR_TRACE = Debug.isDebug("StealthNet.CryptoCreditHashChain.ErrorTrace") || Debug.isDebug("ErrorTrace");
+	
 	/** Algorithm to use for the hashchain {@link MessageDigest}. */
 	private static final String HASH_ALGORITHM = "MD5";
 	
@@ -47,7 +52,7 @@ public class CryptoCreditHashChain {
 	private static final int HASHCHAIN_SEED_BYTES = 8;
 	
 	/** Class to represent individual CryptoCredits. */
-	private class CryptoCredit {
+	public class CryptoCredit {
 		byte[] hash = null;
 	}
 	
@@ -144,13 +149,21 @@ public class CryptoCreditHashChain {
 			mdb = MessageDigest.getInstance(HASH_ALGORITHM);
 		} catch (final Exception e) {
 			System.err.println("Unable to create hash chain.");
+			if (DEBUG_ERROR_TRACE)
+				e.printStackTrace();
 			return null;
 		}
 		
-		new SecureRandom();
+		/* Use a random number to "seed" the hash chain. */
+		final SecureRandom random = new SecureRandom();
 		final byte[] hashChainSeed = new byte[HASHCHAIN_SEED_BYTES];
+		random.nextBytes(hashChainSeed);
 		byte[] nextValueToHash = hashChainSeed;
 		
+		/*
+		 * Generate new hash chain values by repeating hashing the previous
+		 * value.
+		 */
 		while (hashchain.size() < length) {
 			final CryptoCredit nextCredit = new CryptoCredit();
 			nextCredit.hash = mdb.digest(nextValueToHash);
@@ -158,6 +171,9 @@ public class CryptoCreditHashChain {
 			
 			hashchain.push(nextCredit);
 		}
+		
+		if (DEBUG_GENERAL)
+			System.out.println("Generated a hash chain of length " + length + " with top hash of \"" + Utility.getHexValue(nextValueToHash) + "\".");
 		
 		return hashchain;
 	}
@@ -206,6 +222,8 @@ public class CryptoCreditHashChain {
 			byteArrayOutput.close();
 		} catch (final Exception e) {
 			System.err.println("Error generating identifying tuple for hash chain.");
+			if (DEBUG_ERROR_TRACE)
+				e.printStackTrace();
 		}
 		
 		return identifyingTuple;
@@ -238,6 +256,8 @@ public class CryptoCreditHashChain {
 			byteArrayInput.close();
 		} catch (final Exception e) {
 			System.err.println("Error parsing username from hash chain identifier.");
+			if (DEBUG_ERROR_TRACE)
+				e.printStackTrace();
 		}
 		
 		return result;
@@ -273,6 +293,8 @@ public class CryptoCreditHashChain {
 			byteArrayInput.close();
 		} catch (final Exception e) {
 			System.err.println("Error parsing credits from hash chain identifier.");
+			if (DEBUG_ERROR_TRACE)
+				e.printStackTrace();
 		}
 		
 		return result;
@@ -316,6 +338,8 @@ public class CryptoCreditHashChain {
 			byteArrayInput.close();
 		} catch (final Exception e) {
 			System.err.println("Error parsing top of hash chain from hash chain identifier.");
+			if (DEBUG_ERROR_TRACE)
+				e.printStackTrace();
 		}
 		
 		return result;
@@ -356,7 +380,10 @@ public class CryptoCreditHashChain {
 					default:
 						System.err.println("Unrecognised or unexpected command received from bank.");
 				}
-			} catch (final Exception e) {}
+			} catch (final Exception e) {
+				if (DEBUG_ERROR_TRACE)
+					e.printStackTrace();
+			}
 	}
 	
 	/**
@@ -392,21 +419,39 @@ public class CryptoCreditHashChain {
 	 * @return True if the {@link CryptoCredit} passes verification, otherwise
 	 *         false.
 	 */
-	public static boolean verify(final byte[] hash, final int credits, final byte[] lastHash) {
+	public static boolean validate(final byte[] hash, final int credits, final byte[] lastHash) {
+		/* TODO: not working. */
+		if (false) {
+			if (hash == null) {
+				System.err.println("Cannot validate CryptoCredit without a lash hash value.");
+				return false;
+			}
+			
+			final MessageDigest mdb;
+			try {
+				mdb = MessageDigest.getInstance(HASH_ALGORITHM);
+			} catch (final Exception e) {
+				System.err.println("Unable to verify CryptoCredit hash.");
+				return false;
+			}
+			
+			/* Apply the hash function 'credits' times. */
+			byte[] hashedHash = new byte[hash.length];
+			System.arraycopy(hash, 0, hashedHash, 0, hash.length);
+			for (int i = 1; i < credits; i++)
+				hashedHash = mdb.digest(hashedHash);
+			
+			if (Arrays.equals(lastHash, hashedHash)) {
+				if (DEBUG_GENERAL)
+					System.out.println("Validation of CryptoCredit passed. \"" + Utility.getHexValue(hash) + "\" => \"" + Utility.getHexValue(lastHash) + "\".");
+				return true;
+			} else {
+				if (DEBUG_GENERAL)
+					System.out.println("Validation of CryptoCredit failed. \"" + Utility.getHexValue(hash) + "\" => \"" + Utility.getHexValue(hashedHash) + "\". Expected \"" + Utility.getHexValue(lastHash) + "\".");
+				return false;
+			}
+		}
 		return true;
-		/* TODO: this doesn't seem to be working properly */
-		/*
-		 * final MessageDigest mdb; try { mdb =
-		 * MessageDigest.getInstance(HASH_ALGORITHM); } catch (final Exception
-		 * e) { System.err.println("Unable to verify CryptoCredit hash.");
-		 * return false; }
-		 */
-		/* Apply the hash function 'credits' times. */
-		/*
-		 * for (int i = 1; i < credits; i++) hash = mdb.digest(hash);
-		 * 
-		 * if (Arrays.equals(lastHash, hash)) return true; else return false;
-		 */
 	}
 }
 

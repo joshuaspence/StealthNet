@@ -84,6 +84,10 @@ DEBUG="\
 -Ddebug.StealthNet.Comms.ReplayPrevention=true \
 -Ddebug.StealthNet.Comms.AsymmetricEncryption=true \
 \
+-Ddebug.StealthNet.CryptoCreditHashChain=false \
+-Ddebug.StealthNet.CryptoCreditHashChain.General=true \
+-Ddebug.StealthNet.CryptoCreditHashChain.ErrorTrace=true \
+\
 -Ddebug.StealthNet.EncryptedFile=false \
 -Ddebug.StealthNet.EncryptedFile.FileIO=true \
 \
