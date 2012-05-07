@@ -12,7 +12,7 @@
 \fi
 
 % Title page details
-\title{StealthNet Security Implementation}
+\title{StealthNet Security Implementation: \\ Project 1}
 \author{Joshua Spence \\ 308216350 \and Ahmad Al Mutawa \\ 312003919 \and James Moutafidis \\ ???}
 \date{May 2012}
 
@@ -25,20 +25,106 @@
 \section{Introduction}
 % TODO
 
-% ASYMMETRIC AUTHENTICATION
-\section{Asymmetric Authentication}
+% ASYMMETRIC ENCRYPTION
+\section{Asymmetric Encryption}
 
 \subsection{Introduction}
-% TODO
+Asymmetric encryption refers to an encryption system in which two separate keys 
+are used --- namely, a \emph{public key} and a \emph{private key}. The public 
+key is used for encryption \textbf{only} and the private key is used for
+decryption \textbf{only}. The keys are so named because the public key may be 
+made public --- it doesn't matter who has knowledge of this key because all that
+this key allows is the encryption of messages, not the decryption of messages. 
+Similarly, and more importantly, the private key must be kept private.
+
+Although unrelated, the two parts of the key pair are mathematically linked. The
+public key is used to transform a message into an unreadable form, decryptable 
+only by using the (different but matching) private key. By publishing the public
+key, the key producer empowers anyone who gets a copy of the public key to 
+produce messages only they can read --- because only the key producer has a copy
+of the private key (required for decryption). When someone wants to send a 
+secure message to the creator of those keys, the sender encrypts it (i.e., 
+transforms it into an unreadable form) using the intended recipient's public 
+key; to decrypt the message, the recipient uses the private key. No one else, 
+including the sender, can do so.
+
+Thus, unlike symmetric key algorithms, a public key algorithm does not require a
+secure initial exchange of one, or more, secret keys between the sender and 
+receiver. These algorithms work in such a way that, while it is easy for the 
+intended recipient to generate the public and private keys and to decrypt the 
+message using the private key, and while it is easy for the sender to encrypt 
+the message using the public key, it is extremely difficult for anyone to figure
+out the private key based on their knowledge of the public key. They are based 
+on mathematical relationships (the most notable ones being the integer 
+factorization and discrete logarithm problems) that have no efficient solution.
 
 \subsection{Details}
+\algorithm{RSA} is an algorithm for public-key cryptography that is based on the
+presumed difficulty of factoring large integers, the factoring problem. A user 
+of \algorithm{RSA} creates and then publishes the product of two large prime 
+numbers, along with an auxiliary value, as their public key. The prime factors 
+must be kept secret. Anyone can use the public key to encrypt a message, but 
+with currently published methods, if the public key is large enough, only 
+someone with knowledge of the prime factors can feasibly decode the message. 
+
 % TODO
 
 \subsection{Justification}
 % TODO
 
 \subsection{Implementation}
-% TODO
+Asymmetric encryption is implemented in \packageName{} on top of the 
+\verb+Encryption+ and \verb+AsymmetricEncryption+ base classes. In particular, 
+the \verb+RSAAsymmetricEncryption+ class implements the \algorithm{RSA} 
+algorithm.
+
+The \verb+Encryption+ base class provides methods \verb+encrypt(byte[])+ and 
+\verb+decrypt(byte[])+ for encryption with the peer's public key and decryption 
+with the local private key, respectively.  The \verb+AsymmetricEncryption+ base 
+class requires a public-private key pair for instantiation, but setting of the 
+peer's public key (for encryption) can be delayed until a later stage.
+
+Packed into the JAR file of the StealthNet executable is the public key of the 
+\serviceName{} server and the \serviceName{} bank. By reading these public keys 
+from the JAR archive, a \serviceName{} is able to make a secure connection to 
+the \serviceName{} server, as well as the \serviceName{} bank, without needing 
+to worry about the possibility of a man-in-the-middle attack. If an attacker 
+does attempt such an attack, they would be unable to decrypt the transmitted 
+packets.
+
+Whilst the clients are aware of the server and bank public keys, the server and 
+the bank are unaware of the public keys of all of the clients. For this reason, 
+when a client first creates a connection to a \serviceName{} server or bank, the
+first (encryption) data that is sent is the client's public key. Once the server
+has received this public key, the server can itself encrypt client-bound 
+messages.
+
+\algorithm{RSA encryption} is initialised in the \verb+initiateSession()+ 
+function, after a communications socket has been established. The initiator of 
+the connection (usually the client), sends their public key to the other party 
+(usually but not always a server) in encrypted form, but only if the other party
+does not already have this public key (maintained with the 
+\verb+peerHasPublicKey+ variable. Once the public key has been transmitted, the 
+\serviceName{} peer calls the \verb+recvPublicKey()+ function, rejecting all 
+incoming packets until the peer receives the initiating party's public key. 
+Similarly to the initiating party, the party that is accepting the connection 
+only waits for the peer's public key value if it does already possess this value
+(maintained through the condition 
+\verb+symmetricEncryptionProvider.getPeerPublicKey() == null+).
+
+In situations in which a client is connecting to a \serviceName{} server or 
+bank, the client will already possess the public key of the server/bank, but the
+server/bank will not possess the public key of the client. In situations in 
+which a client is connecting to another client, the server informs both parties 
+of the public key such that both parties can perform asymmetric encryption from 
+the commencement of the communication.
+
+\algorithm{RSA encryption} is implemented as a feature of the \serviceName{} 
+\verb+Comms+ class, however all \verb+Comms+ for any given \serviceName{} peer 
+will use identical public-private keys, it is only the peer public keys that 
+will differ.
+
+The size selected for the public and private keys was selected to be 2048-bits.
  
 % FILE ENCRYPTION
 \section{File Encryption}
@@ -70,8 +156,8 @@
 \subsection{Implementation}
 % TODO
 
-% CURRENCY SYSTEM
-\section{Currency System}
+% PAYMENT PROTOCOL
+\section{Payment Protocol}
 
 \subsection{Introduction}
 % TODO
