@@ -95,7 +95,7 @@ asymmetric cryptographic key is a lot easier than key management for a
 symmetric cryptographic key. However, asymmetric encryption/decryption is many 
 times slower than symmetric encryption/decryption, but this does not present any 
 great issue in the \packageName{} implementation because the 
-\algorithm{Diffie-Hellman key exchange} is used only to exchange symettric
+\algorithm{Diffie-Hellman key exchange} is used only to exchange symmetric
 encryption keys. Our \algorithm{Diffie-Hellman} implementation uses 1024-bit 
 keys, which is fairly common and is adequate for the \serviceName{} system.
 
@@ -125,7 +125,7 @@ does not initiate key exchange but rather calls \verb+waitForKeyExchange()+
 after establishing the communications socket.
 
 When the \verb+waitForKeyExchange()+ function returns, the StealthNet 
-communications class will have had its \verb+authenitcationProvider+ and \\
+communications class will have had its \verb+authenticationProvider+ and \\
 \verb+authenticationKey+ variables set.
 
 \algorithm{Diffie-Hellman key exchange} is implemented as a feature of the
@@ -291,7 +291,7 @@ nonce generation.
 The implementation of the various security measures implemented in 
 \packageName{} are detailed in the previous sections. In order to share
 cryptographic keys between parties, modifications were made to the 
-\packageName{} \verb+Packet+ class to accomodate three additional command types:
+\packageName{} \verb+Packet+ class to accommodate three additional command types:
 \begin{itemize}
 \item \verb+CMD_AUTHENTICATIONKEY+: For exchanging \algorithm{Diffie-Hellman} 
 keys between the parties.
@@ -311,7 +311,7 @@ completely within the \verb+Comms+ class.
 \subsection{Packet}
 In order to share additional data between communicating parties, the 
 \serviceName{} \verb+Packet+ class was renamed to \verb+DecryptedPacket+ and 
-exended such that it is composed of the following fields:
+extended such that it is composed of the following fields:
 \begin{itemize}
 \item \verb+command+: The command type being transmitted in the 
 packet.
@@ -353,19 +353,19 @@ attacker very little information on which to base an attack.
 
 \subsection{Proxy}
 In addition to the provided \serviceName{} \verb+Client+ and \verb+Server+ 
-classes, I have implemented an additional \serviceName{} entitty --- a 
+classes, I have implemented an additional \serviceName{} entity --- a 
 \serviceName{} \verb+Proxy+. This class acts as a ``man-in-the-middle'' for
 \serviceName{} communications. In its normal mode of operation, this class will
-simply accept incoming \serviceName{} communcations as if it were a 
+simply accept incoming \serviceName{} communications as if it were a 
 \serviceName{} server, and will then create its own additional \serviceName{}
-communcation to the \emph{real} \serviceName{} server. Once these channels have
+communication to the \emph{real} \serviceName{} server. Once these channels have
 been created, the proxy simply forwards all received packet strings (note that 
 the proxy makes no attempt to parse strings into \verb+Packet+s) to the other
 party. So, in its normal mode of operation, using \serviceName{} through the
 proxy will be transparent to both the client and the server, and will have no
 impact on the quality of the communications.
 
-However, the \verb+Proxy+ class has additional functionality to simualte 
+However, the \verb+Proxy+ class has additional functionality to simulate 
 various security attacks. The proxy server is, for example, able to replay 
 transmitted packets and modify the encrypted packet data. The usefulness of this
 class is that it can provide these simulations, thus allowing the effectiveness
@@ -375,7 +375,7 @@ observed.
 % VULNERABILITIES
 \section{Vulnerabilities}
 Whilst various security protocols have been implemented in \serviceName{} in 
-order to provide authentication, confidentialty, integrity and replay 
+order to provide authentication, confidentiality, integrity and replay 
 prevention; the communications application is is still by no means completely
 secure. Of particular mention, the application is still vulnerable to a 
 \algorithm{Man-in-the-Middle attack}. It is possible for an attacker to 
@@ -422,9 +422,9 @@ time to guarantee the encryption key.
 In our implementation of \packageName{} we applied \algorithm{Diffie-Hellman key
 exchange} in order to provide authentication and establish and common shared 
 key. We applied \algorithm{AES} encryption with a 128-bit block size and a
-128-bit key to encrypt and decfrypt all transmitted data. We used a SHA-1 
+128-bit key to encrypt and decrypt all transmitted data. We used a SHA-1 
 hashed Message Authentication Code to allow communicating parties to verify the
-integrity of the transmitted data. And finally we implented a seed pseudo-random
+integrity of the transmitted data. And finally we implemented a seed pseudo-random
 number generator to define a predictable sequence of nonces that the receiving 
 party can use to detect a replay attack. These various security methods were 
 implemented with a strength (to cryptanalysis) sufficient for the intended 
