@@ -58,16 +58,16 @@ public class BankThread extends Thread {
 	private static final boolean DEBUG_ASYMMETRIC_ENCRYPTION = Debug.isDebug("StealthNet.BankThread.AsymmetricEncryption");
 	
 	/* Constants. */
-	private static final int INITIAL_BALANCE = 100;
+	private static final int INITIAL_BALANCE = 1000;
 	
 	/** Used to store details of the clients available funds. */
-	private class UserBankAccount {
+	private class UserData {
 		BankThread userThread = null;
-		int balance = INITIAL_BALANCE;
+		int accountBalance = INITIAL_BALANCE;
 	}
 	
 	/** A list of users, indexed by their ID. */
-	private static final Hashtable<String, UserBankAccount> userAccounts = new Hashtable<String, UserBankAccount>();
+	private static final Hashtable<String, UserData> userAccounts = new Hashtable<String, UserData>();
 	
 	/** The user ID for the user owning the thread. */
 	private String userID = null;
@@ -182,20 +182,39 @@ public class BankThread extends Thread {
 	 */
 	private synchronized boolean addUser(final String id) {
 		/* Make sure the specified user doesn't already exist in the user list. */
-		UserBankAccount userAccount = userAccounts.get(id);
+		UserData userInfo = userAccounts.get(id);
 		
-		if (userAccount != null && userAccount.userThread != null)
+		if (userInfo != null && userInfo.userThread != null)
 			return false;
 		else {
 			/* Create new user data for the specified user. */
-			userAccount = new UserBankAccount();
-			userAccount.userThread = this;
-			userAccounts.put(id, userAccount);
+			userInfo = new UserData();
+			userInfo.userThread = this;
+			userAccounts.put(id, userInfo);
 			
 			if (DEBUG_GENERAL)
 				System.out.println("Added user \"" + id + "\" to the user list.");
 			return true;
 		}
+	}
+	
+	/**
+	 * Retrieve a user from the user list.
+	 * 
+	 * @param id The ID of the user to add.
+	 * @return The {@link UserData} corresponding to the specified ID.
+	 */
+	private static synchronized UserData getUser(final String id) {
+		return userAccounts.get(id);
+	}
+	
+	/**
+	 * Retrieve all users from the user list.
+	 * 
+	 * @return The user list.
+	 */
+	private static synchronized Hashtable<String, UserData> getUsers() {
+		return userAccounts;
 	}
 	
 	/**
@@ -205,10 +224,10 @@ public class BankThread extends Thread {
 	 * @return True on success, false on failure or if the specified user
 	 *         doesn't exist in the user list.
 	 */
-	private synchronized boolean removeUser(final String id) {
-		final UserBankAccount userAccount = userAccounts.get(id);
-		if (userAccount != null) {
-			userAccount.userThread = null;
+	private static synchronized boolean removeUser(final String id) {
+		final UserData userInfo = getUser(id);
+		if (userInfo != null) {
+			userInfo.userThread = null;
 			if (DEBUG_GENERAL)
 				System.out.println("Removed user \"" + id + "\" from the user list.");
 			return true;
@@ -273,8 +292,14 @@ public class BankThread extends Thread {
 							/* Cancel the current login attempt. */
 							pckt.command = DecryptedPacket.CMD_LOGOUT;
 							userID = null;
-						} else
-							System.out.println("User \"" + userID + "\" has logged in.");
+							break;
+						}
+						
+						System.out.println("User \"" + userID + "\" has logged in.");
+						
+						/* Send the user their account balance. */
+						stealthComms.sendPacket(DecryptedPacket.CMD_GETBALANCE, Integer.toString(getUser(userID).accountBalance));
+						
 						break;
 					}
 					

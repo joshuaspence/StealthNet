@@ -105,6 +105,7 @@ public class Client {
 	private static final boolean DEBUG_COMMANDS_LIST = Debug.isDebug("StealthNet.Client.Commands.List");
 	private static final boolean DEBUG_COMMANDS_SECRETLIST = Debug.isDebug("StealthNet.Client.Commands.SecretList");
 	private static final boolean DEBUG_COMMANDS_GETSECRET = Debug.isDebug("StealthNet.Client.Commands.GetSecret");
+	private static final boolean DEBUG_COMMANDS_GETBALANCE = Debug.isDebug("StealthNet.Client.Commands.GetBalance");
 	private static final boolean DEBUG_ASYMMETRIC_ENCRYPTION = Debug.isDebug("StealthNet.Client.AsymmetricEncryption");
 	private static final boolean DEBUG_PAYMENTS = Debug.isDebug("StealthNet.Client.Payments");
 	
@@ -169,8 +170,14 @@ public class Client {
 	/** Field to show the {@link Bank} credit balance. */
 	JTextField bankBalanceBox;
 	
+	/** The client's {@link Bank} account balance. */
+	private Integer bankBalance = null;
+	
+	/** The client's {@link Server} account balance. */
+	private Integer serverBalance = null;
+	
 	/** The current {@link CryptoCreditHashChain} in use. */
-	private CryptoCreditHashChain hashChain = null;
+	private CryptoCreditHashChain hashChain = new CryptoCreditHashChain();
 	
 	/**
 	 * The number of credits to request from the {@link Bank} when generating a
@@ -409,7 +416,7 @@ public class Client {
 		bankBalanceSubpane.setPreferredSize(new Dimension(180, 30));
 		bankBalanceSubpane.setBorder(BorderFactory.createEmptyBorder(10, 10, 0, 0));
 		bankBalanceSubpane.add(new JLabel("Bank:  ", SwingConstants.RIGHT));
-		bankBalanceBox = new JTextField(new Integer(0).toString());
+		bankBalanceBox = new JTextField();
 		bankBalanceBox.setEditable(false);
 		bankBalanceSubpane.add(bankBalanceBox);
 		creditsPane.add(bankBalanceSubpane);
@@ -419,7 +426,7 @@ public class Client {
 		creditsSubpane.setPreferredSize(new Dimension(180, 30));
 		creditsSubpane.setBorder(BorderFactory.createEmptyBorder(10, 10, 0, 0));
 		creditsSubpane.add(new JLabel("Credits:  ", SwingConstants.RIGHT));
-		creditsBox = new JTextField(new Integer(0).toString());
+		creditsBox = new JTextField();
 		creditsBox.setEditable(false);
 		creditsSubpane.add(creditsBox);
 		creditsPane.add(creditsSubpane);
@@ -429,7 +436,7 @@ public class Client {
 		serverBalanceSubpane.setPreferredSize(new Dimension(180, 30));
 		serverBalanceSubpane.setBorder(BorderFactory.createEmptyBorder(10, 10, 0, 0));
 		serverBalanceSubpane.add(new JLabel("Server:  ", SwingConstants.RIGHT));
-		serverBalanceBox = new JTextField(new Integer(0).toString());
+		serverBalanceBox = new JTextField();
 		serverBalanceBox.setEditable(false);
 		serverBalanceSubpane.add(serverBalanceBox);
 		creditsPane.add(serverBalanceSubpane);
@@ -580,20 +587,18 @@ public class Client {
 			}
 			
 			/* Initiate a connection with the StealthNet server. */
-			/* TODO: Probably want a timeout on this. */
 			if (DEBUG_GENERAL)
 				System.out.println("Initiating a connection with StealthNet server '" + serverHostname + "' on port " + serverPort + ".");
 			serverComms = new Comms(serverEncryption);
 			serverComms.initiateSession(new Socket(serverHostname, serverPort));
 			
 			/* Initiate a connection with the StealthNet bank. */
-			/* TODO: Probably want a timeout on this. */
 			if (DEBUG_GENERAL)
 				System.out.println("Initiating a connection with StealthNet bank '" + bankHostname + "' on port " + bankPort + ".");
 			bankComms = new Comms(bankEncryption);
 			bankComms.initiateSession(new Socket(bankHostname, bankPort));
 			
-			/** Send the server a login command. */
+			/* Send the server a login command. */
 			if (DEBUG_GENERAL)
 				System.out.println("Sending the server a login packet for user \"" + userID + "\".");
 			serverComms.sendPacket(DecryptedPacket.CMD_LOGIN, userID);
@@ -603,8 +608,13 @@ public class Client {
 				System.out.println("Sending the bank a login packet for user \"" + userID + "\".");
 			bankComms.sendPacket(DecryptedPacket.CMD_LOGIN, userID);
 			
-			/* Update balances. */
-			updateCreditsBoxes(true);
+			/* Wait for the bank and the server to send the account balances. */
+			if (DEBUG_GENERAL)
+				System.out.println("Waiting for account balance from bank.");
+			bankBalance = new Integer(waitForBalance(bankComms));
+			if (DEBUG_GENERAL)
+				System.out.println("Waiting for account balance from server.");
+			serverBalance = new Integer(waitForBalance(serverComms));
 			
 			/* Start periodically checking for packets. */
 			stealthTimer.start();
@@ -622,7 +632,7 @@ public class Client {
 			return;
 		}
 		
-		/* NOTE: We should now be connected to the StealthNet server. */
+		/* NOTE: We should now be connected to the StealthNet server and bank. */
 		
 		msgTextBox.append("Connected to StealthNet.\n");
 		if (DEBUG_GENERAL)
@@ -657,6 +667,11 @@ public class Client {
 			bankComms.terminateSession();
 			serverComms = null;
 			bankComms = null;
+			
+			/* Destroy hash chain. */
+			hashChain = new CryptoCreditHashChain();
+			serverBalance = null;
+			bankBalance = null;
 			
 			/* Change the logout button back to a login button. */
 			loginBtn.setIcon(new ImageIcon(this.getClass().getClassLoader().getResource("img/login.gif")));
@@ -777,6 +792,11 @@ public class Client {
 				pckt = serverComms.recvPacket();
 				
 				switch (pckt.command) {
+/* @formatter:off */
+					/***********************************************************
+					 * Request Payment command
+					 **********************************************************/
+/* @formatter:on */
 					case DecryptedPacket.CMD_REQUESTPAYMENT:
 						final String pcktData = new String(pckt.data);
 						final int amountOwing = Integer.parseInt(pcktData);
@@ -811,15 +831,30 @@ public class Client {
 								}
 							}
 						}
+						
+						break;
+					
+					/***********************************************************
+					 * Get Balance command
+					 **********************************************************/
+					case DecryptedPacket.CMD_GETBALANCE:
+						if (DEBUG_PAYMENTS)
+							System.out.println("Received account balance from server.");
+						serverBalance = new Integer(Integer.parseInt(new String(pckt.data)));
+						break;
+					
+					/***********************************************************
+					 * Other command
+					 **********************************************************/
+					default:
+						System.err.println("Unrecognised or unexpected command received from server.");
+						
 				}
 			} catch (final Exception e) {
 				System.err.println("Error reading packet. Discarding...");
 				if (DEBUG_ERROR_TRACE)
 					e.printStackTrace();
 			}
-		
-		/** Update credits displays. */
-		updateCreditsBoxes(true);
 		
 		/* Choose where to save the secret file. */
 		final FileDialog fileSave = new FileDialog(clientFrame, "Save As...", FileDialog.SAVE);
@@ -1056,6 +1091,20 @@ public class Client {
 	
 	/** Process incoming packets. */
 	private void processPackets() {
+		/* Update credit boxes. */
+		if (hashChain != null)
+			creditsBox.setText(new Integer(hashChain.getLength()).toString());
+		else
+			creditsBox.setText("");
+		if (bankBalance != null)
+			bankBalanceBox.setText(bankBalance.toString());
+		else
+			bankBalanceBox.setText("");
+		if (serverBalance != null)
+			serverBalanceBox.setText(serverBalance.toString());
+		else
+			serverBalanceBox.setText("");
+		
 		try {
 			if (serverComms == null || !serverComms.recvReady())
 				return;
@@ -1085,9 +1134,9 @@ public class Client {
 				
 				switch (pckt.command) {
 /* @formatter:off */
-				/***********************************************************
-				 * Message command
-				 **********************************************************/
+					/***********************************************************
+					 * Message command
+					 **********************************************************/
 /* @formatter:on */
 					case DecryptedPacket.CMD_MSG: {
 						final String msg = new String(pckt.data);
@@ -1287,12 +1336,21 @@ public class Client {
 							System.out.println("Starting file transfer.");
 						final FileTransfer ft = new FileTransfer(snComms, fileName, true);
 						ft.start();
-						updateCreditsBoxes(true);
 						break;
 					}
 					
 					/***********************************************************
-					 * Unknown command
+					 * Get Balance command
+					 **********************************************************/
+					case DecryptedPacket.CMD_GETBALANCE: {
+						if (DEBUG_COMMANDS_GETBALANCE)
+							System.out.println("Received a get balance command.");
+						serverBalance = new Integer(Integer.parseInt(new String(pckt.data)));
+						break;
+					}
+					
+					/***********************************************************
+					 * Other command
 					 **********************************************************/
 					default:
 						System.err.println("Unrecognised command received from server.");
@@ -1436,7 +1494,18 @@ public class Client {
 						
 /* @formatter:off */
 					/***********************************************************
-					 * Unexpected command
+					 * Get Balance command
+					 **********************************************************/
+/* @formatter:on */
+					case DecryptedPacket.CMD_GETBALANCE:
+						if (DEBUG_PAYMENTS)
+							System.out.println("Received account balance from server.");
+						serverBalance = new Integer(Integer.parseInt(new String(pckt.data)));
+						break;
+					
+/* @formatter:off */
+					/***********************************************************
+					 * Other command
 					 **********************************************************/
 /* @formatter:on */
 					default:
@@ -1487,41 +1556,16 @@ public class Client {
 		}
 		
 		serverComms.sendPacket(DecryptedPacket.CMD_HASHCHAIN, Base64.encodeBase64(data));
-		updateCreditsBoxes(true);
 		
 	}
 	
 	/**
-	 * TODO
+	 * Wait for the {@link Bank} or the {@link Server} to send the account
+	 * balance.
 	 * 
-	 * @param retrieve
+	 * @return The client's account balance.
 	 */
-	private void updateCreditsBoxes(final boolean retrieve) {
-		/* Update credits box, stick it here for convenience. */
-		if (hashChain != null)
-			creditsBox.setText(new Integer(hashChain.getLength()).toString());
-		else
-			creditsBox.setText(new Integer(0).toString());
-		
-		if (retrieve) {
-			if (DEBUG_PAYMENTS)
-				System.out.println("Requesting balance from bank.");
-			final int bankBalance = getBalance(bankComms);
-			bankBalanceBox.setText(new Integer(bankBalance).toString());
-			
-			if (DEBUG_PAYMENTS)
-				System.out.println("Requesting balance from server.");
-			final int serverBalance = getBalance(serverComms);
-			serverBalanceBox.setText(new Integer(serverBalance).toString());
-		}
-	}
-	
-	/**
-	 * TODO
-	 */
-	private static int getBalance(final Comms comms) {
-		comms.sendPacket(DecryptedPacket.CMD_GETBALANCE);
-		
+	private static int waitForBalance(final Comms comms) {
 		DecryptedPacket pckt = new DecryptedPacket();
 		while (true)
 			try {
@@ -1538,7 +1582,7 @@ public class Client {
 						
 /* @formatter:off */
 					/***********************************************************
-					 * Unexpected command
+					 * Other command
 					 **********************************************************/
 /* @formatter:on */
 					default:
