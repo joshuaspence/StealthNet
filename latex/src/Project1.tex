@@ -413,13 +413,13 @@ key. The problem with this for an attacker, is that with a key size of 128-bits
 the key space is large enough that you need much more time than the remaining 
 lifetime of the universe to check a significant portion of all keys.
 
-There are somne known attacks on \algorithm{AES} which are faster than a brute
+There are some known attacks on \algorithm{AES} which are faster than a brute
 force attack, however these attacks still require an insurmountable amount of 
 time to guarantee the encryption key.
 
 % CONCLUSION
 \section{Conclusion}
-In our implementation of \packageName{} we applied \algorithm{Diffie-Hellam key
+In our implementation of \packageName{} we applied \algorithm{Diffie-Hellman key
 exchange} in order to provide authentication and establish and common shared 
 key. We applied \algorithm{AES} encryption with a 128-bit block size and a
 128-bit key to encrypt and decfrypt all transmitted data. We used a SHA-1 

@@ -125,8 +125,10 @@
 		<property name="file.jar.server"          value="${path.jar}/${ant.project.name}_server.jar" />
     	<property name="file.tar.gz"              value="${ant.project.name}.tar.gz" />
     	<property name="file.tar.gz.md5"          value="${ant.project.name}.tar.gz.md5" />
-		<property name="file.latex.output"        value="${path.latex.output}/StealthNet.pdf" />
-		<basename property="root.latex.output"    file="${file.latex.output}" />
+		<property name="file.latex.output1"       value="${path.latex.output}/Project1.pdf" />
+		<property name="file.latex.output2"       value="${path.latex.output}/Project2.pdf" />
+		<basename property="root.latex.output1"   file="${file.latex.output1}" />
+		<basename property="root.latex.output2"   file="${file.latex.output2}" />
 		<property name="file.runscript"           value="run.sh" />
 		<property name="file.keys.bank.public"    value="${path.keys.bank}/public.key" />
         <property name="file.keys.bank.private"   value="${path.keys.bank}/private.key" />
@@ -145,7 +147,8 @@
         		<echo>GZIPed TAR file:        ${file.tar.gz}</echo>
             	<echo>TAR MD5 hash file:      ${file.tar.gz.md5}</echo>
             	<echo />
-        	    <echo>Latex output file:      ${file.latex.output}</echo>
+        	    <echo>Latex output file (1):  ${file.latex.output1}</echo>
+            	<echo>Latex output file (2):  ${file.latex.output2}</echo>
             	<echo>Run script:             ${file.runscript}</echo>
             	<echo />
             	<echo>Bank public key:        ${file.keys.bank.public}</echo>
@@ -411,10 +414,11 @@
 	<!-- Latex target -->
     <target name="latex" depends="-init" description="Create LaTeX documentation">        
         <!-- Run 'make' within the latex subdirectory -->
-    	<exec executable="make" dir="${path.latex}" />
+    	<exec executable="make" dir="${path.latex}/src" />
     	
-    	<!-- Symlink output PDF to root directory -->
-    	<symlink link="${root.latex.output}" resource="${file.latex.output}" overwrite="true" />
+    	<!-- Symlink output PDFs to root directory -->
+    	<symlink link="${root.latex.output1}" resource="${file.latex.output1}" overwrite="true" />
+    	<symlink link="${root.latex.output2}" resource="${file.latex.output2}" overwrite="true" />
     </target>
 	
 	<!-- ========================== CLEAN TARGETS ========================== -->
