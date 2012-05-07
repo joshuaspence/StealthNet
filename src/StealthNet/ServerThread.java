@@ -479,7 +479,7 @@ public class ServerThread extends Thread {
 	 * credit the user's account. Also sends the user their updated account
 	 * balance.
 	 * 
-	 * @param user The ID of user whose account should be credited.
+	 * @param userID The ID of user whose account should be credited.
 	 * @param credits The number of credits declared by the {@link Client}.
 	 * @param hash The hash of the {@link CryptoCreditHashChain} supplied by the
 	 *        {@link Client}.
