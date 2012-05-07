@@ -667,10 +667,10 @@ public class ServerThread extends Thread {
 							final String data = new String(pckt.data);
 							
 							final int creditsSent = Integer.parseInt(data.split(";")[0]);
-							final byte[] cryptoCreditHash = Base64.decodeBase64(data.split(";")[1].getBytes());
+							final byte[] cryptoCreditHash = data.split(";")[1].getBytes();
 							
 							if (DEBUG_PAYMENTS)
-								System.out.println("Received payment of " + creditsSent + " credits from user '" + userID + "'.");
+								System.out.println("Received payment of " + creditsSent + " credits from user '" + userID + "' with hash \"" + Utility.getHexValue(cryptoCreditHash) + "\".");
 							
 							/*
 							 * If the client sends a null cryptoCreditHash, then

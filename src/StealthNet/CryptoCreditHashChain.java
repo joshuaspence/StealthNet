@@ -401,7 +401,7 @@ public class CryptoCreditHashChain {
 		final Stack<byte[]> result = new Stack<byte[]>();
 		
 		if (credits > 0)
-			while (hashChain.size() > 0 && result.size() < credits)
+			while (!hashChain.isEmpty() && result.size() < credits)
 				result.push(hashChain.pop().hash);
 		
 		return result;
