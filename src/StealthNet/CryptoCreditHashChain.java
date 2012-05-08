@@ -47,18 +47,18 @@ public class CryptoCreditHashChain {
 	private static final boolean DEBUG_GENERAL = Debug.isDebug("StealthNet.CryptoCreditHashChain.General");
 	private static final boolean DEBUG_ERROR_TRACE = Debug.isDebug("StealthNet.CryptoCreditHashChain.ErrorTrace") || Debug.isDebug("ErrorTrace");
 	
-	/** Algorithm to use for the hashchain {@link MessageDigest}. */
+	/** Algorithm to use for the hash chain {@link MessageDigest}. */
 	private static final String HASH_ALGORITHM = "MD5";
 	
 	/** The number of (random) bytes to use as a seed for the hash chain. */
 	private static final int HASHCHAIN_SEED_BYTES = 8;
 	
-	/** Class to represent individual CryptoCredits. */
+	/** Class to represent individual credits. */
 	public class CryptoCredit {
 		byte[] hash = null;
 	}
 	
-	/** Stack to store the hash chain. */
+	/** {@link Stack} to store the hash chain. */
 	private final Stack<CryptoCredit> hashChain;
 	
 	/**
@@ -101,7 +101,7 @@ public class CryptoCreditHashChain {
 	 * @return True if the {@link Bank} signed the hash chain, otherwise false.
 	 */
 	public boolean getSigned(final Comms bankComms) {
-		bankSignature = getBankSignature(bankComms, Base64.encodeBase64(bankIdentifier));
+		bankSignature = getBankSignature(bankComms, bankIdentifier);
 		return bankSignature != null;
 	}
 	
@@ -358,12 +358,18 @@ public class CryptoCreditHashChain {
 	 * @see Base64
 	 */
 	private static byte[] getBankSignature(final Comms bankComms, final byte[] identifier) {
-		bankComms.sendPacket(DecryptedPacket.CMD_SIGNHASHCHAIN, identifier);
-		DecryptedPacket pckt = new DecryptedPacket();
+		/* Request the signature from the bank. */
+		bankComms.sendPacket(DecryptedPacket.CMD_SIGNHASHCHAIN, Base64.encodeBase64(identifier));
 		
 		while (true)
 			try {
-				pckt = bankComms.recvPacket();
+				final DecryptedPacket pckt = bankComms.recvPacket();
+				
+				if (pckt == null)
+					/*
+					 * Something has probably gone wrong, let's get out of here!
+					 */
+					return null;
 				
 				switch (pckt.command) {
 /* @formatter:off */
@@ -429,6 +435,8 @@ public class CryptoCreditHashChain {
 			mdb = MessageDigest.getInstance(HASH_ALGORITHM);
 		} catch (final Exception e) {
 			System.err.println("Unable to verify CryptoCredit hash.");
+			if (DEBUG_ERROR_TRACE)
+				e.printStackTrace();
 			return false;
 		}
 		
@@ -444,7 +452,7 @@ public class CryptoCreditHashChain {
 			return true;
 		} else {
 			if (DEBUG_GENERAL)
-				System.out.println("Validation of CryptoCredit failed. \"" + Utility.getHexValue(hash) + "\" => \"" + Utility.getHexValue(hashedHash) + "\". Expected \"" + Utility.getHexValue(lastHash) + "\".");
+				System.err.println("Validation of CryptoCredit failed. \"" + Utility.getHexValue(hash) + "\" => \"" + Utility.getHexValue(hashedHash) + "\". Expected \"" + Utility.getHexValue(lastHash) + "\".");
 			return false;
 		}
 	}

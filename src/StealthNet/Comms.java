@@ -1,21 +1,34 @@
+/* @formatter:off */
 /******************************************************************************
- * ELEC5616 Computer and Network Security, The University of Sydney
+ * ELEC5616
+ * Computer and Network Security, The University of Sydney
+ * Copyright (C) 2002-2004, Matt Barrie, Stephen Gould and Ryan Junee
+ *
+ * PACKAGE:         StealthNet
+ * FILENAME:        Comms.java
+ * AUTHORS:         Stephen Gould, Matt Barrie, Ryan Junee and Joshua Spence
+ * DESCRIPTION:     Implementation of StealthNet Communications for ELEC5616
+ * 					programming assignment.
  * 
- * PACKAGE: StealthNet FILENAME: Comms.java AUTHORS: Stephen Gould, Matt Barrie,
- * Ryan Junee and Joshua Spence DESCRIPTION: Implementation of StealthNet
- * Communications for ELEC5616 programming assignment.
+ * 					Security protocols have been added to this class in an 
+ * 					attempt to make StealthNet communications secure. In 
+ * 					particular, Diffie-Hellman key exchange  is performed to 
+ * 					provide authentication. AES encryption is performed to 
+ * 					ensure confidentiality. Hashed Message Authentication Codes 
+ * 					(HMACs) are used to verify message integrity. Finally, a 
+ * 					PRNG is used to provide nonces in order to provide reply 
+ * 					prevention.
  * 
- * Security protocols have been added to this class in an attempt to make
- * StealthNet communications secure. In particular, Diffie-Hellman key exchange
- * is performed to provide authentication. AES encryption is performed to ensure
- * confidentiality. Hashed Message Authentication Codes (HMACs) are used to
- * verify message integrity. Finally, a PRNG is used to provide nonces in order
- * to provide reply prevention.
- * 
- * Debug code has also been added to this class. IMPLEMENTS: initiateSession();
- * acceptSession(); terminateSession(); sendPacket(); recvPacket(); recvReady();
- * 
+ * 					Debug code has also been added to this class. 
+ * IMPLEMENTS: 		initiateSession();
+ * 					acceptSession();
+ * 					terminateSession();
+ * 					sendPacket();
+ * 					recvPacket();
+ * 					recvReady();
+ *
  *****************************************************************************/
+/* @formatter:on */
 
 package StealthNet;
 
@@ -147,7 +160,6 @@ public class Comms {
 		commsSocket = null;
 		dataIn = null;
 		dataOut = null;
-		
 		asymmetricEncryptionProvider = null;
 	}
 	

@@ -7,7 +7,7 @@
  * PACKAGE:         StealthNet
  * FILENAME:        Bank.java
  * AUTHORS:         Joshua Spence
- * DESCRIPTION:     Implementation of StealthNet bank (FirstVirtual) for
+ * DESCRIPTION:     Implementation of StealthNet Bank (FirstVirtual) for
  * 					ELEC5616/NETS3016 programming assignment.
  *
  *****************************************************************************/
@@ -28,7 +28,7 @@ import java.net.Socket;
  * , listening on the specified listening port. For each incoming connection on
  * this port, a new {@link BankThread} is created. The {@link BankThread} class
  * is responsible for communicating with that peer (either a {@link Client} or a
- * {@link Server}).
+ * {@link Server}) for the purposes of signing and verifying payments.
  * 
  * The bank is responsible for maintaining account information (such as current
  * account balances) for all logged in users. The bank is responsible for
@@ -46,7 +46,9 @@ public class Bank {
 	/**
 	 * The main Bank function.
 	 * 
-	 * @param args The command line arguments.
+	 * @param args The command line arguments. The command lines arguments take
+	 *        the following format. <ul> <li> <code>args[0]</code> ::=
+	 *        <code>port</code> </li> </ul>
 	 * @throws IOException
 	 */
 	public static void main(final String[] args) throws IOException {

@@ -121,7 +121,7 @@ public class DecryptedPacket {
 	 * {@link CryptoCreditHashChain}. The contents of the packet is the
 	 * identifier of the {@link CryptoCreditHashChain}, containing the user ID,
 	 * the number of credits and the top CryptoCredit hash from the hash chain.
-	 * THe hash sent from the {@link Client} to the {@link Bank} is encoded in
+	 * The hash sent from the {@link Client} to the {@link Bank} is encoded in
 	 * base-64. Similarly, the signature sent from the {@link Bank} to the
 	 * {@link Client} is also encoded in base-64.
 	 */
@@ -141,8 +141,8 @@ public class DecryptedPacket {
 	 * the payment is valid.
 	 * 
 	 * The {@link Server} sends the data in the form
-	 * <code>userID;credits;hash</code>. The {@link Bank} sends data in the form
-	 * <code>[true|false]</code>.
+	 * <code>userID;credits;hash</code>. The hash is to be encoded in base-64.
+	 * The {@link Bank} sends data in the form <code>[true|false]</code>.
 	 */
 	public static final byte CMD_VERIFYCREDIT = 0x44;
 	

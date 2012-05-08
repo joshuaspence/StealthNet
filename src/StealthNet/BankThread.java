@@ -6,7 +6,7 @@
  * PACKAGE:         StealthNet
  * FILENAME:        BankThread.java
  * AUTHORS:         Joshua Spence
- * DESCRIPTION:     Implementation of StealthNet bank for ELEC5616 programming
+ * DESCRIPTION:     Implementation of StealthNet Bank for ELEC5616 programming
  * 					assignment.
  *
  *****************************************************************************/
@@ -46,13 +46,15 @@ import StealthNet.Security.SHA1withRSAAsymmetricVerification;
  * active concurrently. This class handles {@link DecryptedPacket} and deals
  * with them accordingly.
  * 
- * {@link Client}s use the {@link Bank} to sign {@link CryptoCredit} hash
- * chains. {@link Server}s use the bank to verify CryptoCredit payments.
+ * {@link Client}s use the {@link Bank} to sign {@link CryptoCreditHashChain}s,
+ * as well as to retrieve their account balance. {@link Server}s use the
+ * {@link Bank} to verify {@link CryptoCredit} payments.
  * 
  * @author Joshua Spence
  * 
  * @see Bank
  * @see Thread
+ * @see CryptoCreditHashChain
  */
 public class BankThread extends Thread {
 	/* Debug options. */
@@ -60,10 +62,11 @@ public class BankThread extends Thread {
 	private static final boolean DEBUG_ERROR_TRACE = Debug.isDebug("StealthNet.BankThread.ErrorTrace") || Debug.isDebug("ErrorTrace");
 	private static final boolean DEBUG_COMMANDS_NULL = Debug.isDebug("StealthNet.BankThread.Commands.Null");
 	private static final boolean DEBUG_COMMANDS_LOGIN = Debug.isDebug("StealthNet.BankThread.Commands.Login");
-	private static final boolean DEBUG_COMMANDS_LOGOUT = Debug.isDebug("StealthNet.BankThread.Commands.Logout");
-	private static final boolean DEBUG_COMMANDS_GETBALANCE = Debug.isDebug("StealthNet.BankThread.Commands.GetBalance");
 	private static final boolean DEBUG_COMMANDS_SIGNHASHCHAIN = Debug.isDebug("StealthNet.BankThread.Commands.SignHashChain");
+	private static final boolean DEBUG_COMMANDS_GETBALANCE = Debug.isDebug("StealthNet.BankThread.Commands.GetBalance");
+	private static final boolean DEBUG_COMMANDS_VERIFYCREDIT = Debug.isDebug("StealthNet.BankThread.Commands.VerifyCredit");
 	private static final boolean DEBUG_ASYMMETRIC_ENCRYPTION = Debug.isDebug("StealthNet.BankThread.AsymmetricEncryption");
+	private static final boolean DEBUG_BALANCES = Debug.isDebug("StealthNet.BankThread.Balances");
 	
 	/** The initial account balance for a new user logging into the bank. */
 	private static final int INITIAL_BALANCE = 1000;
@@ -78,12 +81,16 @@ public class BankThread extends Thread {
 	/** A list of users, indexed by their ID. */
 	private static final Hashtable<String, UserData> userList = new Hashtable<String, UserData>();
 	
-	/** The user ID for the user owning the thread. */
+	/**
+	 * The user ID for the user owning the thread. Note that for the
+	 * {@link Server} connection, this will be null. The {@link Server} does not
+	 * issue a <code>CMD_LOGIN</code> command to the {@link Bank}.
+	 */
 	private String userID = null;
 	
 	/**
-	 * A {@link Comms} class to handle communications for this {@link Client} or
-	 * {@link Server}.
+	 * A {@link Comms} class to handle communications for this peer (
+	 * {@link Client} or {@link Server}).
 	 */
 	private Comms stealthComms = null;
 	
@@ -99,7 +106,10 @@ public class BankThread extends Thread {
 	/** The public-private {@link KeyPair} for this bank. */
 	private static final KeyPair bankKeys;
 	
-	/** To allow the bank to sign messages. */
+	/**
+	 * A {@link AsymmetricVerification} class to allow the bank to sign
+	 * messages.
+	 */
 	private static final AsymmetricVerification asymmetricVerificationProvider;
 	
 	/* Initialise the bank public-private key pair. */
@@ -133,10 +143,10 @@ public class BankThread extends Thread {
 			System.out.println("Private key: " + privateKeyString);
 		}
 		
+		/* Set up asymmetric verification. */
 		AsymmetricVerification av = null;
 		try {
-			av = new SHA1withRSAAsymmetricVerification(bankKeys);
-			av.setPeerPublicKey(bankKeys.getPublic());
+			av = new SHA1withRSAAsymmetricVerification(bankKeys, bankKeys.getPublic());
 		} catch (final Exception e) {
 			System.err.println("Unable to enable asymmetric verification.");
 			if (DEBUG_ERROR_TRACE)
@@ -166,7 +176,8 @@ public class BankThread extends Thread {
 		/*
 		 * Create a new Comms instance and accept sessions. Note that the
 		 * client/server already has our public key and can hence encrypt
-		 * messages destined for us.
+		 * messages destined for us. They will send us their public key (in an
+		 * encrypted form) so that we can communicate securely.
 		 */
 		stealthComms = new Comms(new RSAAsymmetricEncryption(bankKeys), true);
 		stealthComms.acceptSession(socket);
@@ -185,7 +196,9 @@ public class BankThread extends Thread {
 	
 	/**
 	 * Add a user to the user list. Used to log the specified user into
-	 * StealthNet.
+	 * StealthNet. If the new user has not logged into the {@link Bank}
+	 * previously, then a new bank account will be created for them (with an
+	 * initial default balance).
 	 * 
 	 * @param id The ID of the user to add.
 	 * @return True on success, false on failure or if the specified user
@@ -229,7 +242,9 @@ public class BankThread extends Thread {
 	}
 	
 	/**
-	 * Remove a user from the user list.
+	 * Remove a user from the user list. The user's account will not be deleted,
+	 * such that their balance can be retrieved if they login again at a later
+	 * period.
 	 * 
 	 * @param id The ID of the user to remove.
 	 * @return True on success, false on failure or if the specified user
@@ -262,6 +277,8 @@ public class BankThread extends Thread {
 		
 		if (credits > 0) {
 			user.accountBalance += credits;
+			if (DEBUG_GENERAL)
+				System.out.println("Added " + credits + " credits to user \"" + userID + "\" account.");
 			result = true;
 		}
 		
@@ -290,6 +307,8 @@ public class BankThread extends Thread {
 		if (credits > 0 && fromUser.accountBalance >= credits) {
 			fromUser.accountBalance -= credits;
 			toUser.accountBalance += credits;
+			if (DEBUG_GENERAL)
+				System.out.println("Transferred " + credits + " credits from user \"" + fromUserID + "\" account to user \"" + toUserID + "\" account.");
 			result = true;
 		}
 		
@@ -313,8 +332,10 @@ public class BankThread extends Thread {
 		final UserData user = getUser(userID);
 		boolean result = false;
 		
-		if (credits > 0) {
+		if (credits > 0 && user.accountBalance >= credits) {
 			user.accountBalance -= credits;
+			if (DEBUG_GENERAL)
+				System.out.println("Deducted " + credits + " credits from user \"" + userID + "\" account.");
 			result = true;
 		}
 		
@@ -327,7 +348,14 @@ public class BankThread extends Thread {
 	/**
 	 * Signs a {@link CryptoCreditHashChain} for a user. The hash chain will
 	 * only be signed if the user has sufficient credit in their account and if
-	 * the user is requesting credits from their <em>own</em> account.
+	 * the user is requesting credits from their <em>own</em> account. <p> Once
+	 * the {@link CryptoCreditHashChain} is signed, the signed credits are
+	 * deducted from the user's account. <p> The {@link Bank} maintains the last
+	 * used hash for each {@link Client} in order to verify payments.
+	 * 
+	 * @param identifier The identifier for the {@link CryptoCreditHashChain} to
+	 *        be signed. The identifier takes the form
+	 *        <code>user;credits;topHash</code>.
 	 */
 	private synchronized void signHashChain(final byte[] identifier) {
 		/* Extract fields from identifier. */
@@ -337,20 +365,21 @@ public class BankThread extends Thread {
 		byte[] signature = new byte[0];
 		
 		if (DEBUG_COMMANDS_SIGNHASHCHAIN)
-			System.out.println("Processing a hash chain for user '" + userID + "' for " + credits + " credits with top hash \"" + Utility.getHexValue(topHash) + "\".");
+			System.out.println("Processing a CryptoCreditHashChain for user \"" + userID + "\" for " + credits + " credits with top hash \"" + Utility.getHexValue(topHash) + "\".");
 		
 		/* Make sure the user is requesting credits from their own account. */
-		if (!userID.equals(this.userID)) {
-			if (DEBUG_COMMANDS_SIGNHASHCHAIN)
-				System.err.println("User '" + this.userID + "' requested a signed hash chain for user '" + userID + "'.");
-		} else /* Update the user's account info and sign the hash chain. */
+		if (!userID.equals(this.userID))
+			System.err.println("User \"" + this.userID + "\" cannot requested a signed hash chain for user \"" + userID + "\".");
+		else /* Update the user's account info and sign the hash chain. */
 		if (deductCredits(userID, credits)) {
 			/* The user's account has been deducted. Sign the hash chain. */
 			try {
 				signature = asymmetricVerificationProvider.sign(identifier);
 				
 				if (DEBUG_COMMANDS_SIGNHASHCHAIN)
-					System.out.println("Signed hash chain with identifier \"" + Utility.getHexValue(identifier) + "\". Signature is \"" + Utility.getHexValue(signature) + "\".");
+					System.out.println("Signed CryptoCreditHashChain \"" + Utility.getHexValue(topHash) + "\" with signature \"" + Utility.getHexValue(signature) + "\".");
+				else
+					System.out.println("Signed CryptoCreditHashChain \"" + Utility.getHexValue(topHash) + "\".");
 			} catch (final Exception e) {
 				System.err.println("Failed to sign hash chain.");
 				if (DEBUG_ERROR_TRACE)
@@ -360,35 +389,39 @@ public class BankThread extends Thread {
 			/* Update the last hash for the user. */
 			getUser(userID).lastHash = topHash;
 		} else if (DEBUG_COMMANDS_SIGNHASHCHAIN)
-			System.out.println("Insufficient credit in user '" + userID + "' account.");
+			System.err.println("Insufficient credit in user \"" + userID + "\" account.");
 		
 		/*
 		 * Send the user the signature. Note that the signature will be empty if
 		 * the bank refused to sign the hash chain.
 		 */
 		stealthComms.sendPacket(DecryptedPacket.CMD_SIGNHASHCHAIN, signature);
-		
-		/* Send the user their (possibly updated) account balance. */
-		stealthComms.sendPacket(DecryptedPacket.CMD_GETBALANCE, Integer.toString(getUser(userID).accountBalance));
 	}
 	
 	/**
-	 * Verifies a payment. This is used by the {@link Server} when receiving a
-	 * CryptoCredit hash for payment, to ensure that the CryptoCredit hasn't
-	 * already been spent with another vendor. We can be sure that the user
-	 * requested the payment because only the {@link Client} that generated the
-	 * hash chain will be able to generate valid CryptoCredit hashes for that
+	 * Verifies a {@link CryptoCredit} payment. This is used by the
+	 * {@link Server} when receiving a {@link CryptoCredit} hash for payment, to
+	 * ensure that the {@link CryptoCredit} hasn't already been spent with
+	 * another vendor. We can be sure that the user owning the
+	 * {@link CryptoCredit} requested the payment because only the
+	 * {@link Client} that generated the {@link CryptoCreditHashChain} will be
+	 * able to generate valid {@link CryptoCredit} hashes for that
 	 * {@link CryptoCreditHashChain}.
 	 * 
-	 * @param userID
-	 * @param credits
-	 * @param hash
+	 * @param userID The ID of the user that sent the {@link CryptoCredit}
+	 *        payment.
+	 * @param credits The number of credits that the user claimed to have sent.
+	 * @param hash The {@link CryptoCredit} hash of the payment.
 	 */
 	private synchronized void verifyPayment(final String userID, final int credits, final byte[] hash) {
 		boolean result = false;
-		
-		if (CryptoCreditHashChain.validate(hash, credits, getUser(userID).lastHash)) {
-			getUser(userID).lastHash = hash;
+		final UserData user = getUser(userID);
+		/*
+		 * Check that apply the hash function 'credit' times to "hash" gives
+		 * "lastHash".
+		 */
+		if (CryptoCreditHashChain.validate(hash, credits, user.lastHash)) {
+			user.lastHash = hash;
 			result = true;
 		}
 		
@@ -398,7 +431,7 @@ public class BankThread extends Thread {
 	
 	/**
 	 * Get a {@link String} containing all users and their current account
-	 * balances.
+	 * balances. For debug purposes only.
 	 * 
 	 * @return A {@link String} containing all users and their current account
 	 *         balances.
@@ -410,17 +443,19 @@ public class BankThread extends Thread {
 		while (i.hasMoreElements()) {
 			final String userID = i.nextElement();
 			final UserData userInfo = getUser(userID);
-			
 			result += userID + ":\t" + userInfo.accountBalance + "\t" + (userInfo.lastHash == null ? "(none)" : Utility.getHexValue(userInfo.lastHash)) + "\n";
 		}
 		
+		/* Strip the trailing newline character. */
 		result = result.substring(0, result.length() - 1);
 		return result;
 	}
 	
 	/**
 	 * The main function for the class. This function handles all type of
-	 * StealthNet packets. TODO
+	 * StealthNet packets.
+	 * 
+	 * TODO
 	 */
 	@Override
 	public void run() {
@@ -434,10 +469,10 @@ public class BankThread extends Thread {
 				pckt = stealthComms.recvPacket();
 				
 				if (pckt == null)
+					/*
+					 * Something has probably gone wrong, let's get out of here!
+					 */
 					break;
-				
-				if (DEBUG_GENERAL)
-					System.out.println("Received packet: (" + pckt.getDecodedString() + ").");
 				
 				/* Perform the relevant action based on the packet command. */
 				switch (pckt.command) {
@@ -448,7 +483,10 @@ public class BankThread extends Thread {
 /* @formatter:on */
 					case DecryptedPacket.CMD_NULL: {
 						if (DEBUG_COMMANDS_NULL)
-							System.out.println("Received NULL command.");
+							if (userID != null)
+								System.out.println("User \"" + userID + "\" sent NULL command.");
+							else
+								System.out.println("Received NULL command.");
 						break;
 					}
 					
@@ -456,9 +494,6 @@ public class BankThread extends Thread {
 					 * Login command
 					 **********************************************************/
 					case DecryptedPacket.CMD_LOGIN: {
-						if (DEBUG_COMMANDS_LOGIN)
-							System.out.println("Received login command.");
-						
 						if (userID != null) {
 							/* A user is already logged in. */
 							System.err.println("User \"" + userID + "\" trying to log in twice.");
@@ -481,8 +516,9 @@ public class BankThread extends Thread {
 						System.out.println("User \"" + userID + "\" has logged in.");
 						
 						/* Send the user their account balance. */
+						if (DEBUG_COMMANDS_LOGIN)
+							System.out.println("Sending user \"" + userID + "\" their initial balance.");
 						stealthComms.sendPacket(DecryptedPacket.CMD_GETBALANCE, Integer.toString(getUser(userID).accountBalance));
-						
 						break;
 					}
 					
@@ -490,9 +526,6 @@ public class BankThread extends Thread {
 					 * Logout command
 					 **********************************************************/
 					case DecryptedPacket.CMD_LOGOUT: {
-						if (DEBUG_COMMANDS_LOGOUT)
-							System.out.println("Received logout command.");
-						
 						if (userID == null)
 							System.err.println("Unknown user trying to log out.");
 						else
@@ -507,10 +540,15 @@ public class BankThread extends Thread {
 					 **********************************************************/
 					case DecryptedPacket.CMD_GETBALANCE: {
 						if (DEBUG_COMMANDS_GETBALANCE)
-							System.out.println("Received get balance command.");
+							if (userID != null)
+								System.out.println("User \"" + userID + "\" sent get balance command.");
+							else
+								System.out.println("Received get balance command.");
 						
 						/* Send the user their account balance. */
 						stealthComms.sendPacket(DecryptedPacket.CMD_GETBALANCE, Integer.toString(getUser(userID).accountBalance));
+						if (DEBUG_BALANCES)
+							System.out.println(getUserBalances());
 						break;
 					}
 					
@@ -518,8 +556,15 @@ public class BankThread extends Thread {
 					 * Sign Hashchain command
 					 **********************************************************/
 					case DecryptedPacket.CMD_SIGNHASHCHAIN: {
+						if (DEBUG_COMMANDS_SIGNHASHCHAIN)
+							if (userID != null)
+								System.out.println("User \"" + userID + "\" sent sign hash chain command.");
+							else
+								System.out.println("Received sign hash chain command.");
+						
 						signHashChain(Base64.decodeBase64(pckt.data));
-						System.out.println(getUserBalances());
+						if (DEBUG_BALANCES)
+							System.out.println(getUserBalances());
 						break;
 					}
 					
@@ -527,6 +572,12 @@ public class BankThread extends Thread {
 					 * Verify Credit command
 					 **********************************************************/
 					case DecryptedPacket.CMD_VERIFYCREDIT: {
+						if (DEBUG_COMMANDS_VERIFYCREDIT)
+							if (userID != null)
+								System.out.println("User \"" + userID + "\" sent verify credit command.");
+							else
+								System.out.println("Received sign verify credit command.");
+						
 						final String data = new String(pckt.data);
 						final String user = data.split(";")[0];
 						final int credits = Integer.parseInt(data.split(";")[1]);
@@ -536,10 +587,10 @@ public class BankThread extends Thread {
 					}
 					
 					/***********************************************************
-					 * Unknown command
+					 * Other command
 					 **********************************************************/
 					default:
-						System.err.println("Unrecognised command.");
+						System.err.println("Unrecognised or unexpected command.");
 				}
 			}
 		} catch (final IOException e) {

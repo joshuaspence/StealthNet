@@ -569,16 +569,14 @@ public class RSAAsymmetricEncryption extends AsymmetricEncryption {
 	/**
 	 * Converts a {@link String} to a {@link PublicKey}
 	 * 
-	 * @param keyString The string representing the {@link PublicKey}, assumed
-	 *        to be encoded in base-64.
+	 * @param keyString The byte array representing the {@link PublicKey}.
 	 * @return The {@link PublicKey} represented by the input string, or null if
 	 *         a {@link PublicKey} cannot be formed.
-	 * @see Base64
 	 */
-	public static PublicKey stringToPublicKey(final String keyString) {
+	public static PublicKey stringToPublicKey(final byte[] keyString) {
 		try {
 			final KeyFactory factory = KeyFactory.getInstance(RSAAsymmetricEncryption.ALGORITHM);
-			final X509EncodedKeySpec keySpec = new X509EncodedKeySpec(Base64.decodeBase64(keyString));
+			final X509EncodedKeySpec keySpec = new X509EncodedKeySpec(keyString);
 			return factory.generatePublic(keySpec);
 		} catch (final Exception e) {
 			return null;
