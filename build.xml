@@ -5,7 +5,7 @@
     Authors:
         - Joshua Spence (308216350)
         - Ahmad Al Mutawa (312003919)
-        - James Moutafidis (???)
+        - James Moutafidis (420105464)
 -->
 <project name="StealthNet" default="default" basedir=".">
 	<!-- Use ant-contrib -->
