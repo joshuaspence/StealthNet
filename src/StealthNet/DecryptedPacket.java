@@ -20,10 +20,13 @@ package StealthNet;
 /* Import Libraries ******************************************************** */
 
 import java.io.UnsupportedEncodingException;
+import java.security.PublicKey;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 import javax.management.InvalidAttributeValueException;
+
+import org.apache.commons.codec.binary.Base64;
 
 import StealthNet.Security.Encryption;
 import StealthNet.Security.MessageAuthenticationCode;
@@ -55,16 +58,40 @@ public class DecryptedPacket {
 	public static final byte CMD_LOGIN = 0x01;
 	public static final byte CMD_LOGOUT = 0x02;
 	public static final byte CMD_MSG = 0x03;
+	
+	/**
+	 * <b>NOTE:</b> Data will be of the form <code>user@host:port</code>.
+	 */
 	public static final byte CMD_CHAT = 0x04;
+	
+	/**
+	 * <b>NOTE:</b> Data will be of the form
+	 * <code>user@host:port#filename</code>.
+	 */
 	public static final byte CMD_FTP = 0x05;
+	
+	/**
+	 * <b>NOTE:</b> Data will be of the form <code>userID;online\n...</code>
+	 */
 	public static final byte CMD_LIST = 0x06;
 	public static final byte CMD_CREATESECRET = 0x07;
 	public static final byte CMD_SECRETLIST = 0x08;
+	
+	/**
+	 * <b>NOTE:</b> Data will be of the form <code>user@host:port</code>.
+	 */
 	public static final byte CMD_GETSECRET = 0x09;
 	
 	/**
-	 * The <code>GETPUBLICKEY</code> command is used to request the public key
-	 * of a user from the server.
+	 * The <code>GETPUBLICKEY</code> command is used to request the
+	 * {@link PublicKey} of a user from the server. <p> When the {@link Client}
+	 * sends this command to the {@link Server}, the packet data contains the
+	 * user ID of the user whose {@link PublicKey} is being requested. <p> When
+	 * the {@link Server} sends this command to the {@link Client}, the packet
+	 * data contains the {@link PublicKey} of the requested user, encoded in
+	 * base-64.
+	 * 
+	 * @see Base64
 	 */
 	public static final byte CMD_GETPUBLICKEY = 0x0A;
 	
@@ -74,33 +101,56 @@ public class DecryptedPacket {
 	
 	/**
 	 * The {@link Client} sends a <code>CMD_PAYMENT</code> packet to the
-	 * {@link Server} to add credit to their account.
+	 * {@link Server} to add credit to their account. The contents of the packet
+	 * is the number of credits being sent, as well as the relevant CryptoCredit
+	 * hash. The data takes the form <code>credits;hash<code>. The hash is to be
+	 * encoded in base-64.
 	 */
 	public static final byte CMD_PAYMENT = 0x40;
 	
 	/**
 	 * The {@link Server} sends a <code>CMD_REQUESTPAYMENT</code> packet to the
-	 * {@link Client} to request additional payment for a secret.
+	 * {@link Client} to request additional payment for a secret. The contents
+	 * of the packet is the number of credits being requested.
 	 */
 	public static final byte CMD_REQUESTPAYMENT = 0x41;
 	
 	/**
-	 * The {@link Client} sends a <code>CMD_SIGNPAYMENT</code> packet to the
-	 * {@link Bank} to request that the bank sign a hash chain.
+	 * The {@link Client} sends a <code>CMD_SIGNHASHCHAIN</code> packet to the
+	 * {@link Bank} to request that the bank sign a
+	 * {@link CryptoCreditHashChain}. The contents of the packet is the
+	 * identifier of the {@link CryptoCreditHashChain}, containing the user ID,
+	 * the number of credits and the top CryptoCredit hash from the hash chain.
+	 * THe hash sent from the {@link Client} to the {@link Bank} is encoded in
+	 * base-64. Similarly, the signature sent from the {@link Bank} to the
+	 * {@link Client} is also encoded in base-64.
 	 */
 	public static final byte CMD_SIGNHASHCHAIN = 0x42;
 	
 	/**
 	 * The {@link Client} sends a <code>CMD_GETBALANCE</code> packet to either
-	 * the {@link Bank} or the {@link Server} to request the client's account
-	 * balance.
+	 * the {@link Bank} or the {@link Server} to request the {@link Client}'s
+	 * account balance.
 	 */
 	public static final byte CMD_GETBALANCE = 0x43;
 	
 	/**
+	 * The {@link Server} sends a <code>CMD_VERIFYCREDIT</code> packet to the
+	 * {@link Bank} when the {@link Client} sends a CryptoCredit hash for
+	 * payment. The {@link Bank} sends back a response indicating whether or not
+	 * the payment is valid.
+	 * 
+	 * The {@link Server} sends the data in the form
+	 * <code>userID;credits;hash</code>. The {@link Bank} sends data in the form
+	 * <code>[true|false]</code>.
+	 */
+	public static final byte CMD_VERIFYCREDIT = 0x44;
+	
+	/**
 	 * The {@link Client} sends a <code>CMD_HASHCHAIN</code> packet to the
-	 * {@link Server} when the {@link Client} has depleted its current hash
-	 * chain and has generated a new chain.
+	 * {@link Server} upon generation of a new hash chain. The client must send
+	 * both the identifier and the signature of the
+	 * {@link CryptoCreditHashChain}. The packet data is encoded in base-64.
 	 */
 	public static final byte CMD_HASHCHAIN = 0x44;
 	
@@ -110,19 +160,19 @@ public class DecryptedPacket {
 	 */
 	
 	/**
-	 * The <code>PUBLICKEY</code> command is used to share the common key for
-	 * Diffie-Hellman key exchange.
+	 * The <code>CMD_AUTHENTICATIONKEY</code> command is used to share the
+	 * common key for Diffie-Hellman key exchange.
 	 */
 	public static final byte CMD_AUTHENTICATIONKEY = 0x7A;
 	
 	/**
-	 * The <code>PUBLICKEY</code> command is used to share the key for the MAC
-	 * generator.
+	 * The <code>CMD_INTEGRITYKEY</code> command is used to share the key for
+	 * the MAC generator.
 	 */
 	public static final byte CMD_INTEGRITYKEY = 0x7B;
 	
 	/**
-	 * The <code>PUBLICKEY</code> command is used to share the seed for the
+	 * The <code>CMD_NONCESEED</code> command is used to share the seed for the
 	 * nonce generator.
 	 */
 	public static final byte CMD_NONCESEED = 0x7C;
@@ -349,8 +399,8 @@ public class DecryptedPacket {
 				return "CMD_SIGNHASHCHAIN";
 			case CMD_GETBALANCE:
 				return "CMD_GETBALANCE";
-			case CMD_HASHCHAIN:
-				return "CMD_HASHCHAIN";
+			case CMD_VERIFYCREDIT:
+				return "CMD_VERIFYCREDIT";
 			case CMD_AUTHENTICATIONKEY:
 				return "CMD_AUTHENTICATIONKEY";
 			case CMD_INTEGRITYKEY:

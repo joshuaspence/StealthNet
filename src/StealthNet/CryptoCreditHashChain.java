@@ -421,10 +421,8 @@ public class CryptoCreditHashChain {
 	 *         false.
 	 */
 	public static boolean validate(final byte[] hash, final int credits, final byte[] lastHash) {
-		if (hash == null) {
-			System.err.println("Cannot validate CryptoCredit without a lash hash value.");
+		if (hash == null || lastHash == null)
 			return false;
-		}
 		
 		final MessageDigest mdb;
 		try {

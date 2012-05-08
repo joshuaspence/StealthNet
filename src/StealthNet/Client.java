@@ -40,6 +40,7 @@ import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 import java.security.KeyPair;
+import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.util.Hashtable;
 import java.util.Stack;
@@ -202,6 +203,10 @@ public class Client {
 		stealthTimer = new Timer(100, new ActionListener() {
 			@Override
 			public void actionPerformed(final ActionEvent e) {
+				/* Update credit boxes with the cached values. */
+				updateCreditsBoxes();
+				
+				/* Process incoming packets. */
 				processPackets();
 			}
 		});
@@ -228,6 +233,10 @@ public class Client {
 		stealthTimer = new Timer(100, new ActionListener() {
 			@Override
 			public void actionPerformed(final ActionEvent e) {
+				/* Update credit boxes with the cached values. */
+				updateCreditsBoxes();
+				
+				/* Process incoming packets. */
 				processPackets();
 			}
 		});
@@ -501,6 +510,12 @@ public class Client {
 	 * {@link Bank}'s {@link PublicKey} respectively. This means that if another
 	 * party is masquerading as the {@link Server} or as the {@link Bank}, then
 	 * (without the {link PrivateKey}s) they are unable to decrypt the packets.
+	 * 
+	 * When a user attempts to login, the application will check if that user
+	 * already has a public-private {@link KeyPair}. If they do, then the
+	 * application will attempt to use the existing {@link KeyPair}, assuming
+	 * that the user provides the correct password to decrypt the
+	 * {@link PrivateKey} file.
 	 */
 	private synchronized void login() {
 		if (DEBUG_GENERAL)
@@ -542,7 +557,7 @@ public class Client {
 			
 			try {
 				/*
-				 * Retrieve the public/private key from the filesystem. If the
+				 * Retrieve the public/private key from the file system. If the
 				 * public/private keys don't exist then create new
 				 * public/private keys. Then enable asymmetric encryption to the
 				 * server and to the bank.
@@ -634,8 +649,8 @@ public class Client {
 			return;
 		}
 		
+		/* Initiate a connection with the StealthNet bank. */
 		try {
-			/* Initiate a connection with the StealthNet bank. */
 			if (DEBUG_GENERAL)
 				System.out.println("Initiating a connection with StealthNet bank '" + bankHostname + "' on port " + bankPort + ".");
 			bankComms = new Comms(bankEncryption);
@@ -683,7 +698,9 @@ public class Client {
 		/* Start periodically checking for packets. */
 		stealthTimer.start();
 		
+		/* ================================================================== */
 		/* NOTE: We should now be connected to the StealthNet server and bank. */
+		/* ================================================================== */
 		
 		/* Set the frame title. */
 		clientFrame.setTitle("stealthnet [" + userID + "]");
@@ -708,9 +725,9 @@ public class Client {
 				
 				/* Send the server and bank a logout command. */
 				serverComms.sendPacket(DecryptedPacket.CMD_LOGOUT);
-				msgTextBox.append("[INFO] Logged out of StealthNet server.\n");
 				if (DEBUG_GENERAL)
 					System.out.println("Logged out of StealthNet server.");
+				msgTextBox.append("[INFO] Logged out of StealthNet server.\n");
 				
 				/* Terminate session. */
 				serverComms.terminateSession();
@@ -723,9 +740,9 @@ public class Client {
 				buddyListData.setRowCount(0);
 				secretListData.setRowCount(0);
 				
-				msgTextBox.append("[INFO] Disconnected from StealthNet server.\n");
 				if (DEBUG_GENERAL)
 					System.out.println("Disconnected from StealthNet server.");
+				msgTextBox.append("[INFO] Disconnected from StealthNet server.\n");
 			}
 			
 			if (bankComms != null) {
@@ -747,7 +764,7 @@ public class Client {
 					System.out.println("Disconnected from StealthNet bank.");
 			}
 			
-			/* Destroy hash chain. */
+			/* Destroy the current hash chain. */
 			hashChain = new CryptoCreditHashChain();
 			
 			/* Change the logout button back to a login button. */
@@ -781,9 +798,9 @@ public class Client {
 		if (fileOpen.getFile().length() == 0)
 			return;
 		
+		/* Create the secret on the server. */
 		final String secret = name + ";" + description + ";" + cost + ";" + fileOpen.getDirectory() + ";" + fileOpen.getFile();
 		if (secret != null) {
-			/* Create the secret on the server. */
 			if (DEBUG_GENERAL)
 				System.out.println("Sending secret details to server. Secret name is \"" + name + "\". Secret cost is " + cost + ". Secret description is \"" + description + "\". Secret file is \"" + fileOpen.getDirectory() + fileOpen.getFile() + "\".");
 			serverComms.sendPacket(DecryptedPacket.CMD_CREATESECRET, secret);
@@ -853,15 +870,16 @@ public class Client {
 		
 		/*
 		 * Wait for the server to respond with the payment required to purchase
-		 * the secret.
+		 * the secret. Note that if no payment is required, then the server
+		 * should explicitly send a request for zero payment.
 		 */
 		if (DEBUG_PAYMENTS)
 			System.out.println("Waiting for server to respond with payment required to purchase the secret.");
-		DecryptedPacket pckt = new DecryptedPacket();
+		
 		boolean sufficientCredit = false;
 		while (!sufficientCredit)
 			try {
-				pckt = serverComms.recvPacket();
+				final DecryptedPacket pckt = serverComms.recvPacket();
 				
 				switch (pckt.command) {
 /* @formatter:off */
@@ -885,6 +903,10 @@ public class Client {
 							boolean sentPayment = false;
 							while (!sentPayment) {
 								if (hashChain == null) {
+									/*
+									 * We don't have a hash chain... Generate a
+									 * new hash chain.
+									 */
 									if (DEBUG_PAYMENTS)
 										System.out.println("No hash chain found. Generating a new hash chain.");
 									getNewHashChain(DEFAULT_HASHCHAIN_LENGTH);
@@ -1055,7 +1077,7 @@ public class Client {
 		iAddr += ":" + Integer.toString(chatSocket.getLocalPort());
 		
 		/* Get the public key of the other client. */
-		final PublicKey peer = getPublicKey(myid);
+		final PublicKey peer = requestPublicKey(myid);
 		if (peer == null) {
 			System.err.println("Unable to determine peer public key.");
 			return;
@@ -1123,7 +1145,7 @@ public class Client {
 		final String myid = (String) buddyTable.getValueAt(row, 0);
 		
 		/* Get the public key of the other client. */
-		final PublicKey peer = getPublicKey(myid);
+		final PublicKey peer = requestPublicKey(myid);
 		if (peer == null) {
 			System.err.println("Unable to determine peer public key.");
 			msgTextBox.append("[*ERR*] Unable to determine details of user '" + myid + "'.");
@@ -1211,7 +1233,7 @@ public class Client {
 	}
 	
 	/**
-	 * Get the {@link PublicKey} of a peer client from the {@link Server}.
+	 * Request the {@link PublicKey} of a peer client from the {@link Server}.
 	 * Blocks and discards packets until the {@link Server} sends a
 	 * <code>CMD_GETPUBLICKEY</code> packet.
 	 * 
@@ -1219,7 +1241,7 @@ public class Client {
 	 * @return The {@link PublicKey} belonging to the requested user, or null if
 	 *         it could not determined.
 	 */
-	private PublicKey getPublicKey(final String id) {
+	private PublicKey requestPublicKey(final String id) {
 		/* Request the public key of the peer. */
 		if (DEBUG_GENERAL)
 			System.out.println("Requesting the public key of user '" + id + "' from server.");
@@ -1276,7 +1298,8 @@ public class Client {
 	 * Generates a new {@link CryptoCreditHashChain} and requests that the
 	 * {@link Bank} signs the new {@link CryptoCreditHashChain}. Finally, sends
 	 * the new {@link CryptoCreditHashChain} and the new signature to the
-	 * {@link Server}.
+	 * {@link Server}. <p> Once this has completed, we can proceed to make
+	 * purchases with the hash chain.
 	 * 
 	 * @param length The length of the new {@link CryptoCreditHashChain}.
 	 */
@@ -1286,7 +1309,7 @@ public class Client {
 		
 		hashChain = new CryptoCreditHashChain(userID, length);
 		
-		/* TODO: Get the bank to sign the hash chain. */
+		/* Get the bank to sign the hash chain. */
 		final byte[] identification = hashChain.getIdentifier();
 		hashChain.getSigned(bankComms);
 		final byte[] signature = hashChain.getSignature();
@@ -1391,9 +1414,6 @@ public class Client {
 	
 	/** Process incoming packets. */
 	private void processPackets() {
-		/* Update credit boxes with the cached values. */
-		updateCreditsBoxes();
-		
 		try {
 			if (serverComms == null || !serverComms.recvReady())
 				return;
@@ -1437,9 +1457,6 @@ public class Client {
 					 * Chat command
 					 **********************************************************/
 					case DecryptedPacket.CMD_CHAT: {
-						/*
-						 * NOTE: Data will be of the form "user@host:port".
-						 */
 						final String data = new String(pckt.data);
 						final String iAddr = data.split("@")[1].split(":")[0];
 						final int iPort = Integer.parseInt(data.split("@")[1].split(":")[1]);
@@ -1448,10 +1465,10 @@ public class Client {
 						final String sourceUser = data.split("@")[0];
 						
 						/*
-						 * Get the public key of the user requesting the chat
-						 * session.
+						 * Request the public key of the user initiating the
+						 * chat session from the server.
 						 */
-						final PublicKey peer = getPublicKey(sourceUser);
+						final PublicKey peer = requestPublicKey(sourceUser);
 						if (peer == null) {
 							System.err.println("Unable to determine peer public key.");
 							msgTextBox.append("[*ERR*] Failed to start chat session with user '" + sourceUser + "'.\n");
@@ -1484,26 +1501,22 @@ public class Client {
 					 * FTP command
 					 **********************************************************/
 					case DecryptedPacket.CMD_FTP: {
-						/*
-						 * NOTE: Data will be of the form
-						 * "user@host:port#filename".
-						 */
 						final String data = new String(pckt.data);
 						final String fName = data.split("@")[1].split("#")[1];
 						final String iAddr = data.split("@")[1].split("#")[0].split(":")[0];
 						final int iPort = Integer.parseInt(data.split("@")[1].split("#")[0].split(":")[1]);
 						
 						/*
-						 * Get the name of the user requesting the file
+						 * Parse the name of the user requesting the file
 						 * transfer.
 						 */
 						final String sourceUser = data.split("@")[0];
 						
 						/*
-						 * Get the public key of the user requesting the file
-						 * transfer.
+						 * Request the public key of the user initiating the
+						 * file transfer from the server.
 						 */
-						final PublicKey peer = getPublicKey(sourceUser);
+						final PublicKey peer = requestPublicKey(sourceUser);
 						if (peer == null) {
 							System.err.println("Unable to determine peer public key.");
 							msgTextBox.append("[*ERR*] Failed to start file transfer with user '" + sourceUser + "'.\n");
@@ -1551,6 +1564,10 @@ public class Client {
 						if (DEBUG_COMMANDS_LIST)
 							System.out.println("Received a user list: \"" + userTable.replaceAll("\n", "; ") + "\".");
 						
+						/*
+						 * Recreate the user list with the user list received
+						 * from the server.
+						 */
 						while (userTable.length() > 0) {
 							final int indx = userTable.indexOf("\n");
 							String row;
@@ -1587,6 +1604,10 @@ public class Client {
 						if (DEBUG_COMMANDS_SECRETLIST)
 							System.out.println("Received a secret list: \"" + secretTable.replaceAll("\n", "; ") + "\".");
 						
+						/*
+						 * Recreate the user list with the user list received
+						 * from the server.
+						 */
 						while (secretTable.length() > 0) {
 							final int indx = secretTable.indexOf("\n");
 							String row;
@@ -1614,9 +1635,6 @@ public class Client {
 					 * Get Secret command
 					 **********************************************************/
 					case DecryptedPacket.CMD_GETSECRET: {
-						/*
-						 * NOTE: Data will be of the form "name@address".
-						 */
 						final String data = new String(pckt.data);
 						final String fileName = data.split("@")[0];
 						final String iAddr = data.split("@")[1].split(":")[0];
@@ -1627,8 +1645,11 @@ public class Client {
 						
 						/*
 						 * Wait for the server to send the public key of the
-						 * user requesting the secret. Note that the user
-						 * requesting the secret will NOT have our public key.
+						 * user requesting the secret.
+						 * 
+						 * Note that the user requesting the secret will NOT
+						 * have our public key. We will transmit it to then when
+						 * we begin the communications.
 						 */
 						final PublicKey receiver = waitForPublicKey();
 						
@@ -1637,10 +1658,12 @@ public class Client {
 						if (DEBUG_GENERAL)
 							System.out.println("Opened a communications session with '" + iAddr + "'.");
 						
-						msgTextBox.append("[INFO] Sending out a secret.\n");
 						if (DEBUG_GENERAL)
 							System.out.println("Starting file transfer.");
+						msgTextBox.append("[INFO] Sending out a secret.\n");
 						final FileTransfer ft = new FileTransfer(snComms, fileName, true);
+						
+						/* Start the file transfer. */
 						ft.start();
 						break;
 					}
@@ -1682,11 +1705,11 @@ public class Client {
 	 *        </ul>
 	 */
 	public static void main(final String[] args) {
-		/* The server. */
+		/* Details for the server. */
 		String serverHostname = Comms.DEFAULT_SERVERNAME;
 		int serverPort = Comms.DEFAULT_SERVERPORT;
 		
-		/* The bank. */
+		/* Details for the bank. */
 		String bankHostname = Comms.DEFAULT_BANKNAME;
 		int bankPort = Comms.DEFAULT_BANKPORT;
 		
