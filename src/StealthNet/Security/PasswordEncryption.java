@@ -56,7 +56,7 @@ public class PasswordEncryption extends Encryption {
 	private final PBEParameterSpec params;
 	
 	/** The algorithm to be used for the {@link Cipher}. */
-	public static final String ALGORITHM = "PBEWithMD5AndDES";
+	public static final String ALGORITHM = "PBEWithHmacSHA1AndDESede";
 	
 	/** The number of bytes to use for the salt for the {@link Cipher}. */
 	public static final int SALT_BYTES = 8;

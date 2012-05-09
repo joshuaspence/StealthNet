@@ -9,12 +9,20 @@
 -->
 <project name="StealthNet" default="default" basedir=".">
 	<!-- Use ant-contrib -->
-	<!-- see http://http://ant-contrib.sourceforge.net/ -->
+	<!-- see http://ant-contrib.sourceforge.net/ -->
 	<taskdef resource="net/sf/antcontrib/antcontrib.properties">
 	    <classpath>
 	        <pathelement location="lib/ant-contrib-0.6.jar" />
 	    </classpath>
 	</taskdef>
+	
+	<!-- Use one-jar -->
+    <!-- see http://http://one-jar.sourceforge.net/ -->
+	<property name="one-jar.dist.dir" value="lib/"/>  
+	<property name="one-jar.version" value="0.97"/>
+	    <property name="one-jar.ant.jar" value="${one-jar.dist.dir}/one-jar-ant-task-${one-jar.version}.jar"/>
+	    <taskdef name="one-jar" classname="com.simontuffs.onejar.ant.OneJarTask" 
+	        classpath="${one-jar.ant.jar}" onerror="report"/>
 	
 	<!-- ========================= DEFAULT TARGETS ========================= -->
 	<!-- Default target -->
@@ -262,130 +270,162 @@
 	    </tstamp>
     	
     	<!-- Bank JAR file -->
-        <jar destfile="${file.jar.bank}">
-            <zipgroupfileset dir="${path.lib}" includes="*.jar" />
-            
-            <fileset dir=".">
-            	<!-- RSA keys -->
-            	<include name="${file.keys.bank.public}" />
-                <include name="${file.keys.bank.private}" />
-            </fileset>
-            
-            <!-- Class files -->
-            <fileset dir="${path.classes}">
-                <!-- NOTE: Must list the files to be included in the server JAR file here!!! -->
-            	<include name="StealthNet/Bank**" />
-                <include name="StealthNet/BankThread**" />
-                <include name="StealthNet/Comms**" />
-            	<include name="StealthNet/CryptoCreditHashChain**" />
-                <include name="StealthNet/Debug**" />
-                <include name="StealthNet/DecryptedPacket**" />
-            	<include name="StealthNet/EncryptedFile**" />
-                <include name="StealthNet/EncryptedPacket**" />
-                <include name="StealthNet/Utility**" />
-                <include name="StealthNet/Security/**" />
-            </fileset>
-            
-            <manifest>
-                <attribute name="Built-By"   value="${user.name}" />
-                <attribute name="Built-Date" value="${TODAY}" />
-                <attribute name="Main-Class" value="${class.bank}" />
+        <one-jar destfile="${file.jar.bank}">
+        	<manifest>
+                <attribute name="Built-By"             value="${user.name}" />
+                <attribute name="Built-Date"           value="${TODAY}" />
+                <attribute name="One-Jar-Main-Class"   value="${class.bank}" />
             </manifest>
-        </jar>
+        	
+            <main>            	
+                <fileset dir=".">
+                	<!-- RSA keys -->
+                	<include name="${file.keys.bank.public}" />
+                    <include name="${file.keys.bank.private}" />
+                	<include name="${file.keys.server.public}" />
+                </fileset>
+                
+                <!-- Class files -->
+                <fileset dir="${path.classes}">
+                    <!-- NOTE: Must list the files to be included in the bank JAR file here!!! -->
+                	<include name="StealthNet/Bank**" />
+                    <include name="StealthNet/BankThread**" />
+                    <include name="StealthNet/Comms**" />
+                	<include name="StealthNet/CryptoCreditHashChain**" />
+                    <include name="StealthNet/Debug**" />
+                    <include name="StealthNet/DecryptedPacket**" />
+                	<include name="StealthNet/EncryptedFile**" />
+                    <include name="StealthNet/EncryptedPacket**" />
+                    <include name="StealthNet/Utility**" />
+                    <include name="StealthNet/Security/**" />
+                </fileset>
+            </main>
+        	
+        	<lib>
+                <fileset dir="${path.lib}">
+                    <!-- NOTE: Must list the files to be included in the bank JAR file here!!! -->  
+                    <include name="bcprov-jdk15on-147.jar" />
+                    <include name="commons-codec-1.6.jar" />
+                </fileset>
+            </lib>
+        </one-jar>
     	
     	<!-- Client JAR file -->
-        <jar destfile="${file.jar.client}">
-            <zipgroupfileset dir="${path.lib}" includes="*.jar" />
-        	
-            <fileset dir=".">
-            	<!-- Images -->
-                <include name="${path.img}/*" />
-            	
-            	<!-- RSA keys -->
-                <include name="${file.keys.bank.public}" />
-            	<include name="${file.keys.server.public}" />
-            </fileset>
-        	
-        	<!-- Class files -->
-        	<fileset dir="${path.classes}">
-        		<!-- NOTE: Must list the files to be included in the client JAR file here!!! -->
-                <include name="StealthNet/Chat**" />
-        		<include name="StealthNet/Client**" />
-                <include name="StealthNet/Comms**" />
-        		<include name="StealthNet/CryptoCreditHashChain**" />
-        		<include name="StealthNet/Debug**" />
-        		<include name="StealthNet/DecryptedPacket**" />
-        		<include name="StealthNet/EncryptedFile**" />
-                <include name="StealthNet/EncryptedPacket**" />
-        		<include name="StealthNet/FileTransfer**" />
-        		<include name="StealthNet/Utility**" />
-        		<include name="StealthNet/Security/**" />
-            </fileset>
-        	
-            <manifest>
-                <attribute name="Built-By"   value="${user.name}"/>
-                <attribute name="Built-Date" value="${TODAY}"/>
-                <attribute name="Main-Class" value="${class.client}"/>
+        <one-jar destfile="${file.jar.client}">
+        	<manifest>
+                <attribute name="Built-By"              value="${user.name}"/>
+                <attribute name="Built-Date"            value="${TODAY}"/>
+                <attribute name="One-Jar-Main-Class"    value="${class.client}"/>
             </manifest>
-        </jar>
+            <main>
+                <fileset dir=".">
+                	<!-- Images -->
+                    <include name="${path.img}/*" />
+                	
+                	<!-- RSA keys -->
+                    <include name="${file.keys.bank.public}" />
+                	<include name="${file.keys.server.public}" />
+                </fileset>
+            	
+            	<!-- Class files -->
+            	<fileset dir="${path.classes}">
+            		<!-- NOTE: Must list the files to be included in the client JAR file here!!! -->
+                    <include name="StealthNet/Chat**" />
+            		<include name="StealthNet/Client**" />
+                    <include name="StealthNet/Comms**" />
+            		<include name="StealthNet/CryptoCreditHashChain**" />
+            		<include name="StealthNet/Debug**" />
+            		<include name="StealthNet/DecryptedPacket**" />
+            		<include name="StealthNet/EncryptedFile**" />
+                    <include name="StealthNet/EncryptedPacket**" />
+            		<include name="StealthNet/FileTransfer**" />
+            		<include name="StealthNet/Utility**" />
+            		<include name="StealthNet/Security/**" />
+                </fileset>
+        	</main>
+            
+        	<lib>
+                <fileset dir="${path.lib}">
+                    <!-- NOTE: Must list the files to be included in the client JAR file here!!! -->  
+                    <include name="bcprov-jdk15on-147.jar" />
+                    <include name="commons-codec-1.6.jar" />
+                </fileset>
+            </lib>
+        </one-jar>
     	
     	<!-- Proxy JAR file -->
-        <jar destfile="${file.jar.proxy}">
-            <zipgroupfileset dir="${path.lib}" includes="*.jar" />
-            
-            <!-- Class files -->
-            <fileset dir="${path.classes}">
-                <!-- NOTE: Must list the files to be included in the proxy JAR file here!!! -->                
-                <include name="StealthNet/Comms**" />
-                <include name="StealthNet/Debug**" />
-                <include name="StealthNet/DecryptedPacket**" />
-            	<include name="StealthNet/EncryptedFile**" />
-                <include name="StealthNet/EncryptedPacket**" />
-                <include name="StealthNet/Proxy**" />
-                <include name="StealthNet/ProxyComms**" />
-                <include name="StealthNet/ProxyThread**" />
-                <include name="StealthNet/Utility**" />
-                <include name="StealthNet/Security/**" />
-            </fileset>
-            
-            <manifest>
-                <attribute name="Built-By"   value="${user.name}" />
-                <attribute name="Built-Date" value="${TODAY}" />
-                <attribute name="Main-Class" value="${class.proxy}" />
+        <one-jar destfile="${file.jar.proxy}">
+        	<manifest>
+                <attribute name="Built-By"              value="${user.name}" />
+                <attribute name="Built-Date"            value="${TODAY}" />
+                <attribute name="One-Jar-Main-Class"    value="${class.proxy}" />
             </manifest>
-        </jar>
+        	
+            <main>
+                <!-- Class files -->
+                <fileset dir="${path.classes}">
+                    <!-- NOTE: Must list the files to be included in the proxy JAR file here!!! -->                
+                    <include name="StealthNet/Comms**" />
+                    <include name="StealthNet/Debug**" />
+                    <include name="StealthNet/DecryptedPacket**" />
+                	<include name="StealthNet/EncryptedFile**" />
+                    <include name="StealthNet/EncryptedPacket**" />
+                    <include name="StealthNet/Proxy**" />
+                    <include name="StealthNet/ProxyComms**" />
+                    <include name="StealthNet/ProxyThread**" />
+                    <include name="StealthNet/Utility**" />
+                    <include name="StealthNet/Security/**" />
+                </fileset>
+            </main>
+            
+        	<lib>
+                <fileset dir="${path.lib}">
+                    <!-- NOTE: Must list the files to be included in the proxy JAR file here!!! -->  
+                    <include name="bcprov-jdk15on-147.jar" />
+                    <include name="commons-codec-1.6.jar" />
+                </fileset>
+            </lib>
+        </one-jar>
     	
     	<!-- Server JAR file -->
-        <jar destfile="${file.jar.server}">
-            <zipgroupfileset dir="${path.lib}" includes="*.jar" />
-            
-            <fileset dir=".">
-            	<!-- RSA keys -->
-            	<include name="${file.keys.server.public}" />
-                <include name="${file.keys.server.private}" />
-            </fileset>
-            
-            <!-- Class files -->
-            <fileset dir="${path.classes}">
-                <!-- NOTE: Must list the files to be included in the server JAR file here!!! -->                
-                <include name="StealthNet/Comms**" />
-            	<include name="StealthNet/CryptoCreditHashChain**" />
-                <include name="StealthNet/Debug**" />
-                <include name="StealthNet/DecryptedPacket**" />
-            	<include name="StealthNet/EncryptedFile**" />
-                <include name="StealthNet/EncryptedPacket**" />
-                <include name="StealthNet/Server**" />
-                <include name="StealthNet/ServerThread**" />
-                <include name="StealthNet/Utility**" />
-                <include name="StealthNet/Security/**" />
-            </fileset>
-            
-            <manifest>
-                <attribute name="Built-By"   value="${user.name}" />
-                <attribute name="Built-Date" value="${TODAY}" />
-                <attribute name="Main-Class" value="${class.server}" />
+        <one-jar destfile="${file.jar.server}">
+        	<manifest>
+                <attribute name="Built-By"              value="${user.name}" />
+                <attribute name="Built-Date"            value="${TODAY}" />
+                <attribute name="One-Jar-Main-Class"    value="${class.server}" />
             </manifest>
-        </jar>
+        	
+            <main>
+            	<fileset dir=".">
+                	<!-- RSA keys -->
+                	<include name="${file.keys.server.public}" />
+                    <include name="${file.keys.server.private}" />
+                </fileset>
+                
+                <!-- Class files -->
+                <fileset dir="${path.classes}">
+                    <!-- NOTE: Must list the files to be included in the server JAR file here!!! -->                
+                    <include name="StealthNet/Comms**" />
+                	<include name="StealthNet/CryptoCreditHashChain**" />
+                    <include name="StealthNet/Debug**" />
+                    <include name="StealthNet/DecryptedPacket**" />
+                	<include name="StealthNet/EncryptedFile**" />
+                    <include name="StealthNet/EncryptedPacket**" />
+                    <include name="StealthNet/Server**" />
+                    <include name="StealthNet/ServerThread**" />
+                    <include name="StealthNet/Utility**" />
+                    <include name="StealthNet/Security/**" />
+                </fileset>
+            </main>
+        	
+        	<lib>
+                <fileset dir="${path.lib}">
+        	        <!-- NOTE: Must list the files to be included in the server JAR file here!!! -->  
+                    <include name="bcprov-jdk15on-147.jar" />
+        	        <include name="commons-codec-1.6.jar" />
+                </fileset>
+            </lib>
+        </one-jar>
     	
     	<!-- Set the JARs to be executable -->
     	<chmod file="${file.jar.bank}" perm="ugo+x"/>

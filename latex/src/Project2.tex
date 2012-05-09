@@ -130,10 +130,20 @@ The size selected for the public and private keys was selected to be 2048-bits.
 \section{File Encryption}
 
 \subsection{Introduction}
-% TODO
+File encryption is required within \packageName{} to protect the private keys of
+\serviceName{} peers from being stolen by an attacker and consequently used by 
+the attacker to masquerade as a legitimate user. To achieve this, \packageName{}
+uses password-based encryption to encrypt the private key data before it is 
+written to disk. Password-based file encryption differs from \packageName{} 
+packet encryption in that the key (password) for file encryption has a much 
+longer lifetime than the key used for packet encryption and decryption. The key 
+used for password-based encryption is likely to change infrequently, if at all, 
+because the user is required to remember the password in order to decrypt the 
+file. The keys used in packet encryption, however, are usually only valid for 
+the duration of a session and are regenerated for the next session.
 
 \subsection{Details}
-% TODO
+Password-based file encryption within \packageName{}
 
 \subsection{Justification}
 % TODO

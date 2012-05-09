@@ -43,6 +43,7 @@ import java.net.UnknownHostException;
 import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.Security;
 import java.util.Hashtable;
 import java.util.Stack;
 
@@ -69,6 +70,7 @@ import javax.swing.table.DefaultTableModel;
 import javax.swing.text.DefaultCaret;
 
 import org.apache.commons.codec.binary.Base64;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 import StealthNet.Security.AsymmetricEncryption;
 import StealthNet.Security.EncryptedFileException;
@@ -225,6 +227,17 @@ public class Client {
 		
 		bankHostname = Comms.DEFAULT_BANKNAME;
 		bankPort = Comms.DEFAULT_BANKPORT;
+	}
+	
+	static {
+		Security.addProvider(new BouncyCastleProvider());
+		
+		final String providerName = "BC";
+		
+		if (Security.getProvider(providerName) == null)
+			System.out.println(providerName + " provider not installed");
+		else
+			System.out.println(providerName + " is installed.");
 	}
 	
 	/**
