@@ -32,6 +32,7 @@ import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.spec.InvalidKeySpecException;
@@ -348,8 +349,9 @@ public class RSAAsymmetricEncryption extends AsymmetricEncryption {
 	 * @throws IllegalBlockSizeException
 	 * @throws InvalidAttributeValueException
 	 * @throws InvalidKeyException
+	 * @throws NoSuchProviderException
 	 */
-	public static void savePublicKeyToFile(final PublicKey key, final String filename) throws NoSuchAlgorithmException, InvalidKeySpecException, InvalidKeyException, InvalidAttributeValueException, IllegalBlockSizeException, BadPaddingException, InvalidAlgorithmParameterException, NoSuchPaddingException, IOException {
+	public static void savePublicKeyToFile(final PublicKey key, final String filename) throws NoSuchAlgorithmException, InvalidKeySpecException, InvalidKeyException, InvalidAttributeValueException, IllegalBlockSizeException, BadPaddingException, InvalidAlgorithmParameterException, NoSuchPaddingException, IOException, NoSuchProviderException {
 		final KeyFactory factory = KeyFactory.getInstance(ALGORITHM);
 		final RSAPublicKeySpec keySpec = factory.getKeySpec(key, RSAPublicKeySpec.class);
 		AsymmetricEncryption.writeKeyToFile(filename, keySpec.getModulus(), keySpec.getPublicExponent(), null);
@@ -374,11 +376,12 @@ public class RSAAsymmetricEncryption extends AsymmetricEncryption {
 	 * @throws IllegalBlockSizeException
 	 * @throws InvalidAttributeValueException
 	 * @throws InvalidKeyException
+	 * @throws NoSuchProviderException
 	 * 
 	 * @see PasswordEncryption
 	 * @see EncryptedFile
 	 */
-	public static void savePrivateKeyToFile(final PrivateKey key, final String filename, final String password) throws NoSuchAlgorithmException, InvalidKeySpecException, InvalidKeyException, InvalidAttributeValueException, IllegalBlockSizeException, BadPaddingException, InvalidAlgorithmParameterException, NoSuchPaddingException, IOException {
+	public static void savePrivateKeyToFile(final PrivateKey key, final String filename, final String password) throws NoSuchAlgorithmException, InvalidKeySpecException, InvalidKeyException, InvalidAttributeValueException, IllegalBlockSizeException, BadPaddingException, InvalidAlgorithmParameterException, NoSuchPaddingException, IOException, NoSuchProviderException {
 		final KeyFactory factory = KeyFactory.getInstance(ALGORITHM);
 		final RSAPrivateKeySpec keySpec = factory.getKeySpec(key, RSAPrivateKeySpec.class);
 		AsymmetricEncryption.writeKeyToFile(filename, keySpec.getModulus(), keySpec.getPrivateExponent(), password);

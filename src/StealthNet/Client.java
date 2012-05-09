@@ -208,6 +208,11 @@ public class Client {
 	/** A list of secret data, indexed by secret name. */
 	static private Hashtable<String, SecretData> secretDescriptions = new Hashtable<String, SecretData>();
 	
+	/* Use the BouncyCastle API. */
+	static {
+		Security.addProvider(new BouncyCastleProvider());
+	}
+	
 	/** Constructor. */
 	public Client() {
 		/* Create a timer to process packets every 100ms. */
@@ -227,17 +232,6 @@ public class Client {
 		
 		bankHostname = Comms.DEFAULT_BANKNAME;
 		bankPort = Comms.DEFAULT_BANKPORT;
-	}
-	
-	static {
-		Security.addProvider(new BouncyCastleProvider());
-		
-		final String providerName = "BC";
-		
-		if (Security.getProvider(providerName) == null)
-			System.out.println(providerName + " provider not installed");
-		else
-			System.out.println(providerName + " is installed.");
 	}
 	
 	/**

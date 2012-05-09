@@ -20,6 +20,9 @@ package StealthNet;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.security.Security;
+
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 /* StealthNet.Server Class Definition ************************************** */
 
@@ -44,6 +47,11 @@ public class Server {
 	/* Debug options. */
 	private static final boolean DEBUG_GENERAL = Debug.isDebug("StealthNet.Server.General");
 	private static final boolean DEBUG_ERROR_TRACE = Debug.isDebug("StealthNet.Server.ErrorTrace") || Debug.isDebug("ErrorTrace");
+	
+	/* Use the BouncyCastle API. */
+	static {
+		Security.addProvider(new BouncyCastleProvider());
+	}
 	
 	/**
 	 * The main Server function.

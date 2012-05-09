@@ -20,6 +20,9 @@ package StealthNet;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.security.Security;
+
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 /* StealthNet.Bank Class Definition **************************************** */
 
@@ -42,6 +45,11 @@ public class Bank {
 	/* Debug options. */
 	private static final boolean DEBUG_GENERAL = Debug.isDebug("StealthNet.Bank.General");
 	private static final boolean DEBUG_ERROR_TRACE = Debug.isDebug("StealthNet.Bank.ErrorTrace") || Debug.isDebug("ErrorTrace");
+	
+	/* Use the BouncyCastle API. */
+	static {
+		Security.addProvider(new BouncyCastleProvider());
+	}
 	
 	/**
 	 * The main Bank function.

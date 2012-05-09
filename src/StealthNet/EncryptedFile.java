@@ -33,6 +33,7 @@ import java.security.InvalidKeyException;
 import java.security.KeyStore.PasswordProtection;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.security.spec.InvalidKeySpecException;
 import java.util.Arrays;
 
@@ -236,8 +237,9 @@ public class EncryptedFile {
 	 * @throws InvalidKeySpecException
 	 * @throws InvalidKeyException
 	 * @throws InvalidAttributeValueException
+	 * @throws NoSuchProviderException
 	 */
-	public EncryptedFile(final byte[] decryptedData, final String password) throws IOException, NoSuchAlgorithmException, IllegalBlockSizeException, BadPaddingException, InvalidKeyException, InvalidKeySpecException, InvalidAlgorithmParameterException, NoSuchPaddingException, InvalidAttributeValueException {
+	public EncryptedFile(final byte[] decryptedData, final String password) throws IOException, NoSuchAlgorithmException, IllegalBlockSizeException, BadPaddingException, InvalidKeyException, InvalidKeySpecException, InvalidAlgorithmParameterException, NoSuchPaddingException, InvalidAttributeValueException, NoSuchProviderException {
 		filename = null;
 		this.password = password;
 		encryption = new PasswordEncryption(this.password);

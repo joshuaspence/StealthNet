@@ -19,6 +19,9 @@ package StealthNet;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.security.Security;
+
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 /* StealthNet.Proxy Class Definition *************************************** */
 
@@ -36,6 +39,11 @@ public class Proxy {
 	/* Debug options. */
 	private static final boolean DEBUG_GENERAL = Debug.isDebug("StealthNet.Proxy.General");
 	private static final boolean DEBUG_ERROR_TRACE = Debug.isDebug("StealthNet.Proxy.ErrorTrace") || Debug.isDebug("ErrorTrace");
+	
+	/* Use the BouncyCastle API. */
+	static {
+		Security.addProvider(new BouncyCastleProvider());
+	}
 	
 	/**
 	 * The main proxy function.

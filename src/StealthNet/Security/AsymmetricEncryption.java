@@ -27,6 +27,7 @@ import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.spec.InvalidKeySpecException;
@@ -138,8 +139,9 @@ public class AsymmetricEncryption extends Encryption {
 	 * @throws NoSuchAlgorithmException
 	 * @throws InvalidAttributeValueException
 	 * @throws InvalidKeyException
+	 * @throws NoSuchProviderException
 	 */
-	protected static void writeKeyToFile(final String filename, final BigInteger mod, final BigInteger exp, final String password) throws IOException, InvalidKeyException, InvalidAttributeValueException, NoSuchAlgorithmException, IllegalBlockSizeException, BadPaddingException, InvalidKeySpecException, InvalidAlgorithmParameterException, NoSuchPaddingException {
+	protected static void writeKeyToFile(final String filename, final BigInteger mod, final BigInteger exp, final String password) throws IOException, InvalidKeyException, InvalidAttributeValueException, NoSuchAlgorithmException, IllegalBlockSizeException, BadPaddingException, InvalidKeySpecException, InvalidAlgorithmParameterException, NoSuchPaddingException, NoSuchProviderException {
 		final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 		final BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(outputStream);
 		final DataOutputStream dataOutputStream = new DataOutputStream(bufferedOutputStream);

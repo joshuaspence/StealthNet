@@ -19,6 +19,7 @@ package StealthNet.Security;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.security.SecureRandom;
 import java.security.spec.InvalidKeySpecException;
 
@@ -56,7 +57,10 @@ public class PasswordEncryption extends Encryption {
 	private final PBEParameterSpec params;
 	
 	/** The algorithm to be used for the {@link Cipher}. */
-	public static final String ALGORITHM = "PBEWithHmacSHA1AndDESede";
+	public static final String ALGORITHM = "PBEWithSHAAnd3KeyTripleDES";
+	
+	/** The provider to be used for the {@link Cipher}. */
+	public static final String PROVIDER = "BC";
 	
 	/** The number of bytes to use for the salt for the {@link Cipher}. */
 	public static final int SALT_BYTES = 8;
@@ -80,8 +84,9 @@ public class PasswordEncryption extends Encryption {
 	 * @throws NoSuchPaddingException
 	 * @throws InvalidAlgorithmParameterException
 	 * @throws InvalidKeyException
+	 * @throws NoSuchProviderException
 	 */
-	public PasswordEncryption(final String password) throws NoSuchAlgorithmException, InvalidKeySpecException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException {
+	public PasswordEncryption(final String password) throws NoSuchAlgorithmException, InvalidKeySpecException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException, NoSuchProviderException {
 		super(ALGORITHM);
 		
 		if (password == null)
@@ -96,7 +101,7 @@ public class PasswordEncryption extends Encryption {
 		/* Setup encryption/decryption parameters. */
 		params = new PBEParameterSpec(salt, ALGORITHM_ITERATIONS);
 		final PBEKeySpec keySpec = new PBEKeySpec(this.password.toCharArray());
-		final SecretKeyFactory factory = SecretKeyFactory.getInstance(ALGORITHM);
+		final SecretKeyFactory factory = SecretKeyFactory.getInstance(ALGORITHM, PROVIDER);
 		key = factory.generateSecret(keySpec);
 		
 		super.setEncryption(key, params);
@@ -115,8 +120,9 @@ public class PasswordEncryption extends Encryption {
 	 * @throws NoSuchPaddingException
 	 * @throws InvalidAlgorithmParameterException
 	 * @throws InvalidKeyException
+	 * @throws NoSuchProviderException
 	 */
-	public PasswordEncryption(final byte[] salt, final String password) throws NoSuchAlgorithmException, InvalidKeySpecException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException {
+	public PasswordEncryption(final byte[] salt, final String password) throws NoSuchAlgorithmException, InvalidKeySpecException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException, NoSuchProviderException {
 		super(ALGORITHM);
 		
 		if (password == null)
@@ -130,7 +136,7 @@ public class PasswordEncryption extends Encryption {
 		/* Setup encryption/decryption parameters. */
 		params = new PBEParameterSpec(this.salt, ALGORITHM_ITERATIONS);
 		final PBEKeySpec keySpec = new PBEKeySpec(this.password.toCharArray());
-		final SecretKeyFactory factory = SecretKeyFactory.getInstance(ALGORITHM);
+		final SecretKeyFactory factory = SecretKeyFactory.getInstance(ALGORITHM, PROVIDER);
 		key = factory.generateSecret(keySpec);
 		
 		super.setEncryption(key, params);
