@@ -65,6 +65,7 @@ public class BankThread extends Thread {
 	private static final boolean DEBUG_ERROR_TRACE = Debug.isDebug("StealthNet.BankThread.ErrorTrace") || Debug.isDebug("ErrorTrace");
 	private static final boolean DEBUG_COMMANDS_NULL = Debug.isDebug("StealthNet.BankThread.Commands.Null");
 	private static final boolean DEBUG_COMMANDS_LOGIN = Debug.isDebug("StealthNet.BankThread.Commands.Login");
+	private static final boolean DEBUG_COMMANDS_PAYMENT = Debug.isDebug("StealthNet.BankThread.Commands.Payment");
 	private static final boolean DEBUG_COMMANDS_SIGNHASHCHAIN = Debug.isDebug("StealthNet.BankThread.Commands.SignHashChain");
 	private static final boolean DEBUG_COMMANDS_GETBALANCE = Debug.isDebug("StealthNet.BankThread.Commands.GetBalance");
 	private static final boolean DEBUG_COMMANDS_VERIFYCREDIT = Debug.isDebug("StealthNet.BankThread.Commands.VerifyCredit");
@@ -283,7 +284,6 @@ public class BankThread extends Thread {
 	 * @return True if the credits were added to the user's account, otherwise
 	 *         false.
 	 */
-	@SuppressWarnings("unused")
 	private static synchronized boolean addCredits(final String userID, final int credits, final boolean sendBalance) {
 		final UserData user = getUser(userID);
 		boolean result = false;
@@ -443,8 +443,9 @@ public class BankThread extends Thread {
 	 *        payment.
 	 * @param credits The number of credits that the user claimed to have sent.
 	 * @param hash The {@link CryptoCredit} hash of the payment.
+	 * @return True if the payment verified successfully, otherwise false.
 	 */
-	private synchronized void verifyPayment(final String userID, final int credits, final byte[] hash) {
+	private synchronized boolean verifyPayment(final String userID, final int credits, final byte[] hash) {
 		boolean result = false;
 		final UserData user = getUser(userID);
 		/*
@@ -456,8 +457,7 @@ public class BankThread extends Thread {
 			result = true;
 		}
 		
-		/* Send the response. */
-		stealthComms.sendPacket(DecryptedPacket.CMD_VERIFYCREDIT, Boolean.toString(result));
+		return result;
 	}
 	
 	/**
@@ -617,9 +617,49 @@ public class BankThread extends Thread {
 						final String user = data.split(";")[0];
 						final int credits = Integer.parseInt(data.split(";")[1]);
 						final byte[] hash = Base64.decodeBase64(data.split(";")[2]);
-						verifyPayment(user, credits, hash);
+						
+						final boolean result = verifyPayment(user, credits, hash);
+						stealthComms.sendPacket(DecryptedPacket.CMD_VERIFYCREDIT, Boolean.toString(result));
 						break;
 					}
+					
+					/*******************************************************
+					 * Payment command
+					 ******************************************************/
+					case DecryptedPacket.CMD_PAYMENT:
+						if (userID == null) {
+							System.err.println("Unknown user sent payment command.");
+							break;
+						} else if (DEBUG_COMMANDS_GETBALANCE)
+							System.out.println("User \"" + userID + "\" sent payment command.");
+						
+						final String data = new String(pckt.data);
+						final int creditsSent = Integer.parseInt(data.split(";")[0]);
+						final byte[] cryptoCreditHash = Base64.decodeBase64(data.split(";")[1].getBytes());
+						
+						if (DEBUG_COMMANDS_PAYMENT)
+							System.out.println("User sent payment of " + creditsSent + " credits with CryptoCredit \"" + cryptoCreditHash + "\".");
+						
+						if (cryptoCreditHash == null || cryptoCreditHash.length == 0)
+							break;
+						else
+						/*
+						 * Add the credits to the user's account once the
+						 * payment is verified.
+						 */
+						if (verifyPayment(userID, creditsSent, cryptoCreditHash))
+							addCredits(userID, creditsSent, false);
+						
+						/*
+						 * Send the user their (possibly updated) account
+						 * balance.
+						 */
+						stealthComms.sendPacket(DecryptedPacket.CMD_GETBALANCE, Integer.toString(getUser(userID).accountBalance));
+						
+						/* Print user account balances. */
+						if (DEBUG_BALANCES)
+							System.out.println(getUserBalances());
+						break;
 					
 					/***********************************************************
 					 * Other command

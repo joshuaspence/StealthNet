@@ -530,11 +530,12 @@ public class ServerThread extends Thread {
 						 * Verify Credit command
 						 ******************************************************/
 /* @formatter:on */
-						case DecryptedPacket.CMD_VERIFYCREDIT:
+						case DecryptedPacket.CMD_VERIFYCREDIT: {
 							final String data = new String(pckt.data);
 							valid = Boolean.parseBoolean(data);
 							bankResponded = true;
 							break;
+						}
 						
 						/*******************************************************
 						 * Other command
@@ -752,7 +753,7 @@ public class ServerThread extends Thread {
 						 * Payment command
 						 ******************************************************/
 /* @formatter:on */
-						case DecryptedPacket.CMD_PAYMENT:
+						case DecryptedPacket.CMD_PAYMENT: {
 							final String data = new String(pckt.data);
 							final int creditsSent = Integer.parseInt(data.split(";")[0]);
 							byte[] cryptoCreditHash;
@@ -776,6 +777,7 @@ public class ServerThread extends Thread {
 								validateAndAddCredits(userID, creditsSent, cryptoCreditHash);
 							}
 							break;
+						}
 						
 						/*******************************************************
 						 * Hashchain command
@@ -1235,7 +1237,7 @@ public class ServerThread extends Thread {
 					/*******************************************************
 					 * Payment command
 					 ******************************************************/
-					case DecryptedPacket.CMD_PAYMENT:
+					case DecryptedPacket.CMD_PAYMENT: {
 						if (userID == null) {
 							System.err.println("Unknown user sent payment command.");
 							break;
@@ -1262,6 +1264,7 @@ public class ServerThread extends Thread {
 						if (DEBUG_BALANCES)
 							System.out.println(getUserBalances());
 						break;
+					}
 					
 					/*******************************************************
 					 * Get Balance command
@@ -1281,7 +1284,7 @@ public class ServerThread extends Thread {
 					/*******************************************************
 					 * Hashchain command
 					 ******************************************************/
-					case DecryptedPacket.CMD_HASHCHAIN:
+					case DecryptedPacket.CMD_HASHCHAIN: {
 						if (userID == null) {
 							System.err.println("Unknown user supplied a new hashchain.");
 							break;
@@ -1294,6 +1297,7 @@ public class ServerThread extends Thread {
 						if (DEBUG_BALANCES)
 							System.out.println(getUserBalances());
 						break;
+					}
 					
 					/***********************************************************
 					 * Other command

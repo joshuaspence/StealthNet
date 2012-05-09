@@ -107,7 +107,8 @@ public class DecryptedPacket {
 	 * encoded in base-64. <p> If the {@link Client} wishes to cancel the
 	 * transaction (possibly because they have insufficient funds in the
 	 * {@link Bank}, then the {@link Client} client should send a "null"
-	 * payment.
+	 * payment. <p> A {@link Client} can make a "payment" to the {@link Bank},
+	 * in order to refund credits to the user's account.
 	 */
 	public static final byte CMD_PAYMENT = 0x40;
 	
