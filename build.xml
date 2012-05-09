@@ -93,6 +93,7 @@
 		<property name="path.keys"            value="keys" />
 		<property name="path.keys.server"     value="${path.keys}/server" />
 		<property name="path.keys.bank"       value="${path.keys}/bank" />
+		<property name="path.keys.clients"    value="${path.keys}/clients" />
 		<property name="path.latex"           value="latex" />
 		<property name="path.latex.output"    value="${path.latex}/output" />
         <property name="path.lib"             value="lib" />
@@ -110,6 +111,7 @@
 				<echo>Keys path:              ${path.keys}</echo>
 				<echo>Server keys path:       ${path.keys.server}</echo>
 				<echo>Bank keys path:         ${path.keys.bank}</echo>
+				<echo>Client keys path:       ${path.keys.clients}</echo>
         		<echo>Library path:           ${path.lib}</echo>
         		<echo>Source path:            ${path.src}</echo>
         		<echo>Class output path:      ${path.classes}</echo>
@@ -439,7 +441,7 @@
     </target>
 	
 	<!-- Distribution clean target -->
-    <target name="distclean" depends="-init" description="Clean the project">
+    <target name="distclean" depends="-init, delete-client-keys" description="Clean the project">
     	<echo>Deleting ${path.build}.</echo>
         <delete dir="${path.build}" />
         
@@ -460,6 +462,14 @@
         <exec executable="make" dir="${path.latex}">
            <arg value="distclean" />
         </exec>
+    </target>
+	
+	<!-- Clean target -->
+    <target name="delete-client-keys" depends="-init" description="Delete client keys">
+        <echo>Deleting client keys from ${path.keys.clients}.</echo>
+    	 <delete includeemptydirs="true">
+    	 	  <fileset dir="${path.keys.clients}" includes="**/*"/>
+    	 </delete>
     </target>
 	<!-- =================================================================== -->
 	
