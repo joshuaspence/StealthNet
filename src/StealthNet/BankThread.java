@@ -267,11 +267,13 @@ public class BankThread extends Thread {
 	 * 
 	 * @param userID The user whose account should be credited.
 	 * @param credits The number of credits to transfer between the accounts.
+	 * @param sendBalance True to send the {@link Client} their updated balance
+	 *        after performing the addition.
 	 * @return True if the credits were added to the user's account, otherwise
 	 *         false.
 	 */
 	@SuppressWarnings("unused")
-	private static synchronized boolean addCredits(final String userID, final int credits) {
+	private static synchronized boolean addCredits(final String userID, final int credits, final boolean sendBalance) {
 		final UserData user = getUser(userID);
 		boolean result = false;
 		
@@ -283,7 +285,8 @@ public class BankThread extends Thread {
 		}
 		
 		/* Send the user their (possibly updated) account balance. */
-		user.userThread.stealthComms.sendPacket(DecryptedPacket.CMD_GETBALANCE, Integer.toString(user.accountBalance));
+		if (sendBalance)
+			user.userThread.stealthComms.sendPacket(DecryptedPacket.CMD_GETBALANCE, Integer.toString(user.accountBalance));
 		
 		return result;
 	}
@@ -295,11 +298,13 @@ public class BankThread extends Thread {
 	 * @param fromUserID The ID of user whose account should be deducted.
 	 * @param toUserID The ID of the user whose account should be credited.
 	 * @param credits The number of credits to add to the user's account.
+	 * @param sendBalance True to send the {@link Client} their updated balance
+	 *        after performing the addition.
 	 * @return True if the credits were added to the user's account, otherwise
 	 *         false.
 	 */
 	@SuppressWarnings("unused")
-	private static synchronized boolean transferCredits(final String fromUserID, final String toUserID, final int credits) {
+	private static synchronized boolean transferCredits(final String fromUserID, final String toUserID, final int credits, final boolean sendBalance) {
 		final UserData fromUser = getUser(fromUserID);
 		final UserData toUser = getUser(toUserID);
 		boolean result = false;
@@ -313,8 +318,10 @@ public class BankThread extends Thread {
 		}
 		
 		/* Send the users their (possibly updated) account balances. */
-		fromUser.userThread.stealthComms.sendPacket(DecryptedPacket.CMD_GETBALANCE, Integer.toString(fromUser.accountBalance));
-		toUser.userThread.stealthComms.sendPacket(DecryptedPacket.CMD_GETBALANCE, Integer.toString(toUser.accountBalance));
+		if (sendBalance) {
+			fromUser.userThread.stealthComms.sendPacket(DecryptedPacket.CMD_GETBALANCE, Integer.toString(fromUser.accountBalance));
+			toUser.userThread.stealthComms.sendPacket(DecryptedPacket.CMD_GETBALANCE, Integer.toString(toUser.accountBalance));
+		}
 		
 		return result;
 	}
@@ -325,10 +332,12 @@ public class BankThread extends Thread {
 	 * 
 	 * @param userID The ID of the user whose account should be deducted.
 	 * @param credits The number of credits to deduct from the user's account.
+	 * @param sendBalance True to send the {@link Client} their updated balance
+	 *        after performing the addition.
 	 * @return True if the credits were deducted from the user's account,
 	 *         otherwise false.
 	 */
-	private static synchronized boolean deductCredits(final String userID, final int credits) {
+	private static synchronized boolean deductCredits(final String userID, final int credits, final boolean sendBalance) {
 		final UserData user = getUser(userID);
 		boolean result = false;
 		
@@ -340,7 +349,8 @@ public class BankThread extends Thread {
 		}
 		
 		/* Send the user their (possibly updated) account balance. */
-		user.userThread.stealthComms.sendPacket(DecryptedPacket.CMD_GETBALANCE, Integer.toString(user.accountBalance));
+		if (sendBalance)
+			user.userThread.stealthComms.sendPacket(DecryptedPacket.CMD_GETBALANCE, Integer.toString(user.accountBalance));
 		
 		return result;
 	}
@@ -356,13 +366,16 @@ public class BankThread extends Thread {
 	 * @param identifier The identifier for the {@link CryptoCreditHashChain} to
 	 *        be signed. The identifier takes the form
 	 *        <code>user;credits;topHash</code>.
+	 * @param sendBalance True to send the {@link Client} their updated balance
+	 *        after performing the addition.
 	 */
-	private synchronized void signHashChain(final byte[] identifier) {
+	private synchronized void signHashChain(final byte[] identifier, final boolean sendBalance) {
 		/* Extract fields from identifier. */
 		final String userID = CryptoCreditHashChain.getUserFromIdentifier(identifier);
 		final int credits = CryptoCreditHashChain.getCreditsFromIdentifier(identifier).intValue();
 		final byte[] topHash = CryptoCreditHashChain.getTopHashFromIdentifier(identifier);
 		byte[] signature = new byte[0];
+		final UserData user = getUser(userID);
 		
 		if (DEBUG_COMMANDS_SIGNHASHCHAIN)
 			System.out.println("Processing a CryptoCreditHashChain for user \"" + userID + "\" for " + credits + " credits with top hash \"" + Utility.getHexValue(topHash) + "\".");
@@ -371,7 +384,7 @@ public class BankThread extends Thread {
 		if (!userID.equals(this.userID))
 			System.err.println("User \"" + this.userID + "\" cannot requested a signed hash chain for user \"" + userID + "\".");
 		else /* Update the user's account info and sign the hash chain. */
-		if (deductCredits(userID, credits)) {
+		if (deductCredits(userID, credits, false)) {
 			/* The user's account has been deducted. Sign the hash chain. */
 			try {
 				signature = asymmetricVerificationProvider.sign(identifier);
@@ -387,7 +400,7 @@ public class BankThread extends Thread {
 			}
 			
 			/* Update the last hash for the user. */
-			getUser(userID).lastHash = topHash;
+			user.lastHash = topHash;
 		} else if (DEBUG_COMMANDS_SIGNHASHCHAIN)
 			System.err.println("Insufficient credit in user \"" + userID + "\" account.");
 		
@@ -396,6 +409,10 @@ public class BankThread extends Thread {
 		 * the bank refused to sign the hash chain.
 		 */
 		stealthComms.sendPacket(DecryptedPacket.CMD_SIGNHASHCHAIN, signature);
+		
+		/* Send the user their (possibly updated) account balance. */
+		if (sendBalance)
+			stealthComms.sendPacket(DecryptedPacket.CMD_GETBALANCE, Integer.toString(user.accountBalance));
 	}
 	
 	/**
@@ -562,7 +579,7 @@ public class BankThread extends Thread {
 							else
 								System.out.println("Received sign hash chain command.");
 						
-						signHashChain(Base64.decodeBase64(pckt.data));
+						signHashChain(Base64.decodeBase64(pckt.data), true);
 						if (DEBUG_BALANCES)
 							System.out.println(getUserBalances());
 						break;

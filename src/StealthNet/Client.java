@@ -914,7 +914,7 @@ public class Client {
 								System.out.println("The server requested a payment of " + amountRequested + " credits.");
 							
 							boolean sentPayment = false;
-							while (!sentPayment) {
+							while (!sentPayment)
 								if (hashChain == null) {
 									/*
 									 * We don't have a hash chain... Generate a
@@ -923,39 +923,66 @@ public class Client {
 									if (DEBUG_COMMANDS_REQUESTPAYMENT)
 										System.out.println("No hash chain found. Generating a new hash chain.");
 									getNewHashChain(DEFAULT_HASHCHAIN_LENGTH);
-								}
-								
-								/*
-								 * Get amountRequested credits from the hash
-								 * chain. If there aren't enough available
-								 * credits on the hash chain then send all
-								 * available credits to the server and then a
-								 * new hash chain will be generated.
-								 */
-								final Stack<byte[]> payment = hashChain.getNextCredits(amountRequested);
-								if (payment != null && payment.size() > 0) {
-									if (DEBUG_COMMANDS_REQUESTPAYMENT)
-										System.out.println("Sending a payment of " + payment.size() + " credits to the server with hash \"" + Utility.getHexValue(payment.peek()) + "\".");
-									serverComms.sendPacket(DecryptedPacket.CMD_PAYMENT, payment.size() + ";" + Base64.encodeBase64String(payment.peek()));
-									sentPayment = true;
-								} else {
-									if (DEBUG_COMMANDS_REQUESTPAYMENT)
-										System.out.println("CryptoCredit hash chain is empty. Generating a new hash chain.");
-									getNewHashChain(DEFAULT_HASHCHAIN_LENGTH);
 									
 									/*
-									 * TODO: check that hash chain is not null.
-									 * Hash chain should be null if the bank
-									 * refused to sign the new hash chain. In
-									 * this case we tell the server that we are
-									 * no longer interested in purchasing the
-									 * secret. The server does NOT refund the
-									 * money that we have already transferred
-									 * towards the secret. This will stay in our
-									 * server account.
+									 * If the hash chain is still null, then the
+									 * bank refused to sign the hash chain. Give
+									 * up on the file transfer.
 									 */
+									if (hashChain == null) {
+										if (DEBUG_GENERAL)
+											System.out.println("Unable to generate hash chain. Giving up on purchase of secret.");
+										serverComms.sendPacket(DecryptedPacket.CMD_PAYMENT, Integer.toString(0) + ";" + Base64.encodeBase64String(new byte[0]));
+										sentPayment = true;
+										
+										/* Clean up and return. */
+										ftpSocket.close();
+										return;
+									}
+								} else {
+									
+									/*
+									 * Get amountRequested credits from the hash
+									 * chain. If there aren't enough available
+									 * credits on the hash chain then send all
+									 * available credits to the server and then
+									 * a new hash chain will be generated.
+									 */
+									final Stack<byte[]> payment = hashChain.getNextCredits(amountRequested);
+									if (payment != null && payment.size() > 0) {
+										if (DEBUG_COMMANDS_REQUESTPAYMENT)
+											System.out.println("Sending a payment of " + payment.size() + " credits to the server with hash \"" + Utility.getHexValue(payment.peek()) + "\".");
+										serverComms.sendPacket(DecryptedPacket.CMD_PAYMENT, payment.size() + ";" + Base64.encodeBase64String(payment.peek()));
+										sentPayment = true;
+									} else {
+										if (DEBUG_COMMANDS_REQUESTPAYMENT)
+											System.out.println("CryptoCredit hash chain is empty. Generating a new hash chain.");
+										getNewHashChain(DEFAULT_HASHCHAIN_LENGTH);
+										
+										/*
+										 * Check that hash chain is not null.
+										 * Hash chain should be null if the bank
+										 * refused to sign the new hash chain.
+										 * In this case we tell the server that
+										 * we are no longer interested in
+										 * purchasing the secret. The server
+										 * does NOT refund the money that we
+										 * have already transferred towards the
+										 * secret. This will stay in our server
+										 * account.
+										 */
+										if (hashChain == null) {
+											if (DEBUG_GENERAL)
+												System.out.println("Unable to generate hash chain. Giving up on purchase of secret.");
+											serverComms.sendPacket(DecryptedPacket.CMD_PAYMENT, Integer.toString(0) + ";" + Base64.encodeBase64String(new byte[0]));
+											sentPayment = true;
+											
+											/* Clean up and return. */
+											ftpSocket.close();
+											return;
+										}
+									}
 								}
-							}
 						}
 						
 						break;
@@ -1339,11 +1366,19 @@ public class Client {
 		/* Get the bank to sign the hash chain. */
 		final byte[] identifier = hashChain.getIdentifier();
 		if (DEBUG_GENERAL)
-			System.out.println("Requesting that the bank sign the new hash chain with identifier \"" + identifier + "\".");
-		hashChain.getSigned(bankComms);
+			System.out.println("Requesting that the bank sign the new hash chain with identifier \"" + Utility.getHexValue(identifier) + "\".");
+		if (!hashChain.getSigned(bankComms)) {
+			/* The bank refused to sign the hash chain. */
+			System.err.println("Bank refused to sign hash chain. Insufficient funds in account.");
+			msgTextBox.append("[*ERR*] Bank refused to sign hash chain. Insufficient funds in account.\n");
+			hashChain = null;
+			return;
+		}
 		final byte[] signature = hashChain.getSignature();
 		
 		/* Receive new balance from bank. */
+		if (DEBUG_GENERAL)
+			System.out.println("Waiting for the bank to send an updated balance.");
 		bankBalance = waitForBalance(bankComms);
 		
 		if (DEBUG_GENERAL) {

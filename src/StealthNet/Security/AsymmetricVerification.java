@@ -184,7 +184,6 @@ public class AsymmetricVerification {
 	 * @see Base64
 	 */
 	public byte[] sign(final byte[] message) throws NoSuchAlgorithmException, InvalidKeyException, SignatureException {
-		System.out.println("blahblah");
 		if (signerKey == null)
 			throw new IllegalStateException("Cannot perform encryption without a signer key.");
 		

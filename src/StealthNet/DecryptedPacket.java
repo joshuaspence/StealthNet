@@ -104,7 +104,10 @@ public class DecryptedPacket {
 	 * {@link Server} to add credit to their account. The contents of the packet
 	 * is the number of credits being sent, as well as the relevant CryptoCredit
 	 * hash. The data takes the form <code>credits;hash<code>. The hash is to be
-	 * encoded in base-64.
+	 * encoded in base-64. <p> If the {@link Client} wishes to cancel the
+	 * transaction (possibly because they have insufficient funds in the
+	 * {@link Bank}, then the {@link Client} client should send a "null"
+	 * payment.
 	 */
 	public static final byte CMD_PAYMENT = 0x40;
 	

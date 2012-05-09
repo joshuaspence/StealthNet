@@ -378,7 +378,10 @@ public class CryptoCreditHashChain {
 					 **********************************************************/
 /* @formatter:on */
 					case DecryptedPacket.CMD_SIGNHASHCHAIN:
-						return pckt.data;
+						if (pckt.data.length == 0)
+							return null;
+						else
+							return pckt.data;
 						
 /* @formatter:off*/
 					/***********************************************************

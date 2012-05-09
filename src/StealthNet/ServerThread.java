@@ -755,20 +755,26 @@ public class ServerThread extends Thread {
 						case DecryptedPacket.CMD_PAYMENT:
 							final String data = new String(pckt.data);
 							final int creditsSent = Integer.parseInt(data.split(";")[0]);
-							final byte[] cryptoCreditHash = Base64.decodeBase64(data.split(";")[1]);
-							
-							if (DEBUG_COMMANDS_PAYMENT)
-								System.out.println("Received payment of " + creditsSent + " credits from user \"" + userID + "\" with hash \"" + Utility.getHexValue(cryptoCreditHash) + "\".");
+							byte[] cryptoCreditHash;
+							if (data.split(";").length < 2)
+								cryptoCreditHash = null;
+							else
+								cryptoCreditHash = Base64.decodeBase64(data.split(";")[1]);
 							
 							/*
 							 * If the client sends a null cryptoCreditHash, then
 							 * we assume that the client is no longer interested
 							 * in the secret.
 							 */
-							if (cryptoCreditHash == null || cryptoCreditHash.length == 0)
+							if (cryptoCreditHash == null || cryptoCreditHash.length == 0) {
+								if (DEBUG_COMMANDS_PAYMENT)
+									System.out.println("Received a null payment from user \"" + userID + "\". Cancelling file transfer.");
 								return false;
-							else
+							} else {
+								if (DEBUG_COMMANDS_PAYMENT)
+									System.out.println("Received payment of " + creditsSent + " credits from user \"" + userID + "\" with hash \"" + Utility.getHexValue(cryptoCreditHash) + "\".");
 								validateAndAddCredits(userID, creditsSent, cryptoCreditHash);
+							}
 							break;
 						
 						/*******************************************************
