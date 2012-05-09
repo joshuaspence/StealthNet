@@ -475,7 +475,7 @@
 		
 		<!-- Run `make clean' within the latex subdirectory -->
 		<echo>Cleaning ${path.latex}.</echo>
-        <exec executable="make" dir="${path.latex}">
+        <exec executable="make" dir="${path.latex}/src">
     	   <arg value="clean" />
     	</exec>
     </target>
@@ -499,7 +499,7 @@
     	
     	<!-- Run `make dstclean' within the latex subdirectory -->
         <echo>Cleaning ${path.latex}.</echo>
-        <exec executable="make" dir="${path.latex}">
+        <exec executable="make" dir="${path.latex}/src">
            <arg value="distclean" />
         </exec>
     </target>
