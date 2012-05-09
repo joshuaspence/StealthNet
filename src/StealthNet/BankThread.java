@@ -48,7 +48,10 @@ import StealthNet.Security.SHA1withRSAAsymmetricVerification;
  * 
  * {@link Client}s use the {@link Bank} to sign {@link CryptoCreditHashChain}s,
  * as well as to retrieve their account balance. {@link Server}s use the
- * {@link Bank} to verify {@link CryptoCredit} payments.
+ * {@link Bank} to verify {@link CryptoCredit} payments. In the process,
+ * {@link Server}s also notify the {@link Bank} of {@link CryptoCredit}s that
+ * the {@link Client} has used to make a purchase. In this way, the {@link Bank}
+ * is able to ensure that no {@link CryptoCredit} is double spent.
  * 
  * @author Joshua Spence
  * 
@@ -75,6 +78,14 @@ public class BankThread extends Thread {
 	private class UserData {
 		BankThread userThread = null;
 		int accountBalance = INITIAL_BALANCE;
+		
+		/**
+		 * The last {@link CryptoCredit} hash used by a user to make a payment.
+		 * All future payments must hash properly to this value. <p> When a user
+		 * generates a new {@link CryptoCreditHashChain}, this value is set to
+		 * the {@link CryptoCredit} hash from the top of the
+		 * {@link CryptoCreditHashChain}. Note that this hash cannot be spent.
+		 */
 		byte[] lastHash = null;
 	}
 	
@@ -372,10 +383,10 @@ public class BankThread extends Thread {
 	private synchronized void signHashChain(final byte[] identifier, final boolean sendBalance) {
 		/* Extract fields from identifier. */
 		final String userID = CryptoCreditHashChain.getUserFromIdentifier(identifier);
+		final UserData user = getUser(userID);
 		final int credits = CryptoCreditHashChain.getCreditsFromIdentifier(identifier).intValue();
 		final byte[] topHash = CryptoCreditHashChain.getTopHashFromIdentifier(identifier);
 		byte[] signature = new byte[0];
-		final UserData user = getUser(userID);
 		
 		if (DEBUG_COMMANDS_SIGNHASHCHAIN)
 			System.out.println("Processing a CryptoCreditHashChain for user \"" + userID + "\" for " + credits + " credits with top hash \"" + Utility.getHexValue(topHash) + "\".");
@@ -394,7 +405,10 @@ public class BankThread extends Thread {
 				else
 					System.out.println("Signed CryptoCreditHashChain \"" + Utility.getHexValue(topHash) + "\".");
 			} catch (final Exception e) {
-				System.err.println("Failed to sign hash chain.");
+				if (DEBUG_COMMANDS_SIGNHASHCHAIN)
+					System.err.println("Failed to sign CryptoCreditHashChain \"" + Utility.getHexValue(topHash) + "\".");
+				else
+					System.err.println("Failed to sign CryptoCreditHashChain.");
 				if (DEBUG_ERROR_TRACE)
 					e.printStackTrace();
 			}
@@ -556,11 +570,13 @@ public class BankThread extends Thread {
 					 * Get Balance command
 					 **********************************************************/
 					case DecryptedPacket.CMD_GETBALANCE: {
-						if (DEBUG_COMMANDS_GETBALANCE)
-							if (userID != null)
+						if (userID != null) {
+							if (DEBUG_COMMANDS_GETBALANCE)
 								System.out.println("User \"" + userID + "\" sent get balance command.");
-							else
-								System.out.println("Received get balance command.");
+						} else {
+							System.err.println("Must be logged in to request account balance.");
+							break;
+						}
 						
 						/* Send the user their account balance. */
 						stealthComms.sendPacket(DecryptedPacket.CMD_GETBALANCE, Integer.toString(getUser(userID).accountBalance));
@@ -573,11 +589,13 @@ public class BankThread extends Thread {
 					 * Sign Hashchain command
 					 **********************************************************/
 					case DecryptedPacket.CMD_SIGNHASHCHAIN: {
-						if (DEBUG_COMMANDS_SIGNHASHCHAIN)
-							if (userID != null)
+						if (userID != null) {
+							if (DEBUG_COMMANDS_SIGNHASHCHAIN)
 								System.out.println("User \"" + userID + "\" sent sign hash chain command.");
-							else
-								System.out.println("Received sign hash chain command.");
+						} else {
+							System.err.println("Must to logged in to request signed hash chain.");
+							break;
+						}
 						
 						signHashChain(Base64.decodeBase64(pckt.data), true);
 						if (DEBUG_BALANCES)

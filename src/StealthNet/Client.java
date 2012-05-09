@@ -922,8 +922,7 @@ public class Client {
 									 */
 									if (DEBUG_COMMANDS_REQUESTPAYMENT)
 										System.out.println("No hash chain found. Generating a new hash chain.");
-									getNewHashChain(DEFAULT_HASHCHAIN_LENGTH);
-									
+									getNewHashChain(Math.max(DEFAULT_HASHCHAIN_LENGTH, amountRequested));
 									/*
 									 * If the hash chain is still null, then the
 									 * bank refused to sign the hash chain. Give
@@ -957,7 +956,7 @@ public class Client {
 									} else {
 										if (DEBUG_COMMANDS_REQUESTPAYMENT)
 											System.out.println("CryptoCredit hash chain is empty. Generating a new hash chain.");
-										getNewHashChain(DEFAULT_HASHCHAIN_LENGTH);
+										getNewHashChain(Math.max(DEFAULT_HASHCHAIN_LENGTH, amountRequested));
 										
 										/*
 										 * Check that hash chain is not null.
@@ -1357,7 +1356,14 @@ public class Client {
 	 * 
 	 * @param length The length of the new {@link CryptoCreditHashChain}.
 	 */
-	private void getNewHashChain(final int length) {
+	private void getNewHashChain(int length) {
+		/*
+		 * Don't try to generate a hash chain with more credits than we have
+		 * available.
+		 */
+		if (bankBalance != null && length > bankBalance.intValue())
+			length = bankBalance.intValue();
+		
 		if (DEBUG_GENERAL)
 			System.out.println("Generating a new hash chain of size " + length + ".");
 		
@@ -1370,7 +1376,7 @@ public class Client {
 		if (!hashChain.getSigned(bankComms)) {
 			/* The bank refused to sign the hash chain. */
 			System.err.println("Bank refused to sign hash chain. Insufficient funds in account.");
-			msgTextBox.append("[*ERR*] Bank refused to sign hash chain. Insufficient funds in account.\n");
+			JOptionPane.showMessageDialog(null, "Bank refused to sign CryptoCredit hash chain. Insufficient funds in account.", "Insufficient funds", JOptionPane.ERROR_MESSAGE);
 			hashChain = null;
 			return;
 		}
