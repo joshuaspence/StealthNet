@@ -139,7 +139,7 @@ public class DecryptedPacket {
 	public static final byte CMD_GETBALANCE = 0x43;
 	
 	/**
-	 * The {@link Server} sends a <code>CMD_VERIFYCREDIT</code> packet to the
+	 * The {@link Server} sends a <code>CMD_VALIDATEPAYMENT</code> packet to the
 	 * {@link Bank} when the {@link Client} sends a CryptoCredit hash for
 	 * payment. The {@link Bank} sends back a response indicating whether or not
 	 * the payment is valid.
@@ -148,7 +148,7 @@ public class DecryptedPacket {
 	 * <code>userID;credits;hash</code>. The hash is to be encoded in base-64.
 	 * The {@link Bank} sends data in the form <code>[true|false]</code>.
 	 */
-	public static final byte CMD_VERIFYCREDIT = 0x44;
+	public static final byte CMD_VALIDATEPAYMENT = 0x44;
 	
 	/**
 	 * The {@link Client} sends a <code>CMD_HASHCHAIN</code> packet to the
@@ -403,8 +403,8 @@ public class DecryptedPacket {
 				return "CMD_SIGNHASHCHAIN";
 			case CMD_GETBALANCE:
 				return "CMD_GETBALANCE";
-			case CMD_VERIFYCREDIT:
-				return "CMD_VERIFYCREDIT";
+			case CMD_VALIDATEPAYMENT:
+				return "CMD_VALIDATEPAYMENT";
 			case CMD_AUTHENTICATIONKEY:
 				return "CMD_AUTHENTICATIONKEY";
 			case CMD_INTEGRITYKEY:

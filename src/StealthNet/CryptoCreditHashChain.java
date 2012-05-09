@@ -30,6 +30,8 @@ import java.util.Stack;
 
 import org.apache.commons.codec.binary.Base64;
 
+import StealthNet.Security.AsymmetricVerification;
+
 /* StealthNet.CryptoCreditHashChain Class Definition *********************** */
 
 /**
@@ -181,8 +183,8 @@ public class CryptoCreditHashChain {
 	
 	/**
 	 * Generates a tuple of the form (username, credits, top hash of hash
-	 * chain). The bank will later sign this tuple to verify to the server that
-	 * the hash chain is valid.
+	 * chain). The {@link Bank} will later sign this tuple to verify to the
+	 * {@link Server} that the {@link CryptoCreditHashChain} is valid.
 	 * 
 	 * @param username The username of the user that generated the hash chain.
 	 * @param credits The number of credits represented by the hash chain.
@@ -347,10 +349,12 @@ public class CryptoCreditHashChain {
 	}
 	
 	/**
-	 * Requests that the bank signs a hash chain identifier. If the bank refuses
-	 * to sign the identifier then this function will return null.
+	 * Requests that the {@link Bank} signs a {@link CryptoCreditHashChain}
+	 * identifier. If the {@link Bank} refuses to sign the identifier then this
+	 * function will return null.
 	 * 
-	 * @param bankComms The {@link Comms} class to communicate with the bank.
+	 * @param bankComms The {@link Comms} class to communicate with the
+	 *        {@link Bank}.
 	 * @param identifier The identifying tuple for the hash chain, that is sent
 	 *        to the bank to be signed. Assumed to be encoded in base-64.
 	 * @return The signature provided by the {@link Bank} for the hash chain, or
@@ -418,9 +422,10 @@ public class CryptoCreditHashChain {
 	}
 	
 	/**
-	 * Verifies a {@link CryptoCredit} by checking that hashing the
-	 * <code>suppliedHash</code> <code>credits</code> times gives the
-	 * <code>lastHash</code>.
+	 * A utility function validate a {@link CryptoCredit} by checking that
+	 * hashing the <code>suppliedHash</code> <code>credits</code> times gives
+	 * the <code>lastHash</code>. This occurs at the {@link Bank} after the
+	 * {@link Server} calls <code>processPayment</code>.
 	 * 
 	 * @param hash The {@link CryptoCredit} hash corresponding to the payment.
 	 * @param credits The number of credits that the <code>suppliedHash</code>
@@ -429,7 +434,7 @@ public class CryptoCreditHashChain {
 	 * @return True if the {@link CryptoCredit} passes verification, otherwise
 	 *         false.
 	 */
-	public static boolean validate(final byte[] hash, final int credits, final byte[] lastHash) {
+	public static boolean validatePayment(final byte[] hash, final int credits, final byte[] lastHash) {
 		if (hash == null || lastHash == null)
 			return false;
 		
@@ -458,6 +463,178 @@ public class CryptoCreditHashChain {
 				System.err.println("Validation of CryptoCredit failed. \"" + Utility.getHexValue(hash) + "\" => \"" + Utility.getHexValue(hashedHash) + "\". Expected \"" + Utility.getHexValue(lastHash) + "\".");
 			return false;
 		}
+	}
+	
+	/**
+	 * A utility function to validate the supplied {@link CryptoCredit} hash by
+	 * requesting that the {@link Bank} call the <code>validatePayment</code>
+	 * function. A {@link CryptoCredit} is validated by checking with the
+	 * {@link Bank} that the {@link CryptoCredit} hasn't been spent before.
+	 * 
+	 * @param bankComms The {@link Comms} class with which to communicate with
+	 *        the {@link Bank}.
+	 * @param userID The ID of user whose account should be credited.
+	 * @param credits The number of credits declared by the {@link Client}.
+	 * @param hash The hash of the {@link CryptoCredit} supplied by the
+	 *        {@link Client}.
+	 * @return True if the credits were added to the user's account, otherwise
+	 *         false.
+	 */
+	public static synchronized boolean processPayment(final Comms bankComms, final String userID, final int credits, final byte[] hash) {
+		if (credits > 0) {
+			/* Request that the bank validates the CrytoCredit. */
+			final String msg = userID + ";" + Integer.toString(credits) + ";" + Base64.encodeBase64String(hash);
+			bankComms.sendPacket(DecryptedPacket.CMD_VALIDATEPAYMENT, msg);
+			
+			/* Wait for the bank's response. */
+			while (true)
+				try {
+					final DecryptedPacket pckt = bankComms.recvPacket();
+					
+					if (pckt == null)
+						/*
+						 * Something has probably gone wrong, let's get out of
+						 * here!
+						 */
+						return false;
+					
+					switch (pckt.command) {
+/* @formatter:off */
+						/*******************************************************
+						 * Verify Credit command
+						 ******************************************************/
+/* @formatter:on */
+						case DecryptedPacket.CMD_VALIDATEPAYMENT: {
+							final String data = new String(pckt.data);
+							final boolean result = Boolean.parseBoolean(data);
+							
+							if (result && DEBUG_GENERAL)
+								System.out.println("Bank validated payment of CryptoCredit \"" + Utility.getHexValue(hash) + "\".");
+							
+							return result;
+						}
+						
+						/*******************************************************
+						 * Other command
+						 ******************************************************/
+						default:
+							System.err.println("Unrecognised or unexpected command.");
+					}
+				} catch (final Exception e) {
+					System.err.println("Error reading packet. Discarding...");
+					if (DEBUG_ERROR_TRACE)
+						e.printStackTrace();
+				}
+		}
+		
+		return false;
+	}
+	
+	/**
+	 * A utility function to validate the identifer of a new
+	 * {@link CryptoCreditHashChain}. Checks the signature of the
+	 * {@link CryptoCreditHashChain} to ensure that the {@link Bank} signed the
+	 * {@link CryptoCreditHashChain}. If the signature verification passes, then
+	 * the user's last {@link CryptoCredit} hash is updated to be the head of
+	 * the new {@link CryptoCreditHashChain}.
+	 * 
+	 * @param bankVerification An {@link AsymmetricVerification} class to verify
+	 *        that the {@link CryptoCreditHashChain} was signed by the
+	 *        {@link Bank}.
+	 * @param packetData The packet data containing the identifier and the
+	 *        signature.
+	 * @return True if the {@link CryptoCreditHashChain} is verified
+	 *         successfully.
+	 */
+	public static synchronized boolean verifyHashChain(final AsymmetricVerification bankVerification, final byte[] packetData) {
+		ByteArrayInputStream input = new ByteArrayInputStream(packetData);
+		BufferedInputStream bufferedInput = new BufferedInputStream(input);
+		DataInputStream dataInput = new DataInputStream(bufferedInput);
+		byte[] identifier = null;
+		byte[] signature = null;
+		
+		try {
+			final int identifierSize = dataInput.readInt();
+			identifier = new byte[identifierSize];
+			dataInput.read(identifier);
+			
+			final int signatureSize = dataInput.readInt();
+			signature = new byte[signatureSize];
+			dataInput.read(signature);
+			
+			dataInput.close();
+			bufferedInput.close();
+			input.close();
+		} catch (final Exception e) {
+			System.err.println("Failed to parse hash chain.");
+			if (DEBUG_ERROR_TRACE)
+				e.printStackTrace();
+			return false;
+		}
+		
+		/* Extract fields from identifier. */
+		String userID = null;
+		int credits = -1;
+		byte[] topHash = null;
+		input = new ByteArrayInputStream(identifier);
+		bufferedInput = new BufferedInputStream(input);
+		dataInput = new DataInputStream(bufferedInput);
+		
+		try {
+			/* Username length. */
+			final int userNameLength = dataInput.readInt();
+			
+			/* Username. */
+			final byte[] userName = new byte[userNameLength];
+			dataInput.read(userName);
+			userID = new String(userName);
+			
+			/* Credits. */
+			credits = dataInput.readInt();
+			
+			/* Length of top of hash chain. */
+			final int topOfChainLength = dataInput.readInt();
+			
+			/* Top of hash chain. */
+			final byte[] topOfChain = new byte[topOfChainLength];
+			dataInput.read(topOfChain);
+			topHash = topOfChain;
+			
+			/* Clean up. */
+			dataInput.close();
+			bufferedInput.close();
+			input.close();
+		} catch (final Exception e) {
+			System.err.println("Error parsing top of hash chain from hash chain identifier.");
+			if (DEBUG_ERROR_TRACE)
+				e.printStackTrace();
+			return false;
+		}
+		
+		if (DEBUG_GENERAL)
+			System.out.println("Processing a hash chain for user \"" + userID + "\" for " + credits + " credits with top hash \"" + Utility.getHexValue(topHash) + "\".");
+		
+		/* Check that the bank signed the identifier. */
+		try {
+			if (!bankVerification.verify(identifier, signature)) {
+				System.err.println("Hash chain failed verification.");
+				return false;
+			}
+		} catch (final Exception e) {
+			System.err.println("Failed to verify hashchain.");
+			if (DEBUG_ERROR_TRACE)
+				e.printStackTrace();
+			return false;
+		}
+		if (DEBUG_GENERAL)
+			System.out.println("Hash chain passed verification.");
+		return true;
+		
+		/* Update the user's account info. */
+		//final UserData userInfo = getUser(userID);
+		//if (DEBUG_PAYMENTS)
+		//	System.out.println("Setting last hash for user \"" + userID + "\" to \"" + Utility.getHexValue(topHash) + "\"");
+		//userInfo.lastHash = topHash;
 	}
 }
 

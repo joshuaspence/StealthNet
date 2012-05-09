@@ -132,7 +132,6 @@ DEBUG="\
 -Ddebug.StealthNet.ServerThread.Commands.GetSecret=true \
 -Ddebug.StealthNet.ServerThread.Commands.GetBalance=true \
 -Ddebug.StealthNet.ServerThread.Commands.GetPublicKey=true \
--Ddebug.StealthNet.ServerThread.Commands.VerifyCredit=true \
 -Ddebug.StealthNet.ServerThread.Commands.RequestPayment=true \
 -Ddebug.StealthNet.ServerThread.Commands.Payment=true \
 -Ddebug.StealthNet.ServerThread.AsymmetricEncryption=true \
