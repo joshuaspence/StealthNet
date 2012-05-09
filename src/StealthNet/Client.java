@@ -142,6 +142,12 @@ public class Client {
 	/** A button to log into StealthNet. */
 	private JButton loginBtn;
 	
+	/** A button to withdraw credits from the bank. */
+	private JButton bankWithdrawBtn;
+	
+	/** A button to withdraw credits from the server. */
+	private JButton serverWithdrawBtn;
+	
 	/** To communicate with the StealthNet {@link Server}. */
 	private Comms serverComms = null;
 	
@@ -472,6 +478,7 @@ public class Client {
 					logout();
 			}
 		});
+		//loginBtn.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 		
 		final JButton msgBtn = new JButton(new ImageIcon(this.getClass().getClassLoader().getResource("img/msg.gif")));
 		msgBtn.setVerticalTextPosition(SwingConstants.BOTTOM);
@@ -484,13 +491,42 @@ public class Client {
 				createSecret();
 			}
 		});
+		//msgBtn.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+		
+		bankWithdrawBtn = new JButton(new ImageIcon(this.getClass().getClassLoader().getResource("img/bankWithdraw.gif")));
+		bankWithdrawBtn.setVerticalTextPosition(SwingConstants.BOTTOM);
+		bankWithdrawBtn.setHorizontalTextPosition(SwingConstants.CENTER);
+		bankWithdrawBtn.setMnemonic(KeyEvent.VK_B);
+		bankWithdrawBtn.setToolTipText("Withdraw from bank");
+		bankWithdrawBtn.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(final ActionEvent e) {
+				withdrawFromBank();
+			}
+		});
+		//bankWithdrawBtn.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+		
+		serverWithdrawBtn = new JButton(new ImageIcon(this.getClass().getClassLoader().getResource("img/serverWithdraw.gif")));
+		serverWithdrawBtn.setVerticalTextPosition(SwingConstants.BOTTOM);
+		serverWithdrawBtn.setHorizontalTextPosition(SwingConstants.CENTER);
+		serverWithdrawBtn.setMnemonic(KeyEvent.VK_S);
+		serverWithdrawBtn.setToolTipText("Withdraw from server");
+		serverWithdrawBtn.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(final ActionEvent e) {
+				withdrawFromServer();
+			}
+		});
+		//serverWithdrawBtn.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 		
 		final JPanel btnPane = new JPanel();
-		btnPane.setLayout(new GridLayout(1, 0));
-		btnPane.setPreferredSize(new Dimension(180, 40));
+		btnPane.setLayout(new GridLayout(2, 0));
+		btnPane.setPreferredSize(new Dimension(180, 80));
 		btnPane.setBorder(BorderFactory.createEmptyBorder(10, 0, 0, 0));
 		btnPane.add(loginBtn);
 		btnPane.add(msgBtn);
+		btnPane.add(bankWithdrawBtn);
+		btnPane.add(serverWithdrawBtn);
 		
 		final JPanel bottomPane = new JPanel();
 		bottomPane.setLayout(new BorderLayout());
@@ -776,6 +812,26 @@ public class Client {
 		}
 	}
 	
+	/** Withdraw additional credits from the {@link Bank}. */
+	private void withdrawFromBank() {
+		if (serverComms == null) {
+			msgTextBox.append("[*ERR*] Not logged in.\n");
+			return;
+		}
+		
+		JOptionPane.showMessageDialog(null, "Feature not yet implemented.", "Feature unavailable", JOptionPane.INFORMATION_MESSAGE);
+	}
+	
+	/** Withdraw additional credits from the {@link Server}. */
+	private void withdrawFromServer() {
+		if (serverComms == null) {
+			msgTextBox.append("[*ERR*] Not logged in.\n");
+			return;
+		}
+		
+		JOptionPane.showMessageDialog(null, "Feature not yet implemented.", "Feature unavailable", JOptionPane.INFORMATION_MESSAGE);
+	}
+	
 	/** Create a secret on the {@link Server}. */
 	private void createSecret() {
 		if (serverComms == null) {
@@ -805,7 +861,7 @@ public class Client {
 				
 				break;
 			} catch (final NumberFormatException e) {
-				JOptionPane.showMessageDialog(null, "Cost must be a non-negative integer.", "Invalid cost.", JOptionPane.ERROR_MESSAGE);
+				JOptionPane.showMessageDialog(null, "Cost must be a non-negative integer.", "Invalid cost", JOptionPane.ERROR_MESSAGE);
 			}
 		}
 		
