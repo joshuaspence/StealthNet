@@ -33,6 +33,7 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
@@ -792,13 +793,31 @@ public class Client {
 		/* Prompt the user for the secret name, description and cost. */
 		name = JOptionPane.showInputDialog("Secret Name:", name);
 		description = JOptionPane.showInputDialog("Secret Description:", description);
-		cost = JOptionPane.showInputDialog("Secret Cost (credits):", cost);
+		while (true) {
+			cost = JOptionPane.showInputDialog("Secret Cost (credits):", cost);
+			
+			int dummy;
+			try {
+				dummy = Integer.parseInt(cost);
+				
+				if (dummy < 0)
+					throw new NumberFormatException();
+				
+				break;
+			} catch (final NumberFormatException e) {
+				JOptionPane.showMessageDialog(null, "Cost must be a non-negative integer.", "Invalid cost.", JOptionPane.ERROR_MESSAGE);
+			}
+		}
 		
 		/* Prompt the user for the secret file. */
 		final FileDialog fileOpen = new FileDialog(clientFrame, "Select Secret File....", FileDialog.LOAD);
 		fileOpen.setVisible(true);
-		if (fileOpen.getFile().length() == 0)
+		if (fileOpen.getFile() == null || fileOpen.getFile().length() == 0)
 			return;
+		else if (!new File(fileOpen.getFile()).exists()) {
+			JOptionPane.showMessageDialog(null, "No such file exists.", "File not found.", JOptionPane.ERROR_MESSAGE);
+			return;
+		}
 		
 		/* Create the secret on the server. */
 		final String secret = name + ";" + description + ";" + cost + ";" + fileOpen.getDirectory() + ";" + fileOpen.getFile();

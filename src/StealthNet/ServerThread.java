@@ -901,8 +901,8 @@ public class ServerThread extends Thread {
 			System.out.println("Running ServerThread... (Thread ID is " + getId() + ")");
 		
 		DecryptedPacket pckt = new DecryptedPacket();
-		try {
-			while (pckt.command != DecryptedPacket.CMD_LOGOUT) {
+		while (pckt.command != DecryptedPacket.CMD_LOGOUT)
+			try {
 				/* Receive a packet. */
 				pckt = clientComms.recvPacket();
 				
@@ -962,10 +962,10 @@ public class ServerThread extends Thread {
 							System.out.println("Distributing user list: \"" + userListAsString().replace('\n', ';') + "\"");
 						sendUserList();
 						
-						/* Distribute the secret list. */
+						/* Distribute the secret list to new user. */
 						if (DEBUG_COMMANDS_LOGIN)
-							System.out.println("Distributing secret list: \"" + secretListAsString().replace('\n', ';') + "\"");
-						sendSecretList();
+							System.out.println("Sending secret list to new user: \"" + secretListAsString().replace('\n', ';') + "\"");
+						clientComms.sendPacket(DecryptedPacket.CMD_SECRETLIST, secretListAsString());
 						break;
 					}
 					
@@ -1115,6 +1115,12 @@ public class ServerThread extends Thread {
 						t.cost = Integer.parseInt(tokens.nextToken());
 						t.dirname = tokens.nextToken();
 						t.filename = tokens.nextToken();
+						
+						/* Make sure the secret has a positive cost. */
+						if (t.cost < 0) {
+							System.err.println("Secret cannot have a negative cost.");
+							clientComms.sendPacket(DecryptedPacket.CMD_MSG, "[*SVR*] Secrets cannot have a negative cost.");
+						}
 						
 						addSecret(t);
 						if (DEBUG_COMMANDS_CREATESECRET)
@@ -1295,16 +1301,16 @@ public class ServerThread extends Thread {
 					default:
 						System.err.println("Unrecognised or unexpected command.");
 				}
+			} catch (final IOException e) {
+				System.err.println("User \"" + userID + "\" session terminated.");
+				if (DEBUG_ERROR_TRACE)
+					e.printStackTrace();
+				break;
+			} catch (final Exception e) {
+				System.err.println("Error running server thread.");
+				if (DEBUG_ERROR_TRACE)
+					e.printStackTrace();
 			}
-		} catch (final IOException e) {
-			System.err.println("User \"" + userID + "\" session terminated.");
-			if (DEBUG_ERROR_TRACE)
-				e.printStackTrace();
-		} catch (final Exception e) {
-			System.err.println("Error running server thread.");
-			if (DEBUG_ERROR_TRACE)
-				e.printStackTrace();
-		}
 		
 		/*
 		 * We only reach this code when a user is logging out, so lets remove
