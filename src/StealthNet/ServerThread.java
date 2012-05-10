@@ -719,6 +719,7 @@ public class ServerThread extends Thread {
 							 */
 							if (creditsRequested > getUser(userID).accountBalance) {
 								System.err.println("User \"" + userID + "\" requested more credits than available in account.");
+								clientComms.sendPacket(DecryptedPacket.CMD_MSG, "[*SVR*] Insufficient credits.");
 								break;
 							}
 							
@@ -1281,6 +1282,7 @@ public class ServerThread extends Thread {
 						 */
 						if (creditsRequested > getUser(userID).accountBalance) {
 							System.err.println("User \"" + userID + "\" requested more credits than available in account.");
+							clientComms.sendPacket(DecryptedPacket.CMD_MSG, "[*SVR*] Insufficient credits.");
 							break;
 						}
 						

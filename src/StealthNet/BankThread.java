@@ -417,7 +417,7 @@ public class BankThread extends Thread {
 		 */
 		if (CryptoCreditHashChain.validatePayment(hash, credits, sendUser.lastHash)) {
 			if (DEBUG_COMMANDS_DEPOSITPAYMENT)
-				System.out.println("Depositing CryptoCredit \"" + hash + "\" into user \"" + this.userID + "\" account for " + credits + " credits.");
+				System.out.println("Depositing CryptoCredit \"" + Utility.getHexValue(hash) + "\" into user \"" + this.userID + "\" account for " + credits + " credits.");
 			result = true;
 		} else if (DEBUG_COMMANDS_DEPOSITPAYMENT)
 			System.err.println("CryptoCredit validation failed. Cannot deposit CryptoCredit \"" + Utility.getHexValue(hash) + "\" into user \"" + this.userID + "\" account.");
@@ -604,12 +604,11 @@ public class BankThread extends Thread {
 						if (cryptoCreditHash == null || cryptoCreditHash.length == 0)
 							break;
 						else
-						/*
-						 * Add the credits to the user's account once the
-						 * payment is verified.
-						 */
-						if (depositPayment(userID, creditsSent, cryptoCreditHash))
-							addCredits(userID, creditsSent);
+							/*
+							 * Add the credits to the user's account once the
+							 * payment is verified.
+							 */
+							depositPayment(userID, creditsSent, cryptoCreditHash);
 						break;
 					
 					/***********************************************************

@@ -870,12 +870,12 @@ public class Client {
 			try {
 				final int dummy = Integer.parseInt(credits);
 				
-				if (dummy < 0)
+				if (dummy <= 0)
 					throw new NumberFormatException();
 				
 				break;
 			} catch (final NumberFormatException e) {
-				JOptionPane.showMessageDialog(null, "Credits must be a non-negative integer.", "Invalid credits", JOptionPane.ERROR_MESSAGE);
+				JOptionPane.showMessageDialog(null, "Credits must be a positive integer.", "Invalid credits", JOptionPane.ERROR_MESSAGE);
 			}
 		}
 		
@@ -912,12 +912,12 @@ public class Client {
 			try {
 				final int dummy = Integer.parseInt(credits);
 				
-				if (dummy < 0)
+				if (dummy <= 0)
 					throw new NumberFormatException();
 				
 				break;
 			} catch (final NumberFormatException e) {
-				JOptionPane.showMessageDialog(null, "Credits must be a non-negative integer.", "Invalid credits", JOptionPane.ERROR_MESSAGE);
+				JOptionPane.showMessageDialog(null, "Credits must be a positive integer.", "Invalid credits", JOptionPane.ERROR_MESSAGE);
 			}
 		}
 		
@@ -943,10 +943,16 @@ public class Client {
 		
 		/* Prompt the user for the secret name, description and cost. */
 		name = JOptionPane.showInputDialog("Secret Name:", name);
+		if (name == null)
+			return;
+		
 		description = JOptionPane.showInputDialog("Secret Description:", description);
+		if (description == null)
+			return;
+		
 		while (true) {
 			cost = JOptionPane.showInputDialog("Secret Cost (credits):", cost);
-			if (cost.length() == 0)
+			if (cost == null)
 				return;
 			
 			try {
@@ -1536,16 +1542,7 @@ public class Client {
 	 * 
 	 * @param length The length of the new {@link CryptoCreditHashChain}.
 	 */
-	private void getNewHashChain(int length) {
-		/*
-		 * Don't try to generate a hash chain with more credits than we have
-		 * available.
-		 */
-		bankComms.sendPacket(DecryptedPacket.CMD_GETBALANCE);
-		final int balance = waitForBalance(bankComms);
-		if (length > balance)
-			length = balance;
-		
+	private void getNewHashChain(final int length) {
 		if (DEBUG_GENERAL)
 			System.out.println("Generating a new hash chain of size " + length + ".");
 		
@@ -1560,7 +1557,11 @@ public class Client {
 			/* The bank refused to sign the hash chain. */
 			System.err.println("Bank refused to sign hash chain. Insufficient funds in account.");
 			JOptionPane.showMessageDialog(null, "Bank refused to sign CryptoCredit hash chain. Insufficient funds in account.", "Insufficient funds", JOptionPane.ERROR_MESSAGE);
-			hashChain = null;
+			
+			hashChain = new CryptoCreditHashChain();
+			creditsBox.setText(Integer.toString(hashChain.getLength()));
+			bankComms.sendPacket(DecryptedPacket.CMD_GETBALANCE);
+			
 			return;
 		}
 		final byte[] signature = hashChain.getSignature();
@@ -1582,44 +1583,6 @@ public class Client {
 			System.out.println("Sending the identifier and signature of the new hash chain to the server.");
 		serverComms.sendPacket(DecryptedPacket.CMD_HASHCHAIN, Base64.encodeBase64(hashChain.getIdentifierAndSignture()));
 		
-	}
-	
-	/**
-	 * Wait for the {@link Bank} or the {@link Server} to send the account
-	 * balance.
-	 * 
-	 * @param comms The {@link Comms} instance to wait for the account balance
-	 *        on.
-	 * @return The client's account balance.
-	 */
-	private static int waitForBalance(final Comms comms) {
-		while (true)
-			try {
-				final DecryptedPacket pckt = comms.recvPacket();
-				
-				switch (pckt.command) {
-/* @formatter:off */
-					/***********************************************************
-					 * Get Balance command
-					 **********************************************************/
-/* @formatter:on */
-					case DecryptedPacket.CMD_GETBALANCE:
-						return Integer.parseInt(new String(pckt.data));
-						
-/* @formatter:off */
-					/***********************************************************
-					 * Other command
-					 **********************************************************/
-/* @formatter:on */
-					default:
-						System.err.println("Unrecognised or unexpected command received while waiting for balance.");
-						
-				}
-			} catch (final Exception e) {
-				System.err.println("Error running client thread.");
-				if (DEBUG_ERROR_TRACE)
-					e.printStackTrace();
-			}
 	}
 	
 	/**
