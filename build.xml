@@ -451,21 +451,24 @@
     	<symlink link="${root.latex.output2}" resource="${file.latex.output2}" overwrite="true" />
     </target>
 	
-	<!-- ========================== CLEAN TARGETS ========================== -->
-	<!-- Clean target -->
-	<target name="clean" depends="-init" description="Clean the project">
-		<echo>Deleting ${path.build}.</echo>
-        <delete dir="${path.build}" />
-		
-		<!-- Run `make clean' within the latex subdirectory -->
-		<echo>Cleaning ${path.latex}.</echo>
+	<!-- Latex clean target -->
+    <target name="latex-clean" depends="-init" description="Delete LaTeX documentation">        
+        <!-- Run 'make clean' within the latex subdirectory -->
+    	<echo>Cleaning ${path.latex}.</echo>
         <exec executable="make" dir="${path.latex}/src">
-    	   <arg value="clean" />
+        	<arg value="clean" />
     	</exec>
     </target>
 	
+	<!-- ========================== CLEAN TARGETS ========================== -->
+	<!-- Clean target -->
+	<target name="clean" depends="-init, latex-clean" description="Clean the project">
+		<echo>Deleting ${path.build}.</echo>
+        <delete dir="${path.build}" />
+    </target>
+	
 	<!-- Distribution clean target -->
-    <target name="distclean" depends="-init, delete-client-keys" description="Clean the project">
+    <target name="distclean" depends="-init, delete-client-keys, latex-clean" description="Clean the project">
     	<echo>Deleting ${path.build}.</echo>
         <delete dir="${path.build}" />
         
@@ -480,12 +483,6 @@
         
         <echo>Deleting ${root.latex.output}.</echo>
         <delete file="${root.latex.output}" />
-    	
-    	<!-- Run `make dstclean' within the latex subdirectory -->
-        <echo>Cleaning ${path.latex}.</echo>
-        <exec executable="make" dir="${path.latex}/src">
-           <arg value="clean" />
-        </exec>
     </target>
 	
 	<!-- Clean target -->
@@ -557,7 +554,7 @@
     </target>
 	
 	<!-- Create a TAR file with all of the relevant content (includes Eclipse files and any built files but excludes git metadata) -->
-    <target name="maximal-tar" depends="compile, jar, javadoc, latex" description="Create a maximal tar archive">
+    <target name="maximal-tar" depends="compile, jar, javadoc, latex, latex-clean" description="Create a maximal tar archive">
         <!-- Delete old TAR file -->
         <delete file="${file.tar.gz}" />
         <delete file="${file.tar.gz.md5}" />
