@@ -9,7 +9,7 @@
 --------------------------------------------------------------------------------
 EXECUTABLES
 --------------------------------------------------------------------------------
-There are three executables resulting from the StealthNet package. These are as
+There are four executables resulting from the StealthNet package. These are as
 follows:
 
 - Client
@@ -23,6 +23,9 @@ follows:
     transparent layer (man-in-the-middle) that transparently relays messages
     between clients and servers. The proxy can additionally be used to simulate
     various security attacks.
+- Bank
+	A StealthNet bank instance. This is a command-line application to 
+	co-ordinate StealthNet payments.
 
 --------------------------------------------------------------------------------
 INSTRUCTIONS
@@ -30,17 +33,17 @@ INSTRUCTIONS
 To build:
 	From the root project directory, execute the command `ant default'. To build
 	documentation and create TAR archives as well, execute the command 
-	
+	`ant all'.
 
 To run:
-	To execute a client application execute the command `ant run_client'. 
-	Alternatively, run the script `run.sh --client [--debug] [extra arguments]'.
+	To execute a bank application, run the script
+	`run.sh --proxy [--debug] [extra arguments]'.
+
+	To execute a client application, run the script 
+	`run.sh --client [--debug] [extra arguments]'.
 	
-	To execute a server application execute the command `ant run_server'.
-	Alternatively, run the script `run.sh --server [--debug] [extra arguments]'.
+	To execute a server application, run the script 
+	`run.sh --server [--debug] [extra arguments]'.
 	
-	To execute a proxy application execute the command `ant run_proxy'.
-    Alternatively, run the script `run.sh --proxy [--debug] [extra arguments]'.
-	
-	Alternatively, the command `ant run' will execute a single proxy appliation,
-	a single server application and two client applications.
+	To execute a proxy application, run the script 
+	`run.sh --proxy [--debug] [extra arguments]'.
