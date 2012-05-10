@@ -145,7 +145,7 @@ been transmitted, the \serviceName{} peer calls the \verb+recvPublicKey()+
 function, rejecting all incoming packets until the peer receives the initiating 
 party's public key. Similarly to the initiating party, the party that is 
 accepting the connection only waits for the peer's public key value if it does 
-already possess this value (maintained through the condition 
+already possess this value (maintained through the condition \\
 \verb+symmetricEncryptionProvider.getPeerPublicKey() == null+).
 
 In situations in which a client is connecting to a \serviceName{} server or 
@@ -212,16 +212,28 @@ is incorrect or the file was been modified in some way.
 \section{Asymmetric Verification}
 
 \subsection{Introduction}
-% TODO
+Verification is a means to confirm the authenticity of a communication. 
+Asymmetric verification relies on the use of public-private keys to allow a 
+sender to \emph{sign} a message as being authentic and a receiver to
+\emph{verify} that the message is authentic and originated from the expected 
+source (the sender).
 
 \subsection{Details}
-% TODO
-
-\subsection{Justification}
-% TODO
+The same \algorithm{RSA} algorithm that was used for asymmetric encryption can 
+also be used for asymmetric verification, albeit in a different manner. To use 
+\algorithm{RSA} to sign and verify messages, the sender's private key is used 
+to \emph{sign} a message and the sender's public key to \emph{verify} a message.
+Apart from this subtlety the two algorithms are otherwise identical, and in fact
+the same public-private key path can be used for both processes --- simplifying 
+the task of key management.
 
 \subsection{Implementation}
-% TODO
+Asymmetric verification is implemented in \packageName{} using the \\
+\verb+AsymmetricVerification+ base class. More specifically, asymmetric 
+verification with \algorithm{RSA} is implemented in the 
+\verb+SHA1withRSAAsymmetricVerification+ class. These classes are almost 
+identical to their encryption counterparts \verb+AsymmetricEncryption+ and 
+\verb+RSAAsymmetricEncryption+.
 
 % PAYMENT PROTOCOL
 \section{Payment Protocol}
@@ -286,7 +298,10 @@ client in order to complete a transaction. The ServerThread class also supports
 clients to store coins in a server credit account, along with all the necessary 
 functions so that users can use these credits to pay for a secret or transfer 
 money from either the bank or their own towards the server.
-The final class stores the encrypt() and decrypt() functions that use the public and private keys used by the RSA algorithm, and also generates and distributes keys when necessary to users across the network.
+
+The final class stores the encrypt() and decrypt() functions that use the public
+and private keys used by the RSA algorithm, and also generates and distributes 
+keys when necessary to users across the network.
 
 % CONCLUSION
 \section{Conclusion}
