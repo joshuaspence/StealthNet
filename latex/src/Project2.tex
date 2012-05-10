@@ -69,16 +69,50 @@ must be kept secret. Anyone can use the public key to encrypt a message, but
 with currently published methods, if the public key is large enough, only 
 someone with knowledge of the prime factors can feasibly decode the message. 
 
-% TODO
+A simple explanation of the various stages of the \algorithm{RSA} algorithm is 
+as follows:
+
+\paragraph{Key generation}
+\begin{enumerate}
+\item Generate two large prime numbers, $p$ and $q$.
+\item Let $n = pq$.
+\item Let $m = (p-1)(q-1)$.
+\item Choose a small number $e$, coprime to $m$.
+\item Find $d$, such that $de \mod m = 1$.
+\item Publish $e$ and $n$ as the public key.
+\item Keep $d$ and $n$ as the secret key.
+\end{enumerate}
+
+\paragraph{Encryption}
+\begin{math}
+C = P^{e} \mod n
+\end{math}
+
+\paragraph{Decryption}
+\begin{math}
+P = C^{d} \mod n
+\end{math}
 
 \subsection{Justification}
-% TODO
+\algorithm{RSA} is a well-studied and well-tested asymmetric encryption 
+algorithm that has proven itself to be sufficient for modern security 
+requirements. However, as with every algorithm, the real strength of an 
+encryption scheme is in its key length. In our implementation we have selected a
+2048-bit key size. Studies have suggested that a 2048-bit \algorithm{RSA} key is 
+similar in strength to a 112-bit symmetric key. It is also estimated that a 
+2048-bit key should be sufficient until the year 2030. Given that 18 years is a 
+very long time in the scheme of software and computing generally, 2030 seems 
+like a valid deadline for either increasing the size of the \algorithm{RSA} keys
+or adopting a newer encryption algorithm.
 
 \subsection{Implementation}
-Asymmetric encryption is implemented in \packageName{} on top of the 
+Asymmetric encryption is implemented in \packageName{} on top of the \\
 \verb+Encryption+ and \verb+AsymmetricEncryption+ base classes. In particular, 
-the \verb+RSAAsymmetricEncryption+ class implements the \algorithm{RSA} 
-algorithm.
+the \\ \verb+RSAAsymmetricEncryption+ class implements the \algorithm{RSA} 
+algorithm. \algorithm{RSA encryption} is implemented as a feature of the 
+\serviceName{} \verb+Comms+ class, however all \verb+Comms+ for any given 
+\serviceName{} peer will use identical public-private keys, it is only the peer 
+public keys that will differ.
 
 The \verb+Encryption+ base class provides methods \verb+encrypt(byte[])+ and 
 \verb+decrypt(byte[])+ for encryption with the peer's public key and decryption 
@@ -86,32 +120,32 @@ with the local private key, respectively.  The \verb+AsymmetricEncryption+ base
 class requires a public-private key pair for instantiation, but setting of the 
 peer's public key (for encryption) can be delayed until a later stage.
 
-Packed into the JAR file of the StealthNet executable is the public key of the 
+Packed into the JAR file of the StealthNet executables is the public key of the 
 \serviceName{} server and the \serviceName{} bank. By reading these public keys 
 from the JAR archive, a \serviceName{} is able to make a secure connection to 
 the \serviceName{} server, as well as the \serviceName{} bank, without needing 
 to worry about the possibility of a man-in-the-middle attack. If an attacker 
 does attempt such an attack, they would be unable to decrypt the transmitted 
-packets.
+packets because they have been encrypted with the server/bank's public key.
 
 Whilst the clients are aware of the server and bank public keys, the server and 
 the bank are unaware of the public keys of all of the clients. For this reason, 
 when a client first creates a connection to a \serviceName{} server or bank, the
-first (encryption) data that is sent is the client's public key. Once the server
-has received this public key, the server can itself encrypt client-bound 
-messages.
+first (encrypted) data that is sent is the client's public key. Once the server
+has received this public key of the client, the server can itself encrypt 
+client-bound messages.
 
 \algorithm{RSA encryption} is initialised in the \verb+initiateSession()+ 
-function, after a communications socket has been established. The initiator of 
-the connection (usually the client), sends their public key to the other party 
-(usually but not always a server) in encrypted form, but only if the other party
-does not already have this public key (maintained with the 
-\verb+peerHasPublicKey+ variable. Once the public key has been transmitted, the 
-\serviceName{} peer calls the \verb+recvPublicKey()+ function, rejecting all 
-incoming packets until the peer receives the initiating party's public key. 
-Similarly to the initiating party, the party that is accepting the connection 
-only waits for the peer's public key value if it does already possess this value
-(maintained through the condition 
+function of the \verb+Comms+ class, after a communications socket has been 
+established. The initiator of the connection (usually the client), sends their
+public key to the other party (usually but not always a server) in encrypted 
+form, but only if the other party does not already have this public key 
+(maintained with the \verb+peerHasPublicKey+ variable. Once the public key has 
+been transmitted, the \serviceName{} peer calls the \verb+recvPublicKey()+ 
+function, rejecting all incoming packets until the peer receives the initiating 
+party's public key. Similarly to the initiating party, the party that is 
+accepting the connection only waits for the peer's public key value if it does 
+already possess this value (maintained through the condition 
 \verb+symmetricEncryptionProvider.getPeerPublicKey() == null+).
 
 In situations in which a client is connecting to a \serviceName{} server or 
@@ -120,13 +154,6 @@ server/bank will not possess the public key of the client. In situations in
 which a client is connecting to another client, the server informs both parties 
 of the public key such that both parties can perform asymmetric encryption from 
 the commencement of the communication.
-
-\algorithm{RSA encryption} is implemented as a feature of the \serviceName{} 
-\verb+Comms+ class, however all \verb+Comms+ for any given \serviceName{} peer 
-will use identical public-private keys, it is only the peer public keys that 
-will differ.
-
-The size selected for the public and private keys was selected to be 2048-bits.
  
 % FILE ENCRYPTION
 \section{File Encryption}
@@ -159,9 +186,6 @@ number generator. As an additional parameter to the algorithm, the password
 encryption algorithm undergoes 1000 iterations to achieve the final encrypted 
 data.
 
-\subsection{Justification}
-% TODO
-
 \subsection{Implementation}
 Password-based encryption is implemented in the \verb+PasswordEncryption+ class,
 as a subclass of the \verb+Encryption+ base class. In this sense, the password
@@ -177,6 +201,12 @@ The encrypted files consists of four fields --- the \verb+salt+, the
 stored as the first 8 bytes of the encrypted file and is necessary in order to
 decrypt the encrypted file. Conveniently, storing the salt in an unencrypted 
 format does not jeopardise the security of the encrypted file.
+
+The password hash is the \verb+SHA1+ hash of the password that is used to 
+encrypt and decrypt the file. Its purpose is to allow for a quick (and only 
+partially accurate) validation of the input password. If the input password does
+not hash to the same value contained in the file, then either the input password
+is incorrect or the file was been modified in some way.
 
 % ASYMMETRIC VERIFICATION
 \section{Asymmetric Verification}
