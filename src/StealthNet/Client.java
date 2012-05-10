@@ -747,7 +747,7 @@ public class Client {
 		/* =================================================================== */
 		/* NOTE: We should now be connected to the StealthNet server and bank. */
 		/* =================================================================== */
-		
+
 		/* Set the frame title. */
 		clientFrame.setTitle("stealthnet [" + userID + "]");
 		
@@ -821,12 +821,37 @@ public class Client {
 	
 	/** Withdraw additional credits from the {@link Bank}. */
 	private void withdrawFromBank() {
-		if (serverComms == null) {
+		if (bankComms == null) {
 			msgTextBox.append("[*ERR*] Not logged in.\n");
 			return;
 		}
 		
-		JOptionPane.showMessageDialog(null, "Feature not yet implemented.", "Feature unavailable", JOptionPane.INFORMATION_MESSAGE);
+		/** Prompt user for amount of credits to withdraw from bank. */
+		String requestCreditsInput = null;
+		int requestCredits = 0;
+		requestCreditsInput = JOptionPane.showInputDialog("Amount of credits to withdraw from bank:", requestCreditsInput);
+		try {
+			requestCredits = Integer.parseInt(requestCreditsInput);
+		} catch (final NumberFormatException e) {
+			JOptionPane.showMessageDialog(null, "Input is not a number.", "Invalid input", JOptionPane.ERROR_MESSAGE);
+			return;
+		}
+		if (requestCredits <= 0) {
+			msgTextBox.append("[*ERR*] Invalid amount requested.\n");
+			return;
+		}
+		
+		/** Send hash chain payment to bank */
+		final int currentCredits = hashChain.getLength();
+		if (currentCredits > 0) {
+			final Stack<byte[]> payment = hashChain.getNextCredits(currentCredits);
+			bankComms.sendPacket(DecryptedPacket.CMD_PAYMENT, payment.size() + ";" + Base64.encodeBase64String(payment.peek()));
+		}
+		
+		/** Request new hash chain */
+		getNewHashChain(requestCredits + currentCredits);
+		
+		// JOptionPane.showMessageDialog(null, "Feature not yet implemented.", "Feature unavailable", JOptionPane.INFORMATION_MESSAGE);
 	}
 	
 	/** Withdraw additional credits from the {@link Server}. */
@@ -978,10 +1003,10 @@ public class Client {
 						msgTextBox.append(msg + "\n");
 						return;
 					}
-					
-					/***********************************************************
-					 * Request Payment command
-					 **********************************************************/
+						
+						/***********************************************************
+						 * Request Payment command
+						 **********************************************************/
 					case DecryptedPacket.CMD_REQUESTPAYMENT:
 						final String pcktData = new String(pckt.data);
 						final int amountRequested = Integer.parseInt(pcktData);
@@ -1107,7 +1132,7 @@ public class Client {
 		 * secret. They will, however, have our public key and so can send us
 		 * their public key in encrypted form.
 		 */
-		
+
 		if (fileSave.getFile() != null && fileSave.getFile().length() > 0)
 			/* Wait for user to connect, then start file transfer. */
 			try {
@@ -1606,10 +1631,10 @@ public class Client {
 						msgTextBox.append(msg + "\n");
 						break;
 					}
-					
-					/***********************************************************
-					 * Chat command
-					 **********************************************************/
+						
+						/***********************************************************
+						 * Chat command
+						 **********************************************************/
 					case DecryptedPacket.CMD_CHAT: {
 						final String data = new String(pckt.data);
 						final String iAddr = data.split("@")[1].split(":")[0];
@@ -1650,10 +1675,10 @@ public class Client {
 							System.out.println("Started a chat session with \"" + iAddr + "\".");
 						break;
 					}
-					
-					/***********************************************************
-					 * FTP command
-					 **********************************************************/
+						
+						/***********************************************************
+						 * FTP command
+						 **********************************************************/
 					case DecryptedPacket.CMD_FTP: {
 						final String data = new String(pckt.data);
 						final String fName = data.split("@")[1].split("#")[1];
@@ -1700,10 +1725,10 @@ public class Client {
 						}
 						break;
 					}
-					
-					/***********************************************************
-					 * List command
-					 **********************************************************/
+						
+						/***********************************************************
+						 * List command
+						 **********************************************************/
 					case DecryptedPacket.CMD_LIST: {
 						/*
 						 * Replace the contents of the buddy list with the data
@@ -1740,10 +1765,10 @@ public class Client {
 						}
 						break;
 					}
-					
-					/***********************************************************
-					 * Secret List command
-					 **********************************************************/
+						
+						/***********************************************************
+						 * Secret List command
+						 **********************************************************/
 					case DecryptedPacket.CMD_SECRETLIST: {
 						/*
 						 * Replace the contents of the graphical secret list
@@ -1781,10 +1806,10 @@ public class Client {
 						}
 						break;
 					}
-					
-					/***********************************************************
-					 * Get Secret command
-					 **********************************************************/
+						
+						/***********************************************************
+						 * Get Secret command
+						 **********************************************************/
 					case DecryptedPacket.CMD_GETSECRET: {
 						final String data = new String(pckt.data);
 						final String fileName = data.split("@")[0];
@@ -1820,20 +1845,20 @@ public class Client {
 							System.out.println("Started an FTP session with \"" + iAddr + "\".");
 						break;
 					}
-					
-					/***********************************************************
-					 * Get Balance command
-					 **********************************************************/
+						
+						/***********************************************************
+						 * Get Balance command
+						 **********************************************************/
 					case DecryptedPacket.CMD_GETBALANCE: {
 						if (DEBUG_COMMANDS_GETBALANCE)
 							System.out.println("Received a get balance command from the server.");
 						serverBalance = new Integer(Integer.parseInt(new String(pckt.data)));
 						break;
 					}
-					
-					/***********************************************************
-					 * Other command
-					 **********************************************************/
+						
+						/***********************************************************
+						 * Other command
+						 **********************************************************/
 					default:
 						System.err.println("Unrecognised or unexpected command received from server.");
 				}
