@@ -260,14 +260,14 @@ By using the RSA algorithm, the system is capable of limiting cases of online
 fraud by using a digital signature on each coin, which can be used by the 
 organization responsible of the service and distribution of e-currency, to 
 authenticate coins when needed. For example, to sign a coin, a bank uses its 
-private key for “encryption” (it actually decrypts), so that if a user wants to 
+private key for ``encryption'' (it actually decrypts), so that if a user wants to 
 verify the authenticity of the coin, it uses the public key of the bank. RSA is 
 also responsible for maintaining anonymity through the system, as with the 
 public and private keys, users can sign transactions without providing personal 
 information.
 
 To create the actual digital currency, hash functions (such as MD5 and SHA-1) 
-are used to generate hash chains that represent money in a user’s account. In 
+are used to generate hash chains that represent money in a user's account. In 
 order to prevent replay attacks, where someone spends the same coin more than 
 once, a nonce is appended to each hash coin so that, when sent to the bank, are 
 recorded in the database as spent.
@@ -287,7 +287,7 @@ and ServerThread classes), and RSAAssymetricEncryption.
 The first two classes are responsible for maintaining the bank system, where 
 hash chains and payments are verified with the use of digital signatures and 
 encryptions/decryptions in the signHashChain() function and verifyPayment() 
-respectively. It also keeps a record of each user’s credit balance at the bank.
+respectively. It also keeps a record of each user's credit balance at the bank.
 
 The third class maintains the state of the hash chain for each user, and is 
 created at the beginning of the Client application (located within the Client 
