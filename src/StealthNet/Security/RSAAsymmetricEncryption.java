@@ -51,6 +51,7 @@ import javax.management.InvalidAttributeValueException;
 import org.apache.commons.codec.binary.Base64;
 
 import StealthNet.EncryptedFile;
+import StealthNet.EncryptedFileException;
 
 /* StealthNet.Security.AsymmetricEncryption Class Definition *************** */
 

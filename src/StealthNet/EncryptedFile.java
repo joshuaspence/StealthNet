@@ -42,7 +42,6 @@ import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import javax.management.InvalidAttributeValueException;
 
-import StealthNet.Security.EncryptedFileException;
 import StealthNet.Security.HashedMessageAuthenticationCode;
 import StealthNet.Security.MessageAuthenticationCode;
 import StealthNet.Security.PasswordEncryption;

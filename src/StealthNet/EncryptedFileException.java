@@ -12,11 +12,11 @@
  *****************************************************************************/
 /* @formatter:on */
 
-package StealthNet.Security;
-
-import StealthNet.EncryptedFile;
+package StealthNet;
 
 /* Import Libraries ******************************************************** */
+
+import StealthNet.EncryptedFile;
 
 /* StealthNet.Security.EncrpytedFileException Class Definition ************* */
 

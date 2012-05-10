@@ -72,7 +72,6 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 import StealthNet.Security.AsymmetricEncryption;
 import StealthNet.Security.AsymmetricVerification;
-import StealthNet.Security.EncryptedFileException;
 import StealthNet.Security.RSAAsymmetricEncryption;
 import StealthNet.Security.SHA1withRSAAsymmetricVerification;
 

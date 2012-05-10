@@ -147,13 +147,34 @@ Password-based file encryption within \packageName{} is implemented using
 ``JCE'' (Java Crypto Extensions), using features provided by ``BouncyCastle''
 --- an open source collection of encryption APIs. The particular algorithm used 
 for password-based encryption is \verb+PBEWithSHAAnd3KeyTripleDES+ from the 
-``BouncyCastle'' API.
+``BouncyCastle'' API. This is password based encryption with an \verb+SHA+ 
+digest and 3-key Triple DES encryption.
+
+In addition, an 8-byte salt is used to initialise the encryption and decryption 
+ciphers, to make bulk cracking of password files difficult. The 8-byte salt is 
+randomly generated using an \verb+SHA1+ \verb+SecureRandom+ pseudo-random 
+number generator. As an additional parameter to the algorithm, the password 
+encryption algorithm undergoes 1000 iterations to achieve the final encrypted 
+data.
 
 \subsection{Justification}
 % TODO
 
 \subsection{Implementation}
-% TODO
+Password-based encryption is implemented in the \verb+PasswordEncryption+ class,
+as a subclass of the \verb+Encryption+ base class. In this sense, the password
+encryption mechanism is flexible because it can also be applied to 
+\serviceName{} packets. In order to save private keys to a password-protected
+file, an \verb+EncryptedFile+ class was created, which allows the creation of 
+an encrypted file from raw (unencrypted) data and a user-supplied password. The 
+class also allows for the reading and decryption of encrypted files from the 
+file system.
+
+The encrypted files consists of four fields --- the \verb+salt+, the 
+\verb+passwordHash+, the \verb+data+ and the \verb+messageDigest+. The salt is 
+stored as the first 8 bytes of the encrypted file and is necessary in order to
+decrypt the encrypted file. Conveniently, storing the salt in an unencrypted 
+format does not jeopardise the security of the encrypted file.
 
 % ASYMMETRIC VERIFICATION
 \section{Asymmetric Verification}
