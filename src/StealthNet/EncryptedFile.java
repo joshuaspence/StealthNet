@@ -319,7 +319,7 @@ public class EncryptedFile {
 		final MessageDigest mdb = MessageDigest.getInstance(HASH_ALGORITHM);
 		final byte[] ourPasswordHash = mdb.digest(password.getBytes());
 		if (!Arrays.equals(passwordHash, ourPasswordHash))
-			throw new EncryptedFileException("Invalid password to decrypt file.");
+			throw new EncryptedFileException("Invalid password to decrypt file or data is corrupted.");
 		
 		/* Check the digest. */
 		if (!mac.verifyMAC(getDigestableData(), digest))
