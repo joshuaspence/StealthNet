@@ -18,11 +18,10 @@
 	
 	<!-- Use one-jar -->
     <!-- see http://http://one-jar.sourceforge.net/ -->
-	<property name="one-jar.dist.dir" value="lib/"/>  
-	<property name="one-jar.version" value="0.97"/>
-	    <property name="one-jar.ant.jar" value="${one-jar.dist.dir}/one-jar-ant-task-${one-jar.version}.jar"/>
-	    <taskdef name="one-jar" classname="com.simontuffs.onejar.ant.OneJarTask" 
-	        classpath="${one-jar.ant.jar}" onerror="report"/>
+	<property name="one-jar.dist.dir" value="lib/" />  
+	<property name="one-jar.version" value="0.97" />
+    <property name="one-jar.ant.jar" value="${one-jar.dist.dir}/one-jar-ant-task-${one-jar.version}.jar" />
+    <taskdef name="one-jar" classname="com.simontuffs.onejar.ant.OneJarTask" classpath="${one-jar.ant.jar}" onerror="report" />
 	
 	<!-- ========================= DEFAULT TARGETS ========================= -->
 	<!-- Default target -->
@@ -216,6 +215,7 @@
 		</if>
 		
 	    <!-- Initialise classpath -->
+		<!-- NOTE: Only used by Javadoc -->
     	<path id="compile.classpath">
             <fileset dir="${basedir}">
             	<include name="${path.lib}/*.jar" />
@@ -246,9 +246,7 @@
         	            optimize="${compile.optimize}"
         	   includeantruntime="${compile.includeantruntime}"
     	                  source="${compile.jdk-version.source}"
-    	                  target="${compile.jdk-version.target}">
-        	<classpath refid="compile.classpath" />
-    	</javac>
+    	                  target="${compile.jdk-version.target}" />
     </target>
   
 	<!-- JAR target -->
@@ -594,12 +592,6 @@
         <echo>JRE vendor: ${java.vendor}</echo>
         <echo>JRE version: ${java.version}</echo>
     </target>
-	
-	<!-- Print the classpath. Used by the run.sh script. -->
-    <target name="classpath" depends="-init" description="Print the classpath">
-    	<property name="print.classpath" refid="compile.classpath" />
-	    <echo>Classpath: '${print.classpath}'</echo>
-	</target>
 	   
 	<!-- Print the directory where the JAR files are stored. Used by the run.sh script. -->
 	<target name="jar_dir" depends="-init" description="Print the directory that the JARs are stored in">

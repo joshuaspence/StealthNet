@@ -14,15 +14,6 @@ JRE_FLAGS="-enableassertions -enablesystemassertions"
 ANT="$(which ant) -quiet"
 [ "$?" -eq 0 ] && HAS_ANT=1 || HAS_ANT=0
 
-# Get classpath
-if [ $HAS_ANT -eq 1 ]; then
-	# Get classpath from ant
-	CLASSPATH=`$ANT classpath | sed -n "s/.*Classpath: '\(.*\)'/\1/p"`
-else
-	# Use default classpath
-	CLASSPATH=""
-fi
-
 # Get JAR file (specified relative to script)
 JAR_DIR=`dirname $0`
 if [ $HAS_ANT -eq 1 ]; then
@@ -197,14 +188,7 @@ if [ -z "$JAR_FILE" ]; then
 fi
 
 # Execute the relevant command
-if [ -n "$CLASSPATH" ]; then
 	# Echo the command before executing it
-	echo "$JRE $DEBUG_ARG $ADDITIONAL_ARG -classpath \"$CLASSPATH\" $JRE_FLAGS -jar $JAR_DIR/$JAR_FILE $@"
-	echo ""
-	$JRE $DEBUG_ARG $ADDITIONAL_ARG -classpath "$CLASSPATH" $JRE_FLAGS -jar $JAR_DIR/$JAR_FILE $@
-else
-	# Echo the command before executing it
-	echo "$JRE $DEBUG_ARG $ADDITIONAL_ARG $JRE_FLAGS -jar $JAR_DIR/$JAR_FILE $@"
-	echo ""
-	$JRE $DEBUG_ARG $ADDITIONAL_ARG $JRE_FLAGS -jar $JAR_DIR/$JAR_FILE $@
-fi
+echo "$JRE $DEBUG_ARG $ADDITIONAL_ARG $JRE_FLAGS -jar $JAR_DIR/$JAR_FILE $@"
+echo ""
+$JRE $DEBUG_ARG $ADDITIONAL_ARG $JRE_FLAGS -jar $JAR_DIR/$JAR_FILE $@
