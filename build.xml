@@ -194,7 +194,7 @@
         <property name="compile.debuglevel"         value="lines, vars, and source" />  <!-- Debugging information to output -->    
         <property name="compile.verbose"            value="${global.verbose}" />        <!-- Compiles with verbose output -->
         <property name="compile.deprecation"        value="false" />                    <!-- Compiles with deprecation information -->
-        <property name="compile.optimize"           value="false" />                    <!-- Class file optimizations -->
+        <property name="compile.optimize"           value="true" />                     <!-- Class file optimizations -->
         <property name="compile.jdk-version.source" value="1.5" />                      <!-- Whether to include the Ant run-time libraries in the classpath -->
         <property name="compile.jdk-version.target" value="1.5" />
         <property name="compile.includeantruntime"  value="false" />
