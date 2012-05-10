@@ -1,0 +1,276 @@
+\documentclass[a4paper,11pt]{article}
+
+\usepackage{StealthNet}
+
+% Graphics directory
+\ifpdf
+    % pdflatex requires bitmap images.
+    \graphicspath{{./img/png/}}
+\else
+    % latex requires vector images.
+    \graphicspath{{./img/eps/}}
+\fi
+
+% Title page details
+\title{StealthNet Security Implementation: \\ Project 1}
+\author{Joshua Spence \\ 308216350 \and Ahmad Al Mutawa \\ 312003919 \and James Moutafidis \\ 420105464}
+\date{May 2012}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{document}
+
+\maketitle
+
+% INTRODUCTION
+\section{Introduction}
+% TODO
+
+% ASYMMETRIC ENCRYPTION
+\section{Asymmetric Encryption}
+
+\subsection{Introduction}
+Asymmetric encryption refers to an encryption system in which two separate keys 
+are used --- namely, a \emph{public key} and a \emph{private key}. The public 
+key is used for encryption \textbf{only} and the private key is used for
+decryption \textbf{only}. The keys are so named because the public key may be 
+made public --- it doesn't matter who has knowledge of this key because all that
+this key allows is the encryption of messages, not the decryption of messages. 
+Similarly, and more importantly, the private key must be kept private.
+
+Although unrelated, the two parts of the key pair are mathematically linked. The
+public key is used to transform a message into an unreadable form, decryptable 
+only by using the (different but matching) private key. By publishing the public
+key, the key producer empowers anyone who gets a copy of the public key to 
+produce messages only they can read --- because only the key producer has a copy
+of the private key (required for decryption). When someone wants to send a 
+secure message to the creator of those keys, the sender encrypts it (i.e., 
+transforms it into an unreadable form) using the intended recipient's public 
+key; to decrypt the message, the recipient uses the private key. No one else, 
+including the sender, can do so.
+
+Thus, unlike symmetric key algorithms, a public key algorithm does not require a
+secure initial exchange of one, or more, secret keys between the sender and 
+receiver. These algorithms work in such a way that, while it is easy for the 
+intended recipient to generate the public and private keys and to decrypt the 
+message using the private key, and while it is easy for the sender to encrypt 
+the message using the public key, it is extremely difficult for anyone to figure
+out the private key based on their knowledge of the public key. They are based 
+on mathematical relationships (the most notable ones being the integer 
+factorization and discrete logarithm problems) that have no efficient solution.
+
+\subsection{Details}
+\algorithm{RSA} is an algorithm for public-key cryptography that is based on the
+presumed difficulty of factoring large integers, the factoring problem. A user 
+of \algorithm{RSA} creates and then publishes the product of two large prime 
+numbers, along with an auxiliary value, as their public key. The prime factors 
+must be kept secret. Anyone can use the public key to encrypt a message, but 
+with currently published methods, if the public key is large enough, only 
+someone with knowledge of the prime factors can feasibly decode the message. 
+
+% TODO
+
+\subsection{Justification}
+% TODO
+
+\subsection{Implementation}
+Asymmetric encryption is implemented in \packageName{} on top of the 
+\verb+Encryption+ and \verb+AsymmetricEncryption+ base classes. In particular, 
+the \verb+RSAAsymmetricEncryption+ class implements the \algorithm{RSA} 
+algorithm.
+
+The \verb+Encryption+ base class provides methods \verb+encrypt(byte[])+ and 
+\verb+decrypt(byte[])+ for encryption with the peer's public key and decryption 
+with the local private key, respectively.  The \verb+AsymmetricEncryption+ base 
+class requires a public-private key pair for instantiation, but setting of the 
+peer's public key (for encryption) can be delayed until a later stage.
+
+Packed into the JAR file of the StealthNet executable is the public key of the 
+\serviceName{} server and the \serviceName{} bank. By reading these public keys 
+from the JAR archive, a \serviceName{} is able to make a secure connection to 
+the \serviceName{} server, as well as the \serviceName{} bank, without needing 
+to worry about the possibility of a man-in-the-middle attack. If an attacker 
+does attempt such an attack, they would be unable to decrypt the transmitted 
+packets.
+
+Whilst the clients are aware of the server and bank public keys, the server and 
+the bank are unaware of the public keys of all of the clients. For this reason, 
+when a client first creates a connection to a \serviceName{} server or bank, the
+first (encryption) data that is sent is the client's public key. Once the server
+has received this public key, the server can itself encrypt client-bound 
+messages.
+
+\algorithm{RSA encryption} is initialised in the \verb+initiateSession()+ 
+function, after a communications socket has been established. The initiator of 
+the connection (usually the client), sends their public key to the other party 
+(usually but not always a server) in encrypted form, but only if the other party
+does not already have this public key (maintained with the 
+\verb+peerHasPublicKey+ variable. Once the public key has been transmitted, the 
+\serviceName{} peer calls the \verb+recvPublicKey()+ function, rejecting all 
+incoming packets until the peer receives the initiating party's public key. 
+Similarly to the initiating party, the party that is accepting the connection 
+only waits for the peer's public key value if it does already possess this value
+(maintained through the condition 
+\verb+symmetricEncryptionProvider.getPeerPublicKey() == null+).
+
+In situations in which a client is connecting to a \serviceName{} server or 
+bank, the client will already possess the public key of the server/bank, but the
+server/bank will not possess the public key of the client. In situations in 
+which a client is connecting to another client, the server informs both parties 
+of the public key such that both parties can perform asymmetric encryption from 
+the commencement of the communication.
+
+\algorithm{RSA encryption} is implemented as a feature of the \serviceName{} 
+\verb+Comms+ class, however all \verb+Comms+ for any given \serviceName{} peer 
+will use identical public-private keys, it is only the peer public keys that 
+will differ.
+
+The size selected for the public and private keys was selected to be 2048-bits.
+ 
+% FILE ENCRYPTION
+\section{File Encryption}
+
+\subsection{Introduction}
+File encryption is required within \packageName{} to protect the private keys of
+\serviceName{} peers from being stolen by an attacker and consequently used by 
+the attacker to masquerade as a legitimate user. To achieve this, \packageName{}
+uses password-based encryption to encrypt the private key data before it is 
+written to disk. Password-based file encryption differs from \packageName{} 
+packet encryption in that the key (password) for file encryption has a much 
+longer lifetime than the key used for packet encryption and decryption. The key 
+used for password-based encryption is likely to change infrequently, if at all, 
+because the user is required to remember the password in order to decrypt the 
+file. The keys used in packet encryption, however, are usually only valid for 
+the duration of a session and are regenerated for the next session.
+
+\subsection{Details}
+Password-based file encryption within \packageName{}
+
+\subsection{Justification}
+% TODO
+
+\subsection{Implementation}
+% TODO
+
+% ASYMMETRIC VERIFICATION
+\section{Asymmetric Verification}
+
+\subsection{Introduction}
+% TODO
+
+\subsection{Details}
+% TODO
+
+\subsection{Justification}
+% TODO
+
+\subsection{Implementation}
+% TODO
+
+% PAYMENT PROTOCOL
+\section{Payment Protocol}
+
+\subsection{Introduction}
+% TODO
+
+\subsection{Details}
+% TODO
+
+\subsection{Justification}
+% TODO
+
+\subsection{Implementation}
+% TODO
+
+% GENERAL IMPLEMENTATION DETAILS
+\section{General Implementation Details}
+
+\subsection{Security Measures}
+The implementation of the various security measures implemented in 
+\packageName{} are detailed in the previous sections. In order to share
+cryptographic keys between parties, modifications were made to the 
+\packageName{} \verb+Packet+ class to accommodate three additional command types:
+\begin{itemize}
+\item \verb+CMD_AUTHENTICATIONKEY+: For exchanging \algorithm{Diffie-Hellman} 
+keys between the parties.
+\item \verb+CMD_INTEGRITYKEY+: For exchanging \algorithm{SHA-1} keys used for
+\algorithm {Hashed Message Authentication Code (HMAC)} generation and 
+verification.
+\item \verb+CMD_NONCESEED+: A seed for a \verb+PRNGNonceGenerator+, 
+which is used to generate and verify nonces that are appended to a packet in 
+order to prevent replay prevention.
+\end{itemize}
+
+These additional packet commands should not appear during normal execution of 
+\serviceName{}, but rather should only exist during execution of the
+\verb+initiateSession()+ and \verb+acceptSession()+ functions, and are handled 
+completely within the \verb+Comms+ class.
+
+\subsection{Packet}
+In order to share additional data between communicating parties, the 
+\serviceName{} \verb+Packet+ class was renamed to \verb+DecryptedPacket+ and 
+extended such that it is composed of the following fields:
+\begin{itemize}
+\item \verb+command+: The command type being transmitted in the 
+packet.
+\item \verb+data+: The command data being transmitted in the packet.
+\item \verb+nonce+: The unique nonce, generated by a pseudo-random number 
+generator in order to allow a given message to be received only once on the 
+receiving end of the communications.
+\end{itemize}
+
+An additional class, \verb+EncryptedPacket+ was designed to store the following
+data:
+\begin{itemize}
+\item \verb+data+: The encrypted contents of the corresponding 
+\verb+DecryptedPacket+.
+\item \verb+digest+: The MAC digest of the encrypted packet contents, used to 
+verify packet integrity.
+\end{itemize}
+
+\subsection{Order of Application of Security Measures}
+The security measures are applied to packet data in the following order:
+\begin{enumerate}
+\item Nonce generation
+\item Encryption
+\item MAC digest calculation
+\end{enumerate}
+
+This ordering effectively defines the degree to which the various security 
+protocols are effective. MAC digest calculation generates a MAC digest based on
+the encrypted packet's \verb+command+, \verb+data+ and \verb+nonce+ fields and 
+can, consequently, be used to verify the integrity of these three fields. All 
+security methods occur internally to the \verb+DecryptedPacket+ and 
+\verb+EncryptedPacket+ classes, either at the time that the packet is 
+instantiated or just before/after the packet is transmitted/received.
+
+Encryption is applied to all \verb+DecryptedPacket+ fields --- \verb+command+, 
+\verb+data+ and \verb+nonce+. Whilst not strictly necessary, this ensures that 
+all of these fields remain private from a potential attacker, giving the 
+attacker very little information on which to base an attack. 
+
+\subsection{Proxy}
+In addition to the provided \serviceName{} \verb+Client+ and \verb+Server+ 
+classes, I have implemented an additional \serviceName{} entity --- a 
+\serviceName{} \verb+Proxy+. This class acts as a ``man-in-the-middle'' for
+\serviceName{} communications. In its normal mode of operation, this class will
+simply accept incoming \serviceName{} communications as if it were a 
+\serviceName{} server, and will then create its own additional \serviceName{}
+communication to the \emph{real} \serviceName{} server. Once these channels have
+been created, the proxy simply forwards all received packet strings (note that 
+the proxy makes no attempt to parse strings into \verb+Packet+s) to the other
+party. So, in its normal mode of operation, using \serviceName{} through the
+proxy will be transparent to both the client and the server, and will have no
+impact on the quality of the communications.
+
+However, the \verb+Proxy+ class has additional functionality to simulate 
+various security attacks. The proxy server is, for example, able to replay 
+transmitted packets and modify the encrypted packet data. The usefulness of this
+class is that it can provide these simulations, thus allowing the effectiveness
+of the implementation of the security protocols in \serviceName{} to be 
+observed.
+
+% CONCLUSION
+\section{Conclusion}
+% TODO
+
+\end{document}

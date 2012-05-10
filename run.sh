@@ -40,7 +40,6 @@ DEBUG="\
 -Ddebug.StealthNet.Bank=false \
 -Ddebug.StealthNet.Bank.General=true \
 -Ddebug.StealthNet.Bank.ErrorTrace=true \
--Ddebug.StealthNet.Bank.AsymmetricEncryption=true \
 \
 -Ddebug.StealthNet.BankThread=false \
 -Ddebug.StealthNet.BankThread.General=true \
@@ -48,7 +47,12 @@ DEBUG="\
 -Ddebug.StealthNet.BankThread.Commands=false \
 -Ddebug.StealthNet.BankThread.Commands.Null=true \
 -Ddebug.StealthNet.BankThread.Commands.Login=true \
--Ddebug.StealthNet.BankThread.Commands.Logout=true \
+-Ddebug.StealthNet.BankThread.Commands.GetBalance=true \
+-Ddebug.StealthNet.BankThread.Commands.Payment=true \
+-Ddebug.StealthNet.BankThread.Commands.SignHashChain=true \
+-Ddebug.StealthNet.BankThread.Commands.VerifyCredit=true \
+-Ddebug.StealthNet.BankThread.AsymmetricEncryption=true \
+-Ddebug.StealthNet.BankThread.Commands.Balances=true \
 \
 -Ddebug.StealthNet.Chat=false \
 -Ddebug.StealthNet.Chat.General=true \
@@ -64,6 +68,10 @@ DEBUG="\
 -Ddebug.StealthNet.Client.Commands.List=true \
 -Ddebug.StealthNet.Client.Commands.SecretList=true \
 -Ddebug.StealthNet.Client.Commands.GetSecret=true \
+-Ddebug.StealthNet.Client.Commands.GetPublicKey=true \
+-Ddebug.StealthNet.Client.Commands.GetBalance=true \
+-Ddebug.StealthNet.Client.Commands.RequestPayment=true \
+-Ddebug.StealthNet.Client.Commands.HashChain=true \
 -Ddebug.StealthNet.Client.AsymmetricEncryption=true \
 \
 -Ddebug.StealthNet.Comms=false \
@@ -80,6 +88,10 @@ DEBUG="\
 -Ddebug.StealthNet.Comms.Integrity=true \
 -Ddebug.StealthNet.Comms.ReplayPrevention=true \
 -Ddebug.StealthNet.Comms.AsymmetricEncryption=true \
+\
+-Ddebug.StealthNet.CryptoCreditHashChain=false \
+-Ddebug.StealthNet.CryptoCreditHashChain.General=true \
+-Ddebug.StealthNet.CryptoCreditHashChain.ErrorTrace=true \
 \
 -Ddebug.StealthNet.EncryptedFile=false \
 -Ddebug.StealthNet.EncryptedFile.FileIO=true \
@@ -113,13 +125,17 @@ DEBUG="\
 -Ddebug.StealthNet.ServerThread.Commands=false \
 -Ddebug.StealthNet.ServerThread.Commands.Null=true \
 -Ddebug.StealthNet.ServerThread.Commands.Login=true \
--Ddebug.StealthNet.ServerThread.Commands.Logout=true \
 -Ddebug.StealthNet.ServerThread.Commands.Message=true \
 -Ddebug.StealthNet.ServerThread.Commands.Chat=true \
 -Ddebug.StealthNet.ServerThread.Commands.FTP=true \
 -Ddebug.StealthNet.ServerThread.Commands.CreateSecret=true \
 -Ddebug.StealthNet.ServerThread.Commands.GetSecret=true \
+-Ddebug.StealthNet.ServerThread.Commands.GetBalance=true \
+-Ddebug.StealthNet.ServerThread.Commands.GetPublicKey=true \
+-Ddebug.StealthNet.ServerThread.Commands.RequestPayment=true \
+-Ddebug.StealthNet.ServerThread.Commands.Payment=true \
 -Ddebug.StealthNet.ServerThread.AsymmetricEncryption=true \
+-Ddebug.StealthNet.ServerThread.Balances=true \
 "
 DEBUG_ARG=
 ADDITIONAL_ARG=

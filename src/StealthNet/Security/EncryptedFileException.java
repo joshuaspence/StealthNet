@@ -1,3 +1,4 @@
+/* @formatter:off */
 /******************************************************************************
  * ELEC5616
  * Computer and Network Security, The University of Sydney
@@ -9,31 +10,40 @@
  * 					decrypting an encrypted file.
  *
  *****************************************************************************/
+/* @formatter:on */
 
 package StealthNet.Security;
 
-/* Import Libraries **********************************************************/
+import StealthNet.EncryptedFile;
 
-/* StealthNet.Security.EncrpytedFileException Class Definition ***************/
+/* Import Libraries ******************************************************** */
+
+/* StealthNet.Security.EncrpytedFileException Class Definition ************* */
 
 /**
  * An exception to be thrown when an encrypted file cannot be decrypted.
  * 
+ * An encrypted file may be unable to be decrypted because either the supplied
+ * password is incorrect, or the file has been corrupted. It can, in some
+ * situations, be difficult to differentiate these two cases.
+ * 
  * @author Joshua Spence
+ * @see Exception
+ * @see EncryptedFile
  */
 public class EncryptedFileException extends Exception {
 	private static final long serialVersionUID = 1L;
-
-	/** 
+	
+	/**
 	 * Constructor.
 	 * 
 	 * @param msg A message describing the exception.
 	 */
-	public EncryptedFileException(String msg) {
+	public EncryptedFileException(final String msg) {
 		super(msg);
 	}
 }
 
 /******************************************************************************
- * END OF FILE:     EncrpytedFileException.java
+ * END OF FILE: EncrpytedFileException.java
  *****************************************************************************/
