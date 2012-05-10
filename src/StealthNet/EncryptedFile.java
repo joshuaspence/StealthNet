@@ -42,7 +42,6 @@ import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import javax.management.InvalidAttributeValueException;
 
-import StealthNet.Security.AESEncryption;
 import StealthNet.Security.EncryptedFileException;
 import StealthNet.Security.HashedMessageAuthenticationCode;
 import StealthNet.Security.MessageAuthenticationCode;
@@ -60,6 +59,9 @@ import StealthNet.Security.PasswordEncryption;
 public class EncryptedFile {
 	/* Debug options. */
 	private static final boolean DEBUG_FILE_IO = Debug.isDebug("StealthNet.EncryptedFile.FileIO");
+	
+	/** The algorithm to use for the {@link MessageDigest}. */
+	public static final String HASH_ALGORITHM = "SHA1";
 	
 	/** The salt to use for the encrption/decryption of the file. */
 	private byte[] salt;
@@ -245,7 +247,7 @@ public class EncryptedFile {
 		data = encryption.encrypt(decryptedData);
 		
 		/* Generate the password hash. */
-		final MessageDigest mdb = MessageDigest.getInstance(AESEncryption.HASH_ALGORITHM);
+		final MessageDigest mdb = MessageDigest.getInstance(HASH_ALGORITHM);
 		passwordHash = mdb.digest(this.password.getBytes());
 		
 		/* Generate the message digest. */
@@ -315,7 +317,7 @@ public class EncryptedFile {
 			throw new EncryptedFileException("Corrupted file.");
 		
 		/* Check the password. */
-		final MessageDigest mdb = MessageDigest.getInstance(AESEncryption.HASH_ALGORITHM);
+		final MessageDigest mdb = MessageDigest.getInstance(HASH_ALGORITHM);
 		final byte[] ourPasswordHash = mdb.digest(password.getBytes());
 		if (!Arrays.equals(passwordHash, ourPasswordHash))
 			throw new EncryptedFileException("Invalid password to decrypt file.");
