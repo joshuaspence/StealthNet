@@ -28,6 +28,7 @@ import javax.management.InvalidAttributeValueException;
 
 import org.apache.commons.codec.binary.Base64;
 
+import StealthNet.CryptoCreditHashChain.CryptoCredit;
 import StealthNet.Security.Encryption;
 import StealthNet.Security.MessageAuthenticationCode;
 import StealthNet.Security.NonceGenerator;
@@ -53,7 +54,7 @@ import StealthNet.Security.NonceGenerator;
  * @author Joshua Spence
  */
 public class DecryptedPacket {
-	/** The <ode>NULL</code> command is commonly used for acknowledgement. */
+	/** The <code>NULL</code> command is commonly used for acknowledgement. */
 	public static final byte CMD_NULL = 0x00;
 	public static final byte CMD_LOGIN = 0x01;
 	public static final byte CMD_LOGOUT = 0x02;
@@ -101,14 +102,18 @@ public class DecryptedPacket {
 	
 	/**
 	 * The {@link Client} sends a <code>CMD_PAYMENT</code> packet to the
-	 * {@link Server} to add credit to their account. The contents of the packet
-	 * is the number of credits being sent, as well as the relevant CryptoCredit
-	 * hash. The data takes the form <code>credits;hash<code>. The hash is to be
-	 * encoded in base-64. <p> If the {@link Client} wishes to cancel the
+	 * {@link Server} to add credit to their account on the {@link Server} using
+	 * {@link CryptoCredit}s. The contents of the packet is the number of
+	 * credits being sent, as well as the relevant CryptoCredit hash. The data
+	 * takes the form <code>credits;hash<code>. The hash is to be encoded in
+	 * base-64. <p> If the {@link Client} wishes to cancel an in-progress
 	 * transaction (possibly because they have insufficient funds in the
 	 * {@link Bank}, then the {@link Client} client should send a "null"
 	 * payment. <p> A {@link Client} can make a "payment" to the {@link Bank},
-	 * in order to refund credits to the user's account.
+	 * in order to refund unspent {@link CryptoCredit}s from the {@link Client}
+	 * 's {@link CryptoCreditHashChain} to the user's account. <p> The
+	 * {@link Server} can also send {@link CryptoCredit}s to the {@link Client},
+	 * to effectively withdraw funds from the user's account.
 	 */
 	public static final byte CMD_PAYMENT = 0x40;
 	
@@ -132,29 +137,28 @@ public class DecryptedPacket {
 	public static final byte CMD_SIGNHASHCHAIN = 0x42;
 	
 	/**
-	 * The {@link Client} sends a <code>CMD_GETBALANCE</code> packet to either
-	 * the {@link Bank} or the {@link Server} to request the {@link Client}'s
-	 * account balance.
+	 * The a StealthNet peer sends a <code>CMD_GETBALANCE</code> packet to
+	 * either the {@link Bank} or the {@link Server} to request the peer's
+	 * account balance on that peer. <p>
 	 */
 	public static final byte CMD_GETBALANCE = 0x43;
 	
 	/**
-	 * The {@link Server} sends a <code>CMD_VALIDATEPAYMENT</code> packet to the
-	 * {@link Bank} when the {@link Client} sends a CryptoCredit hash for
-	 * payment. The {@link Bank} sends back a response indicating whether or not
-	 * the payment is valid.
-	 * 
-	 * The {@link Server} sends the data in the form
+	 * A peer sends a <code>CMD_DEPOSITPAYMENT</code> packet to the {@link Bank}
+	 * when a {@link CryptoCredit} hash is received for payment. The
+	 * {@link Bank} sends back a response indicating whether or not the payment
+	 * is valid. <p> The peer sends the data in the form
 	 * <code>userID;credits;hash</code>. The hash is to be encoded in base-64.
 	 * The {@link Bank} sends data in the form <code>[true|false]</code>.
 	 */
-	public static final byte CMD_VALIDATEPAYMENT = 0x44;
+	public static final byte CMD_DEPOSITPAYMENT = 0x44;
 	
 	/**
-	 * The {@link Client} sends a <code>CMD_HASHCHAIN</code> packet to the
-	 * {@link Server} upon generation of a new hash chain. The client must send
-	 * both the identifier and the signature of the
-	 * {@link CryptoCreditHashChain}. The packet data is encoded in base-64.
+	 * A peer sends a <code>CMD_HASHCHAIN</code> packet to other peers (with
+	 * which it would be interested in performing a transaction) upon generation
+	 * of a new {@link CryptoCreditHashChain}. The peer must send both the
+	 * identifier and the signature of the {@link CryptoCreditHashChain}. The
+	 * packet data is encoded in base-64.
 	 */
 	public static final byte CMD_HASHCHAIN = 0x44;
 	
@@ -403,8 +407,8 @@ public class DecryptedPacket {
 				return "CMD_SIGNHASHCHAIN";
 			case CMD_GETBALANCE:
 				return "CMD_GETBALANCE";
-			case CMD_VALIDATEPAYMENT:
-				return "CMD_VALIDATEPAYMENT";
+			case CMD_DEPOSITPAYMENT:
+				return "CMD_DEPOSITPAYMENT";
 			case CMD_AUTHENTICATIONKEY:
 				return "CMD_AUTHENTICATIONKEY";
 			case CMD_INTEGRITYKEY:

@@ -130,6 +130,36 @@ public class CryptoCreditHashChain {
 	}
 	
 	/**
+	 * Retrieves the identifier and the signature.
+	 * 
+	 * @return An array containing the identifier and the signature.
+	 */
+	public byte[] getIdentifierAndSignture() {
+		byte[] data = null;
+		final ByteArrayOutputStream output = new ByteArrayOutputStream();
+		final DataOutputStream dataOutput = new DataOutputStream(output);
+		try {
+			dataOutput.writeInt(bankIdentifier.length);
+			dataOutput.write(bankIdentifier);
+			dataOutput.writeInt(bankSignature.length);
+			dataOutput.write(bankSignature);
+			
+			dataOutput.flush();
+			output.flush();
+			data = output.toByteArray();
+			dataOutput.close();
+			output.close();
+		} catch (final Exception e) {
+			System.err.println("Failed to send hash chain signature to server.");
+			if (DEBUG_ERROR_TRACE)
+				e.printStackTrace();
+			return null;
+		}
+		
+		return data;
+	}
+	
+	/**
 	 * Get the length of the hash chain. This is equal to the number of credits
 	 * represented by the hash chain.
 	 * 
@@ -484,7 +514,7 @@ public class CryptoCreditHashChain {
 		if (credits > 0) {
 			/* Request that the bank validates the CrytoCredit. */
 			final String msg = userID + ";" + Integer.toString(credits) + ";" + Base64.encodeBase64String(hash);
-			bankComms.sendPacket(DecryptedPacket.CMD_VALIDATEPAYMENT, msg);
+			bankComms.sendPacket(DecryptedPacket.CMD_DEPOSITPAYMENT, msg);
 			
 			/* Wait for the bank's response. */
 			while (true)
@@ -504,7 +534,7 @@ public class CryptoCreditHashChain {
 						 * Verify Credit command
 						 ******************************************************/
 /* @formatter:on */
-						case DecryptedPacket.CMD_VALIDATEPAYMENT: {
+						case DecryptedPacket.CMD_DEPOSITPAYMENT: {
 							final String data = new String(pckt.data);
 							final boolean result = Boolean.parseBoolean(data);
 							

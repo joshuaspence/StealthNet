@@ -31,8 +31,6 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.io.ByteArrayOutputStream;
-import java.io.DataOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
@@ -112,6 +110,7 @@ public class Client {
 	private static final boolean DEBUG_COMMANDS_SECRETLIST = Debug.isDebug("StealthNet.Client.Commands.SecretList");
 	private static final boolean DEBUG_COMMANDS_GETSECRET = Debug.isDebug("StealthNet.Client.Commands.GetSecret");
 	private static final boolean DEBUG_COMMANDS_GETPUBLICKEY = Debug.isDebug("StealthNet.Client.Commands.GetPublicKey");
+	private static final boolean DEBUG_COMMANDS_PAYMENT = Debug.isDebug("StealthNet.Client.Commands.Payment");
 	private static final boolean DEBUG_COMMANDS_REQUESTPAYMENT = Debug.isDebug("StealthNet.Client.Commands.RequestPayment");
 	private static final boolean DEBUG_COMMANDS_GETBALANCE = Debug.isDebug("StealthNet.Client.Commands.GetBalance");
 	private static final boolean DEBUG_COMMANDS_HASHCHAIN = Debug.isDebug("StealthNet.Client.Commands.HashChain");
@@ -836,7 +835,98 @@ public class Client {
 			return;
 		}
 		
-		JOptionPane.showMessageDialog(null, "Feature not yet implemented.", "Feature unavailable", JOptionPane.INFORMATION_MESSAGE);
+		/* Prompt the user for the user ID. */
+		String credits = null;
+		while (true) {
+			credits = JOptionPane.showInputDialog("Credits to withdraw:", credits);
+			
+			if (credits.length() == 0)
+				return;
+			
+			int dummy;
+			try {
+				dummy = Integer.parseInt(credits);
+				
+				if (dummy < 0)
+					throw new NumberFormatException();
+				
+				break;
+			} catch (final NumberFormatException e) {
+				JOptionPane.showMessageDialog(null, "Credits must be a non-negative integer.", "Invalid credits", JOptionPane.ERROR_MESSAGE);
+			}
+		}
+		
+		/* Request the credits from the server. */
+		if (DEBUG_COMMANDS_REQUESTPAYMENT)
+			System.out.println("Requesting additional payment of " + credits + " credits from server.");
+		serverComms.sendPacket(DecryptedPacket.CMD_REQUESTPAYMENT, credits);
+		
+		/* Wait for the server response. */
+		if (DEBUG_COMMANDS_PAYMENT)
+			System.out.println("Waiting for server to send withdrawal.");
+		DecryptedPacket pckt = new DecryptedPacket();
+		while (pckt.command != DecryptedPacket.CMD_PAYMENT)
+			try {
+				pckt = serverComms.recvPacket();
+				
+				if (pckt == null)
+					/*
+					 * Something has probably gone wrong, let's get out of here!
+					 */
+					return;
+				
+				switch (pckt.command) {
+/* @formatter:off */
+					/*******************************************************
+					 * Payment command
+					 ******************************************************/
+/* @formatter:on */
+					case DecryptedPacket.CMD_PAYMENT: {
+						final String data = new String(pckt.data);
+						final int creditsSent = Integer.parseInt(data.split(";")[0]);
+						byte[] cryptoCreditHash;
+						if (data.split(";").length < 2)
+							cryptoCreditHash = null;
+						else
+							cryptoCreditHash = Base64.decodeBase64(data.split(";")[1]);
+						
+						if (DEBUG_COMMANDS_PAYMENT)
+							System.out.println("Received withdrawal of " + creditsSent + " credits from server with hash \"" + Utility.getHexValue(cryptoCreditHash) + "\".");
+						CryptoCreditHashChain.processPayment(bankComms, "server#" + Base64.encodeBase64String(serverComms.getPeerPublicKey().getEncoded()), creditsSent, cryptoCreditHash);
+						break;
+					}
+					
+					/*******************************************************
+					 * Hashchain command
+					 ******************************************************/
+					case DecryptedPacket.CMD_HASHCHAIN: {
+						//CryptoCreditHashChain.verifyHashChain(bankVerification, Base64.decodeBase64(pckt.data));
+						break;
+					}
+					
+					/*******************************************************
+					 * Get Balance command
+					 ******************************************************/
+					case DecryptedPacket.CMD_GETBALANCE: {
+						serverBalance = new Integer(new String(pckt.data));
+						break;
+					}
+					
+					/*******************************************************
+					 * Other command
+					 ******************************************************/
+					default:
+						System.err.println("Unrecognised or unexpected command.");
+				}
+			} catch (final Exception e) {
+				System.err.println("Error reading packet. Discarding...");
+				if (DEBUG_ERROR_TRACE)
+					e.printStackTrace();
+			}
+		
+		/* Wait for updated balance from bank. */
+		serverBalance = waitForBalance(serverComms);
+		bankBalance = waitForBalance(bankComms);
 	}
 	
 	/** Create a secret on the {@link Server}. */
@@ -858,6 +948,8 @@ public class Client {
 		description = JOptionPane.showInputDialog("Secret Description:", description);
 		while (true) {
 			cost = JOptionPane.showInputDialog("Secret Cost (credits):", cost);
+			if (cost.length() == 0)
+				return;
 			
 			int dummy;
 			try {
@@ -1479,29 +1571,9 @@ public class Client {
 		 * Send the identifier and the signature of the new hash chain to the
 		 * server.
 		 */
-		byte[] data = null;
-		final ByteArrayOutputStream output = new ByteArrayOutputStream();
-		final DataOutputStream dataOutput = new DataOutputStream(output);
-		try {
-			dataOutput.writeInt(identifier.length);
-			dataOutput.write(identifier);
-			dataOutput.writeInt(signature.length);
-			dataOutput.write(signature);
-			
-			dataOutput.flush();
-			output.flush();
-			data = output.toByteArray();
-			dataOutput.close();
-			output.close();
-		} catch (final Exception e) {
-			System.err.println("Failed to send hash chain signature to server.");
-			if (DEBUG_ERROR_TRACE)
-				e.printStackTrace();
-			return;
-		}
 		if (DEBUG_COMMANDS_HASHCHAIN)
 			System.out.println("Sending the identifier and signature of the new hash chain to the server.");
-		serverComms.sendPacket(DecryptedPacket.CMD_HASHCHAIN, Base64.encodeBase64(data));
+		serverComms.sendPacket(DecryptedPacket.CMD_HASHCHAIN, Base64.encodeBase64(hashChain.getIdentifierAndSignture()));
 		
 	}
 	

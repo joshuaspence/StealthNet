@@ -40,18 +40,15 @@ import StealthNet.Security.SHA1withRSAAsymmetricVerification;
 /**
  * Represents a {@link Thread} within the operating system for communications
  * between the StealthNet {@link Bank} and a peer (either a {@link Client} or a
- * {@link Server}).
- * 
- * A new instance is created for each peer such that multiple peers can be
- * active concurrently. This class handles {@link DecryptedPacket} and deals
- * with them accordingly.
- * 
- * {@link Client}s use the {@link Bank} to sign {@link CryptoCreditHashChain}s,
- * as well as to retrieve their account balance. {@link Server}s use the
- * {@link Bank} to verify {@link CryptoCredit} payments. In the process,
- * {@link Server}s also notify the {@link Bank} of {@link CryptoCredit}s that
- * the {@link Client} has used to make a purchase. In this way, the {@link Bank}
- * is able to ensure that no {@link CryptoCredit} is double spent.
+ * {@link Server}). <p> A new instance is created for each peer such that
+ * multiple peers can be active concurrently. This class handles
+ * {@link DecryptedPacket} and deals with them accordingly. <p> Peers use the
+ * {@link Bank} to sign {@link CryptoCreditHashChain}s, as well as to retrieve
+ * their account balance. Peers can also use the {@link Bank} to verify
+ * {@link CryptoCredit} payments. In the process, the {@link Bank} is notified
+ * of {@link CryptoCredit}s that the {@link Client} has used to make a purchase.
+ * In this way, the {@link Bank} is able to ensure that no {@link CryptoCredit}
+ * is double spent.
  * 
  * @author Joshua Spence
  * 
@@ -68,14 +65,17 @@ public class BankThread extends Thread {
 	private static final boolean DEBUG_COMMANDS_PAYMENT = Debug.isDebug("StealthNet.BankThread.Commands.Payment");
 	private static final boolean DEBUG_COMMANDS_SIGNHASHCHAIN = Debug.isDebug("StealthNet.BankThread.Commands.SignHashChain");
 	private static final boolean DEBUG_COMMANDS_GETBALANCE = Debug.isDebug("StealthNet.BankThread.Commands.GetBalance");
-	private static final boolean DEBUG_COMMANDS_VALIDATEPAMYENT = Debug.isDebug("StealthNet.BankThread.Commands.ValidatePayment");
+	private static final boolean DEBUG_COMMANDS_DEPOSITPAYMENT = Debug.isDebug("StealthNet.BankThread.Commands.DepositPayment");
 	private static final boolean DEBUG_ASYMMETRIC_ENCRYPTION = Debug.isDebug("StealthNet.BankThread.AsymmetricEncryption");
 	private static final boolean DEBUG_BALANCES = Debug.isDebug("StealthNet.BankThread.Balances");
 	
 	/** The initial account balance for a new user logging into the bank. */
 	private static final int INITIAL_BALANCE = 1000;
 	
-	/** Used to store details of the clients available funds. */
+	/**
+	 * Used to store details of the clients available funds. Note that "user"
+	 * here can also represent a {@link Server}.
+	 */
 	private class UserData {
 		BankThread userThread = null;
 		int accountBalance = INITIAL_BALANCE;
@@ -94,9 +94,9 @@ public class BankThread extends Thread {
 	private static final Hashtable<String, UserData> userList = new Hashtable<String, UserData>();
 	
 	/**
-	 * The user ID for the user owning the thread. Note that for the
-	 * {@link Server} connection, this will be null. The {@link Server} does not
-	 * issue a <code>CMD_LOGIN</code> command to the {@link Bank}.
+	 * The user ID for the user owning the thread. {@link Server}s also "log in"
+	 * to the bank, but use the username <code>server;{PUBLIC_KEY}</code> to do
+	 * so.
 	 */
 	private String userID = null;
 	
@@ -279,12 +279,10 @@ public class BankThread extends Thread {
 	 * 
 	 * @param userID The user whose account should be credited.
 	 * @param credits The number of credits to transfer between the accounts.
-	 * @param sendBalance True to send the {@link Client} their updated balance
-	 *        after performing the addition.
 	 * @return True if the credits were added to the user's account, otherwise
 	 *         false.
 	 */
-	private static synchronized boolean addCredits(final String userID, final int credits, final boolean sendBalance) {
+	private static synchronized boolean addCredits(final String userID, final int credits) {
 		final UserData user = getUser(userID);
 		boolean result = false;
 		
@@ -296,43 +294,8 @@ public class BankThread extends Thread {
 		}
 		
 		/* Send the user their (possibly updated) account balance. */
-		if (sendBalance)
-			user.userThread.stealthComms.sendPacket(DecryptedPacket.CMD_GETBALANCE, Integer.toString(user.accountBalance));
-		
-		return result;
-	}
-	
-	/**
-	 * Transfer credits from one user's account to another user's account. Also
-	 * sends both users their updated account balances.
-	 * 
-	 * @param fromUserID The ID of user whose account should be deducted.
-	 * @param toUserID The ID of the user whose account should be credited.
-	 * @param credits The number of credits to add to the user's account.
-	 * @param sendBalance True to send the {@link Client} their updated balance
-	 *        after performing the transfer.
-	 * @return True if the credits were added to the user's account, otherwise
-	 *         false.
-	 */
-	@SuppressWarnings("unused")
-	private static synchronized boolean transferCredits(final String fromUserID, final String toUserID, final int credits, final boolean sendBalance) {
-		final UserData fromUser = getUser(fromUserID);
-		final UserData toUser = getUser(toUserID);
-		boolean result = false;
-		
-		if (credits > 0 && fromUser.accountBalance >= credits) {
-			fromUser.accountBalance -= credits;
-			toUser.accountBalance += credits;
-			if (DEBUG_GENERAL)
-				System.out.println("Transferred " + credits + " credits from user \"" + fromUserID + "\" account to user \"" + toUserID + "\" account.");
-			result = true;
-		}
-		
-		/* Send the users their (possibly updated) account balances. */
-		if (sendBalance) {
-			fromUser.userThread.stealthComms.sendPacket(DecryptedPacket.CMD_GETBALANCE, Integer.toString(fromUser.accountBalance));
-			toUser.userThread.stealthComms.sendPacket(DecryptedPacket.CMD_GETBALANCE, Integer.toString(toUser.accountBalance));
-		}
+		if (DEBUG_BALANCES)
+			System.out.println(getUserBalances());
 		
 		return result;
 	}
@@ -343,12 +306,10 @@ public class BankThread extends Thread {
 	 * 
 	 * @param userID The ID of the user whose account should be deducted.
 	 * @param credits The number of credits to deduct from the user's account.
-	 * @param sendBalance True to send the {@link Client} their updated balance
-	 *        after performing the deduction.
 	 * @return True if the credits were deducted from the user's account,
 	 *         otherwise false.
 	 */
-	private static synchronized boolean deductCredits(final String userID, final int credits, final boolean sendBalance) {
+	private static synchronized boolean deductCredits(final String userID, final int credits) {
 		final UserData user = getUser(userID);
 		boolean result = false;
 		
@@ -360,8 +321,8 @@ public class BankThread extends Thread {
 		}
 		
 		/* Send the user their (possibly updated) account balance. */
-		if (sendBalance)
-			user.userThread.stealthComms.sendPacket(DecryptedPacket.CMD_GETBALANCE, Integer.toString(user.accountBalance));
+		if (DEBUG_BALANCES)
+			System.out.println(getUserBalances());
 		
 		return result;
 	}
@@ -372,15 +333,13 @@ public class BankThread extends Thread {
 	 * the user is requesting credits from their <em>own</em> account. <p> Once
 	 * the {@link CryptoCreditHashChain} is signed, the signed credits are
 	 * deducted from the user's account. <p> The {@link Bank} maintains the last
-	 * used hash for each {@link Client} in order to verify payments.
+	 * used hash for each peer in order to verify payments.
 	 * 
 	 * @param identifier The identifier for the {@link CryptoCreditHashChain} to
 	 *        be signed. The identifier takes the form
 	 *        <code>user;credits;topHash</code>.
-	 * @param sendBalance True to send the {@link Client} their updated balance
-	 *        after performing the addition.
 	 */
-	private synchronized void signHashChain(final byte[] identifier, final boolean sendBalance) {
+	private synchronized void signHashChain(final byte[] identifier) {
 		/* Extract fields from identifier. */
 		final String userID = CryptoCreditHashChain.getUserFromIdentifier(identifier);
 		final UserData user = getUser(userID);
@@ -395,7 +354,7 @@ public class BankThread extends Thread {
 		if (!userID.equals(this.userID))
 			System.err.println("User \"" + this.userID + "\" cannot requested a signed hash chain for user \"" + userID + "\".");
 		else /* Update the user's account info and sign the hash chain. */
-		if (deductCredits(userID, credits, false)) {
+		if (deductCredits(userID, credits)) {
 			/* The user's account has been deducted. Sign the hash chain. */
 			try {
 				signature = asymmetricVerificationProvider.sign(identifier);
@@ -423,21 +382,17 @@ public class BankThread extends Thread {
 		 * the bank refused to sign the hash chain.
 		 */
 		stealthComms.sendPacket(DecryptedPacket.CMD_SIGNHASHCHAIN, signature);
-		
-		/* Send the user their (possibly updated) account balance. */
-		if (sendBalance)
-			stealthComms.sendPacket(DecryptedPacket.CMD_GETBALANCE, Integer.toString(user.accountBalance));
 	}
 	
 	/**
-	 * Verifies a {@link CryptoCredit} payment. This is used by the
-	 * {@link Server} when receiving a {@link CryptoCredit} hash for payment, to
-	 * ensure that the {@link CryptoCredit} hasn't already been spent with
-	 * another vendor. We can be sure that the user owning the
-	 * {@link CryptoCredit} requested the payment because only the
-	 * {@link Client} that generated the {@link CryptoCreditHashChain} will be
-	 * able to generate valid {@link CryptoCredit} hashes for that
-	 * {@link CryptoCreditHashChain}.
+	 * Validate a {@link CryptoCredit} payment and add the credits to our own
+	 * account. This is used by a peer when receiving a {@link CryptoCredit}
+	 * hash for payment. We can be sure that the user owning the
+	 * {@link CryptoCredit} requested the payment because only the peer that
+	 * generated the {@link CryptoCreditHashChain} will be able to generate
+	 * valid {@link CryptoCredit} hashes for that {@link CryptoCreditHashChain}.
+	 * <p> If the validation is successful, then the credits are deposited into
+	 * the current user's account.
 	 * 
 	 * @param userID The ID of the user that sent the {@link CryptoCredit}
 	 *        payment.
@@ -445,18 +400,25 @@ public class BankThread extends Thread {
 	 * @param hash The {@link CryptoCredit} hash of the payment.
 	 * @return True if the payment verified successfully, otherwise false.
 	 */
-	private synchronized boolean verifyPayment(final String userID, final int credits, final byte[] hash) {
+	private synchronized boolean depositPayment(final String userID, final int credits, final byte[] hash) {
 		boolean result = false;
-		final UserData user = getUser(userID);
+		final UserData sendUser = getUser(userID);
+		
 		/*
 		 * Check that apply the hash function 'credit' times to "hash" gives
 		 * "lastHash".
 		 */
-		if (CryptoCreditHashChain.validatePayment(hash, credits, user.lastHash)) {
-			user.lastHash = hash;
+		if (CryptoCreditHashChain.validatePayment(hash, credits, sendUser.lastHash)) {
+			if (DEBUG_COMMANDS_DEPOSITPAYMENT)
+				System.out.println("Depositing CryptoCredit \"" + hash + "\" into user \"" + this.userID + "\" account for " + credits + " credits.");
+			sendUser.lastHash = hash;
+			addCredits(this.userID, credits);
 			result = true;
-		}
+		} else if (DEBUG_COMMANDS_DEPOSITPAYMENT)
+			System.err.println("CryptoCredit validation failed. Cannot deposit CryptoCredit \"" + Utility.getHexValue(hash) + "\" into user \"" + this.userID + "\" account.");
 		
+		/* Send the user the result. */
+		stealthComms.sendPacket(DecryptedPacket.CMD_DEPOSITPAYMENT, Boolean.toString(result));
 		return result;
 	}
 	
@@ -570,18 +532,16 @@ public class BankThread extends Thread {
 					 * Get Balance command
 					 **********************************************************/
 					case DecryptedPacket.CMD_GETBALANCE: {
-						if (userID != null) {
-							if (DEBUG_COMMANDS_GETBALANCE)
-								System.out.println("User \"" + userID + "\" sent get balance command.");
-						} else {
+						if (userID == null) {
 							System.err.println("Must be logged in to request account balance.");
 							break;
 						}
 						
+						if (DEBUG_COMMANDS_GETBALANCE)
+							System.out.println("User \"" + userID + "\" sent get balance command.");
+						
 						/* Send the user their account balance. */
 						stealthComms.sendPacket(DecryptedPacket.CMD_GETBALANCE, Integer.toString(getUser(userID).accountBalance));
-						if (DEBUG_BALANCES)
-							System.out.println(getUserBalances());
 						break;
 					}
 					
@@ -589,37 +549,40 @@ public class BankThread extends Thread {
 					 * Sign Hashchain command
 					 **********************************************************/
 					case DecryptedPacket.CMD_SIGNHASHCHAIN: {
-						if (userID != null) {
-							if (DEBUG_COMMANDS_SIGNHASHCHAIN)
-								System.out.println("User \"" + userID + "\" sent sign hash chain command.");
-						} else {
+						if (userID == null) {
 							System.err.println("Must to logged in to request signed hash chain.");
 							break;
 						}
 						
-						signHashChain(Base64.decodeBase64(pckt.data), true);
-						if (DEBUG_BALANCES)
-							System.out.println(getUserBalances());
+						if (DEBUG_COMMANDS_SIGNHASHCHAIN)
+							System.out.println("User \"" + userID + "\" sent sign hash chain command.");
+						signHashChain(Base64.decodeBase64(pckt.data));
+						
+						stealthComms.sendPacket(DecryptedPacket.CMD_GETBALANCE, Integer.toString(getUser(userID).accountBalance));
 						break;
 					}
 					
 					/***********************************************************
-					 * Verify Credit command
+					 * Validate Payment Command
 					 **********************************************************/
-					case DecryptedPacket.CMD_VALIDATEPAYMENT: {
-						if (DEBUG_COMMANDS_VALIDATEPAMYENT)
+					case DecryptedPacket.CMD_DEPOSITPAYMENT: {
+						if (userID == null) {
+							System.err.println("Must to logged in to accept payment.");
+							break;
+						}
+						
+						if (DEBUG_COMMANDS_DEPOSITPAYMENT)
 							if (userID != null)
-								System.out.println("User \"" + userID + "\" sent verify credit command.");
+								System.out.println("User \"" + userID + "\" sent validate payment command.");
 							else
-								System.out.println("Received sign verify credit command.");
+								System.out.println("Received sign validate payment command.");
 						
 						final String data = new String(pckt.data);
 						final String user = data.split(";")[0];
 						final int credits = Integer.parseInt(data.split(";")[1]);
 						final byte[] hash = Base64.decodeBase64(data.split(";")[2]);
-						
-						final boolean result = verifyPayment(user, credits, hash);
-						stealthComms.sendPacket(DecryptedPacket.CMD_VALIDATEPAYMENT, Boolean.toString(result));
+						depositPayment(user, credits, hash);
+						stealthComms.sendPacket(DecryptedPacket.CMD_GETBALANCE, Integer.toString(getUser(userID).accountBalance));
 						break;
 					}
 					
@@ -647,18 +610,10 @@ public class BankThread extends Thread {
 						 * Add the credits to the user's account once the
 						 * payment is verified.
 						 */
-						if (verifyPayment(userID, creditsSent, cryptoCreditHash))
-							addCredits(userID, creditsSent, false);
-						
-						/*
-						 * Send the user their (possibly updated) account
-						 * balance.
-						 */
-						stealthComms.sendPacket(DecryptedPacket.CMD_GETBALANCE, Integer.toString(getUser(userID).accountBalance));
-						
-						/* Print user account balances. */
-						if (DEBUG_BALANCES)
-							System.out.println(getUserBalances());
+						if (depositPayment(userID, creditsSent, cryptoCreditHash)) {
+							addCredits(userID, creditsSent);
+							getUser(userID).userThread.stealthComms.sendPacket(DecryptedPacket.CMD_GETBALANCE, Integer.toString(getUser(userID).accountBalance));
+						}
 						break;
 					
 					/***********************************************************
