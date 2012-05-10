@@ -227,16 +227,66 @@ is incorrect or the file was been modified in some way.
 \section{Payment Protocol}
 
 \subsection{Introduction}
-% TODO
+Payment protocols are a key ingredient for online transactions, as they allow 
+users to transfer money over the internet while maintaining a high standard of 
+security. While this modern method of payment with virtual money costs 
+significantly less than the traditional systems (cash, checks, etc.), it must be
+implemented in such a way so that online currency functions in the same way as 
+real money, while also featuring additional attributes.
+
+Amongst other things, online payment protocols must ensure anonymity so that 
+users need not provide personal information when sending or receiving money. 
+They must also make it impossible to use a digital coin more than once to 
+prevent customers from spending more than they have, and allow electronic money 
+to be divisible (no need to use change during a payment). In addition, online 
+cash should be resistant to modification when exchanged, and support 
+authentication and verification by various organizations (i.e. the bank).
 
 \subsection{Details}
-% TODO
+The security mechanism of online payment relies on RSA public-key cryptography. 
+By using the RSA algorithm, the system is capable of limiting cases of online 
+fraud by using a digital signature on each coin, which can be used by the 
+organization responsible of the service and distribution of e-currency, to 
+authenticate coins when needed. For example, to sign a coin, a bank uses its 
+private key for “encryption” (it actually decrypts), so that if a user wants to 
+verify the authenticity of the coin, it uses the public key of the bank. RSA is 
+also responsible for maintaining anonymity through the system, as with the 
+public and private keys, users can sign transactions without providing personal 
+information.
+
+To create the actual digital currency, hash functions (such as MD5 and SHA-1) 
+are used to generate hash chains that represent money in a user’s account. In 
+order to prevent replay attacks, where someone spends the same coin more than 
+once, a nonce is appended to each hash coin so that, when sent to the bank, are 
+recorded in the database as spent.
 
 \subsection{Justification}
-% TODO
+For the creation of hash chains for the digital coins, the MD5 algorithm is used
+as it is secure enough for preventing online fraud for the system. For the 
+communication between the server, bank and client, the RSA algorithm is 
+implemented to allow encryption and decryption based on the public and private 
+keys of the users.
 
 \subsection{Implementation}
-% TODO
+The main classes that are created to support the CryptoCredits system are the 
+Bank and BankThread, the CryptoCreditHashChain (along with updates to the Client
+and ServerThread classes), and RSAAssymetricEncryption.
+
+The first two classes are responsible for maintaining the bank system, where 
+hash chains and payments are verified with the use of digital signatures and 
+encryptions/decryptions in the signHashChain() function and verifyPayment() 
+respectively. It also keeps a record of each user’s credit balance at the bank.
+
+The third class maintains the state of the hash chain for each user, and is 
+created at the beginning of the Client application (located within the Client 
+class). It is responsible for the creation and delivery of a hash chain tuple to
+the bank for signing. The related Client class also manages payment packets 
+received from the bank and server, indicating the action expected from the 
+client in order to complete a transaction. The ServerThread class also supports 
+clients to store coins in a server credit account, along with all the necessary 
+functions so that users can use these credits to pay for a secret or transfer 
+money from either the bank or their own towards the server.
+The final class stores the encrypt() and decrypt() functions that use the public and private keys used by the RSA algorithm, and also generates and distributes keys when necessary to users across the network.
 
 % CONCLUSION
 \section{Conclusion}
