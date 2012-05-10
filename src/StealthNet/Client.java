@@ -6,7 +6,8 @@
  *
  * PACKAGE:         StealthNet
  * FILENAME:        Client.java
- * AUTHORS:         Matt Barrie, Stephen Gould, Ryan Junee and Joshua Spence
+ * AUTHORS:         Matt Barrie, Stephen Gould, Ryan Junee, Joshua Spence and
+ * 					James Dimitrios Moutafidis
  * DESCRIPTION:     Implementation of StealthNet Client for ELEC5616
  *                  programming assignment. Debug code has been added to this
  *                  class.
@@ -103,6 +104,7 @@ import StealthNet.Security.SHA1withRSAAsymmetricVerification;
  * @author Stephen Gould
  * @author Ryan Junee
  * @author Joshua Spence
+ * @author James Dimitrios Moutafidis
  */
 public class Client {
 	/* Debug options. */

@@ -460,7 +460,49 @@ public class BankThread extends Thread {
 	
 	/**
 	 * The main function for the class. This function handles all type of
-	 * StealthNet packets.
+	 * {@link DecryptedPacket}s: <ul>
+	 * 
+	 * <li> If the packet contains the <code>CMD_LOGIN</code> command, then we
+	 * attempt to log the user into the StealthNet {@link Bank}.</li>
+	 * 
+	 * <li> If the packet contains the <code>CMD_LOGOUT</code> command, then the
+	 * user is logged out of the StealthNet {@link Bank}, and this
+	 * {@link Thread} is terminated.</li>
+	 * 
+	 * <li> We should never receive a <code>CMD_MSG</code> packet.</li>
+	 * 
+	 * <li> We should never receive a <code>CMD_CHAT</code> packet.</li>
+	 * 
+	 * <li> We should never receive a <code>CMD_FTP</code> packet.</li>
+	 * 
+	 * <li> We should never receive a <code>CMD_CREATESECRET</code> packet.</li>
+	 * 
+	 * <li> We should never receive a <code>CMD_GETSECRET</code> packet.</li>
+	 * 
+	 * <li> We should never receive a <code>CMD_GETPUBLICKEY</code> packet.</li>
+	 * 
+	 * <li> If the packet contains the <code>CMD_PAYMENT</code> command, then we
+	 * add the payment to the user's {@link Bank} account.</li>
+	 * 
+	 * <li> We should never receive a <code>CMD_REQUESTPAYMENT</code> packet.
+	 * </li>
+	 * 
+	 * <li> If the packet contains the <code>CMD_SIGNHASHCHAIN</code> command,
+	 * then we deduct the credits represented by the
+	 * {@link CryptoCreditHashChain} from the user's account and return the
+	 * signature of the {@link CryptoCreditHashChain} identifier. If the user
+	 * has insufficient funds in their account, then we inform the user of this.
+	 * </li>
+	 * 
+	 * <li> If the packet contains the <code>CMD_GETBALANCE</code> command, then
+	 * we send the user their {@link Bank} account balance.</li>
+	 * 
+	 * <li> If we receive a <code>CMD_DEPOSITPAYMENT</code> command, then we
+	 * deposit the received {@link CryptoCredit}s into the user's {@link Bank}
+	 * account.</li>
+	 * 
+	 * <li> We should never receive a <code>CMD_HASHCHAIN</code> packet.</li>
+	 * </ul>
 	 */
 	@Override
 	public void run() {

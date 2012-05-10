@@ -884,7 +884,7 @@ public class ServerThread extends Thread {
 	 * packet.</li>
 	 * 
 	 * <li> If the packet contains the <code>CMD_GETBALANCE</code> command, then
-	 * we send the user their server account balance.</li>
+	 * we send the user their {@link Server} account balance.</li>
 	 * 
 	 * <li> We should never receive a <code>CMD_DEPOSITPAYMENT</code>
 	 * packet.</li>
