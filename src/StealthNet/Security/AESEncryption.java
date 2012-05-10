@@ -20,8 +20,10 @@ import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.util.Random;
 
+import javax.crypto.Cipher;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
@@ -50,8 +52,17 @@ public class AESEncryption extends Encryption {
 	 */
 	public static final String KEY_ALGORITHM = "AES";
 	
-	/** The algorithm used to specify the encryption and decryption ciphers. */
+	/**
+	 * The algorithm used to specify the encryption and decryption
+	 * {@link Cipher}s.
+	 */
 	public static final String CIPHER_ALGORITHM = "AES/CBC/PKCS5Padding";
+	
+	/**
+	 * The provider used to specify the encryption and decryption {@link Cipher}
+	 * s.
+	 */
+	public static final String CIPHER_PROVIDER = null;
 	
 	/**
 	 * Number of bytes to use as a salt for the encryption and decryption
@@ -70,9 +81,10 @@ public class AESEncryption extends Encryption {
 	 * @throws NoSuchAlgorithmException
 	 * @throws InvalidAlgorithmParameterException
 	 * @throws InvalidKeyException
+	 * @throws NoSuchProviderException
 	 */
-	public AESEncryption(final SecretKey key) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException {
-		super(CIPHER_ALGORITHM);
+	public AESEncryption(final SecretKey key) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException, NoSuchProviderException {
+		super(CIPHER_ALGORITHM, CIPHER_PROVIDER);
 		
 		/*
 		 * Generate the initialisation vector using a seeded random number

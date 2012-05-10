@@ -33,7 +33,7 @@ import javax.crypto.spec.PBEParameterSpec;
 /* StealthNet.Security.PasswordEncryption Class Definition ***************** */
 
 /**
- * A class used to encrypt and decrypt messages using a password.
+ * A class used to encrypt and decrypt messages using a iser-supplied password.
  * 
  * @author Joshua Spence
  * @see Encryption
@@ -87,7 +87,7 @@ public class PasswordEncryption extends Encryption {
 	 * @throws NoSuchProviderException
 	 */
 	public PasswordEncryption(final String password) throws NoSuchAlgorithmException, InvalidKeySpecException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException, NoSuchProviderException {
-		super(ALGORITHM);
+		super(ALGORITHM, PROVIDER);
 		
 		if (password == null)
 			throw new IllegalArgumentException("Password cannot be null.");
@@ -123,7 +123,7 @@ public class PasswordEncryption extends Encryption {
 	 * @throws NoSuchProviderException
 	 */
 	public PasswordEncryption(final byte[] salt, final String password) throws NoSuchAlgorithmException, InvalidKeySpecException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException, NoSuchProviderException {
-		super(ALGORITHM);
+		super(ALGORITHM, PROVIDER);
 		
 		if (password == null)
 			throw new IllegalArgumentException("Password cannot be null.");

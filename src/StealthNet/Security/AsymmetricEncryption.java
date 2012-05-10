@@ -33,6 +33,7 @@ import java.security.PublicKey;
 import java.security.spec.InvalidKeySpecException;
 
 import javax.crypto.BadPaddingException;
+import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import javax.management.InvalidAttributeValueException;
@@ -63,6 +64,28 @@ public class AsymmetricEncryption extends Encryption {
 	 * Constructor to use a supplied public-private {@link KeyPair} for
 	 * asymmetric encryption.
 	 * 
+	 * @param algorithm The {@Link Cipher} algorithm to be used for
+	 *        encryption and decryption.
+	 * @param The {@link Cipher} provider to be used for encryption and
+	 *        decryption.
+	 * @param keys The public-private {@link KeyPair} to be used. The
+	 *        {@link PrivateKey} will be used for decryption.
+	 * 
+	 * @throws NoSuchPaddingException
+	 * @throws NoSuchAlgorithmException
+	 * @throws InvalidKeyException
+	 * @throws NoSuchProviderException
+	 */
+	protected AsymmetricEncryption(final String algorithm, final String provider, final KeyPair keys) throws InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, NoSuchProviderException {
+		super(algorithm, provider);
+		ourKeys = keys;
+		super.setDecryption(ourKeys.getPrivate());
+	}
+	
+	/**
+	 * Constructor to use a supplied public-private {@link KeyPair} for
+	 * asymmetric encryption.
+	 * 
 	 * @param algorithm The cipher algorithm to be used for encryption and
 	 *        decryption.
 	 * @param keys The public-private {@link KeyPair} to be used. The
@@ -71,8 +94,9 @@ public class AsymmetricEncryption extends Encryption {
 	 * @throws NoSuchPaddingException
 	 * @throws NoSuchAlgorithmException
 	 * @throws InvalidKeyException
+	 * @throws NoSuchProviderException
 	 */
-	protected AsymmetricEncryption(final String algorithm, final KeyPair keys) throws InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException {
+	protected AsymmetricEncryption(final String algorithm, final KeyPair keys) throws InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, NoSuchProviderException {
 		super(algorithm);
 		ourKeys = keys;
 		super.setDecryption(ourKeys.getPrivate());
@@ -115,8 +139,9 @@ public class AsymmetricEncryption extends Encryption {
 	 * @throws NoSuchPaddingException
 	 * @throws NoSuchAlgorithmException
 	 * @throws InvalidKeyException
+	 * @throws NoSuchProviderException
 	 */
-	public void setPeerPublicKey(final PublicKey peer) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException {
+	public void setPeerPublicKey(final PublicKey peer) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, NoSuchProviderException {
 		peerPublicKey = peer;
 		super.setEncryption(peerPublicKey);
 	}

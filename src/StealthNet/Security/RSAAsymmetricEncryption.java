@@ -71,6 +71,11 @@ public class RSAAsymmetricEncryption extends AsymmetricEncryption {
 	 */
 	public static final String ALGORITHM = "RSA";
 	
+	/**
+	 * The provider to be used for the encryption and decryption {@link Cipher}.
+	 */
+	public static final String PROVIDER = null;
+	
 	/** The number of bits to use for the encryption and decryption keys. */
 	private static final int NUM_BITS = 2048;
 	
@@ -99,9 +104,10 @@ public class RSAAsymmetricEncryption extends AsymmetricEncryption {
 	 * @throws NoSuchPaddingException
 	 * @throws NoSuchAlgorithmException
 	 * @throws InvalidKeyException
+	 * @throws NoSuchProviderException
 	 */
-	public RSAAsymmetricEncryption(final KeyPair ourKeys) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException {
-		super(ALGORITHM, ourKeys);
+	public RSAAsymmetricEncryption(final KeyPair ourKeys) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, NoSuchProviderException {
+		super(ALGORITHM, PROVIDER, ourKeys);
 	}
 	
 	/**
@@ -115,9 +121,10 @@ public class RSAAsymmetricEncryption extends AsymmetricEncryption {
 	 * @throws NoSuchPaddingException
 	 * @throws NoSuchAlgorithmException
 	 * @throws InvalidKeyException
+	 * @throws NoSuchProviderException
 	 */
-	public RSAAsymmetricEncryption(final KeyPair ourKeys, final PublicKey peer) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException {
-		super(ALGORITHM, ourKeys);
+	public RSAAsymmetricEncryption(final KeyPair ourKeys, final PublicKey peer) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, NoSuchProviderException {
+		super(ALGORITHM, PROVIDER, ourKeys);
 		super.setPeerPublicKey(peer);
 	}
 	
@@ -133,9 +140,10 @@ public class RSAAsymmetricEncryption extends AsymmetricEncryption {
 	 * @throws NoSuchPaddingException
 	 * @throws NoSuchAlgorithmException
 	 * @throws InvalidKeyException
+	 * @throws NoSuchProviderException
 	 */
-	public RSAAsymmetricEncryption(final AsymmetricEncryption ae, final PublicKey peer) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException {
-		super(ALGORITHM, ae.getKeys());
+	public RSAAsymmetricEncryption(final AsymmetricEncryption ae, final PublicKey peer) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, NoSuchProviderException {
+		super(ALGORITHM, PROVIDER, ae.getKeys());
 		super.setPeerPublicKey(peer);
 	}
 	
@@ -223,8 +231,7 @@ public class RSAAsymmetricEncryption extends AsymmetricEncryption {
 		}
 		
 		/* Encode the combined encrypted chunks in base-64. */
-		final byte[] encodedValue = Base64.encodeBase64(combinedChunks);
-		return encodedValue;
+		return encode(combinedChunks);
 	}
 	
 	/**
@@ -265,7 +272,7 @@ public class RSAAsymmetricEncryption extends AsymmetricEncryption {
 	@Override
 	public byte[] decrypt(final byte[] ciphertext) throws IllegalBlockSizeException, BadPaddingException {
 		/* Decode the combined encrypted chunks. */
-		final byte[] decodedValue = Base64.decodeBase64(ciphertext);
+		final byte[] decodedValue = decode(ciphertext);
 		
 		/*
 		 * TODO: Tidy the following code. All that it does it break the
@@ -322,10 +329,15 @@ public class RSAAsymmetricEncryption extends AsymmetricEncryption {
 	 * @return A new public-private {@link KeyPair}
 	 * 
 	 * @throws NoSuchAlgorithmException
+	 * @throws NoSuchProviderException
 	 */
-	public static KeyPair generateKeys() throws NoSuchAlgorithmException {
+	public static KeyPair generateKeys() throws NoSuchAlgorithmException, NoSuchProviderException {
 		/* Initialise the key generator. */
-		final KeyPairGenerator kpg = KeyPairGenerator.getInstance(ALGORITHM);
+		KeyPairGenerator kpg;
+		if (PROVIDER == null)
+			kpg = KeyPairGenerator.getInstance(ALGORITHM);
+		else
+			kpg = KeyPairGenerator.getInstance(ALGORITHM, PROVIDER);
 		kpg.initialize(NUM_BITS);
 		
 		/* Establish the keys. */

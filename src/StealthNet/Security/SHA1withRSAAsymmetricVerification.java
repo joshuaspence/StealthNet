@@ -44,6 +44,11 @@ public class SHA1withRSAAsymmetricVerification extends AsymmetricVerification {
 	public static final String ALGORITHM = "SHA1withRSA";
 	
 	/**
+	 * The provider to be used for the signer and verifier {@link Signature}.
+	 */
+	public static final String PROVIDER = null;
+	
+	/**
 	 * Constructor to use the supplied public-private {@link KeyPair} for
 	 * signing. Verifying will not yet be enabled.
 	 * 
@@ -54,7 +59,7 @@ public class SHA1withRSAAsymmetricVerification extends AsymmetricVerification {
 	 * @throws InvalidKeyException
 	 */
 	public SHA1withRSAAsymmetricVerification(final KeyPair ourKeys) throws InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException {
-		super(ALGORITHM, ourKeys);
+		super(ALGORITHM, PROVIDER, ourKeys);
 	}
 	
 	/**
@@ -70,7 +75,7 @@ public class SHA1withRSAAsymmetricVerification extends AsymmetricVerification {
 	 * @throws InvalidKeyException
 	 */
 	public SHA1withRSAAsymmetricVerification(final KeyPair ourKeys, final PublicKey peer) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException {
-		super(ALGORITHM, ourKeys);
+		super(ALGORITHM, PROVIDER, ourKeys);
 		super.setPeerPublicKey(peer);
 	}
 }

@@ -24,14 +24,13 @@ import org.apache.commons.codec.binary.Base64;
 
 /**
  * An interface to calculate and verify packet Message Authentication Codes
- * (MACs). This is used to ensure packet integrity between peers.
- * 
- * When a packet is sent, the sender calculates the MAC for the packet and
- * appends it to the message. When a packet is received, the receiver calculates
- * the MAC for the packet (disregarding the MAC digest) and compares it to the
- * received MAC digest. If the calculated digest matches the received digest,
- * then the receiver can be assured of the message integrity. <p> In order for
- * this to occur, the sender and receiver must at some stage exchange an
+ * (MACs). This is used to ensure packet integrity between peers. <p> When a
+ * packet is sent, the sender calculates the MAC for the packet and appends it
+ * to the message. When a packet is received, the receiver calculates the MAC
+ * for the packet (disregarding the MAC digest) and compares it to the received
+ * MAC digest. If the calculated digest matches the received digest, then the
+ * receiver can be assured of the message integrity. <p> In order for this to
+ * occur, the sender and receiver must at some stage exchange an
  * "integrity key", used as a key for the hash function.
  * 
  * @author Joshua Spence

@@ -21,6 +21,7 @@ import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.Key;
 import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.security.spec.AlgorithmParameterSpec;
 
 import javax.crypto.BadPaddingException;
@@ -34,9 +35,8 @@ import org.apache.commons.codec.binary.Base64;
 
 /**
  * A base class to provide encryption and decryption of messages, in order to
- * provide confidentiality of the communications in StealthNet. <p> Ideally,
- * only the sender should be able to encrypt the message; and only the receiver
- * should be able to decrypt the message.
+ * provide confidentiality of the communications in StealthNet. <p> Abstracts
+ * away some of the finer implementation details.
  * 
  * @author Joshua Spence
  */
@@ -56,6 +56,9 @@ public class Encryption {
 	/** The algorithm used to initialise the {@link Cipher}s. */
 	private final String algorithm;
 	
+	/** The provider used to intialise the {@link Cipher}s. */
+	private final String provider;
+	
 	/**
 	 * Constructor.
 	 * 
@@ -64,6 +67,20 @@ public class Encryption {
 	 */
 	protected Encryption(final String algorithm) {
 		this.algorithm = algorithm;
+		provider = null;
+	}
+	
+	/**
+	 * Constructor.
+	 * 
+	 * @param algorithm The {@link Cipher} algorithm to be used for encryption
+	 *        and decryption.
+	 * @param provider The {@link Cipher} provider to be used for encryption and
+	 *        decryption.
+	 */
+	protected Encryption(final String algorithm, final String provider) {
+		this.algorithm = algorithm;
+		this.provider = provider;
 	}
 	
 	/**
@@ -75,10 +92,14 @@ public class Encryption {
 	 * @throws NoSuchPaddingException
 	 * @throws NoSuchAlgorithmException
 	 * @throws InvalidKeyException
+	 * @throws NoSuchProviderException
 	 */
-	protected final void setEncryption(final Key key) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException {
+	protected final void setEncryption(final Key key) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, NoSuchProviderException {
 		encryptionKey = key;
-		encryptionCipher = Cipher.getInstance(algorithm);
+		if (provider == null)
+			encryptionCipher = Cipher.getInstance(algorithm);
+		else
+			encryptionCipher = Cipher.getInstance(algorithm, provider);
 		encryptionCipher.init(Cipher.ENCRYPT_MODE, encryptionKey);
 	}
 	
@@ -94,10 +115,14 @@ public class Encryption {
 	 * @throws NoSuchAlgorithmException
 	 * @throws InvalidAlgorithmParameterException
 	 * @throws InvalidKeyException
+	 * @throws NoSuchProviderException
 	 */
-	protected final void setEncryption(final Key key, final AlgorithmParameterSpec specs) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException {
+	protected final void setEncryption(final Key key, final AlgorithmParameterSpec specs) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException, NoSuchProviderException {
 		encryptionKey = key;
-		encryptionCipher = Cipher.getInstance(algorithm);
+		if (provider == null)
+			encryptionCipher = Cipher.getInstance(algorithm);
+		else
+			encryptionCipher = Cipher.getInstance(algorithm, provider);
 		encryptionCipher.init(Cipher.ENCRYPT_MODE, encryptionKey, specs);
 	}
 	
@@ -110,10 +135,14 @@ public class Encryption {
 	 * @throws NoSuchPaddingException
 	 * @throws NoSuchAlgorithmException
 	 * @throws InvalidKeyException
+	 * @throws NoSuchProviderException
 	 */
-	protected final void setDecryption(final Key key) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException {
+	protected final void setDecryption(final Key key) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, NoSuchProviderException {
 		decryptionKey = key;
-		decryptionCipher = Cipher.getInstance(algorithm);
+		if (provider == null)
+			decryptionCipher = Cipher.getInstance(algorithm);
+		else
+			decryptionCipher = Cipher.getInstance(algorithm, provider);
 		decryptionCipher.init(Cipher.DECRYPT_MODE, decryptionKey);
 	}
 	
@@ -129,10 +158,14 @@ public class Encryption {
 	 * @throws NoSuchAlgorithmException
 	 * @throws InvalidAlgorithmParameterException
 	 * @throws InvalidKeyException
+	 * @throws NoSuchProviderException
 	 */
-	protected final void setDecryption(final Key key, final AlgorithmParameterSpec specs) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException {
+	protected final void setDecryption(final Key key, final AlgorithmParameterSpec specs) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException, NoSuchProviderException {
 		decryptionKey = key;
-		decryptionCipher = Cipher.getInstance(algorithm);
+		if (provider == null)
+			decryptionCipher = Cipher.getInstance(algorithm);
+		else
+			decryptionCipher = Cipher.getInstance(algorithm, provider);
 		decryptionCipher.init(Cipher.DECRYPT_MODE, decryptionKey, specs);
 	}
 	
@@ -171,14 +204,36 @@ public class Encryption {
 		if (encryptionCipher == null)
 			throw new IllegalStateException("Cannot perform encryption without an encryption cipher.");
 		
-		final byte[] encryptedValue = encryptionCipher.doFinal(cleartext);
-		final byte[] encodedValue = Base64.encodeBase64(encryptedValue);
-		return encodedValue;
+		return encode(encryptionCipher.doFinal(cleartext));
+	}
+	
+	/**
+	 * Encodes data in base-64. Performs the opposite of the
+	 * <code>decode(String)</code> function.
+	 * 
+	 * @param cleartext The data to encode.
+	 * @return The data encoded in base-64
+	 * @see Base64
+	 */
+	protected static byte[] encode(final String data) {
+		return encode(data.getBytes());
+	}
+	
+	/**
+	 * Encodes data in base-64. Performs the opposite of the
+	 * <code>decode(byte[])</code> function.
+	 * 
+	 * @param data The data to encrypt.
+	 * @return The data encoded in base-64.
+	 * @see Base64
+	 */
+	protected static byte[] encode(final byte[] data) {
+		return Base64.encodeBase64(data);
 	}
 	
 	/**
 	 * Decrypts data using the decryption key. Performs the opposite of the
-	 * <code>decrypt(String)</code> function.
+	 * <code>encrypt(String)</code> function.
 	 * 
 	 * @param ciphertext The data to be decrypted, assumed to be encoded in
 	 *        base-64.
@@ -214,9 +269,33 @@ public class Encryption {
 		if (decryptionCipher == null)
 			throw new IllegalStateException("Cannot perform decryption without a decryption cipher.");
 		
-		final byte[] decodedValue = Base64.decodeBase64(ciphertext);
-		final byte[] decryptedValue = decryptionCipher.doFinal(decodedValue);
-		return decryptedValue;
+		return decryptionCipher.doFinal(decode(ciphertext));
+	}
+	
+	/**
+	 * Decodes data from base-64. Performs the opposite of the
+	 * <code>encode(String)</code> function.
+	 * 
+	 * @param data The data to be decoded, assumed to be encoded in base-64.
+	 * @return The decoded data.
+	 * 
+	 * @see Base64
+	 */
+	protected static byte[] decode(final String data) {
+		return decode(data.getBytes());
+	}
+	
+	/**
+	 * Decodes base from base-64. Performs the opposite of the
+	 * <code>encode(byte[])</code> function.
+	 * 
+	 * @param data The data to be decoded, assumed to be encoded in base-64.
+	 * @return The decoded data.
+	 * 
+	 * @see Base64
+	 */
+	protected static byte[] decode(final byte[] data) {
+		return Base64.decodeBase64(data);
 	}
 }
 

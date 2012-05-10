@@ -21,6 +21,7 @@ import java.net.Socket;
 import java.security.InvalidKeyException;
 import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.util.Enumeration;
@@ -176,8 +177,9 @@ public class BankThread extends Thread {
 	 * @throws NoSuchPaddingException
 	 * @throws NoSuchAlgorithmException
 	 * @throws InvalidKeyException
+	 * @throws NoSuchProviderException
 	 */
-	public BankThread(final Socket socket) throws InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException {
+	public BankThread(final Socket socket) throws InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, NoSuchProviderException {
 		/* Thread constructor. */
 		super("StealthNet.BankThread");
 		
