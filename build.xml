@@ -459,9 +459,6 @@
 		<echo>Deleting ${path.build}.</echo>
         <delete dir="${path.build}" />
 		
-		<echo>Deleting ${path.docs}.</echo>
-		<delete dir="${path.docs}" />
-		
 		<!-- Run `make clean' within the latex subdirectory -->
 		<echo>Cleaning ${path.latex}.</echo>
         <exec executable="make" dir="${path.latex}/src">
@@ -489,7 +486,7 @@
     	<!-- Run `make dstclean' within the latex subdirectory -->
         <echo>Cleaning ${path.latex}.</echo>
         <exec executable="make" dir="${path.latex}/src">
-           <arg value="distclean" />
+           <arg value="clean" />
         </exec>
     </target>
 	
@@ -518,15 +515,20 @@
             	<exclude name="**/${path.build}/**" />
                 <exclude name="**/${path.docs}/**" />
             	<exclude name="**/${path.latex}/**" />
-                
+            	
+            	<!-- Exclude client keys -->
+            	<exclude name="**/${path.keys.clients}/**" />
+            	
             	<!-- Exclude git metadata -->
             	<exclude name=".git" />
             	<exclude name=".gitignore" />
             	
             	<!-- Exclude Eclipse files -->
             	<exclude name=".classpath" />
+            	<exclude name="**/.eclipse/**" />
+            	<exclude name="**/.externalToolBuilders/**" />
             	<exclude name=".project" />
-            	<exclude name=".settings" />
+            	<exclude name="**/.settings/**" />
             </tarfileset>
         </tar>
         <checksum file="${file.tar.gz}" algorithm="md5" />
@@ -544,6 +546,9 @@
                 <exclude name="**/${path.build}/**" />
                 <exclude name="**/${path.docs}/**" />
             	<exclude name="**/${path.latex}/**" />
+            	
+            	<!-- Exclude client keys -->
+                <exclude name="**/${path.keys.clients}/**" />
                 
                 <!-- Exclude git metadata -->
                 <exclude name=".git" />
@@ -561,6 +566,9 @@
         
         <tar destfile="${file.tar.gz}" longfile="gnu" compression="gzip">
             <tarfileset dir="${basedir}">
+            	<!-- Exclude client keys -->
+                <exclude name="**/${path.keys.clients}/**" />
+            	
                 <!-- Exclude git metadata -->
                 <exclude name=".git" />
                 <exclude name=".gitignore" />
@@ -592,7 +600,7 @@
     	<property name="print.classpath" refid="compile.classpath" />
 	    <echo>Classpath: '${print.classpath}'</echo>
 	</target>
-	
+	   
 	<!-- Print the directory where the JAR files are stored. Used by the run.sh script. -->
 	<target name="jar_dir" depends="-init" description="Print the directory that the JARs are stored in">
 		<echo>JAR directory: '${path.jar}'</echo>
