@@ -48,7 +48,7 @@ public class CryptoCreditHashChain {
 	private static final boolean DEBUG_ERROR_TRACE = Debug.isDebug("StealthNet.CryptoCreditHashChain.ErrorTrace") || Debug.isDebug("ErrorTrace");
 	
 	/** Algorithm to use for the hash chain {@link MessageDigest}. */
-	private static final String HASH_ALGORITHM = "MD5";
+	private static final String HASH_ALGORITHM = "SHA1";
 	
 	/** The number of (random) bytes to use as a seed for the hash chain. */
 	private static final int HASHCHAIN_SEED_BYTES = 8;
