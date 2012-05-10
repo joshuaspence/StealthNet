@@ -30,7 +30,7 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
  * The proxy simply accepts {@link Server}-bound connections from a
  * {@link Client} and creates its own connection to the {@link Server} on behalf
  * of the {@link Client}. Any messages from the {@link Client} to the
- * {@link Server} (and vice versa) will be relayed through the proxy.
+ * {@link Server} (and vice versa) will be relayed through the {@link Proxy}.
  * 
  * @author Joshua Spence
  * @see ProxyThread
@@ -46,9 +46,12 @@ public class Proxy {
 	}
 	
 	/**
-	 * The main proxy function.
+	 * The main {@link Proxy} function.
 	 * 
-	 * @param args The command line arguments.
+	 * @param args The command line arguments. The command lines arguments take
+	 *        the following format. <ul> <li> <code>args[0]</code> ::=
+	 *        <code>port</code> </li> <li> <code>args[1]</code> ::=
+	 *        <code>serverHostname:serverPort</code> </li> </ul>
 	 * @throws IOException
 	 */
 	public static void main(final String[] args) {

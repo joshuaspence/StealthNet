@@ -22,8 +22,8 @@ package StealthNet.Security;
  * An interface to create nonce identifiers for StealthNet packets. This is used
  * to prevent message replay attacks by "generating" and "consuming" nonces.
  * 
- * A nonce is stored as a byte array of 8 bytes. When a packet is sent, a nonce
- * is generated and appended to the message. At the receiving end of the
+ * <p> A nonce is stored as a byte array of 8 bytes. When a packet is sent, a
+ * nonce is generated and appended to the message. At the receiving end of the
  * communications, the peer is able to check if a message with the received
  * nonce has been received before. If yes, then this packet is probably a
  * replay, and is consequently discarded silently.

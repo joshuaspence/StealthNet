@@ -50,11 +50,12 @@ public class FileTransfer extends Thread {
 	
 	/**
 	 * The number of bytes to send at a time, before waiting for an
-	 * acknowledgement that the bytes have been received.
+	 * acknowledgement from the receiving {@link Client} that the bytes have
+	 * been received.
 	 */
 	private static final int PACKET_SIZE = 256;
 	
-	/** A progress bar to visualise the transfer. */
+	/** A {JProgressBar} to visualise the transfer. */
 	private JProgressBar progressBar = null;
 	
 	/** The {@link Comms} class through which to perform the transfer. */
@@ -63,7 +64,7 @@ public class FileTransfer extends Thread {
 	/** The filename of the file being transferred. */
 	private final String filename;
 	
-	/** True to indicate sending, false to indicate receiving. */
+	/** True to indicate we are sending, false to indicate we are receiving. */
 	private final boolean bSend;
 	
 	/**

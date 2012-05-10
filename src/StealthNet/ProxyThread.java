@@ -28,18 +28,18 @@ import java.util.Random;
  * Represents a {@link Thread} within the operating system for communications
  * between the StealthNet {@link Proxy} and a StealthNet peer.
  * 
- * A new instance is created for each {@link Client} such that multiple
+ * <p> A new instance is created for each {@link Client} such that multiple
  * {@link Client}s can be active concurrently. This class receives
  * {@link EncryptedPacket}s from one peer and forwards them to the other peer.
  * To simulate various security attacks, the {@link EncryptedPacket}s may be
  * altered/retransmitted/dropped.
  * 
- * A ProxyThread is "paired" with another ProxyThread such that when one
- * {@link Thread} ends, the paired {@link Thread} can be ended as well. This is
- * because for a single {@link Client}<=>{@link Server} connection, for example,
- * two ProxyThreads will be created - one to handle the {@link Client}->
- * {@link Server} communications and another to handle the {@link Server}->
- * {@link Client} communications.
+ * <p>A {@link ProxyThread} is "paired" with another {@link ProxyThread} such
+ * that when one {@link Thread} ends, the paired {@link Thread} can be ended as
+ * well. This is because for a single {@link Client}<=>{@link Server}
+ * connection, for example, two {@link ProxyThread} will be created - one to
+ * handle the {@link Client}-> {@link Server} communications and another to
+ * handle the {@link Server}-> {@link Client} communications.
  * 
  * @author Joshua Spence
  * @see Proxy
@@ -75,7 +75,7 @@ public class ProxyThread extends Thread {
 	/** {@link ProxyComms} class to handle communications to/from the other peer. */
 	private ProxyComms stealthCommsDestination = null;
 	
-	/** Paired ProxyThread (to be killed when this thread terminates). */
+	/** Paired {@link ProxyThread} (to be killed when this thread terminates). */
 	private ProxyThread pairedThread;
 	
 	/**
@@ -107,8 +107,8 @@ public class ProxyThread extends Thread {
 	}
 	
 	/**
-	 * Set a the paired ProxyThread to be terminated when this thread
-	 * terminates.
+	 * Set a the paired {@link ProxyThread} to be terminated when this
+	 * {@link Thread} terminates.
 	 * 
 	 * @param thread The ProxyThread to be paired with this thread.
 	 */
@@ -117,11 +117,12 @@ public class ProxyThread extends Thread {
 	}
 	
 	/**
-	 * Set whether or not a ProxyThread should stop executing. This should be
-	 * set by this thread's "paired" thread when the paired thread itself wishes
-	 * to terminate.
+	 * Set whether or not a {@link ProxyThread} should stop executing. This
+	 * should be set by this {@link Thread} "paired" {@link Thread} when the
+	 * paired {@link Thread} itself wishes to terminate.
 	 * 
-	 * @param stop True if this thread should stop executing, otherwise false.
+	 * @param stop True if this {@link Thread} should stop executing, otherwise
+	 *        false.
 	 */
 	private synchronized void setShouldStop(final boolean stop) {
 		shouldStop = stop;
@@ -152,16 +153,16 @@ public class ProxyThread extends Thread {
 	}
 	
 	/**
-	 * The main function for the ProxyThread class. This function forwards
-	 * {@link EncryptedPacket} from source to destination.
+	 * The main function for the {@link ProxyThread} class. This function
+	 * forwards {@link EncryptedPacket}s from source to destination.
 	 * 
-	 * If <code>isMalicious</code> is true, then the proxy will attempt to
-	 * randomly simulate various security attacks. After the initial
+	 * <p> If <code>isMalicious</code> is true, then the {@link Proxy} will
+	 * attempt to randomly simulate various security attacks. After the initial
 	 * <code>noMaliciousPacketCount</code> received {@link EncryptedPacket}s
 	 * (during which no malicious activity will occur - to allow the
-	 * communicating parties to perform various security protocols), the server
-	 * will randomly simulate a security attack with some probability based on a
-	 * pseudo-random number generator.
+	 * communicating parties to perform various security protocols), the
+	 * {@link Proxy} will randomly simulate a security attack with some
+	 * probability based on a pseudo-random number generator.
 	 */
 	@Override
 	public void run() {

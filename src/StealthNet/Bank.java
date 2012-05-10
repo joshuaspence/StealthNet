@@ -33,10 +33,11 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
  * is responsible for communicating with that peer (either a {@link Client} or a
  * {@link Server}) for the purposes of signing and verifying payments.
  * 
- * The bank is responsible for maintaining account information (such as current
- * account balances) for all logged in users. The bank is responsible for
- * signing {@link CryptoCreditHashChain}s belonging to a {@link Client} so that
- * the {@link Server} can verify the validity of the purchase.
+ * <p> The bank is responsible for maintaining account information (such as
+ * current account balances) for all logged in users. The {@link Bank} is
+ * responsible for signing {@link CryptoCreditHashChain}s belonging to a
+ * {@link Client} so that the {@link Server} can verify the validity of the
+ * purchase.
  * 
  * @author Joshua Spence
  * @see BankThread

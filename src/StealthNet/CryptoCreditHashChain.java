@@ -39,8 +39,6 @@ import StealthNet.Security.AsymmetricVerification;
  * CryptoCredit is a hash, produced by a {@link MessageDigest} algorithm, and a
  * {@link Stack} of CryptoCredits forms a CryptoCreditHashChain.
  * 
- * TODO: Write more detail here.
- * 
  * @author Joshua Spence
  * @author James Dimitrios Moutafidis
  */
@@ -72,7 +70,7 @@ public class CryptoCreditHashChain {
 	/** The signature provided by the {@link Bank} for the hash chain. */
 	private byte[] bankSignature = null;
 	
-	/** Constructor to generate an empty hash chain. */
+	/** Constructor to generate an empty {@link CryptoCreditHashChain}. */
 	public CryptoCreditHashChain() {
 		hashChain = new Stack<CryptoCredit>();
 		bankIdentifier = null;
@@ -80,11 +78,12 @@ public class CryptoCreditHashChain {
 	}
 	
 	/**
-	 * Constructor to generate a new hash chain.
+	 * Constructor to generate a new {@link CryptoCreditHashChain}.
 	 * 
-	 * @param username The username of the user that generated the hash chain.
+	 * @param username The username of the user that generated the
+	 *        {@link CryptoCreditHashChain}.
 	 * @param credits An integer indicating the number of credits stored in the
-	 *        hash chain.
+	 *        {@link CryptoCreditHashChain}.
 	 */
 	public CryptoCreditHashChain(final String username, final int credits) {
 		hashChain = generateHashChain(credits + 1);
@@ -95,8 +94,8 @@ public class CryptoCreditHashChain {
 	}
 	
 	/**
-	 * Request that the bank signs this hash chain, storing the signature for
-	 * later use.
+	 * Request that the {@link Bank} signs this hash chain, storing the
+	 * signature for later use.
 	 * 
 	 * @param bankComms The {@link Comms} class to communicate with the
 	 *        {@link Bank}.
@@ -118,7 +117,7 @@ public class CryptoCreditHashChain {
 	}
 	
 	/**
-	 * Retrieves the signature provided by the bank. The
+	 * Retrieves the signature provided by the {@link Bank}. The
 	 * <code>getSigned(Comms)</code> function must be called before this
 	 * function.
 	 * 
@@ -130,7 +129,8 @@ public class CryptoCreditHashChain {
 	}
 	
 	/**
-	 * Retrieves the identifier and the signature.
+	 * Retrieves the identifier and the signature of this
+	 * {@link CryptoCreditHashChain}.
 	 * 
 	 * @return An array containing the identifier and the signature.
 	 */
@@ -160,10 +160,10 @@ public class CryptoCreditHashChain {
 	}
 	
 	/**
-	 * Get the length of the hash chain. This is equal to the number of credits
-	 * represented by the hash chain.
+	 * Get the length of the CryptoCreditHashChain. This is equal to the number
+	 * of {@link CryptoCredit}s represented by the CryptoCreditHashChain.
 	 * 
-	 * @return The length of the hash chain.
+	 * @return The length of the CryptoCreditHashChain.
 	 */
 	public int getLength() {
 		return hashChain.size();
@@ -216,9 +216,12 @@ public class CryptoCreditHashChain {
 	 * chain). The {@link Bank} will later sign this tuple to verify to the
 	 * {@link Server} that the {@link CryptoCreditHashChain} is valid.
 	 * 
-	 * @param username The username of the user that generated the hash chain.
-	 * @param credits The number of credits represented by the hash chain.
-	 * @param topOfChain The {@link CryptoCredit} at the top of the hash chain.
+	 * @param username The username of the user that generated the
+	 *        CryptoCreditHashChain.
+	 * @param credits The number of {@link CryptoCredit}s represented by the
+	 *        CryptoCreditHashChain.
+	 * @param topOfChain The {@link CryptoCredit} at the top of the
+	 *        CryptoCreditHashChain.
 	 * @return A byte array that can be used to identify the hash chain to the
 	 *         {@link Bank}.
 	 */
@@ -400,9 +403,6 @@ public class CryptoCreditHashChain {
 				final DecryptedPacket pckt = bankComms.recvPacket();
 				
 				if (pckt == null)
-					/*
-					 * Something has probably gone wrong, let's get out of here!
-					 */
 					return null;
 				
 				switch (pckt.command) {
@@ -433,14 +433,17 @@ public class CryptoCreditHashChain {
 	
 	/**
 	 * Get the next <code>credits</code> number of {@link CryptoCredit}s from
-	 * the hash chain, removing them from the hash chain. The number of credits
-	 * retrieved from the hash chain will be equal to (or less than) the
-	 * <code>credits</code> parameter. If the size of the hash chain is less
-	 * than <code>credits</code>, then the complete hash chain will be returned.
+	 * the {@link CryptoCreditHashChain}, removing them from the chain. The
+	 * number of {@link CryptoCredit}s retrieved from the
+	 * {@link CryptoCreditHashChain} will be equal to (or less than) the
+	 * <code>credits</code> parameter. If the size of the
+	 * {@link CryptoCreditHashChain} is less than <code>credits</code>, then the
+	 * complete {@link CryptoCreditHashChain} will be returned.
 	 * 
 	 * @param credits The number of {@link CryptoCredit}s to retrieve.
-	 * @return A stack of size <code>credits</code> (or possibly less), with the
-	 *         top element of the stack being the credit to be spent.
+	 * @return A {@link Stack} of size <code>credits</code> (or possibly less),
+	 *         with the top element of the stack being the {@link CryptoCredit}
+	 *         to be spent.
 	 */
 	public Stack<byte[]> getNextCredits(final int credits) {
 		final Stack<byte[]> result = new Stack<byte[]>();
@@ -522,10 +525,6 @@ public class CryptoCreditHashChain {
 					final DecryptedPacket pckt = bankComms.recvPacket();
 					
 					if (pckt == null)
-						/*
-						 * Something has probably gone wrong, let's get out of
-						 * here!
-						 */
 						return false;
 					
 					switch (pckt.command) {

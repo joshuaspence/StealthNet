@@ -44,28 +44,33 @@ import javax.crypto.spec.DHPublicKeySpec;
  * private key and our public key. Through the magic of Diffie-Hellman we both
  * come up with the same number. This number is secret (discounting MITM
  * attacks) and hence called the shared secret. It has the same length as the
- * modulus, e.g. 512 or 1024 bit. <p> The thing to note is that the shared
- * secret is constant for two partners with constant private keys. This is often
- * not what we want, which is why it is generally a good idea to create a new
- * private key for each session. Generating a private key involves one modular
- * exponentiation assuming suitable Diffie-Hellman parameters are available. <p>
- * The protocol depends on the discrete logarithm problem for its security. It
- * assumes that it is computationally infeasible to calculate the shared secret
- * key <code>k = generator^ab mod prime</code> given the two public values
- * <code>generator^a mod prime</code> and <code>generator^b mod prime</code>
- * when the prime is sufficiently large. Maurer has shown that breaking the
- * Diffie-Hellman protocol is equivalent to computing discrete logarithms under
- * certain assumptions. <p> The Diffie-Hellman key exchange is vulnerable to a
- * man-in-the-middle attack. In this attack, an opponent Carol intercepts
- * Alice's public value and sends her own public value to Bob. When Bob
- * transmits his public value, Carol substitutes it with her own and sends it to
- * Alice. Carol and Alice thus agree on one shared key and Carol and Bob agree
- * on another shared key. After this exchange, Carol simply decrypts any
- * messages sent out by Alice or Bob, and then reads and possibly modifies them
- * before re-encrypting with the appropriate key and transmitting them to the
- * other party. This vulnerability is present because Diffie-Hellman key
- * exchange does not authenticate the participants. Possible solutions include
- * the use of digital signatures and other protocol variants.
+ * modulus, e.g. 512 or 1024 bit.
+ * 
+ * <p> The thing to note is that the shared secret is constant for two partners
+ * with constant private keys. This is often not what we want, which is why it
+ * is generally a good idea to create a new private key for each session.
+ * Generating a private key involves one modular exponentiation assuming
+ * suitable Diffie-Hellman parameters are available.
+ * 
+ * <p> The protocol depends on the discrete logarithm problem for its security.
+ * It assumes that it is computationally infeasible to calculate the shared
+ * secret key <code>k = generator^ab mod prime</code> given the two public
+ * values <code>generator^a mod prime</code> and <code>generator^b mod
+ * prime</code> when the prime is sufficiently large. Maurer has shown that
+ * breaking the Diffie-Hellman protocol is equivalent to computing discrete
+ * logarithms under certain assumptions.
+ * 
+ * <p> The Diffie-Hellman key exchange is vulnerable to a man-in-the-middle
+ * attack. In this attack, an opponent Carol intercepts Alice's public value and
+ * sends her own public value to Bob. When Bob transmits his public value, Carol
+ * substitutes it with her own and sends it to Alice. Carol and Alice thus agree
+ * on one shared key and Carol and Bob agree on another shared key. After this
+ * exchange, Carol simply decrypts any messages sent out by Alice or Bob, and
+ * then reads and possibly modifies them before re-encrypting with the
+ * appropriate key and transmitting them to the other party. This vulnerability
+ * is present because Diffie-Hellman key exchange does not authenticate the
+ * participants. Possible solutions include the use of digital signatures and
+ * other protocol variants.
  * 
  * @author Joshua Spence
  * @see KeyExchange

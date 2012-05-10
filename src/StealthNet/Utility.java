@@ -13,6 +13,8 @@
 
 package StealthNet;
 
+/* Import Libraries ******************************************************** */
+
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
@@ -29,11 +31,11 @@ import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import javax.management.InvalidAttributeValueException;
 
+import org.apache.commons.codec.binary.Base64;
+
 import StealthNet.Security.AsymmetricEncryption;
 import StealthNet.Security.EncryptedFileException;
 import StealthNet.Security.RSAAsymmetricEncryption;
-
-/* Import Libraries ******************************************************** */
 
 /* StealthNet.Utility Class Definition ************************************* */
 
@@ -59,10 +61,10 @@ public class Utility {
 	
 	/**
 	 * Function to assist with printing cryptographic keys by returning byte
-	 * arrays as a hexadecimal number.
+	 * arrays as a {@link String} of hexadecimal numbers.
 	 * 
 	 * @param array The byte array to transform into a hexadecimal number.
-	 * @return The string containing the hexadecimal number.
+	 * @return The {@link String} containing the hexadecimal number.
 	 */
 	public static String getHexValue(final byte[] array) {
 		final StringBuffer buf = new StringBuffer(array.length * HEX_PER_BYTE);
@@ -83,6 +85,7 @@ public class Utility {
 	 * 
 	 * @param hex The hexadecimal character to convert to an integer.
 	 * @return The integer value of the hexadecimal character.
+	 * @throws NumberFormatException
 	 */
 	public static int singleHexToInt(final char hex) {
 		if (hex >= '0' && hex <= '9')
@@ -92,15 +95,15 @@ public class Utility {
 		else if (hex >= 'a' && hex <= 'f')
 			return hex - 'a' + 10;
 		else
-			return 0;
+			throw new NumberFormatException("Character '" + hex + "' is not a valid hexadecimal character.");
 	}
 	
 	/**
-	 * Convert a hexadecimal string to the integer representing the value of the
-	 * hexadecimal string.
+	 * Convert a hexadecimal {@link String} to the integer representing the
+	 * value of the hexadecimal {@link String}.
 	 * 
-	 * @param hex The string to convert.
-	 * @return An integer representing the hexadecimal string.
+	 * @param hex The {@link String} to convert.
+	 * @return An integer representing the hexadecimal {@link String}.
 	 * @throws NumberFormatException
 	 */
 	public static int hexToInt(final String hex) throws NumberFormatException {
@@ -108,12 +111,13 @@ public class Utility {
 	}
 	
 	/**
-	 * Convert an integer to a hexadecimal string representing the same value.
-	 * The length of the hexadecimal string will be equal to the length that
-	 * would be required to encode Integer.MAX_VALUE as a hexadecimal string.
+	 * Convert an integer to a hexadecimal {@link String} representing the same
+	 * value. The length of the hexadecimal {@link String} will be equal to the
+	 * length that would be required to encode Integer.MAX_VALUE as a
+	 * hexadecimal {@link String}.
 	 * 
 	 * @param value The integer to convert.
-	 * @return The hexadecimal string representing the integer.
+	 * @return The hexadecimal {@link String} representing the integer.
 	 */
 	public static String intToHex(final int value) {
 		String result = Integer.toHexString(value);
@@ -291,6 +295,18 @@ public class Utility {
 			
 			return kp;
 		}
+	}
+	
+	/**
+	 * Get the user name that a {@link Server} should use to log in to the
+	 * {@link Bank}.
+	 * 
+	 * @param publicKey The {@link Server}'s {@link PublicKey}.
+	 * @return The user name that a {@link Server} should use to log in to the
+	 *         {@link Bank}.
+	 */
+	public static String getServerUserName(final PublicKey publicKey) {
+		return "server#" + Base64.encodeBase64String(publicKey.getEncoded());
 	}
 }
 

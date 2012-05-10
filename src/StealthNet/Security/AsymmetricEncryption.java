@@ -47,6 +47,8 @@ import StealthNet.EncryptedFile;
  * are encrypted with the peer's {@link PublicKey} and decrypted with our
  * {@link PrivateKey} In this way, only we should be able to decrypt messages
  * sent to us and only the peer should be able to decrypt messages sent from us.
+ * 
+ * 
  * <p> Asymmetric encryption is slow and should only be used until it is
  * possible to securely use symmetric encryption.
  * 
@@ -64,9 +66,9 @@ public class AsymmetricEncryption extends Encryption {
 	 * Constructor to use a supplied public-private {@link KeyPair} for
 	 * asymmetric encryption.
 	 * 
-	 * @param algorithm The {@Link Cipher} algorithm to be used for
-	 *        encryption and decryption.
-	 * @param The {@link Cipher} provider to be used for encryption and
+	 * @param algorithm The {@link Cipher} algorithm to be used for encryption
+	 *        and decryption.
+	 * @param provider The {@link Cipher} provider to be used for encryption and
 	 *        decryption.
 	 * @param keys The public-private {@link KeyPair} to be used. The
 	 *        {@link PrivateKey} will be used for decryption.

@@ -31,9 +31,9 @@ import org.apache.commons.codec.binary.Base64;
  * numbers that have been consumed, such that a peer receiving a packet is able
  * to check whether that packet is being replayed.
  * 
- * A peer uses a single instance for the transmission of packets (which it uses
- * to generate nonces) and a single instance for the reception of packets (which
- * it uses to verify allowable nonces).
+ * <p> A peer uses a single instance for the transmission of packets (which it
+ * uses to generate nonces) and a single instance for the reception of packets
+ * (which it uses to verify allowable nonces).
  * 
  * @author Joshua Spence
  * @see NonceGenerator

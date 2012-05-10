@@ -71,26 +71,34 @@ import org.apache.commons.codec.binary.Base64;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 import StealthNet.Security.AsymmetricEncryption;
+import StealthNet.Security.AsymmetricVerification;
 import StealthNet.Security.EncryptedFileException;
 import StealthNet.Security.RSAAsymmetricEncryption;
+import StealthNet.Security.SHA1withRSAAsymmetricVerification;
 
 /* StealthNet.Client Class Definition ************************************** */
 
 /**
  * A client for the StealthNet chat program. Receives information about other
- * clients and secrets from a StealthNet {@link Server}. <p> If the client wants
- * to start a chat session with a user, then the source client sends a command
- * to the {@link Server}, containing an IP address and port number on which the
- * source client is waiting to accept a connection from the destination client.
- * The {@link Server} relays this information to the destination client, which
- * should then connect with the source client to start the chat session. <p>
- * Similarly, if the clients wants to send a file to another client, then the
- * source client sends a command to the server, containing an IP address and
- * port number on which the source client is waiting to accept a connection from
- * the destination client. The server relays this information to the destination
- * client, which should then connect with the source client to start the file
- * transfer. <p> A client also communications with a StealthNet {@link Bank} in
- * order to withdraw funds from the user's bank account.
+ * clients and secrets from a StealthNet {@link Server}.
+ * 
+ * <p> If the {@link Client} wants to start a chat session with a user, then the
+ * source {@link Client} sends a command to the {@link Server}, containing an IP
+ * address and port number on which the source {@link Client} is waiting to
+ * accept a connection from the destination {@link Client}. The {@link Server}
+ * relays this information to the destination {@link Client}, which should then
+ * connect with the source {@link Client} to start the {@link Chat} session.
+ * 
+ * <p> Similarly, if the {@link Client} wants to send a file to another
+ * {@link Client}, then the source {@link Client} sends a command to the
+ * {@link Server}, containing an IP address and port number on which the source
+ * {@link Client} is waiting to accept a connection from the destination
+ * {@link Client}. The {@link Server} relays this information to the destination
+ * {@link Client}, which should then connect with the source {@link Client} to
+ * start the {link FileTransfer}.
+ * 
+ * <p> A client also communications with a StealthNet {@link Bank} in order to
+ * withdraw funds from the user's bank account.
  * 
  * @author Matt Barrie
  * @author Stephen Gould
@@ -152,6 +160,12 @@ public class Client {
 	
 	/** To communicate with the StealthNet {@link Bank}. */
 	private Comms bankComms = null;
+	
+	/**
+	 * An {@link AsymmetricVerification} class to verify that the {@link Bank}
+	 * signed the hash chain.
+	 */
+	private static AsymmetricVerification bankVerification = null;
 	
 	/** Public-private {@link KeyPair} to identify this client. */
 	private KeyPair clientKeys;
@@ -567,6 +581,7 @@ public class Client {
 	 * {@link Bank}'s {@link PublicKey} respectively. This means that if another
 	 * party is masquerading as the {@link Server} or as the {@link Bank}, then
 	 * (without the {link PrivateKey}s) they are unable to decrypt the packets.
+	 * 
 	 * <p> When a user attempts to login, the application will check if that
 	 * user already has a public-private {@link KeyPair}. If they do, then the
 	 * application will attempt to use the existing {@link KeyPair}, assuming
@@ -677,6 +692,7 @@ public class Client {
 				return;
 			}
 			bankEncryption.setPeerPublicKey(bankPublicKey);
+			bankVerification = new SHA1withRSAAsymmetricVerification(clientKeys, bankPublicKey);
 		} catch (final Exception e) {
 			System.err.println("Unable to set peer public key.");
 			if (DEBUG_ERROR_TRACE)
@@ -1180,16 +1196,16 @@ public class Client {
 		fileSave.setFile(data.filename);
 		fileSave.setVisible(true);
 		
-		if (DEBUG_GENERAL)
-			System.out.println("Will save secret file \"" + name + "\" to \"" + fileSave.getDirectory() + fileSave.getFile() + "\".");
-		
 		/*
 		 * Note that we don't yet have the public key of the owner of the
 		 * secret. They will, however, have our public key and so can send us
 		 * their public key in encrypted form.
 		 */
 		
-		if (fileSave.getFile() != null && fileSave.getFile().length() > 0)
+		if (fileSave.getFile() != null && fileSave.getFile().length() > 0) {
+			if (DEBUG_GENERAL)
+				System.out.println("Will save secret file \"" + name + "\" to \"" + fileSave.getDirectory() + fileSave.getFile() + "\".");
+			
 			/* Wait for user to connect, then start file transfer. */
 			try {
 				if (DEBUG_GENERAL)
@@ -1213,6 +1229,7 @@ public class Client {
 				if (DEBUG_ERROR_TRACE)
 					e.printStackTrace();
 			}
+		}
 	}
 	
 	/**
@@ -1511,8 +1528,10 @@ public class Client {
 	 * Generates a new {@link CryptoCreditHashChain} and requests that the
 	 * {@link Bank} signs the new {@link CryptoCreditHashChain}. Finally, sends
 	 * the new {@link CryptoCreditHashChain} and the new signature to the
-	 * {@link Server}. <p> Once this has completed, we can proceed to make
-	 * purchases with the hash chain.
+	 * {@link Server}.
+	 * 
+	 * <p> Once this has completed, we can proceed to make purchases with the
+	 * hash chain.
 	 * 
 	 * @param length The length of the new {@link CryptoCreditHashChain}.
 	 */
@@ -1600,17 +1619,6 @@ public class Client {
 				if (DEBUG_ERROR_TRACE)
 					e.printStackTrace();
 			}
-	}
-	
-	/**
-	 * Get the user name that the {@link Server} is using to log in to the
-	 * {@link Bank}.
-	 * 
-	 * @return The user name that the {@link Server} is using to log in to the
-	 *         {@link Bank}.
-	 */
-	private String getServerUserName() {
-		return "server#" + Base64.encodeBase64String(serverComms.getPeerPublicKey().getEncoded());
 	}
 	
 	/**
@@ -1899,7 +1907,7 @@ public class Client {
 							
 							if (DEBUG_COMMANDS_PAYMENT)
 								System.out.println("Received withdrawal of " + creditsSent + " credits from server with hash \"" + Utility.getHexValue(cryptoCreditHash) + "\".");
-							CryptoCreditHashChain.processPayment(bankComms, getServerUserName(), creditsSent, cryptoCreditHash);
+							CryptoCreditHashChain.processPayment(bankComms, Utility.getServerUserName(serverComms.getPeerPublicKey()), creditsSent, cryptoCreditHash);
 							break;
 						}
 					}
@@ -1908,7 +1916,7 @@ public class Client {
 					 * Hashchain command
 					 ******************************************************/
 					case DecryptedPacket.CMD_HASHCHAIN: {
-						//CryptoCreditHashChain.verifyHashChain(bankVerification, Base64.decodeBase64(pckt.data));
+						CryptoCreditHashChain.verifyHashChain(bankVerification, Base64.decodeBase64(pckt.data));
 						break;
 					}
 					

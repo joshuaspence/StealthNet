@@ -21,10 +21,11 @@ import StealthNet.EncryptedFile;
 /* StealthNet.Security.EncrpytedFileException Class Definition ************* */
 
 /**
- * An exception to be thrown when an encrypted file cannot be decrypted. <p> An
- * encrypted file may be unable to be decrypted because either the supplied
- * password is incorrect, or the file has been corrupted. It can, in some
- * situations, be difficult to differentiate these two cases.
+ * An exception to be thrown when an encrypted file cannot be decrypted.
+ * 
+ * <p> An encrypted file may be unable to be decrypted because either the
+ * supplied password is incorrect, or the file has been corrupted. It can, in
+ * some situations, be difficult to differentiate these two cases.
  * 
  * @author Joshua Spence
  * @see Exception

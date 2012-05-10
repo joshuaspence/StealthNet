@@ -32,10 +32,10 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
  * this port, a new {@link ServerThread} is created. The {@link ServerThread}
  * class is responsible for communicating with that {@link Client}.
  * 
- * The server is responsible for maintaining a list of users, as well as a list
- * of secrets. Whenever the server is sent a command, the server needs only to
- * pass some other command to the intended target {@link Client}, enabling the
- * two {@link Client}s to communicate with each other.
+ * <p> The server is responsible for maintaining a list of users, as well as a
+ * list of secrets. Whenever the server is sent a command, the server needs only
+ * to pass some other command to the intended target {@link Client}, enabling
+ * the two {@link Client}s to communicate with each other.
  * 
  * @author Matt Barrie
  * @author Stephen Gould
@@ -54,9 +54,11 @@ public class Server {
 	}
 	
 	/**
-	 * The main Server function.
+	 * The main {@link Server} function.
 	 * 
-	 * @param args The command line arguments.
+	 * @param args The command line arguments. The command lines arguments take
+	 *        the following format. <ul> <li> <code>args[0]</code> ::=
+	 *        <code>port</code> </li> </ul>
 	 * @throws IOException
 	 */
 	public static void main(final String[] args) throws IOException {

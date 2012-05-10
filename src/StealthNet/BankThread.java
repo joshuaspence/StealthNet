@@ -41,15 +41,18 @@ import StealthNet.Security.SHA1withRSAAsymmetricVerification;
 /**
  * Represents a {@link Thread} within the operating system for communications
  * between the StealthNet {@link Bank} and a peer (either a {@link Client} or a
- * {@link Server}). <p> A new instance is created for each peer such that
- * multiple peers can be active concurrently. This class handles
- * {@link DecryptedPacket} and deals with them accordingly. <p> Peers use the
- * {@link Bank} to sign {@link CryptoCreditHashChain}s, as well as to retrieve
- * their account balance. Peers can also use the {@link Bank} to verify
- * {@link CryptoCredit} payments. In the process, the {@link Bank} is notified
- * of {@link CryptoCredit}s that the {@link Client} has used to make a purchase.
- * In this way, the {@link Bank} is able to ensure that no {@link CryptoCredit}
- * is double spent.
+ * {@link Server}).
+ * 
+ * <p> A new instance is created for each peer such that multiple peers can be
+ * active concurrently. This class handles {@link DecryptedPacket} and deals
+ * with them accordingly.
+ * 
+ * <p> Peers use the {@link Bank} to sign {@link CryptoCreditHashChain}s, as
+ * well as to retrieve their account balance. Peers can also use the
+ * {@link Bank} to verify {@link CryptoCredit} payments. In the process, the
+ * {@link Bank} is notified of {@link CryptoCredit}s that the {@link Client} has
+ * used to make a purchase. In this way, the {@link Bank} is able to ensure that
+ * no {@link CryptoCredit} is double spent.
  * 
  * @author Joshua Spence
  * 
@@ -82,9 +85,10 @@ public class BankThread extends Thread {
 		
 		/**
 		 * The last {@link CryptoCredit} hash used by a user to make a payment.
-		 * All future payments must hash properly to this value. <p> When a user
-		 * generates a new {@link CryptoCreditHashChain}, this value is set to
-		 * the {@link CryptoCredit} hash from the top of the
+		 * All future payments must hash properly to this value.
+		 * 
+		 * <p> When a user generates a new {@link CryptoCreditHashChain}, this
+		 * value is set to the {@link CryptoCredit} hash from the top of the
 		 * {@link CryptoCreditHashChain}. Note that this hash cannot be spent.
 		 */
 		byte[] lastHash = null;
@@ -329,10 +333,13 @@ public class BankThread extends Thread {
 	/**
 	 * Signs a {@link CryptoCreditHashChain} for a user. The hash chain will
 	 * only be signed if the user has sufficient credit in their account and if
-	 * the user is requesting credits from their <em>own</em> account. <p> Once
-	 * the {@link CryptoCreditHashChain} is signed, the signed credits are
-	 * deducted from the user's account. <p> The {@link Bank} maintains the last
-	 * used hash for each peer in order to verify payments.
+	 * the user is requesting credits from their <em>own</em> account.
+	 * 
+	 * <p> Once the {@link CryptoCreditHashChain} is signed, the signed credits
+	 * are deducted from the user's account.
+	 * 
+	 * <p> The {@link Bank} maintains the last used hash for each peer in order
+	 * to verify payments.
 	 * 
 	 * @param identifier The identifier for the {@link CryptoCreditHashChain} to
 	 *        be signed. The identifier takes the form
@@ -390,6 +397,7 @@ public class BankThread extends Thread {
 	 * {@link CryptoCredit} requested the payment because only the peer that
 	 * generated the {@link CryptoCreditHashChain} will be able to generate
 	 * valid {@link CryptoCredit} hashes for that {@link CryptoCreditHashChain}.
+	 * 
 	 * <p> If the validation is successful, then the credits are deposited into
 	 * the current user's account.
 	 * 
@@ -453,8 +461,6 @@ public class BankThread extends Thread {
 	/**
 	 * The main function for the class. This function handles all type of
 	 * StealthNet packets.
-	 * 
-	 * TODO
 	 */
 	@Override
 	public void run() {

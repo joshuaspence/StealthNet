@@ -52,7 +52,7 @@ import StealthNet.Security.PasswordEncryption;
 
 /**
  * A class to read and write encrypted files. The encrypted files are protected
- * with a password.
+ * with a password using {@link PasswordEncryption}.
  * 
  * @author Joshua Spence
  * @see PasswordProtection
@@ -105,8 +105,6 @@ public class EncryptedFile {
 	 * @throws InvalidKeySpecException
 	 * @throws NoSuchAlgorithmException
 	 * @throws InvalidKeyException
-	 * 
-	 * @see File
 	 */
 	public EncryptedFile(final File file, final String password) throws IOException, InvalidKeyException, NoSuchAlgorithmException, InvalidKeySpecException, InvalidAlgorithmParameterException, NoSuchPaddingException {
 		/* PParse the file. */
@@ -169,8 +167,6 @@ public class EncryptedFile {
 	 * @throws InvalidKeySpecException
 	 * @throws NoSuchAlgorithmException
 	 * @throws InvalidKeyException
-	 * 
-	 * @see URL
 	 */
 	public EncryptedFile(final URL file, final String password) throws IOException, InvalidKeyException, NoSuchAlgorithmException, InvalidKeySpecException, InvalidAlgorithmParameterException, NoSuchPaddingException {
 		/* Parse the file. */
@@ -222,7 +218,7 @@ public class EncryptedFile {
 	}
 	
 	/**
-	 * Constructor to create a new encrypted file from raw uncrypted data.
+	 * Constructor to create a new encrypted file from raw unencrypted data.
 	 * 
 	 * @param decryptedData The unencrypted data to be written to the encrypted
 	 *        file.
@@ -258,7 +254,7 @@ public class EncryptedFile {
 	}
 	
 	/**
-	 * Write the encrypted file to the filesystem.
+	 * Write the encrypted file to the file system.
 	 * 
 	 * @param output The file to write the encrypted data to.
 	 * 

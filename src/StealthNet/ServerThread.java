@@ -82,8 +82,8 @@ public class ServerThread extends Thread {
 	private static final int INITIAL_BALANCE = 0;
 	
 	/**
-	 * Used to store details of other {@link Client}s that this thread may want
-	 * to communicate with.
+	 * Used to store details of other {@link Client}s that this {@link Thread}
+	 * may want to communicate with.
 	 */
 	private class UserData {
 		ServerThread userThread = null;
@@ -92,7 +92,9 @@ public class ServerThread extends Thread {
 		/**
 		 * This balance is used to remember where the balance of the
 		 * {@link Server}'s bank account came from. The actual credits are
-		 * stored in the {@link Bank}.
+		 * stored in the {@link Bank}. This variable is used so that the
+		 * {@link Server} is able to allow users to withdraw funds from their
+		 * {@link Server} account.
 		 */
 		int accountBalance = INITIAL_BALANCE;
 	}
@@ -103,13 +105,19 @@ public class ServerThread extends Thread {
 		String description = null;
 		int cost = 0;
 		
-		/** Server knows, but clients should not. */
+		/**
+		 * The {@link Server} knows the owner of a secret, but {@link Client}s
+		 * should not.
+		 */
 		String owner = null;
 		
 		String dirname = null;
 		String filename = null;
 		
-		/** Users that have already purchased the secret. */
+		/**
+		 * Store a {@link Set} of users that have already purchased the secret.
+		 * These users will not be charged again for the purchase of the secret.
+		 */
 		Set<String> purchasers = new HashSet<String>();
 	}
 	
@@ -177,8 +185,8 @@ public class ServerThread extends Thread {
 	
 	/**
 	 * A {@link Comms} class to handle communications to the {@link Bank}. Note
-	 * that we need only a single connection to the {@link Bank}, not a separate
-	 * connection for each {@link Client} connection.
+	 * that we need only a single (static) connection to the {@link Bank}, not a
+	 * separate connection for each {@link Client} connection.
 	 */
 	private static Comms bankComms = null;
 	
@@ -228,7 +236,7 @@ public class ServerThread extends Thread {
 			bankComms.initiateSession(new Socket(bankHostname, bankPort));
 			
 			/* Login to the bank. */
-			bankComms.sendPacket(DecryptedPacket.CMD_LOGIN, "server#" + Base64.encodeBase64String(serverKeys.getPublic().getEncoded()));
+			bankComms.sendPacket(DecryptedPacket.CMD_LOGIN, Utility.getServerUserName(serverKeys.getPublic()));
 		} catch (final Exception e) {
 			System.err.println("Unable to connect to StealthNet bank.");
 			if (DEBUG_ERROR_TRACE)
@@ -501,8 +509,8 @@ public class ServerThread extends Thread {
 	
 	/**
 	 * Credit the user's account. Also sends the user their updated account
-	 * balance. Note that this does not affect the actual account balance with
-	 * the {@link Bank}.
+	 * balance. Note that this does not directly affect the actual account
+	 * balance with the {@link Bank}.
 	 * 
 	 * @param userID The user whose account should be credited.
 	 * @param credits The number of credits to transfer between the accounts.
@@ -514,6 +522,7 @@ public class ServerThread extends Thread {
 		boolean result = false;
 		
 		if (credits > 0) {
+			/* Credit the user's account and send an updated account balance. */
 			user.accountBalance += credits;
 			if (DEBUG_GENERAL)
 				System.out.println("Added " + credits + " credits to user \"" + userID + "\" account.");
@@ -521,7 +530,7 @@ public class ServerThread extends Thread {
 			result = true;
 		}
 		
-		/* Send the user their (possibly updated) account balance. */
+		/* Print user account balances. */
 		if (DEBUG_BALANCES)
 			System.out.println(getUserBalances());
 		
@@ -531,7 +540,7 @@ public class ServerThread extends Thread {
 	/**
 	 * Transfer credits from one user's account to another user's account. Also
 	 * sends both users their updated account balances. Note that this does not
-	 * affect the actual account balance with the {@link Bank}.
+	 * directly affect the actual account balance with the {@link Bank}.
 	 * 
 	 * @param fromUserID The ID of user whose account should be deducted.
 	 * @param toUserID The ID of the user whose account should be credited.
@@ -539,21 +548,28 @@ public class ServerThread extends Thread {
 	 * @return True if the credits were added to the user's account, otherwise
 	 *         false.
 	 */
-	public static synchronized boolean transferCredits(final String fromUserID, final String toUserID, final int credits) {
+	private static synchronized boolean transferCredits(final String fromUserID, final String toUserID, final int credits) {
 		final UserData fromUser = getUser(fromUserID);
 		final UserData toUser = getUser(toUserID);
 		boolean result = false;
 		
 		if (credits > 0 && fromUser.accountBalance >= credits) {
+			/*
+			 * Credit the user's account and send both users an updated account
+			 * balance.
+			 */
 			fromUser.accountBalance -= credits;
 			toUser.accountBalance += credits;
+			
 			if (DEBUG_GENERAL)
 				System.out.println("Transferred " + credits + " credits from user \"" + fromUserID + "\" account to user \"" + toUserID + "\" account.");
+			
 			toUser.userThread.clientComms.sendPacket(DecryptedPacket.CMD_GETBALANCE, Integer.toString(toUser.accountBalance));
 			fromUser.userThread.clientComms.sendPacket(DecryptedPacket.CMD_GETBALANCE, Integer.toString(fromUser.accountBalance));
 			result = true;
 		}
 		
+		/* Print user account balances. */
 		if (DEBUG_BALANCES)
 			System.out.println(getUserBalances());
 		
@@ -562,19 +578,23 @@ public class ServerThread extends Thread {
 	
 	/**
 	 * Deduct credits from the user's account. Also sends the user their updated
-	 * account balance. Note that this does not affect the actual account
-	 * balance with the {@link Bank}.
+	 * account balance. Note that this does not directly affect the actual
+	 * account balance with the {@link Bank}.
 	 * 
 	 * @param userID The ID of the user whose account should be deducted.
 	 * @param credits The number of credits to deduct from the user's account.
 	 * @return True if the credits were deducted from the user's account,
 	 *         otherwise false.
 	 */
-	public static synchronized boolean deductCredits(final String userID, final int credits) {
+	private static synchronized boolean deductCredits(final String userID, final int credits) {
 		final UserData user = getUser(userID);
 		boolean result = false;
 		
 		if (credits > 0 && user.accountBalance >= credits) {
+			/*
+			 * Deduct from the user's account and send both users an updated
+			 * account balance.
+			 */
 			user.accountBalance -= credits;
 			if (DEBUG_GENERAL)
 				System.out.println("Deducted " + credits + " credits from user \"" + userID + "\" account.");
@@ -582,6 +602,7 @@ public class ServerThread extends Thread {
 			result = true;
 		}
 		
+		/* Print user account balances. */
 		if (DEBUG_BALANCES)
 			System.out.println(getUserBalances());
 		
@@ -590,11 +611,20 @@ public class ServerThread extends Thread {
 	
 	/**
 	 * Charge the user for the purchase of a secret. Also credits the account of
-	 * the owner of the secret (internally). The user will be charged from the
-	 * credits in their account. The {@link Server} will reply to the
-	 * {@link Client} with the amount still owed for the purchase of the secret
-	 * (even if zero). <p> If the user has already purchased the secret, then
-	 * they are not charged again.
+	 * the owner of the secret (internally, there is no actual exchange of
+	 * credits). The user will be charged from the credits in their account. If
+	 * there is not enough credits in their account then the {@link Server} will
+	 * request for more payment.
+	 * 
+	 * <p> The {@link Server} will reply to the {@link Client} with the amount
+	 * still owed for the purchase of the secret (even if zero). Note that if
+	 * the user has already purchased the secret, then they are not charged
+	 * again.
+	 * 
+	 * <p> If the user requests to purchase a secret but later discovers that
+	 * they do not have enough credits to do so, they can cancel the transaction
+	 * by sending a "null" payment. No credits will be refunded to the
+	 * {@link Client} during this process.
 	 * 
 	 * @param secret The secret that the user wishes to purchase.
 	 * @return True if the purchase should proceed, otherwise false.
@@ -625,10 +655,6 @@ public class ServerThread extends Thread {
 					pckt = clientComms.recvPacket();
 					
 					if (pckt == null)
-						/*
-						 * Something has probably gone wrong, let's get out of
-						 * here!
-						 */
 						return false;
 					
 					switch (pckt.command) {
@@ -638,6 +664,11 @@ public class ServerThread extends Thread {
 						 ******************************************************/
 /* @formatter:on */
 						case DecryptedPacket.CMD_PAYMENT: {
+							/*
+							 * The user sent a payment for the purchase of the
+							 * secret.
+							 */
+							
 							final String data = new String(pckt.data);
 							final int creditsSent = Integer.parseInt(data.split(";")[0]);
 							byte[] cryptoCreditHash;
@@ -673,33 +704,57 @@ public class ServerThread extends Thread {
 						 * Request Payment command
 						 ******************************************************/
 						case DecryptedPacket.CMD_REQUESTPAYMENT: {
+							/*
+							 * The user requests to withdraw money from their
+							 * account.
+							 */
+							
 							final int creditsRequested = Integer.parseInt(new String(pckt.data));
 							if (DEBUG_COMMANDS_PAYMENT)
 								System.out.println("User \"" + userID + "\" requested withdrawal of " + creditsRequested + " credits.");
 							
+							/*
+							 * Make sure the user has sufficient funds in their
+							 * account.
+							 */
 							if (creditsRequested > getUser(userID).accountBalance) {
 								System.err.println("User \"" + userID + "\" requested more credits than available in account.");
 								break;
 							}
 							
-							final CryptoCreditHashChain hashChain = new CryptoCreditHashChain("server#" + Base64.encodeBase64String(serverKeys.getPublic().getEncoded()), creditsRequested);
+							/*
+							 * Generate a CryptoCreditHashChain to send to the
+							 * user for their withdrawal.
+							 */
+							final CryptoCreditHashChain hashChain = new CryptoCreditHashChain(Utility.getServerUserName(serverKeys.getPublic()), creditsRequested);
 							if (hashChain.getSigned(bankComms))
 								deductCredits(userID, creditsRequested);
 							else {
-								System.err.println("Bank refused to sign CryptoCredit with identifier \"" + Utility.getHexValue(hashChain.getIdentifier()) + "\" for " + creditsRequested + " credits.");
+								System.err.println("Bank refused to sign CryptoCreditHashChain with identifier \"" + Utility.getHexValue(hashChain.getIdentifier()) + "\" for " + creditsRequested + " credits.");
+								
+								/* Send the user a null payment. */
 								clientComms.sendPacket(DecryptedPacket.CMD_PAYMENT, Integer.toString(0) + ";" + Base64.encodeBase64String(new byte[0]));
+								break;
 							}
 							
-							final Stack<byte[]> payment = hashChain.getNextCredits(creditsRequested);
-							
+							/*
+							 * Send the user the identifier and signature of the
+							 * CryptoCreditHashChain.
+							 */
 							if (DEBUG_COMMANDS_HASHCHAIN)
 								System.out.println("Sending the identifier and signature of the new hash chain to user \"" + userID + "\".");
 							clientComms.sendPacket(DecryptedPacket.CMD_HASHCHAIN, Base64.encodeBase64(hashChain.getIdentifierAndSignture()));
 							
+							/*
+							 * Retrieve the CryptoCredit hash value
+							 * corresponding to the requested withdrawal amount.
+							 */
+							final Stack<byte[]> payment = hashChain.getNextCredits(creditsRequested);
+							
+							/* Send the client the CryptoCredit payment. */
 							if (DEBUG_COMMANDS_PAYMENT)
 								System.out.println("Sending CryptoCredit \"" + Utility.getHexValue(payment.peek()) + "\" to user \"" + userID + "\" for " + payment.size() + " credits");
 							clientComms.sendPacket(DecryptedPacket.CMD_PAYMENT, payment.size() + ";" + Base64.encodeBase64String(payment.peek()));
-							
 							break;
 						}
 						
@@ -722,6 +777,7 @@ public class ServerThread extends Thread {
 							} else if (DEBUG_COMMANDS_GETBALANCE)
 								System.out.println("User \"" + userID + "\" sent Get Balance command.");
 							
+							/* Send the user their account balance. */
 							clientComms.sendPacket(DecryptedPacket.CMD_GETBALANCE, Integer.toString(getUser(userID).accountBalance));
 							break;
 						}
@@ -740,15 +796,18 @@ public class ServerThread extends Thread {
 		}
 		
 		/*
-		 * Deduct the funds from the users account and add the funds to the
-		 * owner's account.
+		 * Deduct the funds from the purchasing user's account and add the funds
+		 * to the owner's account.
 		 */
 		transferCredits(userID, secret.owner, secret.cost);
 		
-		/* Record that the user has purchased this secret previously. */
+		/*
+		 * Record that the user has purchased this secret previously. This means
+		 * that the user won't be charged for this secret in the future.
+		 */
 		secret.purchasers.add(userID);
 		
-		/* Let the user know that they don't owe any more money. */
+		/* Let the user know that they don't owe any more credits. */
 		if (DEBUG_COMMANDS_REQUESTPAYMENT)
 			System.out.println("Informing user \"" + userID + "\" that no additional payment is required for purchase of secret \"" + secret.name + "\".");
 		clientComms.sendPacket(DecryptedPacket.CMD_REQUESTPAYMENT, Integer.toString(0));
@@ -781,45 +840,57 @@ public class ServerThread extends Thread {
 	
 	/**
 	 * The main function for the class. This function handles all type of
-	 * {@link DecryptedPacket}s.
+	 * {@link DecryptedPacket}s: <ul>
 	 * 
-	 * If the packet contains the <code>CMD_LOGIN</code> command, then we
+	 * <li> If the packet contains the <code>CMD_LOGIN</code> command, then we
 	 * attempt to log the user into StealthNet. If successful, then we send all
-	 * users an updated list of users and secrets.
+	 * users an updated list of users and secrets.</li>
 	 * 
-	 * If the packet contains the <code>CMD_LOGOUT</code> command, then the user
-	 * is logged out of StealthNet, and this thread is terminated.
+	 * <li> If the packet contains the <code>CMD_LOGOUT</code> command, then the
+	 * user is logged out of StealthNet, and this {@link Thread} is
+	 * terminated.</li>
 	 * 
-	 * If the packet contains the <code>CMD_MSG</code> command, then the chat
-	 * message contained in the packet data is sent to the destined user.
+	 * <li> If the packet contains the <code>CMD_MSG</code> command, then the
+	 * chat message contained in the packet data is sent to the destined
+	 * user.</li>
 	 * 
-	 * If the packet contains the <code>CMD_CHAT</code> command, then a chat
-	 * session is started between the specified users.
+	 * <li> If the packet contains the <code>CMD_CHAT</code> command, then a
+	 * {@link Chat} session is started between the specified users.</li>
 	 * 
-	 * If the packet contains the <code>CMD_FTP</code> command, then a file
-	 * transfer session is started between the specified users.
+	 * <li> If the packet contains the <code>CMD_FTP</code> command, then a
+	 * {@link FileTransfer} session is started between the specified users.</li>
 	 * 
-	 * If the packet contains the <code>CMD_CREATESECRET</code> command, then we
-	 * create secret data from the packet data, and retransmit the list of
-	 * secrets to all currently logged in users.
+	 * <li> If the packet contains the <code>CMD_CREATESECRET</code> command,
+	 * then we create secret data from the packet data, and retransmit the list
+	 * of secrets to all currently logged in users.</li>
 	 * 
-	 * If the packet contains the <code>CMD_GETSECRET</code> command, then we
-	 * deduct the necessary credit from the user's account, and then establish
-	 * the transfer of the secret file.
+	 * <li> If the packet contains the <code>CMD_GETSECRET</code> command, then
+	 * we deduct the necessary credit from the user's account, and then
+	 * establish the transfer of the secret file.</li>
 	 * 
-	 * If the packet contains the <code>CMD_GETPUBLICKEY</code> command, then we
-	 * send the user the encoded {@link PublicKey} of the requested user.
+	 * <li> If the packet contains the <code>CMD_GETPUBLICKEY</code> command,
+	 * then we send the user the encoded {@link PublicKey} of the requested
+	 * user.</li>
 	 * 
-	 * If the packet contains the <code>CMD_PAYMENT</code> command, the we add
-	 * the payment to the user's account.
+	 * <li> If the packet contains the <code>CMD_PAYMENT</code> command, then we
+	 * add the payment to the user's {@link Server} account.</li>
 	 * 
-	 * If the packet contains the <code>CMD_GETBALANCE</code> command, then we
-	 * send the user their server account balance.
+	 * <li> If the packet contains the <code>CMD_REQUESTPAYMENT</code> command,
+	 * then we withdraw the specified number of credits from the user's account,
+	 * and return them to the {@link Client}.</li>
 	 * 
-	 * If the packet contains the <code>CMD_HASHCHAIN</code> command, then we
-	 * update the cached 'last hash' value.
+	 * <li> We should never receive a <code>CMD_SIGNHASHCHAIN</code>
+	 * packet.</li>
 	 * 
-	 * TODO: check if this is still correct
+	 * <li> If the packet contains the <code>CMD_GETBALANCE</code> command, then
+	 * we send the user their server account balance.</li>
+	 * 
+	 * <li> We should never receive a <code>CMD_DEPOSITPAYMENT</code>
+	 * packet.</li>
+	 * 
+	 * <li> If the packet contains the <code>CMD_HASHCHAIN</code> command, then
+	 * we verify that the {@link CryptoCreditHashChain} received was signed by
+	 * the {@link Bank}.</li> </ul>
 	 */
 	@Override
 	public void run() {
@@ -833,9 +904,6 @@ public class ServerThread extends Thread {
 				pckt = clientComms.recvPacket();
 				
 				if (pckt == null)
-					/*
-					 * Something has probably gone wrong, let's get out of here!
-					 */
 					break;
 				
 				/** Perform the relevant action based on the packet command. */
@@ -883,7 +951,11 @@ public class ServerThread extends Thread {
 							System.out.println("Distributing user list: \"" + userListAsString().replace('\n', ';') + "\"");
 						sendUserList();
 						
-						/* Distribute the secret list to new user. */
+						/*
+						 * Distribute the secret list to new user. Note that
+						 * there is no need to distribute the secret list to all
+						 * users at this stage.
+						 */
 						if (DEBUG_COMMANDS_LOGIN)
 							System.out.println("Sending secret list to new user: \"" + secretListAsString().replace('\n', ';') + "\"");
 						clientComms.sendPacket(DecryptedPacket.CMD_SECRETLIST, secretListAsString());
@@ -1099,7 +1171,11 @@ public class ServerThread extends Thread {
 									System.out.println("Returning error message \"" + msg + "\" to user \"" + userID + "\".");
 								clientComms.sendPacket(msg_type, msg);
 							} else {
-								/* Charge the user for the secret. */
+								/*
+								 * Charge the user for the secret. Only proceed
+								 * to transfer the file if the payment was
+								 * successful.
+								 */
 								if (!chargeUserForSecret(secretInfo))
 									break;
 								
@@ -1190,35 +1266,64 @@ public class ServerThread extends Thread {
 					 * Request Payment command
 					 ******************************************************/
 					case DecryptedPacket.CMD_REQUESTPAYMENT: {
-						if (userID == null) {
-							System.err.println("Unknown user sent request payment command.");
-							break;
-						} else if (DEBUG_COMMANDS_GETBALANCE)
-							System.out.println("User \"" + userID + "\" sent request payment command.");
+						/*
+						 * The user requests to withdraw money from their
+						 * account.
+						 */
 						
 						final int creditsRequested = Integer.parseInt(new String(pckt.data));
 						if (DEBUG_COMMANDS_PAYMENT)
-							System.out.println("User requested payment of " + creditsRequested + " credits.");
+							System.out.println("User \"" + userID + "\" requested withdrawal of " + creditsRequested + " credits.");
 						
+						/*
+						 * Make sure the user has sufficient funds in their
+						 * account.
+						 */
 						if (creditsRequested > getUser(userID).accountBalance) {
-							clientComms.sendPacket(DecryptedPacket.CMD_MSG, "[*SVR*] Requested more credits than available.");
+							System.err.println("User \"" + userID + "\" requested more credits than available in account.");
 							break;
 						}
 						
-						final CryptoCreditHashChain hashChain = new CryptoCreditHashChain("server#" + Base64.encodeBase64String(serverKeys.getPublic().getEncoded()), creditsRequested);
+						/*
+						 * Generate a CryptoCreditHashChain to send to the user
+						 * for their withdrawal.
+						 */
+						final CryptoCreditHashChain hashChain = new CryptoCreditHashChain(Utility.getServerUserName(serverKeys.getPublic()), creditsRequested);
 						if (hashChain.getSigned(bankComms))
 							deductCredits(userID, creditsRequested);
+						else {
+							System.err.println("Bank refused to sign CryptoCreditHashChain with identifier \"" + Utility.getHexValue(hashChain.getIdentifier()) + "\" for " + creditsRequested + " credits.");
+							
+							/* Send the user a null payment. */
+							clientComms.sendPacket(DecryptedPacket.CMD_PAYMENT, Integer.toString(0) + ";" + Base64.encodeBase64String(new byte[0]));
+							break;
+						}
+						
+						/*
+						 * Send the user the identifier and signature of the
+						 * CryptoCreditHashChain.
+						 */
+						if (DEBUG_COMMANDS_HASHCHAIN)
+							System.out.println("Sending the identifier and signature of the new hash chain to user \"" + userID + "\".");
+						clientComms.sendPacket(DecryptedPacket.CMD_HASHCHAIN, Base64.encodeBase64(hashChain.getIdentifierAndSignture()));
+						
+						/*
+						 * Retrieve the CryptoCredit hash value corresponding to
+						 * the requested withdrawal amount.
+						 */
 						final Stack<byte[]> payment = hashChain.getNextCredits(creditsRequested);
 						
-						if (payment != null && payment.size() > 0)
+						/* Send the client the CryptoCredit payment. */
+						if (payment != null && payment.size() > 0) {
+							if (DEBUG_COMMANDS_PAYMENT)
+								System.out.println("Sending CryptoCredit \"" + Utility.getHexValue(payment.peek()) + "\" to user \"" + userID + "\" for " + payment.size() + " credits");
 							clientComms.sendPacket(DecryptedPacket.CMD_PAYMENT, payment.size() + ";" + Base64.encodeBase64String(payment.peek()));
-						else
+						} else
 							clientComms.sendPacket(DecryptedPacket.CMD_PAYMENT, Integer.toString(0) + ";" + Base64.encodeBase64String(new byte[0]));
 						
 						/* Print user account balances. */
 						if (DEBUG_BALANCES)
 							System.out.println(getUserBalances());
-						
 						break;
 					}
 					
@@ -1248,10 +1353,6 @@ public class ServerThread extends Thread {
 							System.out.println("User \"" + userID + "\" sent hashchain command.");
 						
 						CryptoCreditHashChain.verifyHashChain(bankVerification, Base64.decodeBase64(pckt.data));
-						
-						/* Print user account balances. */
-						if (DEBUG_BALANCES)
-							System.out.println(getUserBalances());
 						break;
 					}
 					
@@ -1285,8 +1386,6 @@ public class ServerThread extends Thread {
 		 */
 		if (DEBUG_GENERAL)
 			System.out.println("Distributing user list: \"" + userListAsString() + "\"");
-		else
-			System.out.println("Distributing user list.\n");
 		sendUserList();
 		
 		/* Clean up. */

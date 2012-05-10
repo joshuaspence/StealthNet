@@ -36,19 +36,21 @@ import StealthNet.Security.MessageAuthenticationCode;
  * s. An encrypted StealthNet packet consists of two parts: <ul> <li>data
  * (encrypted)</li> <li> digest</li> </ul>
  * 
- * To avoid the need to transmit the length of the data field, we ensure that
- * the length of the digest field is fixed, and known by the {@link Client}s.
+ * <p> To avoid the need to transmit the length of the data field, we ensure
+ * that the length of the digest field is fixed, and known by the {@link Client}
+ * s.
  * 
- * A message digest is produced by passing a {@link MessageAuthenticationCode}
- * instance to the relevant function. This class will allow encrypted packets to
- * be created without a digest (if a null {@link MessageAuthenticationCode}
- * instance is passed to the function, for instance). A higher layer should
- * check whether or not this should be allowed.
+ * <p> A message digest is produced by passing a
+ * {@link MessageAuthenticationCode} instance to the relevant function. This
+ * class will allow encrypted packets to be created without a digest (if a null
+ * {@link MessageAuthenticationCode} instance is passed to the function, for
+ * instance). A higher layer should check whether or not this should be allowed.
  * 
- * The data contained in this class does not necessarily have to be encrypted,
- * it could simply be the same data that was contained in the corresponding
- * {@link DecryptedPacket} class. However, encrypted packets are the only
- * packets that are actually transmitted over the communications channel.
+ * <p> The data contained in this class does not necessarily have to be
+ * encrypted, it could simply be the same data that was contained in the
+ * corresponding {@link DecryptedPacket} class. However, {@link EncryptedPacket}
+ * s are the only packets that are actually transmitted over the communications
+ * channel.
  * 
  * @author Matt Barrie
  * @author Stephen Gould
@@ -220,8 +222,9 @@ public class EncryptedPacket {
 	 * 
 	 * @param mac The {@link MessageAuthenticationCode} instance to calculate
 	 *        the {@link MessageAuthenticationCode} digest.
-	 * @return True if the digest matches (or if the MessageAuthenticationCode
-	 *         instance is null), otherwise false.
+	 * @return True if the digest matches (or if the
+	 *         {@link MessageAuthenticationCode} instance is null), otherwise
+	 *         false.
 	 * 
 	 * @throws InvalidAttributeValueException
 	 * @see MessageAuthenticationCode
@@ -237,9 +240,9 @@ public class EncryptedPacket {
 	 * Get a {@link String} representation of the packet. For debug purposes
 	 * only.
 	 * 
-	 * @return A comma-separated string containing the the value of each of the
-	 *         packet's fields. For purely cosmetic purposes, newline characters
-	 *         will be replaced by semicolons.
+	 * @return A comma-separated {@link String} containing the the value of each
+	 *         of the packet's fields. For purely cosmetic purposes, newline
+	 *         characters will be replaced by semicolons.
 	 */
 	public String getEncryptedString() {
 		String str = "";
@@ -267,7 +270,7 @@ public class EncryptedPacket {
 	 *        then it will be assumed that the packet is not encrypted.
 	 * @return The decrypted packet. If parameter d is null, then the
 	 *         {@link DecryptedPacket} is identical to the data stored in the
-	 *         EncryptedPacket.
+	 *         {@link EncryptedPacket}.
 	 * 
 	 * @throws BadPaddingException
 	 * @throws IllegalBlockSizeException

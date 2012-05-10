@@ -35,8 +35,9 @@ import org.apache.commons.codec.binary.Base64;
 
 /**
  * A base class to provide encryption and decryption of messages, in order to
- * provide confidentiality of the communications in StealthNet. <p> Abstracts
- * away some of the finer implementation details.
+ * provide confidentiality of the communications in StealthNet.
+ * 
+ * <p> Abstracts away some of the finer implementation details.
  * 
  * @author Joshua Spence
  */
@@ -211,7 +212,7 @@ public class Encryption {
 	 * Encodes data in base-64. Performs the opposite of the
 	 * <code>decode(String)</code> function.
 	 * 
-	 * @param cleartext The data to encode.
+	 * @param data The data to encode.
 	 * @return The data encoded in base-64
 	 * @see Base64
 	 */

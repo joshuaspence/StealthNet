@@ -32,11 +32,11 @@ import java.net.SocketException;
 /* StealthNet.ProxyComms class ********************************************* */
 
 /**
- * A class to buffered write and buffered read to and from an opened socket.
- * This class is almost identical to the {@link Comms} class, but is stripped
- * down to provide only a basic forwarding functionality. It does not interpret
- * {@link DecryptedPacket}s, but rather sends raw {@link EncryptedPacket}s
- * around.
+ * A class to buffered write and buffered read to and from an opened
+ * {@link Socket}. This class is almost identical to the {@link Comms} class,
+ * but is stripped down to provide only a basic forwarding functionality. It
+ * does not interpret {@link DecryptedPacket}s, but rather sends raw
+ * {@link EncryptedPacket}s around.
  * 
  * @author Joshua Spence
  */
@@ -47,10 +47,10 @@ public class ProxyComms {
 	private static final boolean DEBUG_RAW_PACKET = Debug.isDebug("StealthNet.ProxyComms.RawOutput");
 	private static final boolean DEBUG_RECEIVE_READY = Debug.isDebug("StealthNet.ProxyComms.ReceiveReady");
 	
-	/** Default host for the StealthNet proxy. */
+	/** Default host for the StealthNet {@link Proxy}. */
 	public static final String DEFAULT_PROXYNAME = "localhost";
 	
-	/** Default port for the StealthNet proxy. */
+	/** Default port for the StealthNet {@link Proxy}. */
 	public static final int DEFAULT_PROXYPORT = 5618;
 	
 	/** The hostname of the StealthNet {@link Server}. */
@@ -115,8 +115,9 @@ public class ProxyComms {
 	}
 	
 	/**
-	 * Initiates a communications session on the given socket. Note that, unlike
-	 * the {@link Comms} class, no security protocols are implemented here.
+	 * Initiates a communications session on the given {@link Socket}. Note
+	 * that, unlike the {@link Comms} class, no security protocols are
+	 * implemented here.
 	 * 
 	 * @param socket The {@link Socket} through which the connection is made.
 	 * @return True if the initialisation succeeds. False if the initialisation
