@@ -502,41 +502,6 @@
     </target>
 	<!-- =================================================================== -->
 	
-	<!-- ======================== EXECUTION TARGETS ======================== -->
-	<!-- Run target -->
-	<target name="run" depends="run_proxy, run_server, run_client, -run_client2" description="Run a single StealthNet proxy, a single server and two clients" />
-	
-	<!-- Run client target -->
-	<target name="run_client" depends="compile, jar" description="Run StealthNet client">
-		<echo>Running StealthNet client...</echo>
-		<exec executable="${file.runclient}" spawn="true" />
-	</target>
-	
-	<!-- Run a second client instance (exactly the same as the "run_client" target) -->
-	<target name="-run_client2" depends="compile, jar">
-		<echo>Running StealthNet client...</echo>
-		<exec executable="./${file.runscript}">
-			<arg value="--client" />
-		</exec>
-	</target>
-	
-	<!-- Run server target -->
-	<target name="run_server" depends="compile, jar" description="Run StealthNet server">
-		<echo>Running StealthNet server...</echo>
-		<exec executable="./${file.runscript}">
-	        <arg value="--server" />
-		</exec>
-    </target>
-	
-	<!-- Run proxy target -->
-    <target name="run_proxy" depends="compile, jar" description="Run StealthNet proxy">
-        <echo>Running StealthNet proxy...</echo>
-        <exec executable="./${file.runscript}">
-            <arg value="--proxy" />
-        </exec>
-    </target>
-	<!-- =================================================================== -->
-	
 	<!-- =========================== TAR TARGETS ========================== -->
 	<!-- Default TAR target -->
 	<target name="tar" depends="maximal-tar" description="Create a tar archive" />
