@@ -864,7 +864,7 @@ public class Client {
 		while (true) {
 			credits = JOptionPane.showInputDialog("Credits to withdraw:", credits);
 			
-			if (credits.length() == 0)
+			if (credits == null)
 				return;
 			
 			try {
@@ -887,6 +887,7 @@ public class Client {
 		}
 		
 		/* Request new hash chain */
+		System.out.println(Integer.parseInt(credits) + currentCredits);
 		getNewHashChain(Integer.parseInt(credits) + currentCredits);
 	}
 	
@@ -1178,7 +1179,7 @@ public class Client {
 					 * Other command
 					 **********************************************************/
 					default:
-						System.err.println("Unrecognised or unexpected command received from server.");
+						System.err.println("Unrecognised or unexpected command received from server while paying for secret.");
 						
 				}
 			} catch (final Exception e) {
@@ -1515,7 +1516,7 @@ public class Client {
 					 **********************************************************/
 /* @formatter:on */
 					default:
-						System.err.println("Unrecognised or unexpected command received from server.");
+						System.err.println("Unrecognised or unexpected command received while waiting for Public Key.");
 				}
 			} catch (final Exception e) {
 				System.err.println("Error running client thread.");
@@ -1611,7 +1612,7 @@ public class Client {
 					 **********************************************************/
 /* @formatter:on */
 					default:
-						System.err.println("Unrecognised or unexpected command received from server.");
+						System.err.println("Unrecognised or unexpected command received while waiting for balance.");
 						
 				}
 			} catch (final Exception e) {
@@ -1895,7 +1896,7 @@ public class Client {
 					 * Payment command
 					 ******************************************************/
 					case DecryptedPacket.CMD_PAYMENT: {
-						/* Receieve a withdrawal from the server. */
+						/* Receive a withdrawal from the server. */
 						if (comms.equals(serverComms)) {
 							final String data = new String(pckt.data);
 							final int creditsSent = Integer.parseInt(data.split(";")[0]);
