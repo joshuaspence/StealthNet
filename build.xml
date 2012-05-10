@@ -221,17 +221,6 @@
             	<include name="${path.lib}/*.jar" />
         	</fileset>
         </path>
-    	
-    	<!-- see http://stackoverflow.com/questions/1821803/creating-a-bundle-jar-with-ant -->
-    	<pathconvert property="mf.classpath" pathsep=" ">
-            <path refid="compile.classpath" />
-            <mapper>
-                <chainedmapper>
-                    <flattenmapper/>
-                    <globmapper from="*.jar" to="lib/*.jar" />
-                </chainedmapper>
-            </mapper>
-    	</pathconvert>
 		
 		<!-- VERBOSE: Output classpath -->
 		<if>
