@@ -515,6 +515,7 @@ public class ServerThread extends Thread {
 			user.accountBalance += credits;
 			if (DEBUG_GENERAL)
 				System.out.println("Added " + credits + " credits to user \"" + userID + "\" account.");
+			user.userThread.clientComms.sendPacket(DecryptedPacket.CMD_GETBALANCE, Integer.toString(user.accountBalance));
 			result = true;
 		}
 		
@@ -546,6 +547,8 @@ public class ServerThread extends Thread {
 			toUser.accountBalance += credits;
 			if (DEBUG_GENERAL)
 				System.out.println("Transferred " + credits + " credits from user \"" + fromUserID + "\" account to user \"" + toUserID + "\" account.");
+			toUser.userThread.clientComms.sendPacket(DecryptedPacket.CMD_GETBALANCE, Integer.toString(toUser.accountBalance));
+			fromUser.userThread.clientComms.sendPacket(DecryptedPacket.CMD_GETBALANCE, Integer.toString(fromUser.accountBalance));
 			result = true;
 		}
 		
@@ -573,6 +576,7 @@ public class ServerThread extends Thread {
 			user.accountBalance -= credits;
 			if (DEBUG_GENERAL)
 				System.out.println("Deducted " + credits + " credits from user \"" + userID + "\" account.");
+			user.userThread.clientComms.sendPacket(DecryptedPacket.CMD_GETBALANCE, Integer.toString(user.accountBalance));
 			result = true;
 		}
 		
@@ -659,8 +663,6 @@ public class ServerThread extends Thread {
 								 */
 								if (CryptoCreditHashChain.processPayment(bankComms, userID, creditsSent, cryptoCreditHash))
 									addCredits(userID, creditsSent);
-								
-								clientComms.sendPacket(DecryptedPacket.CMD_GETBALANCE, Integer.toString(getUser(userID).accountBalance));
 							}
 							break;
 						}
@@ -686,9 +688,6 @@ public class ServerThread extends Thread {
 								clientComms.sendPacket(DecryptedPacket.CMD_PAYMENT, Integer.toString(0) + ";" + Base64.encodeBase64String(new byte[0]));
 							}
 							
-							/* Send the user their account balance. */
-							clientComms.sendPacket(DecryptedPacket.CMD_GETBALANCE, Integer.toString(getUser(userID).accountBalance));
-							
 							final Stack<byte[]> payment = hashChain.getNextCredits(creditsRequested);
 							
 							if (DEBUG_COMMANDS_HASHCHAIN)
@@ -699,7 +698,6 @@ public class ServerThread extends Thread {
 								System.out.println("Sending CryptoCredit \"" + Utility.getHexValue(payment.peek()) + "\" to user \"" + userID + "\" for " + payment.size() + " credits");
 							clientComms.sendPacket(DecryptedPacket.CMD_PAYMENT, payment.size() + ";" + Base64.encodeBase64String(payment.peek()));
 							
-							clientComms.sendPacket(DecryptedPacket.CMD_GETBALANCE, Integer.toString(getUser(userID).accountBalance));
 							break;
 						}
 						
@@ -744,8 +742,6 @@ public class ServerThread extends Thread {
 		 * owner's account.
 		 */
 		transferCredits(userID, secret.owner, secret.cost);
-		clientComms.sendPacket(DecryptedPacket.CMD_GETBALANCE, Integer.toString(getUser(userID).accountBalance));
-		getUser(secret.owner).userThread.clientComms.sendPacket(DecryptedPacket.CMD_GETBALANCE, Integer.toString(getUser(secret.owner).accountBalance));
 		
 		/* Record that the user has purchased this secret previously. */
 		secret.purchasers.add(userID);
@@ -879,11 +875,6 @@ public class ServerThread extends Thread {
 							break;
 						}
 						System.out.println("User \"" + userID + "\" has logged in.");
-						
-						/* Send the user their account balance. */
-						if (DEBUG_COMMANDS_GETBALANCE)
-							System.out.println("Sending account balance to user \"" + userID + "\".");
-						clientComms.sendPacket(DecryptedPacket.CMD_GETBALANCE, Integer.toString(getUser(userID).accountBalance));
 						
 						/* Distribute the user list. */
 						if (DEBUG_COMMANDS_LOGIN)
@@ -1187,9 +1178,6 @@ public class ServerThread extends Thread {
 						if (CryptoCreditHashChain.processPayment(bankComms, userID, creditsSent, cryptoCreditHash))
 							addCredits(userID, creditsSent);
 						
-						/* Send the user their account balance. */
-						clientComms.sendPacket(DecryptedPacket.CMD_GETBALANCE, Integer.toString(getUser(userID).accountBalance));
-						
 						/* Print user account balances. */
 						if (DEBUG_BALANCES)
 							System.out.println(getUserBalances());
@@ -1211,7 +1199,7 @@ public class ServerThread extends Thread {
 							System.out.println("User requested payment of " + creditsRequested + " credits.");
 						
 						if (creditsRequested > getUser(userID).accountBalance) {
-							System.err.println("Requested more credits than available.");
+							clientComms.sendPacket(DecryptedPacket.CMD_MSG, "[*SVR*] Requested more credits than available.");
 							break;
 						}
 						
@@ -1229,8 +1217,6 @@ public class ServerThread extends Thread {
 						if (DEBUG_BALANCES)
 							System.out.println(getUserBalances());
 						
-						/* Send the user their account balance. */
-						clientComms.sendPacket(DecryptedPacket.CMD_GETBALANCE, Integer.toString(getUser(userID).accountBalance));
 						break;
 					}
 					

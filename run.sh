@@ -46,7 +46,6 @@ DEBUG="\
 -Ddebug.StealthNet.BankThread.ErrorTrace=true \
 -Ddebug.StealthNet.BankThread.Commands=false \
 -Ddebug.StealthNet.BankThread.Commands.Null=true \
--Ddebug.StealthNet.BankThread.Commands.Login=true \
 -Ddebug.StealthNet.BankThread.Commands.Payment=true \
 -Ddebug.StealthNet.BankThread.Commands.SignHashChain=true \
 -Ddebug.StealthNet.BankThread.Commands.GetBalance=true \

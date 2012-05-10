@@ -733,6 +733,9 @@ public class Client {
 			System.out.println("Connected to StealthNet server.");
 		msgTextBox.append("[INFO] Connected to StealthNet server.\n");
 		
+		/* Request server balance. */
+		serverComms.sendPacket(DecryptedPacket.CMD_GETBALANCE);
+		
 		/* Send the bank a login command. */
 		if (DEBUG_GENERAL)
 			System.out.println("Sending the bank a login packet for user \"" + userID + "\".");
@@ -740,6 +743,9 @@ public class Client {
 		if (DEBUG_GENERAL)
 			System.out.println("Connected to StealthNet bank.");
 		msgTextBox.append("[INFO] Connected to StealthNet bank.\n");
+		
+		/* Request bank balance. */
+		bankComms.sendPacket(DecryptedPacket.CMD_GETBALANCE);
 		
 		/* Start periodically checking for packets. */
 		serverTimer.start();
@@ -819,7 +825,7 @@ public class Client {
 			
 			/* Destroy the current hash chain. */
 			hashChain = new CryptoCreditHashChain();
-			creditsBox.setText(Integer.toString(hashChain.getLength()));
+			creditsBox.setText("");
 			
 			/* Change the logout button back to a login button. */
 			loginBtn.setIcon(new ImageIcon(this.getClass().getClassLoader().getResource("img/login.gif")));
@@ -1046,6 +1052,7 @@ public class Client {
 						if (DEBUG_COMMANDS_MSG)
 							System.out.println("Received a message command. Message: \"" + msg + "\".");
 						msgTextBox.append(msg + "\n");
+						JOptionPane.showMessageDialog(null, msg, "Message", JOptionPane.INFORMATION_MESSAGE);
 						return;
 					}
 					
@@ -1596,6 +1603,17 @@ public class Client {
 	}
 	
 	/**
+	 * Get the user name that the {@link Server} is using to log in to the
+	 * {@link Bank}.
+	 * 
+	 * @return The user name that the {@link Server} is using to log in to the
+	 *         {@link Bank}.
+	 */
+	private String getServerUserName() {
+		return "server#" + Base64.encodeBase64String(serverComms.getPeerPublicKey().getEncoded());
+	}
+	
+	/**
 	 * Process incoming packets.
 	 * 
 	 * @param comms The {@link Comms} class on which to receive a packet.
@@ -1637,6 +1655,7 @@ public class Client {
 						if (DEBUG_COMMANDS_MSG)
 							System.out.println("Received a message command. Message: \"" + msg + "\".");
 						msgTextBox.append(msg + "\n");
+						JOptionPane.showMessageDialog(null, msg, "Message", JOptionPane.INFORMATION_MESSAGE);
 						break;
 					}
 					
@@ -1880,7 +1899,7 @@ public class Client {
 							
 							if (DEBUG_COMMANDS_PAYMENT)
 								System.out.println("Received withdrawal of " + creditsSent + " credits from server with hash \"" + Utility.getHexValue(cryptoCreditHash) + "\".");
-							CryptoCreditHashChain.processPayment(bankComms, "server#" + Base64.encodeBase64String(serverComms.getPeerPublicKey().getEncoded()), creditsSent, cryptoCreditHash);
+							CryptoCreditHashChain.processPayment(bankComms, getServerUserName(), creditsSent, cryptoCreditHash);
 							break;
 						}
 					}
