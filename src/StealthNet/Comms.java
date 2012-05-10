@@ -575,7 +575,7 @@ public class Comms {
 				
 				/* Retrieve another packet by recursion. */
 				return recvPacket();
-			} else if (DEBUG_INTEGRITY)
+			} else if (DEBUG_REPLAY_PREVENTION)
 				System.out.println("(verified)  recvPacket - Packet passed replay prevention.");
 		
 		/* Done. Return the packet. */

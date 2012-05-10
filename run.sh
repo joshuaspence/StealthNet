@@ -86,8 +86,8 @@ DEBUG="\
 -Ddebug.StealthNet.Comms.ReceiveReady=false \
 -Ddebug.StealthNet.Comms.Authentication=true \
 -Ddebug.StealthNet.Comms.Encryption=true \
--Ddebug.StealthNet.Comms.Integrity=true \
--Ddebug.StealthNet.Comms.ReplayPrevention=true \
+-Ddebug.StealthNet.Comms.Integrity=false \
+-Ddebug.StealthNet.Comms.ReplayPrevention=false \
 -Ddebug.StealthNet.Comms.AsymmetricEncryption=true \
 \
 -Ddebug.StealthNet.CryptoCreditHashChain=false \
