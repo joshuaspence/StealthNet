@@ -215,10 +215,11 @@
 		</if>
 		
 	    <!-- Initialise classpath -->
-		<!-- NOTE: Only used by Javadoc -->
     	<path id="compile.classpath">
             <fileset dir="${basedir}">
-            	<include name="${path.lib}/*.jar" />
+            	<!-- NOTE: Must list all libraries to be reference here!!! -->  
+            	<include name="${path.lib}/bcprov-jdk15on-147.jar" />
+            	<include name="${path.lib}/commons-codec-1.6.jar" />
         	</fileset>
         </path>
 		
@@ -246,7 +247,9 @@
         	            optimize="${compile.optimize}"
         	   includeantruntime="${compile.includeantruntime}"
     	                  source="${compile.jdk-version.source}"
-    	                  target="${compile.jdk-version.target}" />
+    	                  target="${compile.jdk-version.target}">
+        	<classpath refid="compile.classpath" />
+        </javac>
     </target>
   
 	<!-- JAR target -->
@@ -290,7 +293,7 @@
         	
         	<lib>
                 <fileset dir="${path.lib}">
-                    <!-- NOTE: Must list the files to be included in the bank JAR file here!!! -->  
+                    <!-- NOTE: Must list the libraries to be included in the bank JAR file here!!! -->  
                     <include name="bcprov-jdk15on-147.jar" />
                     <include name="commons-codec-1.6.jar" />
                 </fileset>
@@ -333,7 +336,7 @@
             
         	<lib>
                 <fileset dir="${path.lib}">
-                    <!-- NOTE: Must list the files to be included in the client JAR file here!!! -->  
+                    <!-- NOTE: Must list the libraries to be included in the client JAR file here!!! -->  
                     <include name="bcprov-jdk15on-147.jar" />
                     <include name="commons-codec-1.6.jar" />
                 </fileset>
@@ -367,7 +370,7 @@
             
         	<lib>
                 <fileset dir="${path.lib}">
-                    <!-- NOTE: Must list the files to be included in the proxy JAR file here!!! -->  
+                    <!-- NOTE: Must list the libraries to be included in the proxy JAR file here!!! -->  
                     <include name="bcprov-jdk15on-147.jar" />
                     <include name="commons-codec-1.6.jar" />
                 </fileset>
@@ -407,7 +410,7 @@
         	
         	<lib>
                 <fileset dir="${path.lib}">
-        	        <!-- NOTE: Must list the files to be included in the server JAR file here!!! -->  
+        	        <!-- NOTE: Must list the libraries to be included in the server JAR file here!!! -->  
                     <include name="bcprov-jdk15on-147.jar" />
         	        <include name="commons-codec-1.6.jar" />
                 </fileset>
