@@ -1,30 +1,38 @@
 #!/bin/sh
 
-#
+################################################################################
 # Author: Joshua Spence
 # 
-# Script to easily run a StealthNet client, proxy or server.
-# 
+# Script to easily run a StealthNet client, proxy, server or bank.
+################################################################################
 
+#===============================================================================
 # Java configuration
+#===============================================================================
 JRE=java
 JRE_FLAGS="-enableassertions -enablesystemassertions"
 
+#===============================================================================
 # ANT configuration
-ANT="$(which ant) -quiet"
-[ "$?" -eq 0 ] && HAS_ANT=1 || HAS_ANT=0
+#===============================================================================
+ANT="$(which ant)"
+[ -n "$ANT" ] && HAS_ANT=1 || HAS_ANT=0
 
+#===============================================================================
 # Get JAR file (specified relative to script)
+#===============================================================================
 JAR_DIR=`dirname $0`
 if [ $HAS_ANT -eq 1 ]; then
 	# Get JAR path from ant
-	JAR_DIR="$CLIENT_DIR`$ANT jar_dir | sed -n "s/.*JAR directory: '\(.*\)'/\1/p"`"
+	JAR_DIR="$JAR_DIR/$($ANT jar_dir | sed -n "s/.*JAR directory: '\(.*\)'/\1/p")"
 else
 	# Use default JAR path
-	JAR_DIR="$CLIENT_DIR/build/classes"
+	JAR_DIR="$JAR_DIR/build/jar"
 fi
 
-# Debug options
+#===============================================================================
+# Debug options for the program
+#===============================================================================
 DEBUG="\
 -Ddebug.StealthNet=false \
 \
@@ -130,10 +138,20 @@ DEBUG="\
 -Ddebug.StealthNet.ServerThread.AsymmetricEncryption=true \
 -Ddebug.StealthNet.ServerThread.Balances=true \
 "
+
+#===============================================================================
+# Arguments to pass to the JRE
+#===============================================================================
 DEBUG_ARG=
 ADDITIONAL_ARG=
 
+#===============================================================================
 # Get program command line options
+#-------------------------------------------------------------------------------
+# The command line options are:
+#     * Mode of operation = [--bank | --client | --malicious-proxy | --proxy | --server ]
+#     * Debug output = [ --debug | -d ]
+#===============================================================================
 PN=`basename $0`
 ARGS=`getopt --name "$PN" --long bank,debug,client,malicious-proxy,proxy,server --options d -- "$@"`
 if [ $? -ne 0 ]; then
@@ -181,14 +199,17 @@ while [ $# -gt 0 ]; do
     shift
 done
 
-# Make sure client or server mode was specified
+#===============================================================================
+# Make sure a mode of operation (client/server/proxy/bank mode) was specified
+#===============================================================================
 if [ -z "$JAR_FILE" ]; then
 	echo "You must specify bank (\`--bank'), client (\`--client'), malicious proxy (\`--malicious-proxy'), proxy (\`--proxy') or server (\`--server') mode." >&2
 	exit 1
 fi
 
+#===============================================================================
 # Execute the relevant command
-	# Echo the command before executing it
-echo "$JRE $DEBUG_ARG $ADDITIONAL_ARG $JRE_FLAGS -jar $JAR_DIR/$JAR_FILE $@"
-echo ""
-$JRE $DEBUG_ARG $ADDITIONAL_ARG $JRE_FLAGS -jar $JAR_DIR/$JAR_FILE $@
+#===============================================================================
+# Echo the command before executing it
+COMMAND="$JRE $DEBUG_ARG $ADDITIONAL_ARG $JRE_FLAGS -jar $JAR_DIR/$JAR_FILE $@"
+echo "$COMMAND" && $COMMAND
