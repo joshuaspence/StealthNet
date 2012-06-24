@@ -4,7 +4,6 @@
     
     Authors:
         - Joshua Spence (308216350)
-        - Ahmad Al Mutawa (312003919)
         - James Moutafidis (420105464)
 -->
 <project name="StealthNet" default="default" basedir=".">
@@ -102,7 +101,7 @@
 		<property name="path.keys.bank"       value="${path.keys}/bank" />
 		<property name="path.keys.clients"    value="${path.keys}/clients" />
 		<property name="path.latex"           value="latex" />
-		<property name="path.latex.output"    value="${path.latex}/output" />
+		<property name="path.latex.output"    value="${path.latex}/" />
         <property name="path.lib"             value="lib" />
         <property name="path.src"             value="src" />
         <property name="path.classes"         value="${path.build}/classes" />
