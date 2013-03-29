@@ -23,53 +23,53 @@
 
 % INTRODUCTION
 \section{Introduction}
-In this assignment, the security mechanisms implemented previously in 
-\packageName{} were extended to include asymmetric encryption, password-based 
+In this assignment, the security mechanisms implemented previously in
+\packageName{} were extended to include asymmetric encryption, password-based
 file encryption and a secure online payment system.
 
 % ASYMMETRIC ENCRYPTION
 \section{Asymmetric Encryption}
 
 \subsection{Introduction}
-Asymmetric encryption refers to an encryption system in which two separate keys 
-are used --- namely, a \emph{public key} and a \emph{private key}. The public 
+Asymmetric encryption refers to an encryption system in which two separate keys
+are used --- namely, a \emph{public key} and a \emph{private key}. The public
 key is used for encryption \textbf{only} and the private key is used for
-decryption \textbf{only}. The keys are so named because the public key may be 
+decryption \textbf{only}. The keys are so named because the public key may be
 made public --- it doesn't matter who has knowledge of this key because all that
-this key allows is the encryption of messages, not the decryption of messages. 
+this key allows is the encryption of messages, not the decryption of messages.
 Similarly, and more importantly, the private key must be kept private.
 
 Although unrelated, the two parts of the key pair are mathematically linked. The
-public key is used to transform a message into an unreadable form, decryptable 
+public key is used to transform a message into an unreadable form, decryptable
 only by using the (different but matching) private key. By publishing the public
-key, the key producer empowers anyone who gets a copy of the public key to 
+key, the key producer empowers anyone who gets a copy of the public key to
 produce messages only they can read --- because only the key producer has a copy
-of the private key (required for decryption). When someone wants to send a 
-secure message to the creator of those keys, the sender encrypts it (i.e., 
-transforms it into an unreadable form) using the intended recipient's public 
-key; to decrypt the message, the recipient uses the private key. No one else, 
+of the private key (required for decryption). When someone wants to send a
+secure message to the creator of those keys, the sender encrypts it (i.e.,
+transforms it into an unreadable form) using the intended recipient's public
+key; to decrypt the message, the recipient uses the private key. No one else,
 including the sender, can do so.
 
 Thus, unlike symmetric key algorithms, a public key algorithm does not require a
-secure initial exchange of one, or more, secret keys between the sender and 
-receiver. These algorithms work in such a way that, while it is easy for the 
-intended recipient to generate the public and private keys and to decrypt the 
-message using the private key, and while it is easy for the sender to encrypt 
+secure initial exchange of one, or more, secret keys between the sender and
+receiver. These algorithms work in such a way that, while it is easy for the
+intended recipient to generate the public and private keys and to decrypt the
+message using the private key, and while it is easy for the sender to encrypt
 the message using the public key, it is extremely difficult for anyone to figure
-out the private key based on their knowledge of the public key. They are based 
-on mathematical relationships (the most notable ones being the integer 
+out the private key based on their knowledge of the public key. They are based
+on mathematical relationships (the most notable ones being the integer
 factorization and discrete logarithm problems) that have no efficient solution.
 
 \subsection{Details}
 \algorithm{RSA} is an algorithm for public-key cryptography that is based on the
-presumed difficulty of factoring large integers, the factoring problem. A user 
-of \algorithm{RSA} creates and then publishes the product of two large prime 
-numbers, along with an auxiliary value, as their public key. The prime factors 
-must be kept secret. Anyone can use the public key to encrypt a message, but 
-with currently published methods, if the public key is large enough, only 
-someone with knowledge of the prime factors can feasibly decode the message. 
+presumed difficulty of factoring large integers, the factoring problem. A user
+of \algorithm{RSA} creates and then publishes the product of two large prime
+numbers, along with an auxiliary value, as their public key. The prime factors
+must be kept secret. Anyone can use the public key to encrypt a message, but
+with currently published methods, if the public key is large enough, only
+someone with knowledge of the prime factors can feasibly decode the message.
 
-A simple explanation of the various stages of the \algorithm{RSA} algorithm is 
+A simple explanation of the various stages of the \algorithm{RSA} algorithm is
 as follows:
 
 \paragraph{Key generation}
@@ -94,116 +94,116 @@ P = C^{d} \mod n
 \end{math}
 
 \subsection{Justification}
-\algorithm{RSA} is a well-studied and well-tested asymmetric encryption 
-algorithm that has proven itself to be sufficient for modern security 
-requirements. However, as with every algorithm, the real strength of an 
+\algorithm{RSA} is a well-studied and well-tested asymmetric encryption
+algorithm that has proven itself to be sufficient for modern security
+requirements. However, as with every algorithm, the real strength of an
 encryption scheme is in its key length. In our implementation we have selected a
-2048-bit key size. Studies have suggested that a 2048-bit \algorithm{RSA} key is 
-similar in strength to a 112-bit symmetric key. It is also estimated that a 
-2048-bit key should be sufficient until the year 2030. Given that 18 years is a 
-very long time in the scheme of software and computing generally, 2030 seems 
+2048-bit key size. Studies have suggested that a 2048-bit \algorithm{RSA} key is
+similar in strength to a 112-bit symmetric key. It is also estimated that a
+2048-bit key should be sufficient until the year 2030. Given that 18 years is a
+very long time in the scheme of software and computing generally, 2030 seems
 like a valid deadline for either increasing the size of the \algorithm{RSA} keys
 or adopting a newer encryption algorithm.
 
 \subsection{Implementation}
 Asymmetric encryption is implemented in \packageName{} on top of the \\
-\verb+Encryption+ and \verb+AsymmetricEncryption+ base classes. In particular, 
-the \\ \verb+RSAAsymmetricEncryption+ class implements the \algorithm{RSA} 
-algorithm. \algorithm{RSA encryption} is implemented as a feature of the 
-\serviceName{} \verb+Comms+ class, however all \verb+Comms+ for any given 
-\serviceName{} peer will use identical public-private keys, it is only the peer 
+\verb+Encryption+ and \verb+AsymmetricEncryption+ base classes. In particular,
+the \\ \verb+RSAAsymmetricEncryption+ class implements the \algorithm{RSA}
+algorithm. \algorithm{RSA encryption} is implemented as a feature of the
+\serviceName{} \verb+Comms+ class, however all \verb+Comms+ for any given
+\serviceName{} peer will use identical public-private keys, it is only the peer
 public keys that will differ.
 
-The \verb+Encryption+ base class provides methods \verb+encrypt(byte[])+ and 
-\verb+decrypt(byte[])+ for encryption with the peer's public key and decryption 
-with the local private key, respectively.  The \verb+AsymmetricEncryption+ base 
-class requires a public-private key pair for instantiation, but setting of the 
+The \verb+Encryption+ base class provides methods \verb+encrypt(byte[])+ and
+\verb+decrypt(byte[])+ for encryption with the peer's public key and decryption
+with the local private key, respectively.  The \verb+AsymmetricEncryption+ base
+class requires a public-private key pair for instantiation, but setting of the
 peer's public key (for encryption) can be delayed until a later stage.
 
-Packed into the JAR file of the StealthNet executables is the public key of the 
-\serviceName{} server and the \serviceName{} bank. By reading these public keys 
-from the JAR archive, a \serviceName{} is able to make a secure connection to 
-the \serviceName{} server, as well as the \serviceName{} bank, without needing 
-to worry about the possibility of a man-in-the-middle attack. If an attacker 
-does attempt such an attack, they would be unable to decrypt the transmitted 
+Packed into the JAR file of the StealthNet executables is the public key of the
+\serviceName{} server and the \serviceName{} bank. By reading these public keys
+from the JAR archive, a \serviceName{} is able to make a secure connection to
+the \serviceName{} server, as well as the \serviceName{} bank, without needing
+to worry about the possibility of a man-in-the-middle attack. If an attacker
+does attempt such an attack, they would be unable to decrypt the transmitted
 packets because they have been encrypted with the server/bank's public key.
 
-Whilst the clients are aware of the server and bank public keys, the server and 
-the bank are unaware of the public keys of all of the clients. For this reason, 
+Whilst the clients are aware of the server and bank public keys, the server and
+the bank are unaware of the public keys of all of the clients. For this reason,
 when a client first creates a connection to a \serviceName{} server or bank, the
 first (encrypted) data that is sent is the client's public key. Once the server
-has received this public key of the client, the server can itself encrypt 
+has received this public key of the client, the server can itself encrypt
 client-bound messages.
 
-\algorithm{RSA encryption} is initialised in the \verb+initiateSession()+ 
-function of the \verb+Comms+ class, after a communications socket has been 
+\algorithm{RSA encryption} is initialised in the \verb+initiateSession()+
+function of the \verb+Comms+ class, after a communications socket has been
 established. The initiator of the connection (usually the client), sends their
-public key to the other party (usually but not always a server) in encrypted 
-form, but only if the other party does not already have this public key 
-(maintained with the \verb+peerHasPublicKey+ variable. Once the public key has 
-been transmitted, the \serviceName{} peer calls the \verb+recvPublicKey()+ 
-function, rejecting all incoming packets until the peer receives the initiating 
-party's public key. Similarly to the initiating party, the party that is 
-accepting the connection only waits for the peer's public key value if it does 
+public key to the other party (usually but not always a server) in encrypted
+form, but only if the other party does not already have this public key
+(maintained with the \verb+peerHasPublicKey+ variable. Once the public key has
+been transmitted, the \serviceName{} peer calls the \verb+recvPublicKey()+
+function, rejecting all incoming packets until the peer receives the initiating
+party's public key. Similarly to the initiating party, the party that is
+accepting the connection only waits for the peer's public key value if it does
 already possess this value (maintained through the condition \\
 \verb+AsymmetricEncryptionProvider.getPeerPublicKey() == null+).
 
-In situations in which a client is connecting to a \serviceName{} server or 
+In situations in which a client is connecting to a \serviceName{} server or
 bank, the client will already possess the public key of the server/bank, but the
-server/bank will not possess the public key of the client. In situations in 
-which a client is connecting to another client, the server informs both parties 
-of the public key such that both parties can perform asymmetric encryption from 
+server/bank will not possess the public key of the client. In situations in
+which a client is connecting to another client, the server informs both parties
+of the public key such that both parties can perform asymmetric encryption from
 the commencement of the communication.
- 
+
 % FILE ENCRYPTION
 \section{File Encryption}
 
 \subsection{Introduction}
 File encryption is required within \packageName{} to protect the private keys of
-\serviceName{} peers from being stolen by an attacker and consequently used by 
+\serviceName{} peers from being stolen by an attacker and consequently used by
 the attacker to masquerade as a legitimate user. To achieve this, \packageName{}
-uses password-based encryption to encrypt the private key data before it is 
-written to disk. Password-based file encryption differs from \packageName{} 
-packet encryption in that the key (password) for file encryption has a much 
-longer lifetime than the key used for packet encryption and decryption. The key 
-used for password-based encryption is likely to change infrequently, if at all, 
-because the user is required to remember the password in order to decrypt the 
-file. The keys used in packet encryption, however, are usually only valid for 
+uses password-based encryption to encrypt the private key data before it is
+written to disk. Password-based file encryption differs from \packageName{}
+packet encryption in that the key (password) for file encryption has a much
+longer lifetime than the key used for packet encryption and decryption. The key
+used for password-based encryption is likely to change infrequently, if at all,
+because the user is required to remember the password in order to decrypt the
+file. The keys used in packet encryption, however, are usually only valid for
 the duration of a session and are regenerated for the next session.
 
 \subsection{Details}
-Password-based file encryption within \packageName{} is implemented using 
+Password-based file encryption within \packageName{} is implemented using
 ``JCE'' (Java Crypto Extensions), using features provided by ``BouncyCastle''
---- an open source collection of encryption APIs. The particular algorithm used 
-for password-based encryption is \verb+PBEWithSHAAnd3KeyTripleDES+ from the 
-``BouncyCastle'' API. This is password based encryption with an \verb+SHA+ 
+--- an open source collection of encryption APIs. The particular algorithm used
+for password-based encryption is \verb+PBEWithSHAAnd3KeyTripleDES+ from the
+``BouncyCastle'' API. This is password based encryption with an \verb+SHA+
 digest and 3-key Triple DES encryption.
 
-In addition, an 8-byte salt is used to initialise the encryption and decryption 
-ciphers, to make bulk cracking of password files difficult. The 8-byte salt is 
-randomly generated using an \verb+SHA1+ \verb+SecureRandom+ pseudo-random 
-number generator. As an additional parameter to the algorithm, the password 
-encryption algorithm undergoes 1000 iterations to achieve the final encrypted 
+In addition, an 8-byte salt is used to initialise the encryption and decryption
+ciphers, to make bulk cracking of password files difficult. The 8-byte salt is
+randomly generated using an \verb+SHA1+ \verb+SecureRandom+ pseudo-random
+number generator. As an additional parameter to the algorithm, the password
+encryption algorithm undergoes 1000 iterations to achieve the final encrypted
 data.
 
 \subsection{Implementation}
 Password-based encryption is implemented in the \verb+PasswordEncryption+ class,
 as a subclass of the \verb+Encryption+ base class. In this sense, the password
-encryption mechanism is flexible because it can also be applied to 
+encryption mechanism is flexible because it can also be applied to
 \serviceName{} packets. In order to save private keys to a password-protected
-file, an \verb+EncryptedFile+ class was created, which allows the creation of 
-an encrypted file from raw (unencrypted) data and a user-supplied password. The 
-class also allows for the reading and decryption of encrypted files from the 
+file, an \verb+EncryptedFile+ class was created, which allows the creation of
+an encrypted file from raw (unencrypted) data and a user-supplied password. The
+class also allows for the reading and decryption of encrypted files from the
 file system.
 
-The encrypted files consists of four fields --- the \verb+salt+, the 
-\verb+passwordHash+, the \verb+data+ and the \verb+messageDigest+. The salt is 
+The encrypted files consists of four fields --- the \verb+salt+, the
+\verb+passwordHash+, the \verb+data+ and the \verb+messageDigest+. The salt is
 stored as the first 8 bytes of the encrypted file and is necessary in order to
-decrypt the encrypted file. Conveniently, storing the salt in an unencrypted 
+decrypt the encrypted file. Conveniently, storing the salt in an unencrypted
 format does not jeopardise the security of the encrypted file.
 
-The password hash is the \verb+SHA1+ hash of the password that is used to 
-encrypt and decrypt the file. Its purpose is to allow for a quick (and only 
+The password hash is the \verb+SHA1+ hash of the password that is used to
+encrypt and decrypt the file. Its purpose is to allow for a quick (and only
 partially accurate) validation of the input password. If the input password does
 not hash to the same value contained in the file, then either the input password
 is incorrect or the file was been modified in some way.
@@ -212,136 +212,136 @@ is incorrect or the file was been modified in some way.
 \section{Asymmetric Verification}
 
 \subsection{Introduction}
-Verification is a means to confirm the authenticity of a communication. 
-Asymmetric verification relies on the use of public-private keys to allow a 
+Verification is a means to confirm the authenticity of a communication.
+Asymmetric verification relies on the use of public-private keys to allow a
 sender to \emph{sign} a message as being authentic and a receiver to
-\emph{verify} that the message is authentic and originated from the expected 
+\emph{verify} that the message is authentic and originated from the expected
 source (the sender).
 
 \subsection{Details}
-The same \algorithm{RSA} algorithm that was used for asymmetric encryption can 
-also be used for asymmetric verification, albeit in a different manner. To use 
-\algorithm{RSA} to sign and verify messages, the sender's private key is used 
+The same \algorithm{RSA} algorithm that was used for asymmetric encryption can
+also be used for asymmetric verification, albeit in a different manner. To use
+\algorithm{RSA} to sign and verify messages, the sender's private key is used
 to \emph{sign} a message and the sender's public key to \emph{verify} a message.
 Apart from this subtlety the two algorithms are otherwise identical, and in fact
-the same public-private key path can be used for both processes --- simplifying 
+the same public-private key path can be used for both processes --- simplifying
 the task of key management.
 
 \subsection{Implementation}
 Asymmetric verification is implemented in \packageName{} using the \\
-\verb+AsymmetricVerification+ base class. More specifically, asymmetric 
-verification with \algorithm{RSA} is implemented in the 
-\verb+SHA1withRSAAsymmetricVerification+ class. These classes are almost 
-identical to their encryption counterparts \verb+AsymmetricEncryption+ and 
+\verb+AsymmetricVerification+ base class. More specifically, asymmetric
+verification with \algorithm{RSA} is implemented in the
+\verb+SHA1withRSAAsymmetricVerification+ class. These classes are almost
+identical to their encryption counterparts \verb+AsymmetricEncryption+ and
 \verb+RSAAsymmetricEncryption+.
 
 % PAYMENT PROTOCOL
 \section{Payment Protocol}
 
 \subsection{Introduction}
-Payment protocols are a key ingredient for online transactions, as they allow 
-users to transfer money over the internet while maintaining a high standard of 
-security. Whilst this modern method of payment with virtual money costs (in 
+Payment protocols are a key ingredient for online transactions, as they allow
+users to transfer money over the internet while maintaining a high standard of
+security. Whilst this modern method of payment with virtual money costs (in
 terms of actual currency) significantly less than the traditional systems (cash,
-cheques, etc.), it must be carefully implemented in such a way so that online 
-currency functions in the same way as conventional currency, whilst also 
-featuring additional attributes to ensure the security and integrity of the 
+cheques, etc.), it must be carefully implemented in such a way so that online
+currency functions in the same way as conventional currency, whilst also
+featuring additional attributes to ensure the security and integrity of the
 payment protocol.
 
-Amongst other things, online payment protocols must ensure some level of 
-anonymity so that users need not provide personal information when sending or 
-receiving money. They must also make it impossible to use a digital ``coin'' 
+Amongst other things, online payment protocols must ensure some level of
+anonymity so that users need not provide personal information when sending or
+receiving money. They must also make it impossible to use a digital ``coin''
 more than once to prevent customers from spending more currency than they have.
 An ideal system also allows electronic currency to be divisible (eliminating the
-requirement for ``change'' during a payment). In addition, online currency 
-should be resistant to modification and replay when exchanged, and support 
+requirement for ``change'' during a payment). In addition, online currency
+should be resistant to modification and replay when exchanged, and support
 authentication and verification by external parties, most commonly a centralised
 bank.
 
 \subsection{Details}
-The security mechanism of online currency relies on \algorithm{RSA public-key 
-cryptography} to protect the underlying system. By using the \algorithm{RSA} 
-algorithm, the system is capable of limiting cases of online fraud by using a 
-digital signature on each ``coin'', which can be used by the organization 
-responsible for the service and distribution of the e-currency, to authenticate 
-``coins'' when needed. For example, to sign a coin, a bank uses its private key 
-to sign a ``coin'', so that if a user can use the public key of the bank to 
-verify the currency. \algorithm{RSA} is also responsible for maintaining some 
-level of anonymity through the system, as with the public and private keys, 
+The security mechanism of online currency relies on \algorithm{RSA public-key
+cryptography} to protect the underlying system. By using the \algorithm{RSA}
+algorithm, the system is capable of limiting cases of online fraud by using a
+digital signature on each ``coin'', which can be used by the organization
+responsible for the service and distribution of the e-currency, to authenticate
+``coins'' when needed. For example, to sign a coin, a bank uses its private key
+to sign a ``coin'', so that if a user can use the public key of the bank to
+verify the currency. \algorithm{RSA} is also responsible for maintaining some
+level of anonymity through the system, as with the public and private keys,
 users can sign transactions without providing personal information.
 
-To implement the actual digital currency, ``coins`` or ``credits`` are 
-represented by hashes (values produced by a hash function, such as 
-\algorithm{MD5} or \algorithm{SHA-1}). One such hash-based implementation 
-uses a chain of hashes (a ``hash chain'') to represent multiple credits in a 
-user's account. In order to prevent replay attacks, where someone spends the 
-same credit more than once, a nonce is appended to each hash coin so that, when 
+To implement the actual digital currency, ``coins'' or ``credits'' are
+represented by hashes (values produced by a hash function, such as
+\algorithm{MD5} or \algorithm{SHA-1}). One such hash-based implementation
+uses a chain of hashes (a ``hash chain'') to represent multiple credits in a
+user's account. In order to prevent replay attacks, where someone spends the
+same credit more than once, a nonce is appended to each hash coin so that, when
 sent to the bank, are recorded in the database as spent.
 
 \subsection{Justification}
-For the creation of hash chains for the digital coins, the \algorithm{SHA1} 
-algorithm is used. The \algorithm{SHA1} algorithm is used as it is was deemed to 
-be secure enough for preventing online fraud for the system. For the 
+For the creation of hash chains for the digital coins, the \algorithm{SHA1}
+algorithm is used. The \algorithm{SHA1} algorithm is used as it is was deemed to
+be secure enough for preventing online fraud for the system. For the
 communication between the server, bank and client, the \algorithm{RSA} algorithm
-is implemented to allow encryption and decryption based on the public and private 
-keys of the users. In addition, the \algorithm{RSA} algorithm is also used to 
+is implemented to allow encryption and decryption based on the public and private
+keys of the users. In addition, the \algorithm{RSA} algorithm is also used to
 allow the bank to sign hash chains and the users to verify hash chains.
 
 \subsection{Implementation}
-The main classes that were created to support the ``CryptoCredits'' currency 
-system are the \verb+Bank+ and \verb+BankThread+ classes, the 
-\verb+CryptoCreditHashChain+ classes, and the \verb+RSAAssymetricVerification+ 
-class. Additionally, modifications were made to the \verb+Client+ and 
-\verb+ServerThread+ classes to allow for the processing of payment-related 
+The main classes that were created to support the ``CryptoCredits'' currency
+system are the \verb+Bank+ and \verb+BankThread+ classes, the
+\verb+CryptoCreditHashChain+ classes, and the \verb+RSAAssymetricVerification+
+class. Additionally, modifications were made to the \verb+Client+ and
+\verb+ServerThread+ classes to allow for the processing of payment-related
 packets --- of which there exists the following packet commands.
 
 \begin{itemize}
-\item \verb+CMD_PAYMENT+: Used by a \verb+Client+ to add deposit credits from 
-their current \verb+CryptoCreditHashChain+ into their \verb+Server+ account. 
-Also passed from a \verb+Server+ to a \verb+Client+, or from a \verb+Client+ to 
+\item \verb+CMD_PAYMENT+: Used by a \verb+Client+ to add deposit credits from
+their current \verb+CryptoCreditHashChain+ into their \verb+Server+ account.
+Also passed from a \verb+Server+ to a \verb+Client+, or from a \verb+Client+ to
 a \verb+Bank+ to effectively exchange credits through the system.
-\item \verb+CMD_REQUESTPAYMENT+: Used to request credits from another party 
-within the system. The \verb+Server+ requests a payment from a \verb+Client+ 
-when the \verb+Client+ has insufficient credits to purchase a secret, and so 
-further payment is required. The \verb+Client+ requests payment from the 
-\verb+Server+ when the user wishes to withdraw credits from their \verb+Server+ 
+\item \verb+CMD_REQUESTPAYMENT+: Used to request credits from another party
+within the system. The \verb+Server+ requests a payment from a \verb+Client+
+when the \verb+Client+ has insufficient credits to purchase a secret, and so
+further payment is required. The \verb+Client+ requests payment from the
+\verb+Server+ when the user wishes to withdraw credits from their \verb+Server+
 account.
-\item \verb+CMD_SIGNHASHCHAIN+: Used to request (and return) that the 
-\verb+Bank+ sign a \verb+CryptoCreditHashChain+, such that other parties can 
+\item \verb+CMD_SIGNHASHCHAIN+: Used to request (and return) that the
+\verb+Bank+ sign a \verb+CryptoCreditHashChain+, such that other parties can
 verify the authenticity of payments.
-\item \verb+CMD_GETBALANCE+: Used to request (and return) the available account 
+\item \verb+CMD_GETBALANCE+: Used to request (and return) the available account
 balance of a user on either the \verb+Server+, or on the \verb+Bank+.
-\item \verb+CMD_DEPOSITPAYMENT+: Used when receiving a payment, to deposit the 
+\item \verb+CMD_DEPOSITPAYMENT+: Used when receiving a payment, to deposit the
 received payment into the user's own \verb+Bank+ account.
-\item \verb+CMD_HASHCHAIN+: Used when a user generates a new 
+\item \verb+CMD_HASHCHAIN+: Used when a user generates a new
 \verb+CryptoCreditHashChain+, to share with other users the details of the new
 hash chain, as well as the \verb+Bank+ signature of the hash chain.
 \end{itemize}
 
-The \verb+Bank+ and \verb+BankThread+ classes are responsible for maintaining 
-the bank system, where hash chains and payments are verified with the use of 
-digital signatures in the \verb+signHashChain()+ and \verb+verifyPayment()+ 
+The \verb+Bank+ and \verb+BankThread+ classes are responsible for maintaining
+the bank system, where hash chains and payments are verified with the use of
+digital signatures in the \verb+signHashChain()+ and \verb+verifyPayment()+
 functions. The bank also keeps a record of each user's account balance.
 
 The \verb+CryptoCreditHashChain+ class maintains the state of the hash chain for
-each user, and is created at the beginning of the Client application (located 
+each user, and is created at the beginning of the Client application (located
 within the \verb+Client+ class). It is responsible for the creation and delivery
 of a hash chain identifying tuple (comprising the user ID, number of credits and
-the top CryptoCredit hash from the hash chain) to the bank for signing. The 
-related \verb+Client+ class also manages payment packets received from the bank 
-and server, indicating the action expected from the client in order to complete 
-a transaction. The \verb+ServerThread+ class also supports clients to store 
-credits in their own server account, along with all the necessary functions so 
-that users can use these credits to pay for a secret or transfer money from 
+the top CryptoCredit hash from the hash chain) to the bank for signing. The
+related \verb+Client+ class also manages payment packets received from the bank
+and server, indicating the action expected from the client in order to complete
+a transaction. The \verb+ServerThread+ class also supports clients to store
+credits in their own server account, along with all the necessary functions so
+that users can use these credits to pay for a secret or transfer money from
 either the bank or their own towards the server.
 
 % CONCLUSION
 \section{Conclusion}
 In this assignment, further security improvements were made to \packageName{}.
 Notably, asymmetric encryption was added to significantly reduce the possibility
-of a \attackName{man-in-the-middle} attack; file encryption was added to 
-protect user private keys, which must remain secret in order to ensure the 
-effectiveness of asymmetric encryption; and a secure payment protocol to allow 
+of a \attackName{man-in-the-middle} attack; file encryption was added to
+protect user private keys, which must remain secret in order to ensure the
+effectiveness of asymmetric encryption; and a secure payment protocol to allow
 for the exchange of currency within the system.
 
 \end{document}

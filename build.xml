@@ -1,7 +1,7 @@
 <?xml version="1.0" ?>
 <!--
     Ant buildfile for ELEC5616 project.
-    
+
     Authors:
         - Joshua Spence (308216350)
         - James Moutafidis (420105464)
@@ -11,105 +11,105 @@
 	<!-- see http://ant-contrib.sourceforge.net/ -->
 	<taskdef resource="net/sf/antcontrib/antcontrib.properties">
 	    <classpath>
-	        <pathelement location="lib/ant-contrib-0.6.jar" />
+	        <pathelement location="lib/ant-contrib-0.6.jar"/>
 	    </classpath>
 	</taskdef>
-	
+
 	<!-- Use one-jar -->
     <!-- see http://http://one-jar.sourceforge.net/ -->
-	<property name="one-jar.dist.dir" value="lib/" />  
-	<property name="one-jar.version" value="0.97" />
-    <property name="one-jar.ant.jar" value="${one-jar.dist.dir}/one-jar-ant-task-${one-jar.version}.jar" />
-    <taskdef name="one-jar" classname="com.simontuffs.onejar.ant.OneJarTask" classpath="${one-jar.ant.jar}" onerror="report" />
-	
+	<property name="one-jar.dist.dir" value="lib/"/>
+	<property name="one-jar.version" value="0.97"/>
+    <property name="one-jar.ant.jar" value="${one-jar.dist.dir}/one-jar-ant-task-${one-jar.version}.jar"/>
+    <taskdef name="one-jar" classname="com.simontuffs.onejar.ant.OneJarTask" classpath="${one-jar.ant.jar}" onerror="report"/>
+
 	<!-- ========================= DEFAULT TARGETS ========================= -->
 	<!-- Default target -->
     <target name="default" depends="-init, info, compile, jar" description="Default target">
     	<echo>Done!</echo>
 	</target>
-    
+
     <!-- Default target with verbose output -->
     <target name="default-verbose" depends="-set-verbose, -init, info, compile, jar" description="Default target with verbose output">
         <echo>Done!</echo>
     </target>
-    
+
     <!-- Default debug target -->
     <target name="default-debug" depends="-set-debug, -init, info, compile, jar" description="Default debug target">
         <echo>Done!</echo>
     </target>
-    
+
     <!-- Default debug target with verbose output -->
     <target name="default-debug-verbose" depends="-set-verbose, -set-debug, -init, info, compile, jar" description="Default debug target with verbose output">
         <echo>Done!</echo>
     </target>
-	
+
 	<!-- =========================== FULL TARGETS ========================== -->
     <!-- Main target -->
     <target name="all" depends="-init, info, compile, jar, javadoc, latex, tar" description="Full target">
         <echo>Done!</echo>
     </target>
-    
+
     <!-- Main target with verbose output -->
     <target name="all-verbose" depends="-set-verbose, -init, info, compile, jar, javadoc, latex, tar" description="Full target with verbose output">
         <echo>Done!</echo>
     </target>
-    
+
     <!-- Debug target -->
     <target name="all-debug" depends="-set-debug, -init, info, compile, jar, javadoc, latex, tar" description="Debug target">
         <echo>Done!</echo>
     </target>
-    
+
     <!-- Debug target with verbose output -->
     <target name="all-debug-verbose" depends="-set-verbose, -set-debug, -init, info, compile, jar, javadoc, latex, tar" description="Debug target with verbose output">
         <echo>Done!</echo>
     </target>
     <!-- =================================================================== -->
-	
-	<!-- ====================== INITIALISATION TARGETS ===================== -->	
+
+	<!-- ====================== INITIALISATION TARGETS ===================== -->
 	<!-- Turn verbosity on -->
 	<target name="-set-verbose">
-	   <property name="global.verbose" value="true" />
+	   <property name="global.verbose" value="true"/>
 	</target>
-	
+
 	<!-- Turn debug on -->
     <target name="-set-debug">
-       <property name="global.debug" value="true" />
+       <property name="global.debug" value="true"/>
     </target>
-	
+
 	<!-- Main initialisation target -->
 	<target name="-init">
 		<!-- Set verbose off, if not already set -->
 		<condition property="global.verbose" value="false">
-		    <not>  
-		        <isset property="global.verbose" />
+		    <not>
+		        <isset property="global.verbose"/>
 		     </not>
 		</condition>
-		
+
 		<!-- Set debug off, if not already set -->
 		<condition property="global.debug" value="false">
-		   <not>  
-		      <isset property="global.debug" />
+		   <not>
+		      <isset property="global.debug"/>
 		   </not>
 		</condition>
-			
+
 	    <!-- Initialise path properties -->
-    	<property name="path.build"           value="build" />
-    	<property name="path.docs"            value="docs" />
-        <property name="path.img"             value="img" />
-		<property name="path.keys"            value="keys" />
-		<property name="path.keys.server"     value="${path.keys}/server" />
-		<property name="path.keys.bank"       value="${path.keys}/bank" />
-		<property name="path.keys.clients"    value="${path.keys}/clients" />
-		<property name="path.latex"           value="latex" />
-		<property name="path.latex.output"    value="${path.latex}/" />
-        <property name="path.lib"             value="lib" />
-        <property name="path.src"             value="src" />
-        <property name="path.classes"         value="${path.build}/classes" />
-        <property name="path.jar"             value="${path.build}/jar" />
-		
+    	<property name="path.build"           value="build"/>
+    	<property name="path.docs"            value="docs"/>
+        <property name="path.img"             value="img"/>
+		<property name="path.keys"            value="keys"/>
+		<property name="path.keys.server"     value="${path.keys}/server"/>
+		<property name="path.keys.bank"       value="${path.keys}/bank"/>
+		<property name="path.keys.clients"    value="${path.keys}/clients"/>
+		<property name="path.latex"           value="latex"/>
+		<property name="path.latex.output"    value="${path.latex}/"/>
+        <property name="path.lib"             value="lib"/>
+        <property name="path.src"             value="src"/>
+        <property name="path.classes"         value="${path.build}/classes"/>
+        <property name="path.jar"             value="${path.build}/jar"/>
+
 		<!-- VERBOSE: Output path properties -->
 		<if>
-			<equals arg1="${global.verbose}" arg2="true" />
+			<equals arg1="${global.verbose}" arg2="true"/>
 			<then>
         	    <echo>Build path:             ${path.build}</echo>
         		<echo>Docs path:              ${path.docs}</echo>
@@ -125,27 +125,27 @@
 				<echo />
 			</then>
 		</if>
-		
+
 	    <!-- Initialise file names -->
-		<property name="file.jar.bank"            value="${path.jar}/${ant.project.name}_bank.jar" />
-		<property name="file.jar.client"          value="${path.jar}/${ant.project.name}_client.jar" />
-		<property name="file.jar.proxy"           value="${path.jar}/${ant.project.name}_proxy.jar" />
-		<property name="file.jar.server"          value="${path.jar}/${ant.project.name}_server.jar" />
-    	<property name="file.tar.gz"              value="${ant.project.name}.tar.gz" />
-    	<property name="file.tar.gz.md5"          value="${ant.project.name}.tar.gz.md5" />
-		<property name="file.latex.output1"       value="${path.latex.output}/Project1.pdf" />
-		<property name="file.latex.output2"       value="${path.latex.output}/Project2.pdf" />
-		<basename property="root.latex.output1"   file="${file.latex.output1}" />
-		<basename property="root.latex.output2"   file="${file.latex.output2}" />
-		<property name="file.runscript"           value="run.sh" />
-		<property name="file.keys.bank.public"    value="${path.keys.bank}/public.key" />
-        <property name="file.keys.bank.private"   value="${path.keys.bank}/private.key" />
-		<property name="file.keys.server.public"  value="${path.keys.server}/public.key" />
-		<property name="file.keys.server.private" value="${path.keys.server}/private.key" />
-	
+		<property name="file.jar.bank"            value="${path.jar}/${ant.project.name}_bank.jar"/>
+		<property name="file.jar.client"          value="${path.jar}/${ant.project.name}_client.jar"/>
+		<property name="file.jar.proxy"           value="${path.jar}/${ant.project.name}_proxy.jar"/>
+		<property name="file.jar.server"          value="${path.jar}/${ant.project.name}_server.jar"/>
+    	<property name="file.tar.gz"              value="${ant.project.name}.tar.gz"/>
+    	<property name="file.tar.gz.md5"          value="${ant.project.name}.tar.gz.md5"/>
+		<property name="file.latex.output1"       value="${path.latex.output}/Project1.pdf"/>
+		<property name="file.latex.output2"       value="${path.latex.output}/Project2.pdf"/>
+		<basename property="root.latex.output1"   file="${file.latex.output1}"/>
+		<basename property="root.latex.output2"   file="${file.latex.output2}"/>
+		<property name="file.runscript"           value="run.sh"/>
+		<property name="file.keys.bank.public"    value="${path.keys.bank}/public.key"/>
+        <property name="file.keys.bank.private"   value="${path.keys.bank}/private.key"/>
+		<property name="file.keys.server.public"  value="${path.keys.server}/public.key"/>
+		<property name="file.keys.server.private" value="${path.keys.server}/private.key"/>
+
 		<!-- VERBOSE: Output file properties. -->
 		<if>
-            <equals arg1="${global.verbose}" arg2="true" />
+            <equals arg1="${global.verbose}" arg2="true"/>
             <then>
             	<echo>Bank JAR file:          ${file.jar.bank}</echo>
             	<echo>Client JAR file:        ${file.jar.client}</echo>
@@ -166,17 +166,17 @@
             	<echo />
     	    </then>
 		</if>
-		
+
 	    <!-- Initialise class properties -->
-		<property name="class.bank"    value="StealthNet.Bank" />       <!-- Main class for the bank JAR file -->
-        <property name="class.client"  value="StealthNet.Client" />     <!-- Main class for the client JAR file -->
-    	<property name="class.server"  value="StealthNet.Server" />     <!-- Main class for the server JAR file -->
-		<property name="class.proxy"   value="StealthNet.Proxy" />      <!-- Main class for the proxy JAR file -->
-    	<property name="class.package" value="StealthNet" />            <!-- Package name -->
-	
+		<property name="class.bank"    value="StealthNet.Bank"/>       <!-- Main class for the bank JAR file -->
+        <property name="class.client"  value="StealthNet.Client"/>     <!-- Main class for the client JAR file -->
+    	<property name="class.server"  value="StealthNet.Server"/>     <!-- Main class for the server JAR file -->
+		<property name="class.proxy"   value="StealthNet.Proxy"/>      <!-- Main class for the proxy JAR file -->
+    	<property name="class.package" value="StealthNet"/>            <!-- Package name -->
+
 		<!-- VERBOSE: Output class properties -->
 		<if>
-            <equals arg1="${global.verbose}" arg2="true" />
+            <equals arg1="${global.verbose}" arg2="true"/>
             <then>
             	<echo>Bank main class:        ${class.bank}</echo>
         	    <echo>Client main class:      ${class.client}</echo>
@@ -186,20 +186,20 @@
             	<echo />
 			</then>
     	</if>
-		
+
 	    <!-- Initialise compile properties -->
-    	<property name="compile.debug"              value="${global.debug}" />          <!-- Outputs debug information with class files -->
-        <property name="compile.debuglevel"         value="lines, vars, and source" />  <!-- Debugging information to output -->    
-        <property name="compile.verbose"            value="${global.verbose}" />        <!-- Compiles with verbose output -->
-        <property name="compile.deprecation"        value="false" />                    <!-- Compiles with deprecation information -->
-        <property name="compile.optimize"           value="true" />                     <!-- Class file optimizations -->
-        <property name="compile.jdk-version.source" value="1.5" />                      <!-- Whether to include the Ant run-time libraries in the classpath -->
-        <property name="compile.jdk-version.target" value="1.5" />
-        <property name="compile.includeantruntime"  value="false" />
-	
+    	<property name="compile.debug"              value="${global.debug}"/>          <!-- Outputs debug information with class files -->
+        <property name="compile.debuglevel"         value="lines, vars, and source"/>  <!-- Debugging information to output -->
+        <property name="compile.verbose"            value="${global.verbose}"/>        <!-- Compiles with verbose output -->
+        <property name="compile.deprecation"        value="false"/>                    <!-- Compiles with deprecation information -->
+        <property name="compile.optimize"           value="true"/>                     <!-- Class file optimizations -->
+        <property name="compile.jdk-version.source" value="1.5"/>                      <!-- Whether to include the Ant run-time libraries in the classpath -->
+        <property name="compile.jdk-version.target" value="1.5"/>
+        <property name="compile.includeantruntime"  value="false"/>
+
 		<!-- VERBOSE: Output compile properties -->
 		<if>
-            <equals arg1="${global.verbose}" arg2="true" />
+            <equals arg1="${global.verbose}" arg2="true"/>
             <then>
         	    <echo>Debug compilation:      ${compile.debug}</echo>
         	    <echo>Debug level:            ${compile.debuglevel}</echo>
@@ -212,93 +212,93 @@
             	<echo />
     	    </then>
 		</if>
-		
+
 	    <!-- Initialise classpath -->
     	<path id="compile.classpath">
             <fileset dir="${basedir}">
-            	<!-- NOTE: Must list all libraries to be reference here!!! -->  
-            	<include name="${path.lib}/bcprov-jdk15on-147.jar" />
-            	<include name="${path.lib}/commons-codec-1.6.jar" />
+            	<!-- NOTE: Must list all libraries to be reference here!!! -->
+            	<include name="${path.lib}/bcprov-jdk15on-147.jar"/>
+            	<include name="${path.lib}/commons-codec-1.6.jar"/>
         	</fileset>
         </path>
-		
+
 		<!-- VERBOSE: Output classpath -->
 		<if>
-            <equals arg1="${global.verbose}" arg2="true" />
+            <equals arg1="${global.verbose}" arg2="true"/>
             <then>
-        		<property name="init.classpath" refid="compile.classpath" />
+        		<property name="init.classpath" refid="compile.classpath"/>
         		<echo>Classpath:              ${init.classpath}</echo>
         	</then>
     	</if>
 	</target>
 	<!-- =================================================================== -->
-  
+
 	<!-- Compilation target -->
     <target name="compile" depends="-init" description="Compilation target">
     	<!-- Make output directory -->
-    	<mkdir dir="${path.classes}" />
-    	
+    	<mkdir dir="${path.classes}"/>
+
     	 <!-- Compile Java classes as necessary -->
-        <javac            srcdir="${path.src}" 
-        	             destdir="${path.classes}" 
+        <javac            srcdir="${path.src}"
+        	             destdir="${path.classes}"
     	                   debug="${compile.debug}"
         	         deprecation="${compile.deprecation}"
         	            optimize="${compile.optimize}"
         	   includeantruntime="${compile.includeantruntime}"
     	                  source="${compile.jdk-version.source}"
     	                  target="${compile.jdk-version.target}">
-        	<classpath refid="compile.classpath" />
+        	<classpath refid="compile.classpath"/>
         </javac>
     </target>
-  
+
 	<!-- JAR target -->
     <target name="jar" depends="compile" description="Compression target">
-    	<mkdir dir="${path.jar}" />
+    	<mkdir dir="${path.jar}"/>
     	<tstamp>
-	        <format property="TODAY" pattern="dd/MM/yy HH:mm:ss" />
+	        <format property="TODAY" pattern="dd/MM/yy HH:mm:ss"/>
 	    </tstamp>
-    	
+
     	<!-- Bank JAR file -->
         <one-jar destfile="${file.jar.bank}">
         	<manifest>
-                <attribute name="Built-By"             value="${user.name}" />
-                <attribute name="Built-Date"           value="${TODAY}" />
-                <attribute name="One-Jar-Main-Class"   value="${class.bank}" />
+                <attribute name="Built-By"             value="${user.name}"/>
+                <attribute name="Built-Date"           value="${TODAY}"/>
+                <attribute name="One-Jar-Main-Class"   value="${class.bank}"/>
             </manifest>
-        	
-            <main>            	
+
+            <main>
                 <fileset dir=".">
                 	<!-- RSA keys -->
-                	<include name="${file.keys.bank.public}" />
-                    <include name="${file.keys.bank.private}" />
-                	<include name="${file.keys.server.public}" />
+                	<include name="${file.keys.bank.public}"/>
+                    <include name="${file.keys.bank.private}"/>
+                	<include name="${file.keys.server.public}"/>
                 </fileset>
-                
+
                 <!-- Class files -->
                 <fileset dir="${path.classes}">
                     <!-- NOTE: Must list the files to be included in the bank JAR file here!!! -->
-                	<include name="StealthNet/Bank**" />
-                    <include name="StealthNet/BankThread**" />
-                    <include name="StealthNet/Comms**" />
-                	<include name="StealthNet/CryptoCreditHashChain**" />
-                    <include name="StealthNet/Debug**" />
-                    <include name="StealthNet/DecryptedPacket**" />
-                	<include name="StealthNet/EncryptedFile**" />
-                    <include name="StealthNet/EncryptedPacket**" />
-                    <include name="StealthNet/Utility**" />
-                    <include name="StealthNet/Security/**" />
+                	<include name="StealthNet/Bank**"/>
+                    <include name="StealthNet/BankThread**"/>
+                    <include name="StealthNet/Comms**"/>
+                	<include name="StealthNet/CryptoCreditHashChain**"/>
+                    <include name="StealthNet/Debug**"/>
+                    <include name="StealthNet/DecryptedPacket**"/>
+                	<include name="StealthNet/EncryptedFile**"/>
+                    <include name="StealthNet/EncryptedPacket**"/>
+                    <include name="StealthNet/Utility**"/>
+                    <include name="StealthNet/Security/**"/>
                 </fileset>
             </main>
-        	
+
         	<lib>
                 <fileset dir="${path.lib}">
-                    <!-- NOTE: Must list the libraries to be included in the bank JAR file here!!! -->  
-                    <include name="bcprov-jdk15on-147.jar" />
-                    <include name="commons-codec-1.6.jar" />
+                    <!-- NOTE: Must list the libraries to be included in the bank JAR file here!!! -->
+                    <include name="bcprov-jdk15on-147.jar"/>
+                    <include name="commons-codec-1.6.jar"/>
                 </fileset>
             </lib>
         </one-jar>
-    	
+
     	<!-- Client JAR file -->
         <one-jar destfile="${file.jar.client}">
         	<manifest>
@@ -309,184 +309,184 @@
             <main>
                 <fileset dir=".">
                 	<!-- Images -->
-                    <include name="${path.img}/*" />
-                	
+                    <include name="${path.img}/*"/>
+
                 	<!-- RSA keys -->
-                    <include name="${file.keys.bank.public}" />
-                	<include name="${file.keys.server.public}" />
+                    <include name="${file.keys.bank.public}"/>
+                	<include name="${file.keys.server.public}"/>
                 </fileset>
-            	
+
             	<!-- Class files -->
             	<fileset dir="${path.classes}">
             		<!-- NOTE: Must list the files to be included in the client JAR file here!!! -->
-                    <include name="StealthNet/Chat**" />
-            		<include name="StealthNet/Client**" />
-                    <include name="StealthNet/Comms**" />
-            		<include name="StealthNet/CryptoCreditHashChain**" />
-            		<include name="StealthNet/Debug**" />
-            		<include name="StealthNet/DecryptedPacket**" />
-            		<include name="StealthNet/EncryptedFile**" />
-                    <include name="StealthNet/EncryptedPacket**" />
-            		<include name="StealthNet/FileTransfer**" />
-            		<include name="StealthNet/Utility**" />
-            		<include name="StealthNet/Security/**" />
+                    <include name="StealthNet/Chat**"/>
+            		<include name="StealthNet/Client**"/>
+                    <include name="StealthNet/Comms**"/>
+            		<include name="StealthNet/CryptoCreditHashChain**"/>
+            		<include name="StealthNet/Debug**"/>
+            		<include name="StealthNet/DecryptedPacket**"/>
+            		<include name="StealthNet/EncryptedFile**"/>
+                    <include name="StealthNet/EncryptedPacket**"/>
+            		<include name="StealthNet/FileTransfer**"/>
+            		<include name="StealthNet/Utility**"/>
+            		<include name="StealthNet/Security/**"/>
                 </fileset>
         	</main>
-            
+
         	<lib>
                 <fileset dir="${path.lib}">
-                    <!-- NOTE: Must list the libraries to be included in the client JAR file here!!! -->  
-                    <include name="bcprov-jdk15on-147.jar" />
-                    <include name="commons-codec-1.6.jar" />
+                    <!-- NOTE: Must list the libraries to be included in the client JAR file here!!! -->
+                    <include name="bcprov-jdk15on-147.jar"/>
+                    <include name="commons-codec-1.6.jar"/>
                 </fileset>
             </lib>
         </one-jar>
-    	
+
     	<!-- Proxy JAR file -->
         <one-jar destfile="${file.jar.proxy}">
         	<manifest>
-                <attribute name="Built-By"              value="${user.name}" />
-                <attribute name="Built-Date"            value="${TODAY}" />
-                <attribute name="One-Jar-Main-Class"    value="${class.proxy}" />
+                <attribute name="Built-By"              value="${user.name}"/>
+                <attribute name="Built-Date"            value="${TODAY}"/>
+                <attribute name="One-Jar-Main-Class"    value="${class.proxy}"/>
             </manifest>
-        	
+
             <main>
                 <!-- Class files -->
                 <fileset dir="${path.classes}">
-                    <!-- NOTE: Must list the files to be included in the proxy JAR file here!!! -->                
-                    <include name="StealthNet/Comms**" />
-                    <include name="StealthNet/Debug**" />
-                    <include name="StealthNet/DecryptedPacket**" />
-                	<include name="StealthNet/EncryptedFile**" />
-                    <include name="StealthNet/EncryptedPacket**" />
-                    <include name="StealthNet/Proxy**" />
-                    <include name="StealthNet/ProxyComms**" />
-                    <include name="StealthNet/ProxyThread**" />
-                    <include name="StealthNet/Utility**" />
-                    <include name="StealthNet/Security/**" />
+                    <!-- NOTE: Must list the files to be included in the proxy JAR file here!!! -->
+                    <include name="StealthNet/Comms**"/>
+                    <include name="StealthNet/Debug**"/>
+                    <include name="StealthNet/DecryptedPacket**"/>
+                	<include name="StealthNet/EncryptedFile**"/>
+                    <include name="StealthNet/EncryptedPacket**"/>
+                    <include name="StealthNet/Proxy**"/>
+                    <include name="StealthNet/ProxyComms**"/>
+                    <include name="StealthNet/ProxyThread**"/>
+                    <include name="StealthNet/Utility**"/>
+                    <include name="StealthNet/Security/**"/>
                 </fileset>
             </main>
-            
+
         	<lib>
                 <fileset dir="${path.lib}">
-                    <!-- NOTE: Must list the libraries to be included in the proxy JAR file here!!! -->  
-                    <include name="bcprov-jdk15on-147.jar" />
-                    <include name="commons-codec-1.6.jar" />
+                    <!-- NOTE: Must list the libraries to be included in the proxy JAR file here!!! -->
+                    <include name="bcprov-jdk15on-147.jar"/>
+                    <include name="commons-codec-1.6.jar"/>
                 </fileset>
             </lib>
         </one-jar>
-    	
+
     	<!-- Server JAR file -->
         <one-jar destfile="${file.jar.server}">
         	<manifest>
-                <attribute name="Built-By"              value="${user.name}" />
-                <attribute name="Built-Date"            value="${TODAY}" />
-                <attribute name="One-Jar-Main-Class"    value="${class.server}" />
+                <attribute name="Built-By"              value="${user.name}"/>
+                <attribute name="Built-Date"            value="${TODAY}"/>
+                <attribute name="One-Jar-Main-Class"    value="${class.server}"/>
             </manifest>
-        	
+
             <main>
             	<fileset dir=".">
                 	<!-- RSA keys -->
-                	<include name="${file.keys.server.public}" />
-                    <include name="${file.keys.server.private}" />
+                	<include name="${file.keys.server.public}"/>
+                    <include name="${file.keys.server.private}"/>
                 </fileset>
-                
+
                 <!-- Class files -->
                 <fileset dir="${path.classes}">
-                    <!-- NOTE: Must list the files to be included in the server JAR file here!!! -->                
-                    <include name="StealthNet/Comms**" />
-                	<include name="StealthNet/CryptoCreditHashChain**" />
-                    <include name="StealthNet/Debug**" />
-                    <include name="StealthNet/DecryptedPacket**" />
-                	<include name="StealthNet/EncryptedFile**" />
-                    <include name="StealthNet/EncryptedPacket**" />
-                    <include name="StealthNet/Server**" />
-                    <include name="StealthNet/ServerThread**" />
-                    <include name="StealthNet/Utility**" />
-                    <include name="StealthNet/Security/**" />
+                    <!-- NOTE: Must list the files to be included in the server JAR file here!!! -->
+                    <include name="StealthNet/Comms**"/>
+                	<include name="StealthNet/CryptoCreditHashChain**"/>
+                    <include name="StealthNet/Debug**"/>
+                    <include name="StealthNet/DecryptedPacket**"/>
+                	<include name="StealthNet/EncryptedFile**"/>
+                    <include name="StealthNet/EncryptedPacket**"/>
+                    <include name="StealthNet/Server**"/>
+                    <include name="StealthNet/ServerThread**"/>
+                    <include name="StealthNet/Utility**"/>
+                    <include name="StealthNet/Security/**"/>
                 </fileset>
             </main>
-        	
+
         	<lib>
                 <fileset dir="${path.lib}">
-        	        <!-- NOTE: Must list the libraries to be included in the server JAR file here!!! -->  
-                    <include name="bcprov-jdk15on-147.jar" />
-        	        <include name="commons-codec-1.6.jar" />
+        	        <!-- NOTE: Must list the libraries to be included in the server JAR file here!!! -->
+                    <include name="bcprov-jdk15on-147.jar"/>
+        	        <include name="commons-codec-1.6.jar"/>
                 </fileset>
             </lib>
         </one-jar>
-    	
+
     	<!-- Set the JARs to be executable -->
     	<chmod file="${file.jar.bank}" perm="ugo+x"/>
 		<chmod file="${file.jar.client}" perm="ugo+x"/>
     	<chmod file="${file.jar.proxy}" perm="ugo+x"/>
 		<chmod file="${file.jar.server}" perm="ugo+x"/>
     </target>
-	
+
 	<!-- Javadoc target -->
 	<target name="javadoc" depends="compile" description="Create Javadoc API documentation">
 	    <!-- Make the output directory -->
-		<mkdir dir="${path.docs}" />
-		
+		<mkdir dir="${path.docs}"/>
+
 		<!-- Generate javadoc -->
 	    <javadoc sourcepath="${path.src}"
 	                destdir="${path.docs}"
 	           packagenames="*"
     	           doctitle="StealthNet"
-    	             author="true" 
-    	             bottom="StealthNet" 
-    	             source="${compile.jdk-version.source}"  
+    	             author="true"
+    	             bottom="StealthNet"
+    	             source="${compile.jdk-version.source}"
     	             access="protected"
-                    version="true" 
+                    version="true"
     	        windowtitle="StealthNet">
-	        <classpath refid="compile.classpath" />
+	        <classpath refid="compile.classpath"/>
 	    </javadoc>
 	</target>
-	
+
 	<!-- Latex target -->
-    <target name="latex" depends="-init" description="Create LaTeX documentation">        
+    <target name="latex" depends="-init" description="Create LaTeX documentation">
         <!-- Run 'make' within the latex subdirectory -->
-    	<exec executable="make" dir="${path.latex}/src" />
-    	
+    	<exec executable="make" dir="${path.latex}/src"/>
+
     	<!-- Symlink output PDFs to root directory -->
-    	<symlink link="${root.latex.output1}" resource="${file.latex.output1}" overwrite="true" />
-    	<symlink link="${root.latex.output2}" resource="${file.latex.output2}" overwrite="true" />
+    	<symlink link="${root.latex.output1}" resource="${file.latex.output1}" overwrite="true"/>
+    	<symlink link="${root.latex.output2}" resource="${file.latex.output2}" overwrite="true"/>
     </target>
-	
+
 	<!-- Latex clean target -->
-    <target name="latex-clean" depends="-init" description="Delete LaTeX documentation">        
+    <target name="latex-clean" depends="-init" description="Delete LaTeX documentation">
         <!-- Run 'make clean' within the latex subdirectory -->
     	<echo>Cleaning ${path.latex}.</echo>
         <exec executable="make" dir="${path.latex}/src">
-        	<arg value="clean" />
+        	<arg value="clean"/>
     	</exec>
     </target>
-	
+
 	<!-- ========================== CLEAN TARGETS ========================== -->
 	<!-- Clean target -->
 	<target name="clean" depends="-init, latex-clean" description="Clean the project">
 		<echo>Deleting ${path.build}.</echo>
-        <delete dir="${path.build}" />
+        <delete dir="${path.build}"/>
     </target>
-	
+
 	<!-- Distribution clean target -->
     <target name="distclean" depends="-init, delete-client-keys, latex-clean" description="Clean the project">
     	<echo>Deleting ${path.build}.</echo>
-        <delete dir="${path.build}" />
-        
+        <delete dir="${path.build}"/>
+
         <echo>Deleting ${path.docs}.</echo>
-        <delete dir="${path.docs}" />
-    	
+        <delete dir="${path.docs}"/>
+
     	<echo>Deleting ${file.tar.gz}.</echo>
-        <delete file="${file.tar.gz}" />
-        
+        <delete file="${file.tar.gz}"/>
+
         <echo>Deleting ${file.tar.gz.md5}.</echo>
-        <delete file="${file.tar.gz.md5}" />
-        
+        <delete file="${file.tar.gz.md5}"/>
+
         <echo>Deleting ${root.latex.output}.</echo>
-        <delete file="${root.latex.output}" />
+        <delete file="${root.latex.output}"/>
     </target>
-	
+
 	<!-- Clean target -->
     <target name="delete-client-keys" depends="-init" description="Delete client keys">
         <echo>Deleting client keys from ${path.keys.clients}.</echo>
@@ -495,86 +495,86 @@
     	 </delete>
     </target>
 	<!-- =================================================================== -->
-	
+
 	<!-- =========================== TAR TARGETS ========================== -->
 	<!-- Default TAR target -->
-	<target name="tar" depends="maximal-tar" description="Create a tar archive" />
-    	
+	<target name="tar" depends="maximal-tar" description="Create a tar archive"/>
+
 	<!-- Create a TAR file with all of the relevant content (excludes Eclipse files, git metadata and any built files) -->
 	<target name="minimal-tar" depends="latex" description="Create a minimal tar archive">
 		<!-- Delete old TAR file -->
-		<delete file="${file.tar.gz}" />
-		<delete file="${file.tar.gz.md5}" />
-		
+		<delete file="${file.tar.gz}"/>
+		<delete file="${file.tar.gz.md5}"/>
+
     	<tar destfile="${file.tar.gz}" longfile="gnu" compression="gzip">
             <tarfileset dir="${basedir}">
             	<!-- Exclude unnecessary files that can be built -->
-            	<exclude name="**/${path.build}/**" />
-                <exclude name="**/${path.docs}/**" />
-            	<exclude name="**/${path.latex}/**" />
-            	
+            	<exclude name="**/${path.build}/**"/>
+                <exclude name="**/${path.docs}/**"/>
+            	<exclude name="**/${path.latex}/**"/>
+
             	<!-- Exclude client keys -->
-            	<exclude name="**/${path.keys.clients}/**" />
-            	
+            	<exclude name="**/${path.keys.clients}/**"/>
+
             	<!-- Exclude git metadata -->
-            	<exclude name=".git" />
-            	<exclude name=".gitignore" />
-            	
+            	<exclude name=".git"/>
+            	<exclude name=".gitignore"/>
+
             	<!-- Exclude Eclipse files -->
-            	<exclude name=".classpath" />
-            	<exclude name="**/.eclipse/**" />
-            	<exclude name="**/.externalToolBuilders/**" />
-            	<exclude name=".project" />
-            	<exclude name="**/.settings/**" />
+            	<exclude name=".classpath"/>
+            	<exclude name="**/.eclipse/**"/>
+            	<exclude name="**/.externalToolBuilders/**"/>
+            	<exclude name=".project"/>
+            	<exclude name="**/.settings/**"/>
             </tarfileset>
         </tar>
-        <checksum file="${file.tar.gz}" algorithm="md5" />
+        <checksum file="${file.tar.gz}" algorithm="md5"/>
 	</target>
-	
+
 	<!-- Create a TAR file with all of the relevant content (includes Eclipse files but excludes git metadata and any built files) -->
     <target name="normal-tar" depends="latex" description="Create a normal tar archive">
     	<!-- Delete old TAR file -->
-        <delete file="${file.tar.gz}" />
-        <delete file="${file.tar.gz.md5}" />
-    	
+        <delete file="${file.tar.gz}"/>
+        <delete file="${file.tar.gz.md5}"/>
+
     	<tar destfile="${file.tar.gz}" longfile="gnu" compression="gzip">
             <tarfileset dir="${basedir}">
             	<!-- Exclude unnecessary files that can be built -->
-                <exclude name="**/${path.build}/**" />
-                <exclude name="**/${path.docs}/**" />
-            	<exclude name="**/${path.latex}/**" />
-            	
+                <exclude name="**/${path.build}/**"/>
+                <exclude name="**/${path.docs}/**"/>
+            	<exclude name="**/${path.latex}/**"/>
+
             	<!-- Exclude client keys -->
-                <exclude name="**/${path.keys.clients}/**" />
-                
+                <exclude name="**/${path.keys.clients}/**"/>
+
                 <!-- Exclude git metadata -->
-                <exclude name=".git" />
-                <exclude name=".gitignore" />
+                <exclude name=".git"/>
+                <exclude name=".gitignore"/>
             </tarfileset>
         </tar>
-        <checksum file="${file.tar.gz}" algorithm="md5" />
+        <checksum file="${file.tar.gz}" algorithm="md5"/>
     </target>
-	
+
 	<!-- Create a TAR file with all of the relevant content (includes Eclipse files and any built files but excludes git metadata) -->
     <target name="maximal-tar" depends="compile, jar, javadoc, latex, latex-clean" description="Create a maximal tar archive">
         <!-- Delete old TAR file -->
-        <delete file="${file.tar.gz}" />
-        <delete file="${file.tar.gz.md5}" />
-        
+        <delete file="${file.tar.gz}"/>
+        <delete file="${file.tar.gz.md5}"/>
+
         <tar destfile="${file.tar.gz}" longfile="gnu" compression="gzip">
             <tarfileset dir="${basedir}">
             	<!-- Exclude client keys -->
-                <exclude name="**/${path.keys.clients}/**" />
-            	
+                <exclude name="**/${path.keys.clients}/**"/>
+
                 <!-- Exclude git metadata -->
-                <exclude name=".git" />
-                <exclude name=".gitignore" />
+                <exclude name=".git"/>
+                <exclude name=".gitignore"/>
             </tarfileset>
         </tar>
-        <checksum file="${file.tar.gz}" algorithm="md5" />
+        <checksum file="${file.tar.gz}" algorithm="md5"/>
     </target>
 	<!-- =================================================================== -->
-	
+
 	<!-- ====================== INFORMATIONAL TARGETS ====================== -->
 	<!-- Information target -->
     <target name="info" description="Just prints information about the environment">
@@ -591,7 +591,7 @@
         <echo>JRE vendor: ${java.vendor}</echo>
         <echo>JRE version: ${java.version}</echo>
     </target>
-	   
+
 	<!-- Print the directory where the JAR files are stored. Used by the run.sh script. -->
 	<target name="jar_dir" depends="-init" description="Print the directory that the JARs are stored in">
 		<echo>JAR directory: '${path.jar}'</echo>

@@ -2,7 +2,7 @@
 
 ################################################################################
 # Author: Joshua Spence
-# 
+#
 # Script to easily run a StealthNet client, proxy, server or bank.
 ################################################################################
 
@@ -15,13 +15,13 @@ JRE_FLAGS="-enableassertions -enablesystemassertions"
 #===============================================================================
 # ANT configuration
 #===============================================================================
-ANT="$(which ant)"
+ANT=$(which ant)
 [ -n "$ANT" ] && HAS_ANT=1 || HAS_ANT=0
 
 #===============================================================================
 # Get JAR file (specified relative to script)
 #===============================================================================
-JAR_DIR=`dirname $0`
+JAR_DIR=$(dirname $0)
 if [ $HAS_ANT -eq 1 ]; then
 	# Get JAR path from ant
 	JAR_DIR="$JAR_DIR/$($ANT jar_dir | sed -n "s/.*JAR directory: '\(.*\)'/\1/p")"
@@ -152,8 +152,8 @@ ADDITIONAL_ARG=
 #     * Mode of operation = [--bank | --client | --malicious-proxy | --proxy | --server ]
 #     * Debug output = [ --debug | -d ]
 #===============================================================================
-PN=`basename $0`
-ARGS=`getopt --name "$PN" --long bank,debug,client,malicious-proxy,proxy,server --options d -- "$@"`
+PN=$(basename $0)
+ARGS=$(getopt --name "$PN" --long bank,debug,client,malicious-proxy,proxy,server --options d -- "$@")
 if [ $? -ne 0 ]; then
     echo "getopt failed!" >&2
     exit 1
@@ -164,28 +164,28 @@ while [ $# -gt 0 ]; do
         -d | --debug)
             DEBUG_ARG=$DEBUG
             ;;
-        
+
         --bank)
         	JAR_FILE=StealthNet_bank.jar
         	;;
-        	       	
+
         --client)
         	JAR_FILE=StealthNet_client.jar
         	;;
-        	
+
     	--malicious-proxy)
     		JAR_FILE=StealthNet_proxy.jar
     		ADDITIONAL_ARG="-DStealthNet.Proxy.Malicious=true"
         	;;
-        	
+
         --proxy)
         	JAR_FILE=StealthNet_proxy.jar
         	;;
-        	
+
         --server)
         	JAR_FILE=StealthNet_server.jar
         	;;
-       	
+
        	--)
             shift
             break
