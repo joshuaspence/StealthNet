@@ -23,11 +23,11 @@ ANT=$(which ant)
 #===============================================================================
 JAR_DIR=$(dirname $0)
 if [ $HAS_ANT -eq 1 ]; then
-	# Get JAR path from ant
-	JAR_DIR="$JAR_DIR/$($ANT jar_dir | sed -n "s/.*JAR directory: '\(.*\)'/\1/p")"
+    # Get JAR path from ant
+    JAR_DIR="$JAR_DIR/$($ANT jar_dir | sed -n "s/.*JAR directory: '\(.*\)'/\1/p")"
 else
-	# Use default JAR path
-	JAR_DIR="$JAR_DIR/build/jar"
+    # Use default JAR path
+    JAR_DIR="$JAR_DIR/build/jar"
 fi
 
 #===============================================================================
@@ -166,35 +166,35 @@ while [ $# -gt 0 ]; do
             ;;
 
         --bank)
-        	JAR_FILE=StealthNet_bank.jar
-        	;;
+            JAR_FILE=StealthNet_bank.jar
+            ;;
 
         --client)
-        	JAR_FILE=StealthNet_client.jar
-        	;;
+            JAR_FILE=StealthNet_client.jar
+            ;;
 
-    	--malicious-proxy)
-    		JAR_FILE=StealthNet_proxy.jar
-    		ADDITIONAL_ARG="-DStealthNet.Proxy.Malicious=true"
-        	;;
+        --malicious-proxy)
+            JAR_FILE=StealthNet_proxy.jar
+            ADDITIONAL_ARG="-DStealthNet.Proxy.Malicious=true"
+            ;;
 
         --proxy)
-        	JAR_FILE=StealthNet_proxy.jar
-        	;;
+            JAR_FILE=StealthNet_proxy.jar
+            ;;
 
         --server)
-        	JAR_FILE=StealthNet_server.jar
-        	;;
+            JAR_FILE=StealthNet_server.jar
+            ;;
 
-       	--)
+           --)
             shift
             break
             ;;
 
-	    *)
-	        # terminate while loop
-	        break
-	        ;;
+        *)
+            # terminate while loop
+            break
+            ;;
     esac
     shift
 done
@@ -203,8 +203,8 @@ done
 # Make sure a mode of operation (client/server/proxy/bank mode) was specified
 #===============================================================================
 if [ -z "$JAR_FILE" ]; then
-	echo "You must specify bank (\`--bank'), client (\`--client'), malicious proxy (\`--malicious-proxy'), proxy (\`--proxy') or server (\`--server') mode." >&2
-	exit 1
+    echo "You must specify bank (\`--bank'), client (\`--client'), malicious proxy (\`--malicious-proxy'), proxy (\`--proxy') or server (\`--server') mode." >&2
+    exit 1
 fi
 
 #===============================================================================
