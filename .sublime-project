@@ -1,0 +1,26 @@
+{
+	"folders":
+	[
+		{
+			"path": ".",
+            "folder_exclude_patterns":
+            [
+                ".eclipse",
+                ".externalToolBuilders",
+                ".settings",
+                "build",
+                "docs",
+                "img",
+                "lib"
+            ],
+            "file_exclude_patterns":
+            [
+                ".project",
+                "*.pdf",
+                "*.tar.gz",
+                "*.tar.gz.md5",
+                "*.tar.gz.sha1"
+            ]
+		}
+	]
+}
